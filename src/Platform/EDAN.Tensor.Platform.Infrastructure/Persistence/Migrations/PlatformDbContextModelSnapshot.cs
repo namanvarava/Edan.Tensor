@@ -10,6 +10,12 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations;
 public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
 {
     /// <summary>현재 테이블, 열, 인덱스 및 관계형 제약을 모델 스냅샷에 기록합니다.</summary>
+    public static void ConfigureTargetModel(ModelBuilder modelBuilder)
+    {
+        new PlatformDbContextModelSnapshot().BuildModel(modelBuilder);
+    }
+
+    /// <summary>현재 테이블, 열, 인덱스 및 관계형 제약을 모델 스냅샷에 기록합니다.</summary>
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
         modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
