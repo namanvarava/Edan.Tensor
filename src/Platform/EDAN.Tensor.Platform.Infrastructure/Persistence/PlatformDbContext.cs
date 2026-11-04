@@ -12,6 +12,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<User> Users => Set<User>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
+    public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
+    public DbSet<ProjectMembership> ProjectMemberships => Set<ProjectMembership>();
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<Policy> Policies => Set<Policy>();
 
@@ -24,6 +26,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureProject(modelBuilder);
         ConfigureUser(modelBuilder);
         ConfigureTenantMembership(modelBuilder);
+        ConfigureOrganizationMembership(modelBuilder);
+        ConfigureProjectMembership(modelBuilder);
         ConfigureResource(modelBuilder);
         ConfigurePolicy(modelBuilder);
     }
@@ -106,6 +110,45 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.SubjectId }).IsUnique();
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>조직 소속을 Tenant·Organization·Subject 조합으로 고유하게 저장합니다.</summary>
+    private static void ConfigureOrganizationMembership(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<OrganizationMembership>();
+        entity.ToTable("platform_organization_memberships");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationMembershipId>(value => new OrganizationMembershipId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.SubjectId }).IsUnique();
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(x => new { x.OrganizationId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>프로젝트 소속을 Tenant·Organization·Project·Subject 조합으로 고유하게 저장합니다.</summary>
+    private static void ConfigureProjectMembership(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<ProjectMembership>();
+        entity.ToTable("platform_project_memberships");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<ProjectMembershipId>(value => new ProjectMembershipId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.ProjectId).HasConversion(IdConverter<ProjectId>(value => new ProjectId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId, x.SubjectId }).IsUnique();
+        entity.HasOne<Project>().WithMany()
+            .HasForeignKey(x => new { x.ProjectId, x.OrganizationId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureResource(ModelBuilder modelBuilder)
