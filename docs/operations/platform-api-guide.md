@@ -127,8 +127,51 @@ OpenAPI 문서는 개발 환경에서만 노출됩니다. 현재 API Host에는 
 - 409: 중복·상태·소유권 충돌
 - 503: 데이터베이스 상태 확인 실패
 
+## 인증 및 Tenant 권한
+
+모든 Platform 관리 API는 JWT Bearer 인증을 사용합니다.
+
+- 인증 헤더: `Authorization: Bearer {access-token}`
+- 필수 공통 클레임: `sub` (인증 주체 식별자)
+- Tenant 구성원 API 필수 클레임: `tenant_id` (GUID 형식)
+- 플랫폼 관리자 역할: `role=platform_admin`
+- JWT 발급자·대상·서명은 API 설정과 모두 일치해야 합니다.
+- Tenant 경로 API는 경로의 `tenantId`와 인증 토큰의 `tenant_id`가 일치해야 합니다.
+- 자원 및 정책 API는 요청 본문의 Tenant 식별자를 받지 않고 인증 클레임에서 범위를 결정합니다.
+
+플랫폼 관리자만 테넌트를 생성하고 최초 활성화할 수 있습니다. 조직·프로젝트·사용자·자원·정책 API는 Tenant 구성원 인증을 요구합니다.
+
+### 필수 설정
+
+다음 설정은 환경 변수 또는 비밀 저장소로 제공해야 합니다. 서명 키를 저장소에 커밋하지 마십시오.
+
+- `Authentication__Issuer`: 신뢰하는 인증 발급자
+- `Authentication__Audience`: EDAN Tensor API 대상 식별자
+- `Authentication__SigningKey`: UTF-8 기준 32바이트 이상의 비밀 서명 키
+
+서명 키 또는 발급자·대상 설정이 없으면 API Host는 시작하지 않습니다. 운영 환경에서는 전용 비밀 저장소와 키 교체 절차를 사용해야 합니다.
+
+### 인증 토큰 예시 클레임
+
+```json
+{
+  "sub": "사용자 GUID 또는 인증 공급자 사용자 식별자",
+  "tenant_id": "테넌트 GUID",
+  "role": "tenant_member",
+  "iss": "설정된 발급자",
+  "aud": "설정된 API 대상",
+  "exp": 1794000000
+}
+```
+
+플랫폼 관리자 토큰은 `role`을 `platform_admin`으로 발급합니다. 실제 계정·토큰 발급은 외부 Identity Provider에서 수행하며 API Host는 토큰 검증을 담당합니다.
+
+### 현재 보안 경계의 범위
+
+현재 구현은 인증된 주체의 단일 Tenant 클레임을 요청 범위로 사용합니다. 여러 Tenant에 속한 사용자의 Tenant 전환, 사용자-조직-프로젝트별 세부 권한, 초대 수락, 토큰 발급·갱신·폐기, 키 회전 및 JWKS 기반 비대칭 키 검증은 후속 단계에서 구현해야 합니다.
+
 ## 보안 및 운영 주의
 
-현재 단계의 Platform API는 인증·인가 연결 전의 개발 기반입니다. 외부 네트워크나 운영 환경에 공개하지 마십시오. 다음 보안 단계에서 인증, Tenant 컨텍스트 확정, 권한 정책을 연결한 후 운영 공개를 검토해야 합니다.
+현재 API는 JWT 인증과 기본 Tenant 권한 검사를 적용했습니다. 다만 세부 권한, 다중 Tenant 전환, 인증 공급자 운영 및 키 관리 기능은 아직 구현되지 않았으므로 완전한 운영 보안 검증 전까지 외부 공개를 제한해야 합니다.
 
 개발 환경에서는 설정에 따라 API Host 시작 시 Migration을 적용합니다. 운영 환경에서는 배포 작업에서 승인된 Migration을 별도로 적용해야 합니다.
