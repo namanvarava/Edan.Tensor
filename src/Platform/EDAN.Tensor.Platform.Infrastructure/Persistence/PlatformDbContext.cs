@@ -16,6 +16,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<ProjectMembership> ProjectMemberships => Set<ProjectMembership>();
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<Policy> Policies => Set<Policy>();
+    public DbSet<AuthorizationPolicy> AuthorizationPolicies => Set<AuthorizationPolicy>();
+    public DbSet<AuthorizationAuditEntry> AuthorizationAuditEntries => Set<AuthorizationAuditEntry>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -30,6 +32,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureProjectMembership(modelBuilder);
         ConfigureResource(modelBuilder);
         ConfigurePolicy(modelBuilder);
+        ConfigureAuthorizationPolicy(modelBuilder);
+        ConfigureAuthorizationAuditEntry(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -203,6 +207,58 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken();
         entity.HasIndex(x => new { x.Key, x.Version });
+    }
+
+    /// <summary>접근 정책은 Tenant 소유권과 선택적 하위 범위를 함께 저장합니다.</summary>
+    private static void ConfigureAuthorizationPolicy(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AuthorizationPolicy>();
+        entity.ToTable("platform_authorization_policies", table =>
+            table.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyId>(value => new AuthorizationPolicyId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.OrganizationId).HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+        entity.Property(x => x.ProjectId).HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
+        entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Action).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
+        entity.Property(x => x.Effect).HasConversion<string>().HasMaxLength(16).IsRequired();
+        entity.Property(x => x.Priority).IsRequired();
+        entity.Property(x => x.IsEnabled).IsRequired();
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.SubjectId, x.Action, x.ResourceType, x.IsEnabled });
+        entity.HasIndex(x => new { x.ProjectId, x.OrganizationId, x.TenantId });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(x => new { x.OrganizationId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Project>().WithMany()
+            .HasForeignKey(x => new { x.ProjectId, x.OrganizationId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>권한 평가 감사 기록은 추가 전용 데이터로 저장합니다.</summary>
+    private static void ConfigureAuthorizationAuditEntry(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AuthorizationAuditEntry>();
+        entity.ToTable("platform_authorization_audit");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationAuditEntryId>(value => new AuthorizationAuditEntryId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Action).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
+        entity.Property(x => x.Scope).HasMaxLength(600).IsRequired();
+        entity.Property(x => x.IsAllowed).IsRequired();
+        entity.Property(x => x.ReasonCode).HasMaxLength(80).IsRequired();
+        entity.Property(x => x.MatchedPolicyId).HasMaxLength(36);
+        entity.Property(x => x.OccurredAtUtc).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+        entity.HasIndex(x => new { x.SubjectId, x.OccurredAtUtc });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
