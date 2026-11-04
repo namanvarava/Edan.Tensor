@@ -19,7 +19,7 @@ public static class PlatformAuthenticationExtensions
             : null;
 
         services.AddHttpContextAccessor();
-        services.AddScoped<ITenantContext, ClaimsTenantContext>();
+        services.AddScoped<ITenantContext, RequestTenantContext>();
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
