@@ -1,7 +1,7 @@
-var builder=WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHealthChecks();
-var app=builder.Build();
+var app = builder.Build();
 app.MapHealthChecks("/health");
-app.MapGet("/",()=>Results.Ok(new { Product="EDAN Tensor", Service="ApiHost", Status="Foundation" }));
+app.MapGet("/", () => Results.Ok(new { Product = "EDAN Tensor", Service = "ApiHost", Status = "Foundation" }));
 app.Run();
-public partial class Program;
+public partial class Program { }
