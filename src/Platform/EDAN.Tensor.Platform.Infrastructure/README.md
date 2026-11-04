@@ -4,7 +4,7 @@
 
 ## 구성
 - `PlatformDbContext`: 플랫폼 메타데이터 테이블과 매핑을 관리합니다.
-- `PlatformRepositories`: Tenant, Organization, Project, User, TenantMembership, OrganizationMembership, ProjectMembership, Resource, Policy 저장소와 Unit of Work를 제공합니다.
+- `PlatformRepositories`: Tenant, Organization, Project, User, TenantMembership, OrganizationMembership, ProjectMembership, Resource, Policy, AuthorizationPolicy, AuthorizationAuditEntry 저장소와 Unit of Work를 제공합니다.
 - `PlatformInfrastructureExtensions`: 호스트가 선택한 데이터베이스 공급자 설정으로 의존성을 등록합니다.
 
 ## 데이터 경계와 제약
