@@ -14,6 +14,8 @@ public static class PlatformApplicationExtensions
         services.AddSingleton<ISystemClock, SystemClock>();
         services.AddScoped<PlatformProvisioningService>();
         services.AddScoped<TenantMembershipService>();
+        services.AddScoped<ScopedMembershipService>();
+        services.AddScoped<PlatformAuthorizationService>();
         return services;
     }
 }
