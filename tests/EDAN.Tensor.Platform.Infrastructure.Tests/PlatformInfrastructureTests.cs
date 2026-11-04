@@ -209,6 +209,42 @@ public sealed class PlatformInfrastructureTests
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
+    [Fact]
+    public async Task SqlitePersistsScopedAuthorizationPolicyAndAuditDecision()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("AUTH-A"), "권한 테스트 Tenant", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        var organization = Organization.Create(new OrganizationId(Guid.NewGuid()), tenant.Id,
+            new OrganizationCode("AUTH-ORG"), "권한 테스트 조직");
+        db.Organizations.Add(organization);
+        await db.SaveChangesAsync();
+
+        var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()), tenant.Id,
+            organization.Id, null, "policy-subject", "resource:create", "DataSet",
+            AuthorizationPolicyEffect.Deny, 500, DateTimeOffset.UtcNow);
+        db.AuthorizationPolicies.Add(policy);
+        var decision = new AuthorizationDecision(false, "policy.explicit_deny", policy.Id.Value.ToString());
+        db.AuthorizationAuditEntries.Add(AuthorizationAuditEntry.Create(
+            new AuthorizationAuditEntryId(Guid.NewGuid()), tenant.Id, "policy-subject",
+            "resource:create", "DataSet", $"tenant:{tenant.Id.Value};organization:{organization.Id.Value};project:-",
+            decision, DateTimeOffset.UtcNow));
+        await db.SaveChangesAsync();
+
+        var repository = new AuthorizationPolicyRepository(db);
+        var applicable = await repository.GetApplicableAsync(tenant.Id, organization.Id, null,
+            "policy-subject", "resource:create", "DataSet");
+
+        Assert.Single(applicable);
+        Assert.Equal(AuthorizationPolicyEffect.Deny, applicable[0].Effect);
+        Assert.Equal(1, await db.AuthorizationAuditEntries.CountAsync(x => !x.IsAllowed));
+    }
+
     private static PlatformDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<PlatformDbContext>()
