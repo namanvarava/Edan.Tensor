@@ -26,7 +26,7 @@ public enum ResourceStatus{Active,Suspended,Retired}
 /// <summary>테넌트는 데이터 격리와 소유권의 최상위 경계입니다.</summary>
 public sealed class Tenant:AggregateRoot<TenantId>
 {
- private Tenant(TenantId id,TenantCode code,string name,DateTimeOffset created):base(id){Code=code;Name=Rules.Text(name,160);CreatedAtUtc=created.ToUniversalTime();Status=TenantStatus.Provisioning;}
+ private Tenant(TenantId id,TenantCode code,string name,DateTimeOffset createdAtUtc):base(id){Code=code;Name=Rules.Text(name,160);CreatedAtUtc=createdAtUtc.ToUniversalTime();Status=TenantStatus.Provisioning;}
  public TenantCode Code{get;} public string Name{get;private set;} public TenantStatus Status{get;private set;} public DateTimeOffset CreatedAtUtc{get;}
  public static Tenant Create(TenantId id,TenantCode code,string name,DateTimeOffset created){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(code);return new(id,code,name,created);}
  public void Rename(string name){Open();Name=Rules.Text(name,160);} public void Activate(){if(Status is not(TenantStatus.Provisioning or TenantStatus.Suspended))Invalid();Status=TenantStatus.Active;}
@@ -37,7 +37,7 @@ public sealed class Tenant:AggregateRoot<TenantId>
 /// <summary>조직은 하나의 테넌트에 귀속되는 소유권 단위입니다.</summary>
 public sealed class Organization:AggregateRoot<OrganizationId>
 {
- private Organization(OrganizationId id,TenantId tenant,OrganizationCode code,string name):base(id){TenantId=tenant;Code=code;Name=Rules.Text(name,160);Status=OrganizationStatus.Active;}
+ private Organization(OrganizationId id,TenantId tenantId,OrganizationCode code,string name):base(id){TenantId=tenantId;Code=code;Name=Rules.Text(name,160);Status=OrganizationStatus.Active;}
  public TenantId TenantId{get;} public OrganizationCode Code{get;} public string Name{get;private set;} public OrganizationStatus Status{get;private set;}
  public static Organization Create(OrganizationId id,TenantId tenant,OrganizationCode code,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(tenant);ArgumentNullException.ThrowIfNull(code);return new(id,tenant,code,name);}
  public void Rename(string name){Open();Name=Rules.Text(name,160);} public void Suspend(){if(Status!=OrganizationStatus.Active)Invalid();Status=OrganizationStatus.Suspended;} public void Activate(){if(Status!=OrganizationStatus.Suspended)Invalid();Status=OrganizationStatus.Active;} public void Close(){Open();Status=OrganizationStatus.Closed;}
@@ -47,7 +47,7 @@ public sealed class Organization:AggregateRoot<OrganizationId>
 /// <summary>프로젝트는 테넌트와 조직의 소속 식별자를 함께 보유합니다.</summary>
 public sealed class Project:AggregateRoot<ProjectId>
 {
- private Project(ProjectId id,TenantId tenant,OrganizationId org,ProjectCode code,string name):base(id){TenantId=tenant;OrganizationId=org;Code=code;Name=Rules.Text(name,160);Status=ProjectStatus.Active;}
+ private Project(ProjectId id,TenantId tenantId,OrganizationId organizationId,ProjectCode code,string name):base(id){TenantId=tenantId;OrganizationId=organizationId;Code=code;Name=Rules.Text(name,160);Status=ProjectStatus.Active;}
  public TenantId TenantId{get;} public OrganizationId OrganizationId{get;} public ProjectCode Code{get;} public string Name{get;private set;} public ProjectStatus Status{get;private set;}
  public static Project Create(ProjectId id,TenantId tenant,OrganizationId org,ProjectCode code,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(tenant);ArgumentNullException.ThrowIfNull(org);ArgumentNullException.ThrowIfNull(code);return new(id,tenant,org,code,name);}
  public void Rename(string name){Open();Name=Rules.Text(name,160);} public void Suspend(){if(Status!=ProjectStatus.Active)Invalid();Status=ProjectStatus.Suspended;} public void Activate(){if(Status!=ProjectStatus.Suspended)Invalid();Status=ProjectStatus.Active;} public void Archive(){Open();Status=ProjectStatus.Archived;}
@@ -61,7 +61,7 @@ public sealed record EmailAddress
 /// <summary>사용자는 테넌트에 귀속되며 이메일 중복은 테넌트 범위에서 관리합니다.</summary>
 public sealed class User:AggregateRoot<UserId>
 {
- private User(UserId id,TenantId tenant,EmailAddress email,string name):base(id){TenantId=tenant;Email=email;DisplayName=Rules.Text(name,120);Status=UserStatus.Invited;}
+ private User(UserId id,TenantId tenantId,EmailAddress email,string name):base(id){TenantId=tenantId;Email=email;DisplayName=Rules.Text(name,120);Status=UserStatus.Invited;}
  public TenantId TenantId{get;} public EmailAddress Email{get;} public string DisplayName{get;private set;} public UserStatus Status{get;private set;}
  public static User Invite(UserId id,TenantId tenant,EmailAddress email,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(tenant);ArgumentNullException.ThrowIfNull(email);return new(id,tenant,email,name);}
  public void Rename(string name){Open();DisplayName=Rules.Text(name,120);} public void Activate(){if(Status is not(UserStatus.Invited or UserStatus.Suspended))Invalid();Status=UserStatus.Active;} public void Suspend(){if(Status!=UserStatus.Active)Invalid();Status=UserStatus.Suspended;} public void Deactivate(){Open();Status=UserStatus.Deactivated;}
