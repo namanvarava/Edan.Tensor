@@ -8,5 +8,8 @@
     <ProjectReference Include="../../Commercial/EDAN.Tensor.Commercial.Contracts/EDAN.Tensor.Commercial.Contracts.csproj" />
     <ProjectReference Include="../../Licensing/EDAN.Tensor.Licensing.Contracts/EDAN.Tensor.Licensing.Contracts.csproj" />
   </ItemGroup>
-  <ItemGroup><PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" /></ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+  </ItemGroup>
 </Project>
