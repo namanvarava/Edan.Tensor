@@ -17,6 +17,7 @@ public static class PlatformApplicationExtensions
         services.AddScoped<ScopedMembershipService>();
         services.AddScoped<PlatformAuthorizationService>();
         services.AddScoped<AuthorizationPolicyService>();
+        services.AddScoped<AuthorizationAuditQueryService>();
         return services;
     }
 }
