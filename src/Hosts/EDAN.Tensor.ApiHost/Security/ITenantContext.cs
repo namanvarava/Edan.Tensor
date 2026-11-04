@@ -11,7 +11,7 @@ public interface ITenantContext
 }
 
 /// <summary>요청 헤더의 Tenant 선택값을 읽으며 권한은 별도 소속 저장소에서 검증합니다.</summary>
-public sealed class ClaimsTenantContext(IHttpContextAccessor accessor) : ITenantContext
+public sealed class RequestTenantContext(IHttpContextAccessor accessor) : ITenantContext
 {
     public TenantId TenantId
     {
