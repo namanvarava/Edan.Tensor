@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Platform.Applic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Platform.Infrastructure.Tests", "tests\\EDAN.Tensor.Platform.Infrastructure.Tests\\EDAN.Tensor.Platform.Infrastructure.Tests.csproj", "{A10D0000-0000-4000-8000-000000000019}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.ApiHost.IntegrationTests", "tests\\EDAN.Tensor.ApiHost.IntegrationTests\\EDAN.Tensor.ApiHost.IntegrationTests.csproj", "{A10D0000-0000-4000-8000-000000000020}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -122,5 +124,9 @@ Global
   {A10D0000-0000-4000-8000-000000000019}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {A10D0000-0000-4000-8000-000000000019}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {A10D0000-0000-4000-8000-000000000019}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000020}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal
