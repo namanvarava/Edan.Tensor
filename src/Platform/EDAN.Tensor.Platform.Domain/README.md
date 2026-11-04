@@ -6,6 +6,8 @@
 - `Model/PlatformDomainModel.cs`: 식별자, 소유권 범위, 집합체, 상태 전이 및 정책 버전 규칙
 - `Model/TenantMembership.cs`: 외부 인증 주체의 Tenant 소속, 역할 및 접근 상태
 - `Model/ScopedMemberships.cs`: Organization·Project 소속, 역할 및 폐기 규칙
+- `Model/AuthorizationPolicy.cs`: Tenant·Organization·Project 범위의 Allow·Deny 접근 정책
+- `Model/AuthorizationAuditEntry.cs`: 권한 평가 결과의 변경 불가능한 감사 기록
 
 ## 권한 범위
 - Tenant는 데이터 격리의 최상위 경계입니다.
