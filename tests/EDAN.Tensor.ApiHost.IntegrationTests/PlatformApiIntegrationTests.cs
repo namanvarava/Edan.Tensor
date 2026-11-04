@@ -83,7 +83,8 @@ public sealed class PlatformApiIntegrationTests
                 code = "ORG",
                 name = "통합 테스트 조직"
             });
-        Assert.Equal(HttpStatusCode.Created, organizationResponse.StatusCode);
+        Assert.True(organizationResponse.StatusCode == HttpStatusCode.Created,
+            await organizationResponse.Content.ReadAsStringAsync());
         var organizationId = await ReadIdAsync(organizationResponse);
 
         using var projectResponse = await client.PostAsJsonAsync(
