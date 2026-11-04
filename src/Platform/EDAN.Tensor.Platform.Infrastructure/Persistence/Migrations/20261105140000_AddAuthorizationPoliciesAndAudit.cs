@@ -67,6 +67,8 @@ public sealed class AddAuthorizationPoliciesAndAudit : Migration
 
         migrationBuilder.CreateIndex("IX_platform_authorization_policies_TenantId_SubjectId_Action_ResourceType_IsEnabled",
             "platform_authorization_policies", new[] { "TenantId", "SubjectId", "Action", "ResourceType", "IsEnabled" });
+        migrationBuilder.CreateIndex("IX_platform_authorization_policies_OrganizationId_TenantId",
+            "platform_authorization_policies", new[] { "OrganizationId", "TenantId" });
         migrationBuilder.CreateIndex("IX_platform_authorization_policies_ProjectId_OrganizationId_TenantId",
             "platform_authorization_policies", new[] { "ProjectId", "OrganizationId", "TenantId" });
         migrationBuilder.CreateIndex("IX_platform_authorization_audit_TenantId_OccurredAtUtc",
