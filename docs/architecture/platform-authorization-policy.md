@@ -45,6 +45,7 @@ Tenant Administrator만 접근 정책을 관리할 수 있습니다.
 | GET | /api/platform/tenants/{tenantId}/authorization-policies | Tenant 정책 목록 조회 |
 | PUT | /api/platform/tenants/{tenantId}/authorization-policies/{policyId} | 효과와 우선순위 변경 |
 | PATCH | /api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled | 정책 활성 상태 변경 |
+| GET | /api/platform/tenants/{tenantId}/authorization-audit | Tenant 권한 평가 감사 조회 |
 
 정책 등록 예시:
 
@@ -83,6 +84,10 @@ AuthorizationAuditEntry는 Tenant, 외부 주체, Action, ResourceType, 평가 �
 
 AuthorizationPolicyChangeAuditEntry는 Tenant, 정책 식별자, 변경자 SubjectId, 변경 유형, 변경 전 JSON, 변경 후 JSON 및 UTC 변경 시각을 추가 전용으로 보관합니다. 정책 변경과 감사 기록은 동일한 Unit of Work로 저장하므로 감사 저장이 실패하면 정책 변경도 확정되지 않습니다.
 
+## 감사 조회 경계
+
+권한 평가 감사 기록은 Tenant Administrator만 조회할 수 있습니다. 조회 조건은 SubjectId, Action, 허용 여부, UTC 기간이며 페이지 번호와 페이지 크기를 제한합니다. 페이지 크기는 최대 100건입니다. 쿼리는 항상 TenantId 조건으로 시작하므로 선택 Tenant 밖의 기록을 조회할 수 없습니다. 감사 기록은 읽기 전용으로 제공하며 수정·삭제 API는 제공하지 않습니다.
+
 ## 저장 구조
 
 - platform_authorization_policies: 계층형 접근 정책
@@ -93,4 +98,4 @@ AuthorizationPolicyChangeAuditEntry는 Tenant, 정책 식별자, 변경자 Subje
 
 ## 현재 범위와 한계
 
-현재 정책은 외부 SubjectId에 직접 연결되며 정책 관리는 Tenant Administrator에게만 허용합니다. 역할 기반 정책 주체, 조건식 언어, 시간·네트워크·환경 속성 평가, 캐시 및 무효화, 감사 조회 API는 아직 구현하지 않았습니다. 명시적 Deny는 우선순위와 무관하게 Allow보다 우선합니다.
+현재 정책은 외부 SubjectId에 직접 연결되며 정책 관리는 Tenant Administrator에게만 허용합니다. 역할 기반 정책 주체, 조건식 언어, 시간·네트워크·환경 속성 평가, 캐시 및 무효화, 외부 로그 전송은 아직 구현하지 않았습니다. 명시적 Deny는 우선순위와 무관하게 Allow보다 우선합니다.
