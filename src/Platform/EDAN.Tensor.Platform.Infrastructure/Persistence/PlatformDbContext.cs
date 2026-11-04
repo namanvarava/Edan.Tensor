@@ -18,6 +18,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<Policy> Policies => Set<Policy>();
     public DbSet<AuthorizationPolicy> AuthorizationPolicies => Set<AuthorizationPolicy>();
     public DbSet<AuthorizationAuditEntry> AuthorizationAuditEntries => Set<AuthorizationAuditEntry>();
+    public DbSet<AuthorizationPolicyChangeAuditEntry> AuthorizationPolicyChangeAuditEntries => Set<AuthorizationPolicyChangeAuditEntry>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,6 +35,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigurePolicy(modelBuilder);
         ConfigureAuthorizationPolicy(modelBuilder);
         ConfigureAuthorizationAuditEntry(modelBuilder);
+        ConfigureAuthorizationPolicyChangeAuditEntry(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -258,6 +260,25 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.OccurredAtUtc).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
         entity.HasIndex(x => new { x.SubjectId, x.OccurredAtUtc });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>접근 정책 변경 이력은 Tenant별 추가 전용 감사 데이터로 저장합니다.</summary>
+    private static void ConfigureAuthorizationPolicyChangeAuditEntry(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AuthorizationPolicyChangeAuditEntry>();
+        entity.ToTable("platform_authorization_policy_changes");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyChangeAuditEntryId>(value => new AuthorizationPolicyChangeAuditEntryId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.PolicyId).IsRequired();
+        entity.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.ChangeType).HasMaxLength(32).IsRequired();
+        entity.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+        entity.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired();
+        entity.Property(x => x.OccurredAtUtc).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+        entity.HasIndex(x => new { x.PolicyId, x.OccurredAtUtc });
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
