@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +13,12 @@ public static class PlatformAuthenticationExtensions
         var issuer = configuration["Authentication:Issuer"];
         var audience = configuration["Authentication:Audience"];
         var signingKey = configuration["Authentication:SigningKey"];
-        var key = string.IsNullOrWhiteSpace(signingKey) ? null : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
+        if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+            throw new InvalidOperationException("Authentication:Issuer와 Authentication:Audience 설정이 필요합니다.");
+        if (string.IsNullOrWhiteSpace(signingKey) || Encoding.UTF8.GetByteCount(signingKey) < 32)
+            throw new InvalidOperationException("Authentication:SigningKey는 UTF-8 기준 32바이트 이상의 비밀 값이어야 합니다.");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, ClaimsTenantContext>();
@@ -24,16 +28,16 @@ public static class PlatformAuthenticationExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
+                    ValidateIssuer = true,
                     ValidIssuer = issuer,
-                    ValidateAudience = !string.IsNullOrWhiteSpace(audience),
+                    ValidateAudience = true,
                     ValidAudience = audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
                     ClockSkew = TimeSpan.FromMinutes(1),
                     NameClaimType = "sub",
-                    RoleClaimType = ClaimTypes.Role
+                    RoleClaimType = "role"
                 };
             });
 
