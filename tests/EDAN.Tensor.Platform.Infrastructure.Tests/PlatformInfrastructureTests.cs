@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
