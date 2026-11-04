@@ -61,6 +61,46 @@ public sealed class PlatformAuthorizationServiceTests
         Assert.False(await service.CanCreateInScopeAsync(tenantId, organizationId, new ProjectId(Guid.NewGuid()), "project-contributor"));
     }
 
+    [Fact]
+    public async Task ExplicitDenyPolicyOverridesTenantAdministratorRole()
+    {
+        var tenantId = new TenantId(Guid.NewGuid());
+        var subjectId = "tenant-admin";
+        var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()), tenantId,
+            null, null, subjectId, "resource:create", "*", AuthorizationPolicyEffect.Deny, 1, DateTimeOffset.UtcNow);
+        var policyRepository = new FakePolicyRepository([policy]);
+        var auditRepository = new FakeAuditRepository();
+        var service = new PlatformAuthorizationService(
+            new FakeTenantMembershipRepository(tenantId, subjectId, TenantRole.Administrator),
+            new FakeScopedMembershipRepository(false, false, false),
+            policyRepository, auditRepository, new FakeUnitOfWork(), new SystemClock());
+
+        var decision = await service.EvaluateAsync(tenantId, null, null, subjectId, "resource:create", "DataSet");
+
+        Assert.False(decision.IsAllowed);
+        Assert.Equal("policy.explicit_deny", decision.ReasonCode);
+        Assert.Single(auditRepository.Entries);
+        Assert.False(auditRepository.Entries[0].IsAllowed);
+    }
+
+    [Fact]
+    public async Task ExplicitAllowPolicyCanGrantAccessToTenantMember()
+    {
+        var tenantId = new TenantId(Guid.NewGuid());
+        var subjectId = "policy-user";
+        var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()), tenantId,
+            null, null, subjectId, "resource:create", "DataSet", AuthorizationPolicyEffect.Allow, 100, DateTimeOffset.UtcNow);
+        var service = new PlatformAuthorizationService(
+            new FakeTenantMembershipRepository(tenantId, subjectId, TenantRole.Member),
+            new FakeScopedMembershipRepository(false, false, false),
+            new FakePolicyRepository([policy]), new FakeAuditRepository(), new FakeUnitOfWork(), new SystemClock());
+
+        var decision = await service.EvaluateAsync(tenantId, null, null, subjectId, "resource:create", "DataSet");
+
+        Assert.True(decision.IsAllowed);
+        Assert.Equal("policy.explicit_allow", decision.ReasonCode);
+    }
+
     private static PlatformAuthorizationService CreateService(
         TenantId tenantId,
         string subjectId,
@@ -71,13 +111,19 @@ public sealed class PlatformAuthorizationServiceTests
     {
         var tenantMemberships = new FakeTenantMembershipRepository(tenantId, subjectId, tenantRole);
         var scopedMemberships = new FakeScopedMembershipRepository(organizationWrite, organizationManager, projectWrite);
-        return new PlatformAuthorizationService(tenantMemberships, scopedMemberships, new FakePolicyRepository(), new FakeAuditRepository(), new SystemClock());
+        return new PlatformAuthorizationService(tenantMemberships, scopedMemberships, new FakePolicyRepository(), new FakeAuditRepository(), new FakeUnitOfWork(), new SystemClock());
     }
 
-    private sealed class FakePolicyRepository : IAuthorizationPolicyRepository
+    private sealed class FakeUnitOfWork : IPlatformUnitOfWork
     {
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+    }
+
+    private sealed class FakePolicyRepository(IReadOnlyList<AuthorizationPolicy>? items = null) : IAuthorizationPolicyRepository
+    {
+        private readonly IReadOnlyList<AuthorizationPolicy> _items = items ?? [];
         public Task<IReadOnlyList<AuthorizationPolicy>> GetApplicableAsync(TenantId tenantId, OrganizationId? organizationId, ProjectId? projectId, string subjectId, string action, string resourceType, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<AuthorizationPolicy>>([]);
+            Task.FromResult(_items.Where(x => x.SubjectId == subjectId && x.Action == action && (x.ResourceType == resourceType || x.ResourceType == "*") && (x.OrganizationId is null || x.OrganizationId == organizationId) && (x.ProjectId is null || x.ProjectId == projectId)).ToList() as IReadOnlyList<AuthorizationPolicy>);
         public void Add(AuthorizationPolicy policy) => throw new NotSupportedException();
     }
 
