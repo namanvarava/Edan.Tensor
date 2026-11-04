@@ -16,5 +16,12 @@ public interface IAuthorizationPolicyRepository
 /// <summary>권한 감사 저장소는 평가 결과를 추가 전용으로 기록합니다.</summary>
 public interface IAuthorizationAuditRepository
 {
+    Task<AuthorizationAuditPage> GetPageAsync(TenantId tenantId, string? subjectId, string? action,
+        bool? isAllowed, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default);
     void Add(AuthorizationAuditEntry entry);
 }
+
+/// <summary>권한 감사 조회 결과는 현재 페이지와 전체 건수를 함께 제공합니다.</summary>
+public sealed record AuthorizationAuditPage(
+    IReadOnlyList<AuthorizationAuditEntry> Items, int TotalCount, int Page, int PageSize);
