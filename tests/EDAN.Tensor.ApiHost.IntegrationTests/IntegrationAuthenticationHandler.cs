@@ -21,7 +21,7 @@ public sealed class IntegrationAuthenticationHandler(
         if (Request.Headers.TryGetValue("X-Test-Tenant", out var tenant))
             claims.Add(new Claim("tenant_id", tenant.ToString()));
         if (Request.Headers.TryGetValue("X-Test-Role", out var role))
-            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+            claims.Add(new Claim("role", role.ToString()));
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
