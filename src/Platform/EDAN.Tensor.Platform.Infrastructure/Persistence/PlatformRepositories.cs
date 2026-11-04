@@ -63,6 +63,10 @@ public sealed class ScopedMembershipRepository(PlatformDbContext db) : IScopedMe
             x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
             (x.Role == OrganizationRole.Contributor || x.Role == OrganizationRole.Manager), cancellationToken);
 
+    public Task<bool> HasOrganizationManagementAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.OrganizationMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId &&
+            x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active && x.Role == OrganizationRole.Manager, cancellationToken);
+
     public Task<bool> HasProjectWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) =>
         db.ProjectMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId &&
             x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
