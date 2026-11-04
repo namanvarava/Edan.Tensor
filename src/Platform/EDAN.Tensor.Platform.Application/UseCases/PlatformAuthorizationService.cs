@@ -25,6 +25,6 @@ public sealed class PlatformAuthorizationService(
             return await scopedMemberships.HasOrganizationWriteAccessAsync(tenantId, organizationId, subjectId, cancellationToken);
 
         return await scopedMemberships.HasProjectWriteAccessAsync(tenantId, organizationId, projectId, subjectId, cancellationToken)
-            || await scopedMemberships.HasOrganizationWriteAccessAsync(tenantId, organizationId, subjectId, cancellationToken);
+            || await scopedMemberships.HasOrganizationManagementAccessAsync(tenantId, organizationId, subjectId, cancellationToken);
     }
 }
