@@ -44,7 +44,7 @@ OpenAPI 문서는 개발 환경에서만 노출됩니다. 현재 API Host에는 
 
 활성화 성공 시 HTTP 204를 반환합니다. 활성화된 테넌트만 조직·프로젝트·사용자·자원·정책 생성에 사용할 수 있습니다.
 
-## 조직 생성
+## Tenant 구성원 등록\n\n플랫폼 관리자는 외부 인증 주체의 `sub`를 Tenant에 연결할 수 있습니다. 한 사용자는 여러 Tenant에 각각 소속될 수 있으며, 요청마다 Tenant를 선택합니다.\n\n`POST /api/platform/tenants/{tenantId}/memberships`\n\n```json\n{\n  "subjectId": "identity-provider-user-123",\n  "role": "Administrator"\n}\n```\n\n지원 역할은 `Member`와 `Administrator`입니다. 현재는 두 역할 모두 Tenant 기본 API에 접근할 수 있으며, 조직·프로젝트별 세부 권한은 후속 구현 대상입니다.\n\nTenant 구성원 API 요청에는 다음 헤더가 필요합니다.\n\n```http\nAuthorization: Bearer {access-token}\nX-Tenant-Id: {tenant-guid}\n```\n\n선택한 Tenant에 활성 소속이 없으면 HTTP 403을 반환합니다.\n\n## 조직 생성
 
 `POST /api/platform/tenants/{tenantId}/organizations`
 
@@ -133,11 +133,11 @@ OpenAPI 문서는 개발 환경에서만 노출됩니다. 현재 API Host에는 
 
 - 인증 헤더: `Authorization: Bearer {access-token}`
 - 필수 공통 클레임: `sub` (인증 주체 식별자)
-- Tenant 구성원 API 필수 클레임: `tenant_id` (GUID 형식)
+- 현재 Tenant 선택 헤더: `X-Tenant-Id: {tenant-guid}`\n- Tenant 구성원 권한은 JWT의 `sub`와 데이터베이스의 활성 소속 레코드로 확인
 - 플랫폼 관리자 역할: `role=platform_admin`
 - JWT 발급자·대상·서명은 API 설정과 모두 일치해야 합니다.
-- Tenant 경로 API는 경로의 `tenantId`와 인증 토큰의 `tenant_id`가 일치해야 합니다.
-- 자원 및 정책 API는 요청 본문의 Tenant 식별자를 받지 않고 인증 클레임에서 범위를 결정합니다.
+- Tenant 경로 API는 경로의 `tenantId`와 `X-Tenant-Id` 헤더가 일치해야 합니다.
+- 자원 및 정책 API는 요청 본문의 Tenant 식별자를 받지 않고 `X-Tenant-Id` 선택값으로 범위를 결정합니다.
 
 플랫폼 관리자만 테넌트를 생성하고 최초 활성화할 수 있습니다. 조직·프로젝트·사용자·자원·정책 API는 Tenant 구성원 인증을 요구합니다.
 
@@ -168,7 +168,7 @@ OpenAPI 문서는 개발 환경에서만 노출됩니다. 현재 API Host에는 
 
 ### 현재 보안 경계의 범위
 
-현재 구현은 인증된 주체의 단일 Tenant 클레임을 요청 범위로 사용합니다. 여러 Tenant에 속한 사용자의 Tenant 전환, 사용자-조직-프로젝트별 세부 권한, 초대 수락, 토큰 발급·갱신·폐기, 키 회전 및 JWKS 기반 비대칭 키 검증은 후속 단계에서 구현해야 합니다.
+현재 구현은 외부 주체의 다중 Tenant 소속을 저장하고 `X-Tenant-Id`로 요청 Tenant를 선택합니다. 사용자 초대 수락과 외부 계정 연결, 조직·프로젝트별 세부 권한, 토큰 발급·갱신·폐기, 키 회전 및 JWKS 기반 비대칭 키 검증은 후속 단계에서 구현해야 합니다.
 
 ## 보안 및 운영 주의
 
