@@ -112,6 +112,32 @@ public static class PlatformEndpoints
                 catch (ArgumentException ex) { return ValidationError(ex.Message); }
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 감사 무결성 체크섬은 별도 보관 후 검증 요청에 재사용합니다.
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/integrity",
+            async (Guid tenantId, AuthorizationAuditIntegrityService service, CancellationToken token,
+                DateTimeOffset fromUtc, DateTimeOffset toUtc) =>
+            {
+                try
+                {
+                    var result = await service.CalculateAsync(new TenantId(tenantId), fromUtc, toUtc, token);
+                    return Results.Ok(result);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/integrity/verify",
+            async (Guid tenantId, VerifyAuthorizationAuditIntegrityRequest request,
+                AuthorizationAuditIntegrityService service, CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.VerifyAsync(new TenantId(tenantId), request.FromUtc,
+                        request.ToUtc, request.ExpectedSha256, token);
+                    return Results.Ok(result);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPut("/{tenantId:guid}/authorization-policies/{policyId:guid}",
             async (Guid tenantId, Guid policyId, UpdateAuthorizationPolicyRequest request, HttpContext context,
                 AuthorizationPolicyService service, CancellationToken token) =>
@@ -225,6 +251,7 @@ public sealed record GrantProjectMembershipRequest(string SubjectId, string Role
 public sealed record CreateAuthorizationPolicyRequest(Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action, string ResourceType, string Effect, int Priority);
 public sealed record UpdateAuthorizationPolicyRequest(string Effect, int Priority);
 public sealed record SetAuthorizationPolicyEnabledRequest(bool IsEnabled);
+public sealed record VerifyAuthorizationAuditIntegrityRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
