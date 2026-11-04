@@ -1,0 +1,131 @@
+using EDAN.Tensor.Platform.Domain.Model;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
+
+/// <summary>플랫폼 메타데이터 집합과 데이터베이스 매핑을 관리합니다.</summary>
+public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> options) : DbContext(options)
+{
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<Policy> Policies => Set<Policy>();
+
+    /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        ConfigureTenant(modelBuilder);
+        ConfigureOrganization(modelBuilder);
+        ConfigureProject(modelBuilder);
+        ConfigureUser(modelBuilder);
+        ConfigureResource(modelBuilder);
+        ConfigurePolicy(modelBuilder);
+    }
+
+    private static void ConfigureTenant(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Tenant>();
+        entity.ToTable("platform_tenants");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Code).HasConversion(x => x.Value, x => new TenantCode(x)).HasMaxLength(64).IsRequired();
+        entity.HasIndex(x => x.Code).IsUnique();
+        entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+    }
+
+    private static void ConfigureOrganization(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Organization>();
+        entity.ToTable("platform_organizations");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationId>());
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Code).HasConversion(x => x.Value, x => new OrganizationCode(x)).HasMaxLength(64).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
+        entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+        entity.HasIndex(x => x.TenantId);
+    }
+
+    private static void ConfigureProject(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Project>();
+        entity.ToTable("platform_projects");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<ProjectId>());
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>());
+        entity.Property(x => x.Code).HasConversion(x => x.Value, x => new ProjectCode(x)).HasMaxLength(64).IsRequired();
+        entity.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
+        entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+        entity.HasIndex(x => new { x.TenantId, x.OrganizationId });
+    }
+
+    private static void ConfigureUser(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<User>();
+        entity.ToTable("platform_users");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<UserId>());
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Email).HasConversion(x => x.Value, x => new EmailAddress(x)).HasMaxLength(320).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
+        entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+    }
+
+    private static void ConfigureResource(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Resource>();
+        entity.ToTable("platform_resources");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>());
+        entity.OwnsOne(x => x.Scope, scope =>
+        {
+            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>());
+            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>());
+            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>());
+            scope.HasIndex(x => x.TenantId);
+        });
+        entity.Navigation(x => x.Scope).IsRequired();
+        entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
+        entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+    }
+
+    private static void ConfigurePolicy(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Policy>();
+        entity.ToTable("platform_policies");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>());
+        entity.OwnsOne(x => x.Scope, scope =>
+        {
+            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>());
+            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>());
+            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>());
+            scope.HasIndex(x => x.TenantId);
+        });
+        entity.Navigation(x => x.Scope).IsRequired();
+        entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
+        entity.Property(x => x.Version).IsConcurrencyToken();
+        entity.HasIndex(x => new { x.Key, x.Version });
+    }
+
+    private static ValueConverter<TId, Guid> IdConverter<TId>() where TId : StrongIdMarker =>
+        throw new NotSupportedException();
+
+    private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
+        new(id => value(id), raw => create(raw));
+
+    private static ValueConverter<TId, Guid?> OptionalIdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
+        new(id => id == null ? null : value(id), raw => raw == null ? default : create(raw.Value));
+}
