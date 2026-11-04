@@ -24,6 +24,11 @@ Infrastructure는 Application의 추상화를 구현하며 Domain에서 Infrastr
 | User | platform_users | TenantId + Email 고유 |
 | Resource | platform_resources | Tenant 범위 인덱스 |
 | Policy | platform_policies | Version 동시성 토큰 |
+| TenantMembership | platform_tenant_memberships | TenantId + SubjectId 고유 |
+| OrganizationMembership | platform_organization_memberships | TenantId + OrganizationId + SubjectId 고유 |
+| ProjectMembership | platform_project_memberships | TenantId + OrganizationId + ProjectId + SubjectId 고유 |
+| AuthorizationPolicy | platform_authorization_policies | Tenant·Subject·Action·ResourceType 인덱스 |
+| AuthorizationAuditEntry | platform_authorization_audit | Tenant·발생 시각 및 Subject·발생 시각 인덱스 |
 
 Resource와 Policy의 Scope는 TenantId, 선택적 OrganizationId, 선택적 ProjectId의 개별 열로 저장하며, 도메인에서는 ResourceScope 값 객체로 제공합니다.
 
@@ -35,7 +40,7 @@ Organization 및 Project 코드 중복 검사는 각각 TenantId 및 Organizatio
 
 Infrastructure 프로젝트는 EF Core 핵심 패키지만 참조하고 실제 공급자는 Host에서 구성합니다. 현재 API Host는 로컬 개발 기본 공급자로 SQLite를 선택하며 기본 파일은 `App_Data/edan-tensor-platform.db`입니다. `ConnectionStrings:PlatformDatabase` 또는 `ConnectionStrings__PlatformDatabase` 환경 변수로 연결 문자열을 교체할 수 있습니다. DataSet의 DuckDB·Parquet 분석 저장 구조와 Platform 메타데이터 저장 구조는 서로 독립적입니다.
 
-`/health/database`는 DB 연결 가능 여부를 확인하고 `Green` 또는 `Red` 신호등 상태를 반환합니다. 개발 환경의 `Database:EnsureCreatedInDevelopment` 설정은 최초 실행 시 테이블을 생성하는 편의 기능이며 운영 마이그레이션을 대체하지 않습니다.
+`/health/database`는 DB 연결 가능 여부를 확인하고 `Green` 또는 `Red` 신호등 상태를 반환합니다. 개발 환경의 `Database:ApplyMigrationsInDevelopment=true` 설정은 API Host 시작 과정에서 EF Core Migration을 적용합니다. 운영 환경에서는 승인된 배포 작업에서 Migration을 적용합니다.
 
 ## 관계형 무결성
 
@@ -48,11 +53,11 @@ Infrastructure 프로젝트는 EF Core 핵심 패키지만 참조하고 실제 �
 
 ## Migration 운영
 
-초기 스키마는 `20261104100000_InitialPlatformSchema` Migration으로 관리합니다. 개발 환경에서는 `Database:ApplyMigrationsInDevelopment=true`일 때 API Host 시작 과정에서 `MigrateAsync`를 실행합니다. 운영 환경에서는 배포 파이프라인의 승인된 마이그레이션 작업으로 스키마를 변경하며 API 인스턴스가 임의로 스키마를 변경하지 않도록 합니다.
+초기 스키마는 `20261104100000_InitialPlatformSchema` Migration으로 관리합니다. Tenant 소속은 `20261105100000_AddTenantMemberships`, 조직·프로젝트 소속은 `20261105120000_AddScopedMemberships`, 접근 정책·감사 기록은 `20261105140000_AddAuthorizationPoliciesAndAudit` Migration으로 관리합니다. 개발 환경에서는 `Database:ApplyMigrationsInDevelopment=true`일 때 API Host 시작 과정에서 `MigrateAsync`를 실행합니다. 운영 환경에서는 배포 파이프라인의 승인된 마이그레이션 작업으로 스키마를 변경하며 API 인스턴스가 임의로 스키마를 변경하지 않도록 합니다.
 
 ## 트랜잭션 경계
 
-요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다. 요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다.
+요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다. 권한 평가 감사 기록도 같은 작업 단위로 저장하며 감사 저장에 실패하면 해당 요청을 성공 처리하지 않습니다.
 
 ## SQLite 공급망 보안
 
