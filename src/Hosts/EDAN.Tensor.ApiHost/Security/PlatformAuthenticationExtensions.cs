@@ -13,12 +13,10 @@ public static class PlatformAuthenticationExtensions
         var issuer = configuration["Authentication:Issuer"];
         var audience = configuration["Authentication:Audience"];
         var signingKey = configuration["Authentication:SigningKey"];
-        if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
-            throw new InvalidOperationException("Authentication:Issuer와 Authentication:Audience 설정이 필요합니다.");
-        if (string.IsNullOrWhiteSpace(signingKey) || Encoding.UTF8.GetByteCount(signingKey) < 32)
-            throw new InvalidOperationException("Authentication:SigningKey는 UTF-8 기준 32바이트 이상의 비밀 값이어야 합니다.");
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
+        // 필수 설정이 누락되면 서명 키가 없어 JWT 검증이 실패하므로 보호 API는 계속 닫힌 상태를 유지합니다.
+        var key = !string.IsNullOrWhiteSpace(signingKey) && Encoding.UTF8.GetByteCount(signingKey) >= 32
+            ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
+            : null;
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, ClaimsTenantContext>();
@@ -28,9 +26,9 @@ public static class PlatformAuthenticationExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
+                    ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
                     ValidIssuer = issuer,
-                    ValidateAudience = true,
+                    ValidateAudience = !string.IsNullOrWhiteSpace(audience),
                     ValidAudience = audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
