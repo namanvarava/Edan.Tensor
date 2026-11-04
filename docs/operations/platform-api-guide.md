@@ -126,6 +126,38 @@ Tenant 범위는 요청 본문이 아니라 `X-Tenant-Id`에서 결정합니다.
 
 Tenant 범위는 요청 본문이 아니라 `X-Tenant-Id`에서 결정합니다.
 
+## 조직·프로젝트 소속 및 권한
+
+Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니다.
+
+조직 소속 등록:
+
+`POST /api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships`
+
+```json
+{
+  "subjectId": "identity-provider-user-123",
+  "role": "Contributor"
+}
+```
+
+프로젝트 소속 등록:
+
+`POST /api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships`
+
+```json
+{
+  "subjectId": "identity-provider-user-123",
+  "role": "Reader"
+}
+```
+
+조직·프로젝트 역할은 `Reader`, `Contributor`, `Manager`입니다. Reader는 생성할 수 없고 Contributor는 자신이 속한 범위에서 생성할 수 있습니다. Organization Manager는 하위 Project 범위까지 생성 권한을 상속합니다. Organization Contributor는 프로젝트 권한을 자동으로 상속하지 않습니다. Tenant Administrator는 선택한 Tenant의 모든 하위 범위에서 생성할 수 있습니다.
+
+자원 및 정책 생성 API는 모두 동일한 범위 권한 평가를 수행합니다. Tenant 소속만 가진 Member는 조직·프로젝트 범위 자원을 생성할 수 없습니다.
+
+상세 권한 모델은 [조직·프로젝트 권한 API 안내](platform-scoped-authorization-guide.md)를 참고하십시오.
+
 ## 오류 응답
 
 업무 오류는 다음 공통 JSON 형식으로 반환합니다.
