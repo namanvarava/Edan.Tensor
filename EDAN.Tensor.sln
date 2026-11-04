@@ -1,0 +1,102 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.SharedKernel", "src\Platform\EDAN.Tensor.SharedKernel\EDAN.Tensor.SharedKernel.csproj", "{A10D0000-0000-4000-8000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Platform.Domain", "src\Platform\EDAN.Tensor.Platform.Domain\EDAN.Tensor.Platform.Domain.csproj", "{A10D0000-0000-4000-8000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Platform.Application", "src\Platform\EDAN.Tensor.Platform.Application\EDAN.Tensor.Platform.Application.csproj", "{A10D0000-0000-4000-8000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Platform.Infrastructure", "src\Platform\EDAN.Tensor.Platform.Infrastructure\EDAN.Tensor.Platform.Infrastructure.csproj", "{A10D0000-0000-4000-8000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Commercial.Contracts", "src\Commercial\EDAN.Tensor.Commercial.Contracts\EDAN.Tensor.Commercial.Contracts.csproj", "{A10D0000-0000-4000-8000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Commercial.Domain", "src\Commercial\EDAN.Tensor.Commercial.Domain\EDAN.Tensor.Commercial.Domain.csproj", "{A10D0000-0000-4000-8000-000000000006}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Commercial.Application", "src\Commercial\EDAN.Tensor.Commercial.Application\EDAN.Tensor.Commercial.Application.csproj", "{A10D0000-0000-4000-8000-000000000007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Commercial.Infrastructure", "src\Commercial\EDAN.Tensor.Commercial.Infrastructure\EDAN.Tensor.Commercial.Infrastructure.csproj", "{A10D0000-0000-4000-8000-000000000008}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Licensing.Contracts", "src\Licensing\EDAN.Tensor.Licensing.Contracts\EDAN.Tensor.Licensing.Contracts.csproj", "{A10D0000-0000-4000-8000-000000000009}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Licensing.Domain", "src\Licensing\EDAN.Tensor.Licensing.Domain\EDAN.Tensor.Licensing.Domain.csproj", "{A10D0000-0000-4000-8000-000000000010}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Licensing.Application", "src\Licensing\EDAN.Tensor.Licensing.Application\EDAN.Tensor.Licensing.Application.csproj", "{A10D0000-0000-4000-8000-000000000011}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Licensing.Infrastructure", "src\Licensing\EDAN.Tensor.Licensing.Infrastructure\EDAN.Tensor.Licensing.Infrastructure.csproj", "{A10D0000-0000-4000-8000-000000000012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.ApiHost", "src\Hosts\EDAN.Tensor.ApiHost\EDAN.Tensor.ApiHost.csproj", "{A10D0000-0000-4000-8000-000000000013}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.LicenseAuthority.Host", "src\Hosts\EDAN.Tensor.LicenseAuthority.Host\EDAN.Tensor.LicenseAuthority.Host.csproj", "{A10D0000-0000-4000-8000-000000000014}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.WorkerHost", "src\Hosts\EDAN.Tensor.WorkerHost\EDAN.Tensor.WorkerHost.csproj", "{A10D0000-0000-4000-8000-000000000015}"
+EndProject
+Global
+ GlobalSection(SolutionConfigurationPlatforms) = preSolution
+  Debug|Any CPU = Debug|Any CPU
+  Release|Any CPU = Release|Any CPU
+ EndGlobalSection
+ GlobalSection(ProjectConfigurationPlatforms) = postSolution
+  {A10D0000-0000-4000-8000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000007}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000008}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000009}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000010}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000011}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000011}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000011}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000012}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000013}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000013}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000013}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000013}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000014}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000015}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000015}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000015}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000015}.Release|Any CPU.Build.0 = Release|Any CPU
+ EndGlobalSection
+EndGlobal
