@@ -83,6 +83,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<UserId>(value => new UserId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.TenantId).IsRequired();
         entity.Property(x => x.Email).HasConversion(x => x.Value, x => new EmailAddress(x)).HasMaxLength(320).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
         entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
