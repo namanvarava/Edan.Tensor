@@ -1,6 +1,7 @@
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +9,17 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("PlatformDatabase")
     ?? throw new InvalidOperationException("PlatformDatabase 연결 문자열이 설정되지 않았습니다.");
 
-var databasePath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
-Directory.CreateDirectory(databasePath);
+// 상대 경로는 API Host의 콘텐츠 루트를 기준으로 절대 경로로 변환합니다.
+var sqliteConnection = new SqliteConnectionStringBuilder(connectionString);
+if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSource != ":memory:")
+{
+    sqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqliteConnection.DataSource);
+    var databaseDirectory = Path.GetDirectoryName(sqliteConnection.DataSource);
+    if (!string.IsNullOrWhiteSpace(databaseDirectory))
+        Directory.CreateDirectory(databaseDirectory);
+}
 
-builder.Services.AddPlatformInfrastructure(options => options.UseSqlite(connectionString));
+builder.Services.AddPlatformInfrastructure(options => options.UseSqlite(sqliteConnection.ConnectionString));
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -32,7 +40,7 @@ app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken ca
 {
     try
     {
-        var connected = await db.Database.CanConnectAsync(cancellationToken);
+        var connected = await db.Database.CanConnectAsync(cancellationToken);\n        if (connected)\n            _ = await db.Tenants.AnyAsync(cancellationToken);
         return Results.Ok(new
         {
             Status = connected ? "Connected" : "Disconnected",
