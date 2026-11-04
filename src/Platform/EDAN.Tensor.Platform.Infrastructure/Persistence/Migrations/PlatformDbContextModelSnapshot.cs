@@ -95,6 +95,41 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<OrganizationMembership>(entity =>
+        {
+            entity.ToTable("platform_organization_memberships");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationMembershipId>(value => new OrganizationMembershipId(value), id => id.Value));
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.SubjectId }).IsUnique();
+            entity.HasOne<Organization>().WithMany()
+                .HasForeignKey(x => new { x.OrganizationId, x.TenantId })
+                .HasPrincipalKey(x => new { x.Id, x.TenantId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProjectMembership>(entity =>
+        {
+            entity.ToTable("platform_project_memberships");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasConversion(IdConverter<ProjectMembershipId>(value => new ProjectMembershipId(value), id => id.Value));
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.ProjectId).HasConversion(IdConverter<ProjectId>(value => new ProjectId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId, x.SubjectId }).IsUnique();
+            entity.HasOne<Project>().WithMany()
+                .HasForeignKey(x => new { x.ProjectId, x.OrganizationId, x.TenantId })
+                .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<Resource>(entity =>
         {
             entity.ToTable("platform_resources", table =>
