@@ -166,8 +166,15 @@ public sealed class PlatformInfrastructureTests
         var currentModel = db.GetService<IDesignTimeModel>().Model;
         var differences = differ.GetDifferences(initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
 
-        Assert.True(differences.Count == 0,
-            string.Join(", ", differences.Select(operation => operation.GetType().Name)));
+        var descriptions = differences.Select(operation => operation switch
+        {
+            Microsoft.EntityFrameworkCore.Migrations.Operations.AlterColumnOperation alter =>
+                $"열 변경: {alter.Table}.{alter.Name}, CLR={alter.ClrType.Name}, DB={alter.ColumnType}, Null={alter.IsNullable}, 이전 CLR={alter.OldColumn.ClrType.Name}, 이전 DB={alter.OldColumn.ColumnType}, 이전 Null={alter.OldColumn.IsNullable}",
+            Microsoft.EntityFrameworkCore.Migrations.Operations.CreateIndexOperation index =>
+                $"인덱스 추가: {index.Table}.{index.Name}, 열={string.Join(",", index.Columns)}, 고유={index.IsUnique}",
+            _ => operation.GetType().Name
+        });
+        Assert.True(differences.Count == 0, string.Join(" | ", descriptions));
     }
 
     private static PlatformDbContext CreateContext()
