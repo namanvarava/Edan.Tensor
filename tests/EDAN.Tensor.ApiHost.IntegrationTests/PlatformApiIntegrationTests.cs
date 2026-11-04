@@ -30,6 +30,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -256,6 +258,27 @@ public sealed class PlatformApiIntegrationTests
         using var invalidAuditPageResponse = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/authorization-audit?page=1&pageSize=101");
         Assert.Equal(HttpStatusCode.BadRequest, invalidAuditPageResponse.StatusCode);
+
+        // 기간별 체크섬을 생성하고 외부에 보관한 기준값과 다시 비교합니다.
+        var fromUtc = DateTimeOffset.UtcNow.AddDays(-1);
+        var toUtc = DateTimeOffset.UtcNow.AddDays(1);
+        using var integrityResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/integrity?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}&toUtc={Uri.EscapeDataString(toUtc.ToString("O"))}");
+        Assert.Equal(HttpStatusCode.OK, integrityResponse.StatusCode);
+        using var integrityDocument = await JsonDocument.ParseAsync(await integrityResponse.Content.ReadAsStreamAsync());
+        var digest = integrityDocument.RootElement.GetProperty("sha256").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(digest));
+
+        using var verifyResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", new
+            {
+                fromUtc,
+                toUtc,
+                expectedSha256 = digest
+            });
+        Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
+        using var verifyDocument = await JsonDocument.ParseAsync(await verifyResponse.Content.ReadAsStreamAsync());
+        Assert.True(verifyDocument.RootElement.GetProperty("isValid").GetBoolean());
     }
 
     [Fact]
