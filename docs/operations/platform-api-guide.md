@@ -191,3 +191,26 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인을 제공합니다. Tenant 내부의 Member와 Administrator 역할은 아직 기본 API 접근에서 동일하게 취급합니다. 사용자 초대 수락과 외부 계정 연결, 조직·프로젝트별 세부 권한, 토큰 발급·갱신·폐기, 키 회전 및 JWKS 기반 비대칭 키 검증은 후속 단계에서 구현해야 합니다.
 
 완전한 운영 보안 검증 전까지 API의 외부 공개를 제한해야 합니다. 운영 환경에서는 배포 작업에서 승인된 EF Core Migration을 별도로 적용해야 합니다.
+
+
+## 접근 정책 및 권한 감사
+
+Tenant Administrator는 접근 정책을 등록할 수 있습니다.
+
+POST /api/platform/tenants/{tenantId}/authorization-policies
+
+```json
+{
+  "organizationId": null,
+  "projectId": null,
+  "subjectId": "identity-provider-user-123",
+  "action": "resource:create",
+  "resourceType": "DataSet",
+  "effect": "Deny",
+  "priority": 100
+}
+```
+
+정책 효과는 Allow 또는 Deny이며, 자원 유형은 특정 유형 또는 *를 지정합니다. Tenant 정책은 모든 하위 범위에 적용되고 Organization 정책은 해당 조직과 프로젝트에, Project 정책은 지정 프로젝트에 적용됩니다. 명시적 Deny는 항상 우선하며, 정책에 일치하지 않으면 기존 역할 권한을 평가합니다. 활성 Tenant 소속은 필수이며 정책 Allow로 우회할 수 없습니다.
+
+자원·정책 생성 권한 평가 결과는 platform_authorization_audit 테이블에 자동 기록됩니다. 감사 저장이 실패하면 권한 평가 요청도 성공 처리하지 않습니다. 상세 규칙은 [접근 정책 및 감사 안내](platform-authorization-policy-guide.md)를 참고하십시오.
