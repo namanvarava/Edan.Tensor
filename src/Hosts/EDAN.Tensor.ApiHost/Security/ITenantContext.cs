@@ -74,3 +74,80 @@ public sealed class TenantMembershipAuthorizationFilter(
         Results.Json(new ApiError("platform.membership.forbidden", "선택한 테넌트의 활성 구성원이 아닙니다."),
             statusCode: StatusCodes.Status403Forbidden);
 }
+
+/// <summary>Tenant 관리자만 조직·프로젝트 소속을 배정할 수 있도록 검사합니다.</summary>
+public sealed class TenantAdministratorAuthorizationFilter(
+    ITenantContext tenantContext,
+    ITenantMembershipRepository memberships,
+    IHttpContextAccessor accessor) : IEndpointFilter
+{
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var subjectId = accessor.HttpContext?.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(subjectId))
+            return Forbidden();
+
+        try
+        {
+            var membership = await memberships.GetAsync(tenantContext.TenantId, subjectId, context.HttpContext.RequestAborted);
+            if (membership is null || membership.Status != TenantMembershipStatus.Active || membership.Role != TenantRole.Administrator)
+                return Forbidden();
+        }
+        catch (InvalidOperationException) { return Forbidden(); }
+
+        return await next(context);
+    }
+
+    private static IResult Forbidden() =>
+        Results.Json(new ApiError("platform.membership.admin_required", "Tenant 관리자 권한이 필요합니다."),
+            statusCode: StatusCodes.Status403Forbidden);
+}
+
+/// <summary>조직·프로젝트 범위에 필요한 생성 권한을 확인합니다.</summary>
+public sealed class ScopedResourceAuthorizationFilter(
+    ITenantContext tenantContext,
+    PlatformAuthorizationService authorization,
+    IHttpContextAccessor accessor) : IEndpointFilter
+{
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var subjectId = accessor.HttpContext?.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(subjectId))
+            return Forbidden();
+
+        Guid? organizationId = null;
+        Guid? projectId = null;
+        foreach (var argument in context.Arguments)
+        {
+            if (argument is CreateResourceRequest resource)
+            {
+                organizationId = resource.OrganizationId;
+                projectId = resource.ProjectId;
+            }
+            else if (argument is CreatePolicyRequest policy)
+            {
+                organizationId = policy.OrganizationId;
+                projectId = policy.ProjectId;
+            }
+        }
+
+        try
+        {
+            var allowed = await authorization.CanCreateInScopeAsync(
+                tenantContext.TenantId,
+                organizationId is Guid org ? new OrganizationId(org) : null,
+                projectId is Guid project ? new ProjectId(project) : null,
+                subjectId,
+                context.HttpContext.RequestAborted);
+            if (!allowed)
+                return Forbidden();
+        }
+        catch (InvalidOperationException) { return Forbidden(); }
+
+        return await next(context);
+    }
+
+    private static IResult Forbidden() =>
+        Results.Json(new ApiError("platform.scope.forbidden", "요청한 조직·프로젝트 범위에 생성 권한이 없습니다."),
+            statusCode: StatusCodes.Status403Forbidden);
+}
