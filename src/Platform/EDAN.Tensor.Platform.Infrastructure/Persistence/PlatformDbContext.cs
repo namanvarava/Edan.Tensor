@@ -1,6 +1,7 @@
 using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Text.Json;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
@@ -87,14 +88,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.ToTable("platform_resources");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
-        entity.OwnsOne(x => x.Scope, scope =>
-        {
-            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
-            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
-            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
-            scope.HasIndex(x => x.TenantId);
-        });
-        entity.Navigation(x => x.Scope).IsRequired();
+        entity.Property(x => x.Scope).HasConversion(
+            scope => JsonSerializer.Serialize(scope, (JsonSerializerOptions?)null),
+            json => JsonSerializer.Deserialize<ResourceScope>(json, (JsonSerializerOptions?)null)!).IsRequired();
         entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
@@ -106,14 +102,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.ToTable("platform_policies");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>(value => new PolicyId(value), id => id.Value));
-        entity.OwnsOne(x => x.Scope, scope =>
-        {
-            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
-            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
-            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
-            scope.HasIndex(x => x.TenantId);
-        });
-        entity.Navigation(x => x.Scope).IsRequired();
+        entity.Property(x => x.Scope).HasConversion(
+            scope => JsonSerializer.Serialize(scope, (JsonSerializerOptions?)null),
+            json => JsonSerializer.Deserialize<ResourceScope>(json, (JsonSerializerOptions?)null)!).IsRequired();
         entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken();
