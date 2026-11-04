@@ -46,6 +46,8 @@ Tenant Administrator만 접근 정책을 관리할 수 있습니다.
 | PUT | /api/platform/tenants/{tenantId}/authorization-policies/{policyId} | 효과와 우선순위 변경 |
 | PATCH | /api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled | 정책 활성 상태 변경 |
 | GET | /api/platform/tenants/{tenantId}/authorization-audit | Tenant 권한 평가 감사 조회 |
+| GET | /api/platform/tenants/{tenantId}/authorization-audit/integrity | 기간별 감사 체크섬 생성 |
+| POST | /api/platform/tenants/{tenantId}/authorization-audit/integrity/verify | 외부 보관 체크섬 검증 |
 
 정책 등록 예시:
 
@@ -99,3 +101,10 @@ AuthorizationPolicyChangeAuditEntry는 Tenant, 정책 식별자, 변경자 Subje
 ## 현재 범위와 한계
 
 현재 정책은 외부 SubjectId에 직접 연결되며 정책 관리는 Tenant Administrator에게만 허용합니다. 역할 기반 정책 주체, 조건식 언어, 시간·네트워크·환경 속성 평가, 캐시 및 무효화, 외부 로그 전송은 아직 구현하지 않았습니다. 명시적 Deny는 우선순위와 무관하게 Allow보다 우선합니다.
+
+
+## 감사 무결성 및 보존 경계
+
+감사 기록의 무결성 API는 최대 31일, 최대 100,000건 범위의 Tenant 감사 데이터를 정규화해 SHA-256 체크섬을 계산합니다. 관리자는 체크섬을 별도 보관 매체에 저장하고 이후 검증 요청에 기준값으로 제출할 수 있습니다. 비교는 상수 시간 방식으로 수행합니다.
+
+체크섬은 계산 시점의 데이터 상태를 식별하는 외부 기준값이며, 데이터베이스 내부에 기준값을 함께 저장하지 않습니다. 따라서 데이터와 체크섬을 서로 독립된 보관 경계에 유지해야 변조 탐지 효과를 얻을 수 있습니다. 현재 단계에서는 감사 데이터 자동 삭제, 보존 기간 만료 처리 및 외부 아카이브 저장소 연결을 수행하지 않습니다. 감사 증거의 무단 삭제를 방지하기 위해 보존 정책과 아카이브 승인 절차가 확정되기 전까지 원본 감사 기록을 유지합니다.
