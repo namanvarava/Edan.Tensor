@@ -237,6 +237,23 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<AuthorizationPolicyChangeAuditEntry>(entity =>
+        {
+            entity.ToTable("platform_authorization_policy_changes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyChangeAuditEntryId>(value => new AuthorizationPolicyChangeAuditEntryId(value), id => id.Value));
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.PolicyId).IsRequired();
+            entity.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ChangeType).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.OccurredAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+            entity.HasIndex(x => new { x.PolicyId, x.OccurredAtUtc });
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
