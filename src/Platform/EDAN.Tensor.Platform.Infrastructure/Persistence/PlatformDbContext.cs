@@ -51,6 +51,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
         entity.HasIndex(x => x.TenantId);
+        entity.HasAlternateKey(x => new { x.Id, x.TenantId });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureProject(ModelBuilder modelBuilder)
@@ -66,6 +68,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
         entity.HasIndex(x => new { x.TenantId, x.OrganizationId });
+        entity.HasAlternateKey(x => new { x.Id, x.OrganizationId, x.TenantId });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(x => new { x.OrganizationId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -79,6 +87,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
         entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureResource(ModelBuilder modelBuilder)
@@ -92,6 +101,16 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.HasIndex(x => x.ScopeTenantId);
+        entity.HasCheckConstraint("CK_platform_resources_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.ScopeTenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(x => new { x.ScopeOrganizationId, x.ScopeTenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Project>().WithMany()
+            .HasForeignKey(x => new { x.ScopeProjectId, x.ScopeOrganizationId, x.ScopeTenantId })
+            .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
         entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
@@ -108,6 +127,16 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.HasIndex(x => x.ScopeTenantId);
+        entity.HasCheckConstraint("CK_platform_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.ScopeTenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Organization>().WithMany()
+            .HasForeignKey(x => new { x.ScopeOrganizationId, x.ScopeTenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Project>().WithMany()
+            .HasForeignKey(x => new { x.ScopeProjectId, x.ScopeOrganizationId, x.ScopeTenantId })
+            .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
         entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken();
