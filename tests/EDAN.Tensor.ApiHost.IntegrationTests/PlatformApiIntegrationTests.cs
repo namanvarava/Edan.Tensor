@@ -206,7 +206,7 @@ public sealed class PlatformApiIntegrationTests
         {
             organizationId,
             projectId,
-            resourceType = "Document",
+            resourceType = "Spreadsheet",
             name = "프로젝트 범위 문서"
         });
         Assert.Equal(HttpStatusCode.Forbidden, projectScopedResource.StatusCode);
