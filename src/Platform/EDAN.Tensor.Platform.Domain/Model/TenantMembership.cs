@@ -1,4 +1,5 @@
 using EDAN.Tensor.SharedKernel.Primitives;
+using EDAN.Tensor.SharedKernel.Exceptions;
 
 namespace EDAN.Tensor.Platform.Domain.Model;
 
@@ -48,7 +49,7 @@ public sealed class TenantMembership : AggregateRoot<TenantMembershipId>
     private void EnsureActive()
     {
         if (Status != TenantMembershipStatus.Active)
-            throw new InvalidOperationException("폐기된 테넌트 소속은 변경할 수 없습니다.");
+            throw new BusinessRuleViolationException("platform.membership.revoked", "폐기된 테넌트 소속은 변경할 수 없습니다.");
     }
 
     private static string ValidateSubject(string subjectId)
