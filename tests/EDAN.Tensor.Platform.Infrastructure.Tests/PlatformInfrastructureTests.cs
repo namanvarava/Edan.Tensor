@@ -48,8 +48,8 @@ public sealed class PlatformInfrastructureTests
         db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant, email, "사용자"));
         await db.SaveChangesAsync();
 
-        Assert.True(await repository.ExistsEmailAsync(firstTenant.Id, email));
-        Assert.False(await repository.ExistsEmailAsync(secondTenant.Id, email));
+        Assert.True(await repository.ExistsEmailAsync(firstTenant, email));
+        Assert.False(await repository.ExistsEmailAsync(secondTenant, email));
     }
 
     [Fact]
