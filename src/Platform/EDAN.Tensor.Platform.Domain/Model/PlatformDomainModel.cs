@@ -76,18 +76,20 @@ public sealed record ResourceScope
 /// <summary>자원은 명시적인 테넌트 범위에 귀속됩니다.</summary>
 public sealed class Resource:AggregateRoot<ResourceId>
 {
- private Resource(ResourceId id,ResourceScope scope,string type,string name):base(id){Scope=scope;ResourceType=Rules.Text(type,80);Name=Rules.Text(name,160);Status=ResourceStatus.Active;}
- public ResourceScope Scope{get;} public string ResourceType{get;} public string Name{get;private set;} public ResourceStatus Status{get;private set;}
- public static Resource Create(ResourceId id,ResourceScope scope,string type,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(scope);return new(id,scope,type,name);}
+ private Resource(ResourceId id,TenantId scopeTenantId,OrganizationId? scopeOrganizationId,ProjectId? scopeProjectId,string resourceType,string name):base(id){ScopeTenantId=scopeTenantId;ScopeOrganizationId=scopeOrganizationId;ScopeProjectId=scopeProjectId;ResourceType=Rules.Text(resourceType,80);Name=Rules.Text(name,160);Status=ResourceStatus.Active;}
+ public TenantId ScopeTenantId{get;} public OrganizationId? ScopeOrganizationId{get;} public ProjectId? ScopeProjectId{get;}
+ public ResourceScope Scope=>new(ScopeTenantId,ScopeOrganizationId,ScopeProjectId); public string ResourceType{get;} public string Name{get;private set;} public ResourceStatus Status{get;private set;}
+ public static Resource Create(ResourceId id,ResourceScope scope,string type,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(scope);return new(id,scope.TenantId,scope.OrganizationId,scope.ProjectId,type,name);}
  public void Rename(string name){Open();Name=Rules.Text(name,160);} public void Suspend(){if(Status!=ResourceStatus.Active)Invalid();Status=ResourceStatus.Suspended;} public void Activate(){if(Status!=ResourceStatus.Suspended)Invalid();Status=ResourceStatus.Active;} public void Retire(){Open();Status=ResourceStatus.Retired;}
  private void Open(){if(Status==ResourceStatus.Retired)Invalid();} private static void Invalid()=>throw new BusinessRuleViolationException("platform.resource.invalid_transition","폐기된 자원은 다시 변경할 수 없습니다.");
 }
 /// <summary>정책은 예상 버전이 현재 버전과 일치할 때만 변경됩니다.</summary>
 public sealed class Policy:AggregateRoot<PolicyId>
 {
- private Policy(PolicyId id,ResourceScope scope,string key,string value):base(id){Scope=scope;Key=Rules.Text(key,120);Value=Rules.Text(value,4000);Version=1;IsEnabled=true;}
- public ResourceScope Scope{get;} public string Key{get;} public string Value{get;private set;} public long Version{get;private set;} public bool IsEnabled{get;private set;}
- public static Policy Create(PolicyId id,ResourceScope scope,string key,string value){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(scope);return new(id,scope,key,value);}
+ private Policy(PolicyId id,TenantId scopeTenantId,OrganizationId? scopeOrganizationId,ProjectId? scopeProjectId,string key,string value):base(id){ScopeTenantId=scopeTenantId;ScopeOrganizationId=scopeOrganizationId;ScopeProjectId=scopeProjectId;Key=Rules.Text(key,120);Value=Rules.Text(value,4000);Version=1;IsEnabled=true;}
+ public TenantId ScopeTenantId{get;} public OrganizationId? ScopeOrganizationId{get;} public ProjectId? ScopeProjectId{get;}
+ public ResourceScope Scope=>new(ScopeTenantId,ScopeOrganizationId,ScopeProjectId); public string Key{get;} public string Value{get;private set;} public long Version{get;private set;} public bool IsEnabled{get;private set;}
+ public static Policy Create(PolicyId id,ResourceScope scope,string key,string value){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(scope);return new(id,scope.TenantId,scope.OrganizationId,scope.ProjectId,key,value);}
  public void Update(string value,long expected){Check(expected);Value=Rules.Text(value,4000);Version++;} public void SetEnabled(bool enabled,long expected){Check(expected);if(IsEnabled==enabled)return;IsEnabled=enabled;Version++;}
  private void Check(long expected){if(expected!=Version)throw new BusinessRuleViolationException("platform.policy.version_conflict","정책 버전이 변경되었습니다. 최신 정책을 다시 조회해야 합니다.");}
 }
