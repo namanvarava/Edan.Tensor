@@ -24,13 +24,13 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// 개발 환경에서는 로컬 SQLite 파일을 최초 실행 시 생성하며 운영 환경의 스키마 변경은 별도 마이그레이션으로 관리합니다.
+// 개발 환경에서는 버전이 관리되는 EF Core Migration을 적용하고 운영 환경의 스키마 변경은 배포 절차에서 수행합니다.
 if (app.Environment.IsDevelopment()
-    && builder.Configuration.GetValue<bool>("Database:EnsureCreatedInDevelopment"))
+    && builder.Configuration.GetValue<bool>("Database:ApplyMigrationsInDevelopment"))
 {
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
 }
 
 app.MapHealthChecks("/health");
