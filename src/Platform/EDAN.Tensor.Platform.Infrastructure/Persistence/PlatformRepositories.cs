@@ -90,9 +90,14 @@ public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAutho
             .OrderByDescending(x => x.Priority)
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<AuthorizationPolicy>> GetByTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
-        await db.AuthorizationPolicies.AsNoTracking().Where(x => x.TenantId == tenantId)
-            .OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<AuthorizationPolicy>> GetByTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default)
+    {
+        // SQLite는 DateTimeOffset 정렬을 SQL로 변환하지 못하므로 조회 후 UTC 시각 기준으로 정렬합니다.
+        var policies = await db.AuthorizationPolicies.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .ToListAsync(cancellationToken);
+        return policies.OrderByDescending(x => x.CreatedAtUtc).ToArray();
+    }
 
     public Task<AuthorizationPolicy?> GetByIdAsync(AuthorizationPolicyId id, CancellationToken cancellationToken = default) =>
         db.AuthorizationPolicies.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
