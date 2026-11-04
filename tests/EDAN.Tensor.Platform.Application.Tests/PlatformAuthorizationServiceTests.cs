@@ -101,6 +101,23 @@ public sealed class PlatformAuthorizationServiceTests
         Assert.Equal("policy.explicit_allow", decision.ReasonCode);
     }
 
+    [Fact]
+    public async Task ExplicitAllowCannotBypassMissingTenantMembership()
+    {
+        var tenantId = new TenantId(Guid.NewGuid());
+        var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()), tenantId,
+            null, null, "unaffiliated-user", "resource:create", "*", AuthorizationPolicyEffect.Allow, 100, DateTimeOffset.UtcNow);
+        var service = new PlatformAuthorizationService(
+            new FakeTenantMembershipRepository(tenantId, "different-user", TenantRole.Member),
+            new FakeScopedMembershipRepository(false, false, false),
+            new FakePolicyRepository([policy]), new FakeAuditRepository(), new FakeUnitOfWork(), new SystemClock());
+
+        var decision = await service.EvaluateAsync(tenantId, null, null, "unaffiliated-user", "resource:create", "DataSet");
+
+        Assert.False(decision.IsAllowed);
+        Assert.Equal("membership.required", decision.ReasonCode);
+    }
+
     private static PlatformAuthorizationService CreateService(
         TenantId tenantId,
         string subjectId,
