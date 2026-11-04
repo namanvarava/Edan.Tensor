@@ -31,7 +31,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<Tenant>();
         entity.ToTable("platform_tenants");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
         entity.Property(x => x.Code).HasConversion(x => x.Value, x => new TenantCode(x)).HasMaxLength(64).IsRequired();
         entity.HasIndex(x => x.Code).IsUnique();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -44,8 +44,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<Organization>();
         entity.ToTable("platform_organizations");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationId>());
-        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
         entity.Property(x => x.Code).HasConversion(x => x.Value, x => new OrganizationCode(x)).HasMaxLength(64).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -58,9 +58,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<Project>();
         entity.ToTable("platform_projects");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<ProjectId>());
-        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
-        entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.OrganizationId).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.Code).HasConversion(x => x.Value, x => new ProjectCode(x)).HasMaxLength(64).IsRequired();
         entity.HasIndex(x => new { x.OrganizationId, x.Code }).IsUnique();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -73,8 +73,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<User>();
         entity.ToTable("platform_users");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<UserId>());
-        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<UserId>(value => new UserId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
         entity.Property(x => x.Email).HasConversion(x => x.Value, x => new EmailAddress(x)).HasMaxLength(320).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
         entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
@@ -86,12 +86,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<Resource>();
         entity.ToTable("platform_resources");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
         entity.OwnsOne(x => x.Scope, scope =>
         {
-            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>());
-            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>());
-            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>());
+            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
             scope.HasIndex(x => x.TenantId);
         });
         entity.Navigation(x => x.Scope).IsRequired();
@@ -105,12 +105,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<Policy>();
         entity.ToTable("platform_policies");
         entity.HasKey(x => x.Id);
-        entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>());
+        entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>(value => new PolicyId(value), id => id.Value));
         entity.OwnsOne(x => x.Scope, scope =>
         {
-            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>());
-            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>());
-            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>());
+            scope.Property(x => x.TenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+            scope.Property(x => x.OrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+            scope.Property(x => x.ProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
             scope.HasIndex(x => x.TenantId);
         });
         entity.Navigation(x => x.Scope).IsRequired();
@@ -120,12 +120,10 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasIndex(x => new { x.Key, x.Version });
     }
 
-    private static ValueConverter<TId, Guid> IdConverter<TId>() where TId : StrongIdMarker =>
-        throw new NotSupportedException();
-
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
         new(id => value(id), raw => create(raw));
 
-    private static ValueConverter<TId, Guid?> OptionalIdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
-        new(id => id == null ? null : value(id), raw => raw == null ? default : create(raw.Value));
+    private static ValueConverter<TId?, Guid?> OptionalIdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value)
+        where TId : class =>
+        new(id => id == null ? (Guid?)null : value(id), raw => raw == null ? null : create(raw.Value));
 }
