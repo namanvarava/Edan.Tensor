@@ -162,8 +162,9 @@ public sealed class PlatformInfrastructureTests
         using var db = new PlatformDbContext(options);
         var differ = db.GetService<IMigrationsModelDiffer>();
         var snapshot = new PlatformDbContextModelSnapshot().Model;
+        var initializedSnapshot = db.GetService<IModelRuntimeInitializer>().Initialize(snapshot, designTime: true);
         var currentModel = db.GetService<IDesignTimeModel>().Model;
-        var differences = differ.GetDifferences(snapshot.GetRelationalModel(), currentModel.GetRelationalModel());
+        var differences = differ.GetDifferences(initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
 
         Assert.True(differences.Count == 0,
             string.Join(", ", differences.Select(operation => operation.GetType().Name)));
