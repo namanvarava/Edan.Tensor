@@ -12,7 +12,7 @@ Platform API는 인증된 주체의 Tenant 범위를 기준으로 요청을 처�
 - 외부 Identity Provider가 사용자 인증과 토큰 발급을 담당합니다.
 - API Host는 토큰 발급자가 아니며 수신 토큰의 신뢰성을 검증합니다.
 
-필수 설정은 `Authentication:Issuer`, `Authentication:Audience`, `Authentication:SigningKey`입니다. 서명 키는 UTF-8 기준 32바이트 이상이어야 합니다. 설정이 없거나 유효하지 않으면 API Host 시작을 거부합니다.
+필수 설정은 `Authentication:Issuer`, `Authentication:Audience`, `Authentication:SigningKey`입니다. 서명 키는 UTF-8 기준 32바이트 이상이어야 합니다. 설정이 없거나 유효하지 않으면 JWT 검증은 성공할 수 없으며 보호 API는 닫힌 상태를 유지합니다. 상태 확인 경로는 계속 사용할 수 있습니다.
 
 ## 표준 클레임
 
