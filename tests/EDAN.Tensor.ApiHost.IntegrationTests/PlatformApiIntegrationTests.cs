@@ -136,6 +136,59 @@ public sealed class PlatformApiIntegrationTests
         });
         Assert.Equal(HttpStatusCode.Created, policyResponse.StatusCode);
 
+        // 새 구성원은 Tenant 소속만으로 조직·프로젝트 자원 생성 권한을 얻지 않습니다.
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        using var scopedTenantMembership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships", new
+            {
+                subjectId = "scoped-user",
+                role = "Member"
+            });
+        Assert.Equal(HttpStatusCode.Created, scopedTenantMembership.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "tenant-user");
+        using var organizationGrant = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", new
+            {
+                subjectId = "scoped-user",
+                role = "Contributor"
+            });
+        Assert.Equal(HttpStatusCode.Created, organizationGrant.StatusCode);
+        using var projectGrant = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", new
+            {
+                subjectId = "scoped-user",
+                role = "Reader"
+            });
+        Assert.Equal(HttpStatusCode.Created, projectGrant.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "scoped-user");
+        using var organizationScopedResource = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            organizationId,
+            projectId = (Guid?)null,
+            resourceType = "Document",
+            name = "조직 범위 문서"
+        });
+        Assert.Equal(HttpStatusCode.Created, organizationScopedResource.StatusCode);
+
+        using var projectScopedResource = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            organizationId,
+            projectId,
+            resourceType = "Document",
+            name = "프로젝트 범위 문서"
+        });
+        Assert.Equal(HttpStatusCode.Forbidden, projectScopedResource.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "tenant-user");
+
         using var invitationResponse = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/users/invitations", new
             {
