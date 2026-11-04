@@ -16,4 +16,7 @@ public sealed class PlatformDomainTests
  [Fact] public void ProjectResourceScopeRequiresOrganization()=>Assert.Throws<ArgumentException>(()=>new ResourceScope(T(),project:new ProjectId(Guid.NewGuid())));
  [Fact] public void RetiredResourceCannotBeReactivated(){var r=Resource.Create(new(Guid.NewGuid()),new(T()),"DataSet","기본 데이터");r.Retire();Assert.Throws<BusinessRuleViolationException>(()=>r.Activate());}
  [Fact] public void PolicyUsesOptimisticVersion(){var p=Policy.Create(new(Guid.NewGuid()),new(T()),"retention.days","30");p.Update("60",1);Assert.Equal(2,p.Version);Assert.Throws<BusinessRuleViolationException>(()=>p.Update("90",1));}
+ [Fact] public void TenantMembershipCanChangeRoleWhileActive(){var m=TenantMembership.Grant(new(Guid.NewGuid()),T(),"identity-user-1",TenantRole.Member);m.ChangeRole(TenantRole.Administrator);Assert.Equal(TenantRole.Administrator,m.Role);Assert.Equal(TenantMembershipStatus.Active,m.Status);}
+ [Fact] public void RevokedTenantMembershipCannotBeChanged(){var m=TenantMembership.Grant(new(Guid.NewGuid()),T(),"identity-user-2",TenantRole.Member);m.Revoke();Assert.Equal(TenantMembershipStatus.Revoked,m.Status);Assert.Throws<InvalidOperationException>(()=>m.ChangeRole(TenantRole.Administrator));}
+ [Fact] public void TenantMembershipRejectsBlankExternalSubject(){Assert.Throws<ArgumentException>(()=>TenantMembership.Grant(new(Guid.NewGuid()),T()," ",TenantRole.Member));}
 }
