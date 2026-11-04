@@ -106,6 +106,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.SubjectId }).IsUnique();
+            entity.HasIndex(x => new { x.OrganizationId, x.TenantId });
             entity.HasOne<Organization>().WithMany()
                 .HasForeignKey(x => new { x.OrganizationId, x.TenantId })
                 .HasPrincipalKey(x => new { x.Id, x.TenantId })
@@ -124,6 +125,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId, x.SubjectId }).IsUnique();
+            entity.HasIndex(x => new { x.ProjectId, x.OrganizationId, x.TenantId });
             entity.HasOne<Project>().WithMany()
                 .HasForeignKey(x => new { x.ProjectId, x.OrganizationId, x.TenantId })
                 .HasPrincipalKey(x => new { x.Id, x.OrganizationId, x.TenantId })
