@@ -28,5 +28,17 @@
 ## 정책 버전
 정책은 버전 1로 시작합니다. 변경 시 예상 버전과 현재 버전이 일치해야 합니다. 값 또는 활성화 상태가 변경되면 버전이 증가합니다.
 
+## Tenant 소속 및 계층형 권한
+
+- TenantMembership은 외부 인증 주체와 Tenant 사이의 활성 소속 및 역할을 관리합니다.
+- OrganizationMembership과 ProjectMembership은 하위 범위별 역할을 관리합니다.
+- Tenant Administrator는 선택 Tenant의 하위 범위 전체를 관리합니다.
+- Organization Manager는 하위 Project 범위의 생성 권한을 상속합니다.
+- AuthorizationPolicy는 SubjectId, Action, ResourceType, Allow·Deny 효과와 우선순위를 관리합니다.
+- Tenant 정책은 Organization·Project 하위 요청에 적용되고 Organization 정책은 하위 Project 요청에 적용됩니다.
+- 명시적 Deny는 Allow 및 역할 권한보다 우선합니다.
+- 활성 Tenant 소속은 모든 정책 평가의 필수 보안 경계입니다.
+- AuthorizationAuditEntry는 권한 평가 결과와 사유를 UTC 시각과 함께 기록합니다.
+
 ## 계층 의존성
 Platform.Domain은 SharedKernel만 참조합니다. 저장소 조회, 고유성 보장, 조직 소속 검증은 후속 Application 및 Infrastructure 단계에서 구현합니다.
