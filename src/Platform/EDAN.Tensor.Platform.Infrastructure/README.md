@@ -37,3 +37,12 @@ Infrastructure는 특정 데이터베이스 공급자를 강제하지 않습니�
 ## 운영 유의사항
 
 EF Core 인덱스 정의는 관계형 공급자에서 고유성 제약으로 동작합니다. InMemory 공급자는 관계형 제약과 트랜잭션 동작을 완전히 재현하지 않으므로 SQLite 기반 통합 테스트를 별도로 수행합니다. 개발 환경의 `EnsureCreated`는 초기 검증 편의 기능이며, 운영 데이터베이스의 버전 관리에는 EF Core Migration이 필요합니다. Tenant·Organization·Project 간 교차 행 소속 일관성은 현재 Application 검증으로 보장하며, 실제 관계형 공급자를 선택한 뒤 복합 외래 키 제약을 추가 검토합니다.
+
+
+## Migration 및 관계형 무결성
+
+초기 스키마는 `Persistence/Migrations/20261104100000_InitialPlatformSchema.cs`에서 관리합니다. 개발 환경에서는 API Host가 `Database:ApplyMigrationsInDevelopment=true` 설정에 따라 Migration을 적용합니다. 운영 환경에서는 배포 파이프라인의 승인된 Migration 단계로 적용해야 합니다.
+
+Tenant → Organization → Project 소속 관계와 Resource·Policy 범위는 복합 외래 키 및 CHECK 제약으로 보호합니다. SQLite 통합 테스트는 Migration 적용 후 실제 관계형 제약을 검증합니다.
+
+SQLite 네이티브 라이브러리는 알려진 취약 버전을 피하기 위해 `SQLitePCLRaw.lib.e_sqlite3` 2.1.14를 사용합니다.
