@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -151,6 +152,10 @@ public sealed class InitialPlatformSchema : Migration
         migrationBuilder.CreateIndex("IX_platform_policies_tenant_id", "platform_policies", "tenant_id");
         migrationBuilder.CreateIndex("IX_platform_policies_Key_Version", "platform_policies", new[] { "Key", "Version" });
     }
+
+    /// <summary>현재 Migration의 기준 모델을 EF Core에 제공합니다.</summary>
+    protected override void BuildTargetModel(ModelBuilder modelBuilder) =>
+        PlatformDbContextModelSnapshot.ConfigureTargetModel(modelBuilder);
 
     /// <summary>초기 스키마를 외래 키 의존성의 역순으로 제거합니다.</summary>
     protected override void Down(MigrationBuilder migrationBuilder)
