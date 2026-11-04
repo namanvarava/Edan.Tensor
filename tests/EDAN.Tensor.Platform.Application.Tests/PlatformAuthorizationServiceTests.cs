@@ -1,6 +1,7 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.SharedKernel.Time;
 using Xunit;
 
 namespace EDAN.Tensor.Platform.Application.Tests;
@@ -70,7 +71,20 @@ public sealed class PlatformAuthorizationServiceTests
     {
         var tenantMemberships = new FakeTenantMembershipRepository(tenantId, subjectId, tenantRole);
         var scopedMemberships = new FakeScopedMembershipRepository(organizationWrite, organizationManager, projectWrite);
-        return new PlatformAuthorizationService(tenantMemberships, scopedMemberships);
+        return new PlatformAuthorizationService(tenantMemberships, scopedMemberships, new FakePolicyRepository(), new FakeAuditRepository(), new SystemClock());
+    }
+
+    private sealed class FakePolicyRepository : IAuthorizationPolicyRepository
+    {
+        public Task<IReadOnlyList<AuthorizationPolicy>> GetApplicableAsync(TenantId tenantId, OrganizationId? organizationId, ProjectId? projectId, string subjectId, string action, string resourceType, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AuthorizationPolicy>>([]);
+        public void Add(AuthorizationPolicy policy) => throw new NotSupportedException();
+    }
+
+    private sealed class FakeAuditRepository : IAuthorizationAuditRepository
+    {
+        public List<AuthorizationAuditEntry> Entries { get; } = [];
+        public void Add(AuthorizationAuditEntry entry) => Entries.Add(entry);
     }
 
     private sealed class FakeTenantMembershipRepository(TenantId tenantId, string subjectId, TenantRole role)
