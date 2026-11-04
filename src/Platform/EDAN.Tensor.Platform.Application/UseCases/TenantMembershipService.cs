@@ -10,6 +10,10 @@ public sealed class TenantMembershipService(
     ITenantMembershipRepository memberships,
     IPlatformUnitOfWork unitOfWork)
 {
+    /// <summary>외부 인증 주체가 소속된 모든 활성 Tenant를 조회합니다.</summary>
+    public Task<IReadOnlyList<TenantMembership>> GetMyMembershipsAsync(string subjectId, CancellationToken cancellationToken = default) =>
+        memberships.GetActiveForSubjectAsync(subjectId, cancellationToken);
+
     /// <summary>활성 테넌트에 외부 인증 주체의 역할을 부여합니다.</summary>
     public async Task<Result<TenantMembershipId>> GrantAsync(
         TenantId tenantId, string subjectId, TenantRole role, CancellationToken cancellationToken = default)
