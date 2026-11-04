@@ -8,5 +8,6 @@ public interface ITenantMembershipRepository
     Task<TenantMembership?> GetAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default);
     Task<bool> HasActiveMembershipAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TenantMembership>> GetActiveForSubjectAsync(string subjectId, CancellationToken cancellationToken = default);
     void Add(TenantMembership membership);
 }
