@@ -32,7 +32,7 @@ public sealed class AddAuthorizationPoliciesAndAudit : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_platform_authorization_policies", x => x.Id);
-                table.CheckConstraint("CK_platform_authorization_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
+                table.CheckConstraint("CK_platform_authorization_policies_project_requires_organization", "ProjectId IS NULL OR OrganizationId IS NOT NULL");
                 table.ForeignKey("FK_platform_authorization_policies_platform_tenants_TenantId", x => x.TenantId,
                     "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
                 table.ForeignKey("FK_platform_authorization_policies_platform_organizations_OrganizationId_TenantId",
