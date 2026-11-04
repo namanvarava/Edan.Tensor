@@ -10,14 +10,15 @@ public sealed class PlatformAuthorizationService(
     IScopedMembershipRepository scopedMemberships,
     IAuthorizationPolicyRepository policies,
     IAuthorizationAuditRepository audits,
+    IPlatformUnitOfWork unitOfWork,
     ISystemClock clock)
 {
     /// <summary>Tenant·Organization·Project 범위에서 자원 및 정책 생성 권한을 평가합니다.</summary>
     public async Task<bool> CanCreateInScopeAsync(TenantId tenantId, OrganizationId? organizationId,
-        ProjectId? projectId, string subjectId, CancellationToken cancellationToken = default)
+        ProjectId? projectId, string subjectId, CancellationToken cancellationToken = default, string resourceType = "*")
     {
         var decision = await EvaluateAsync(tenantId, organizationId, projectId, subjectId,
-            "resource:create", "*", cancellationToken);
+            "resource:create", resourceType, cancellationToken);
         return decision.IsAllowed;
     }
 
@@ -59,6 +60,7 @@ public sealed class PlatformAuthorizationService(
         var scope = $"tenant:{tenantId.Value};organization:{organizationId?.Value.ToString() ?? "-"};project:{projectId?.Value.ToString() ?? "-"}";
         audits.Add(AuthorizationAuditEntry.Create(new AuthorizationAuditEntryId(Guid.NewGuid()), tenantId,
             subjectId, action, resourceType, scope, decision, clock.UtcNow));
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return decision;
     }
 }
