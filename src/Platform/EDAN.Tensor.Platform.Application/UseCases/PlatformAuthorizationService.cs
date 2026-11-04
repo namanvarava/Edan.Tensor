@@ -15,10 +15,10 @@ public sealed class PlatformAuthorizationService(
 {
     /// <summary>Tenant·Organization·Project 범위에서 자원 및 정책 생성 권한을 평가합니다.</summary>
     public async Task<bool> CanCreateInScopeAsync(TenantId tenantId, OrganizationId? organizationId,
-        ProjectId? projectId, string subjectId, CancellationToken cancellationToken = default, string resourceType = "*")
+        ProjectId? projectId, string subjectId, CancellationToken cancellationToken = default, string action = "resource:create", string resourceType = "*")
     {
         var decision = await EvaluateAsync(tenantId, organizationId, projectId, subjectId,
-            "resource:create", resourceType, cancellationToken);
+            action, resourceType, cancellationToken);
         return decision.IsAllowed;
     }
 
