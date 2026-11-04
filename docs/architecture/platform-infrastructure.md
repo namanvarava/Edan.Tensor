@@ -31,9 +31,11 @@ Resource와 Policy의 Scope는 TenantId, 선택적 OrganizationId, 선택적 Pro
 
 Organization 및 Project 코드 중복 검사는 각각 TenantId 및 OrganizationId 조건을 포함합니다. User 이메일 중복 검사는 TenantId 조건을 반드시 포함합니다. 프로젝트에는 TenantId와 OrganizationId를 함께 보존하여 상위 범위 일치 여부를 확인할 수 있게 합니다.
 
-## 공급자 독립성
+## 공급자 독립성 및 현재 연결
 
-Infrastructure 프로젝트는 EF Core 핵심 패키지만 참조합니다. 실제 공급자는 Host에서 구성합니다. 따라서 메타데이터 저장소 선택과 DataSet의 DuckDB·Parquet 기반 분석 저장 구조를 서로 독립적으로 결정할 수 있습니다.
+Infrastructure 프로젝트는 EF Core 핵심 패키지만 참조하고 실제 공급자는 Host에서 구성합니다. 현재 API Host는 로컬 개발 기본 공급자로 SQLite를 선택하며 기본 파일은 `App_Data/edan-tensor-platform.db`입니다. `ConnectionStrings:PlatformDatabase` 또는 `ConnectionStrings__PlatformDatabase` 환경 변수로 연결 문자열을 교체할 수 있습니다. DataSet의 DuckDB·Parquet 분석 저장 구조와 Platform 메타데이터 저장 구조는 서로 독립적입니다.
+
+`/health/database`는 DB 연결 가능 여부를 확인하고 `Green` 또는 `Red` 신호등 상태를 반환합니다. 개발 환경의 `Database:EnsureCreatedInDevelopment` 설정은 최초 실행 시 테이블을 생성하는 편의 기능이며 운영 마이그레이션을 대체하지 않습니다.
 
 ## 트랜잭션 경계
 
