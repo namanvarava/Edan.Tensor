@@ -118,17 +118,22 @@ public sealed class ScopedResourceAuthorizationFilter(
 
         Guid? organizationId = null;
         Guid? projectId = null;
+        var action = "resource:create";
+        var resourceType = "*";
         foreach (var argument in context.Arguments)
         {
             if (argument is CreateResourceRequest resource)
             {
                 organizationId = resource.OrganizationId;
                 projectId = resource.ProjectId;
+                resourceType = resource.ResourceType;
             }
             else if (argument is CreatePolicyRequest policy)
             {
                 organizationId = policy.OrganizationId;
                 projectId = policy.ProjectId;
+                action = "policy:create";
+                resourceType = "Policy";
             }
         }
 
@@ -139,7 +144,9 @@ public sealed class ScopedResourceAuthorizationFilter(
                 organizationId is Guid org ? new OrganizationId(org) : null,
                 projectId is Guid project ? new ProjectId(project) : null,
                 subjectId,
-                context.HttpContext.RequestAborted);
+                context.HttpContext.RequestAborted,
+                action,
+                resourceType);
             if (!allowed)
                 return Forbidden();
         }
