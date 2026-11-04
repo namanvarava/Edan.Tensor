@@ -80,7 +80,7 @@ public sealed class PlatformInfrastructureTests
         await connection.OpenAsync();
         var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
         await using var db = new PlatformDbContext(options);
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
 
         var firstTenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-A"), "테넌트 A", DateTimeOffset.UtcNow);
         var secondTenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-B"), "테넌트 B", DateTimeOffset.UtcNow);
@@ -92,8 +92,8 @@ public sealed class PlatformInfrastructureTests
         db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), secondTenant.Id, email, "두 번째 사용자"));
         await db.SaveChangesAsync();
 
-        Assert.True(await new UserRepository(db).ExistsEmailAsync(firstTenant, email));
-        Assert.True(await new UserRepository(db).ExistsEmailAsync(secondTenant, email));
+        Assert.True(await new UserRepository(db).ExistsEmailAsync(firstTenant.Id, email));
+        Assert.True(await new UserRepository(db).ExistsEmailAsync(secondTenant.Id, email));
 
         db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant.Id, email, "중복 사용자"));
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
