@@ -29,6 +29,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -243,6 +244,18 @@ public sealed class PlatformApiIntegrationTests
                 displayName = "통합 테스트 사용자"
             });
         Assert.Equal(HttpStatusCode.Created, invitationResponse.StatusCode);
+
+        // Tenant 관리자는 자신의 Tenant 감사 기록을 필터와 페이지 조건으로 조회할 수 있습니다.
+        using var auditResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit?page=1&pageSize=10&subjectId=tenant-user");
+        Assert.Equal(HttpStatusCode.OK, auditResponse.StatusCode);
+        using var auditDocument = await JsonDocument.ParseAsync(await auditResponse.Content.ReadAsStreamAsync());
+        Assert.True(auditDocument.RootElement.GetProperty("totalCount").GetInt32() > 0);
+        Assert.True(auditDocument.RootElement.GetProperty("items").GetArrayLength() > 0);
+
+        using var invalidAuditPageResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit?page=1&pageSize=101");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidAuditPageResponse.StatusCode);
     }
 
     [Fact]
