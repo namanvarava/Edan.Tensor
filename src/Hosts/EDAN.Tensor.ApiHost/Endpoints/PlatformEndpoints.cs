@@ -121,7 +121,7 @@ public static class PlatformEndpoints
         var code = result.Error.Code;
         var status = code.EndsWith(".not_found", StringComparison.Ordinal) ? StatusCodes.Status404NotFound
             : code.Contains("conflict", StringComparison.Ordinal) ? StatusCodes.Status409Conflict
-            : code.Contains("unavailable", StringComparison.Ordinal) || code.Contains("scope_mismatch", StringComparison.Ordinal)
+            : code.Contains("unavailable", StringComparison.Ordinal) || code.Contains("scope_mismatch", StringComparison.Ordinal) || code.Contains("tenant_required", StringComparison.Ordinal)
                 ? StatusCodes.Status409Conflict : StatusCodes.Status400BadRequest;
         return Results.Json(new ApiError(code, result.Error.Description), statusCode: status);
     }
