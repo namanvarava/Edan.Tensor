@@ -156,7 +156,8 @@ public sealed class PlatformInfrastructureTests
     [Fact]
     public void MigrationSnapshotMatchesCurrentPlatformModel()
     {
-        using var db = CreateContext();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite("Data Source=:memory:").Options;
+        using var db = new PlatformDbContext(options);
         var differ = db.GetService<IMigrationsModelDiffer>();
         var snapshot = new PlatformDbContextModelSnapshot().Model;
         var differences = differ.GetDifferences(snapshot.GetRelationalModel(), db.Model.GetRelationalModel());
