@@ -26,6 +26,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/resources", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/policies", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -168,6 +169,19 @@ public sealed class PlatformApiIntegrationTests
             });
         Assert.Equal(HttpStatusCode.Created, projectGrant.StatusCode);
 
+        using var denyPolicyResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-policies", new
+            {
+                organizationId = (Guid?)null,
+                projectId = (Guid?)null,
+                subjectId = "scoped-user",
+                action = "resource:create",
+                resourceType = "Document",
+                effect = "Deny",
+                priority = 100
+            });
+        Assert.Equal(HttpStatusCode.Created, denyPolicyResponse.StatusCode);
+
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "scoped-user");
         using var organizationScopedResource = await client.PostAsJsonAsync("/api/platform/resources", new
@@ -177,7 +191,16 @@ public sealed class PlatformApiIntegrationTests
             resourceType = "Document",
             name = "조직 범위 문서"
         });
-        Assert.Equal(HttpStatusCode.Created, organizationScopedResource.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, organizationScopedResource.StatusCode);
+
+        using var allowedOrganizationResource = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            organizationId,
+            projectId = (Guid?)null,
+            resourceType = "Image",
+            name = "허용된 조직 범위 이미지"
+        });
+        Assert.Equal(HttpStatusCode.Created, allowedOrganizationResource.StatusCode);
 
         using var projectScopedResource = await client.PostAsJsonAsync("/api/platform/resources", new
         {
