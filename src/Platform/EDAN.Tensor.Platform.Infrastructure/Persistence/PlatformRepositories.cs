@@ -111,6 +111,37 @@ public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAutho
 /// <summary>감사 기록 저장소는 평가 결과를 삭제하거나 수정하지 않고 추가합니다.</summary>
 public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthorizationAuditRepository
 {
+    /// <summary>Tenant 경계를 유지하며 필터와 페이지 조건에 맞는 권한 평가 기록을 조회합니다.</summary>
+    public async Task<AuthorizationAuditPage> GetPageAsync(TenantId tenantId, string? subjectId,
+        string? action, bool? isAllowed, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = db.AuthorizationAuditEntries.AsNoTracking()
+            .Where(x => x.TenantId == tenantId);
+
+        if (!string.IsNullOrWhiteSpace(subjectId))
+            query = query.Where(x => x.SubjectId == subjectId);
+        if (!string.IsNullOrWhiteSpace(action))
+            query = query.Where(x => x.Action == action);
+        if (isAllowed.HasValue)
+            query = query.Where(x => x.IsAllowed == isAllowed.Value);
+        if (fromUtc.HasValue)
+            query = query.Where(x => x.OccurredAtUtc >= fromUtc.Value.ToUniversalTime());
+        if (toUtc.HasValue)
+            query = query.Where(x => x.OccurredAtUtc <= toUtc.Value.ToUniversalTime());
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        // SQLite 공급자는 DateTimeOffset 정렬을 SQL로 변환하지 못하므로 필터 결과를 UTC 시각으로 정렬합니다.
+        var ordered = (await query.ToListAsync(cancellationToken))
+            .OrderByDescending(x => x.OccurredAtUtc)
+            .ThenByDescending(x => x.Id.Value)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return new AuthorizationAuditPage(ordered, totalCount, page, pageSize);
+    }
+
     public void Add(AuthorizationAuditEntry entry) => db.AuthorizationAuditEntries.Add(entry);
 }
 
