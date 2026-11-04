@@ -42,7 +42,7 @@ public static class PlatformAuthenticationExtensions
         services.AddAuthorization(options =>
         {
             options.AddPolicy("TenantMember", policy =>
-                policy.RequireAuthenticatedUser().RequireClaim("tenant_id").RequireClaim("sub"));
+                policy.RequireAuthenticatedUser().RequireClaim("sub"));
             options.AddPolicy("PlatformAdministrator", policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("sub").RequireRole("platform_admin"));
         });
