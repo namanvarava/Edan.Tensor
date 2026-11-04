@@ -3,12 +3,12 @@ using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Primitives;
 namespace EDAN.Tensor.Platform.Domain.Model;
 
-public sealed record TenantId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("테넌트 식별자는 비어 있을 수 없습니다."):Value);
-public sealed record OrganizationId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("조직 식별자는 비어 있을 수 없습니다."):Value);
-public sealed record ProjectId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("프로젝트 식별자는 비어 있을 수 없습니다."):Value);
-public sealed record UserId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("사용자 식별자는 비어 있을 수 없습니다."):Value);
-public sealed record ResourceId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("자원 식별자는 비어 있을 수 없습니다."):Value);
-public sealed record PolicyId(Guid Value):StronglyTypedId<Guid>(Value==Guid.Empty?throw new ArgumentException("정책 식별자는 비어 있을 수 없습니다."):Value);
+public sealed record TenantId : StronglyTypedId<Guid> { public TenantId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("테넌트 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record OrganizationId : StronglyTypedId<Guid> { public OrganizationId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("조직 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record ProjectId : StronglyTypedId<Guid> { public ProjectId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("프로젝트 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record UserId : StronglyTypedId<Guid> { public UserId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("사용자 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record ResourceId : StronglyTypedId<Guid> { public ResourceId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("자원 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record PolicyId : StronglyTypedId<Guid> { public PolicyId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("정책 식별자는 비어 있을 수 없습니다.") : value) { } }
 internal static class Rules
 {
  public static string Code(string value){ArgumentException.ThrowIfNullOrWhiteSpace(value);var v=value.Trim().ToUpperInvariant();if(v.Length is <2 or >64||v[0]=='-'||v[^1]=='-'||v.Contains("--",StringComparison.Ordinal)||v.Any(c=>!(c is >= 'A' and <= 'Z' or >= '0' and <= '9' or '-')))throw new ArgumentException("코드는 영문 대문자, 숫자, 하이픈으로 구성된 2~64자여야 합니다.");return v;}
