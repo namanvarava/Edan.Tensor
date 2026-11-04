@@ -41,8 +41,8 @@ public sealed class AuthorizationPolicy : AggregateRoot<AuthorizationPolicyId>
     public string SubjectId { get; }
     public string Action { get; }
     public string ResourceType { get; }
-    public AuthorizationPolicyEffect Effect { get; }
-    public int Priority { get; }
+    public AuthorizationPolicyEffect Effect { get; private set; }
+    public int Priority { get; private set; }
     public bool IsEnabled { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
 
@@ -54,6 +54,15 @@ public sealed class AuthorizationPolicy : AggregateRoot<AuthorizationPolicyId>
         ArgumentNullException.ThrowIfNull(id);
         ArgumentNullException.ThrowIfNull(tenantId);
         return new(id, tenantId, organizationId, projectId, subjectId, action, resourceType, effect, priority, createdAtUtc);
+    }
+
+    /// <summary>정책 효과와 우선순위를 검증한 뒤 변경합니다.</summary>
+    public void Update(AuthorizationPolicyEffect effect, int priority)
+    {
+        if (!Enum.IsDefined(effect)) throw new ArgumentOutOfRangeException(nameof(effect));
+        if (priority is < 0 or > 10000) throw new ArgumentOutOfRangeException(nameof(priority), "정책 우선순위는 0~10000이어야 합니다.");
+        Effect = effect;
+        Priority = priority;
     }
 
     /// <summary>활성 정책을 비활성화하거나 다시 활성화합니다.</summary>
