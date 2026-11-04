@@ -61,6 +61,49 @@ public static class PlatformEndpoints
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-policies",
+            async (Guid tenantId, AuthorizationPolicyService service, CancellationToken token) =>
+            {
+                var policies = await service.GetByTenantAsync(new TenantId(tenantId), token);
+                return Results.Ok(policies.Select(x => new
+                {
+                    Id = x.Id.Value,
+                    OrganizationId = x.OrganizationId?.Value,
+                    ProjectId = x.ProjectId?.Value,
+                    x.SubjectId,
+                    x.Action,
+                    x.ResourceType,
+                    Effect = x.Effect.ToString(),
+                    x.Priority,
+                    x.IsEnabled,
+                    x.CreatedAtUtc
+                }));
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/authorization-policies/{policyId:guid}",
+            async (Guid tenantId, Guid policyId, UpdateAuthorizationPolicyRequest request, HttpContext context,
+                AuthorizationPolicyService service, CancellationToken token) =>
+            {
+                if (!Enum.TryParse<AuthorizationPolicyEffect>(request.Effect, true, out var effect))
+                    return ValidationError("지원하지 않는 접근 정책 효과입니다.");
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                var result = await service.UpdateAsync(new TenantId(tenantId), new AuthorizationPolicyId(policyId),
+                    effect, request.Priority, actor, token);
+                return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPatch("/{tenantId:guid}/authorization-policies/{policyId:guid}/enabled",
+            async (Guid tenantId, Guid policyId, SetAuthorizationPolicyEnabledRequest request, HttpContext context,
+                AuthorizationPolicyService service, CancellationToken token) =>
+            {
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                var result = await service.SetEnabledAsync(new TenantId(tenantId), new AuthorizationPolicyId(policyId),
+                    request.IsEnabled, actor, token);
+                return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/memberships",
             async (Guid tenantId, Guid organizationId, GrantOrganizationMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
             {
@@ -148,6 +191,8 @@ public sealed record GrantTenantMembershipRequest(string SubjectId, string Role)
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
 public sealed record CreateAuthorizationPolicyRequest(Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action, string ResourceType, string Effect, int Priority);
+public sealed record UpdateAuthorizationPolicyRequest(string Effect, int Priority);
+public sealed record SetAuthorizationPolicyEnabledRequest(bool IsEnabled);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
