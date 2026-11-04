@@ -49,6 +49,24 @@ public static class PlatformEndpoints
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/memberships",
+            async (Guid tenantId, Guid organizationId, GrantOrganizationMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
+            {
+                if (!Enum.TryParse<OrganizationRole>(request.Role, true, out var role))
+                    return ValidationError("지원하지 않는 조직 역할입니다.");
+                var result = await service.GrantOrganizationAsync(new TenantId(tenantId), new OrganizationId(organizationId), request.SubjectId, role, token);
+                return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/projects/{projectId:guid}/memberships",
+            async (Guid tenantId, Guid organizationId, Guid projectId, GrantProjectMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
+            {
+                if (!Enum.TryParse<ProjectRole>(request.Role, true, out var role))
+                    return ValidationError("지원하지 않는 프로젝트 역할입니다.");
+                var result = await service.GrantProjectAsync(new TenantId(tenantId), new OrganizationId(organizationId), new ProjectId(projectId), request.SubjectId, role, token);
+                return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/organizations", async (Guid tenantId, CreateOrganizationRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateOrganizationAsync(new TenantId(tenantId), request.Code, request.Name, token);
@@ -79,7 +97,7 @@ public static class PlatformEndpoints
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }
             catch (ArgumentException ex) { return ValidationError(ex.Message); }
-        }).RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+        }).RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>().AddEndpointFilter<ScopedResourceAuthorizationFilter>();
 
         group.MapPost("/policies", async (CreatePolicyRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
         {
@@ -115,6 +133,8 @@ public static class PlatformEndpoints
 public sealed record ApiError(string Code, string Description);
 public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
+public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
+public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
