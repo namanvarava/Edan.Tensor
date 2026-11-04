@@ -245,6 +245,32 @@ public sealed class PlatformInfrastructureTests
         Assert.Equal(1, await db.AuthorizationAuditEntries.CountAsync(x => !x.IsAllowed));
     }
 
+    [Fact]
+    public async Task SqlitePersistsPolicyChangeAuditWithActorAndBeforeAfterValues()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("CHANGE-A"), "정책 변경 Tenant", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var entry = AuthorizationPolicyChangeAuditEntry.Create(
+            new AuthorizationPolicyChangeAuditEntryId(Guid.NewGuid()), tenant.Id, Guid.NewGuid(),
+            "tenant-admin", "Updated", "{\"Effect\":\"Allow\",\"Priority\":10,\"IsEnabled\":true}",
+            "{\"Effect\":\"Deny\",\"Priority\":100,\"IsEnabled\":true}", DateTimeOffset.UtcNow);
+        db.AuthorizationPolicyChangeAuditEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var persisted = await db.AuthorizationPolicyChangeAuditEntries.SingleAsync();
+        Assert.Equal("tenant-admin", persisted.ActorSubjectId);
+        Assert.Contains("Allow", persisted.BeforeJson, StringComparison.Ordinal);
+        Assert.Contains("Deny", persisted.AfterJson, StringComparison.Ordinal);
+    }
+
     private static PlatformDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<PlatformDbContext>()
