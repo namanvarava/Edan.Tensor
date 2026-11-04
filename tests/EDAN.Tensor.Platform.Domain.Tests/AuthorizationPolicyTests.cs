@@ -40,6 +40,20 @@ public sealed class AuthorizationPolicyTests
     }
 
     [Fact]
+    public void PolicyCanUpdateEffectAndPriorityWithinSupportedRange()
+    {
+        var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()),
+            new TenantId(Guid.NewGuid()), null, null, "subject-1", "resource:create", "*",
+            AuthorizationPolicyEffect.Allow, 10, DateTimeOffset.UtcNow);
+
+        policy.Update(AuthorizationPolicyEffect.Deny, 500);
+
+        Assert.Equal(AuthorizationPolicyEffect.Deny, policy.Effect);
+        Assert.Equal(500, policy.Priority);
+        Assert.Throws<ArgumentOutOfRangeException>(() => policy.Update(AuthorizationPolicyEffect.Allow, 10001));
+    }
+
+    [Fact]
     public void PolicyCanBeDisabledWithoutChangingItsDefinition()
     {
         var policy = AuthorizationPolicy.Create(new AuthorizationPolicyId(Guid.NewGuid()),
