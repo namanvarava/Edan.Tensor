@@ -146,10 +146,20 @@ public sealed class InitialPlatformSchema : Migration
             new[] { "OrganizationId", "Code" }, unique: true);
         migrationBuilder.CreateIndex("IX_platform_projects_TenantId_OrganizationId", "platform_projects",
             new[] { "TenantId", "OrganizationId" });
+        migrationBuilder.CreateIndex("IX_platform_projects_OrganizationId_TenantId", "platform_projects",
+            new[] { "OrganizationId", "TenantId" });
         migrationBuilder.CreateIndex("IX_platform_users_TenantId_Email", "platform_users",
             new[] { "TenantId", "Email" }, unique: true);
         migrationBuilder.CreateIndex("IX_platform_resources_tenant_id", "platform_resources", "tenant_id");
+        migrationBuilder.CreateIndex("IX_platform_resources_organization_id_tenant_id", "platform_resources",
+            new[] { "organization_id", "tenant_id" });
+        migrationBuilder.CreateIndex("IX_platform_resources_project_id_organization_id_tenant_id", "platform_resources",
+            new[] { "project_id", "organization_id", "tenant_id" });
         migrationBuilder.CreateIndex("IX_platform_policies_tenant_id", "platform_policies", "tenant_id");
+        migrationBuilder.CreateIndex("IX_platform_policies_organization_id_tenant_id", "platform_policies",
+            new[] { "organization_id", "tenant_id" });
+        migrationBuilder.CreateIndex("IX_platform_policies_project_id_organization_id_tenant_id", "platform_policies",
+            new[] { "project_id", "organization_id", "tenant_id" });
         migrationBuilder.CreateIndex("IX_platform_policies_Key_Version", "platform_policies", new[] { "Key", "Version" });
     }
 
