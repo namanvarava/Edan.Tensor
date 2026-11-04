@@ -49,6 +49,18 @@ public static class PlatformEndpoints
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-policies",
+            async (Guid tenantId, CreateAuthorizationPolicyRequest request, AuthorizationPolicyService service, CancellationToken token) =>
+            {
+                if (!Enum.TryParse<AuthorizationPolicyEffect>(request.Effect, true, out var effect))
+                    return ValidationError("지원하지 않는 접근 정책 효과입니다.");
+                var result = await service.CreateAsync(new TenantId(tenantId),
+                    request.OrganizationId is Guid organizationId ? new OrganizationId(organizationId) : null,
+                    request.ProjectId is Guid projectId ? new ProjectId(projectId) : null,
+                    request.SubjectId, request.Action, request.ResourceType, effect, request.Priority, token);
+                return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/memberships",
             async (Guid tenantId, Guid organizationId, GrantOrganizationMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
             {
@@ -135,6 +147,7 @@ public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
+public sealed record CreateAuthorizationPolicyRequest(Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action, string ResourceType, string Effect, int Priority);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
