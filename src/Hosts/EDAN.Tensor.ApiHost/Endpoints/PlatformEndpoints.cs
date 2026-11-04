@@ -34,6 +34,15 @@ public static class PlatformEndpoints
             return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
         }).RequireAuthorization("PlatformAdministrator");
 
+        group.MapGet("/tenants/mine", async (HttpContext context, TenantMembershipService service, CancellationToken token) =>
+        {
+            var subjectId = context.User.FindFirst("sub")?.Value;
+            if (string.IsNullOrWhiteSpace(subjectId))
+                return Results.Unauthorized();
+            var memberships = await service.GetMyMembershipsAsync(subjectId, token);
+            return Results.Ok(memberships.Select(x => new { TenantId = x.TenantId.Value, Role = x.Role.ToString() }));
+        }).RequireAuthorization("TenantMember");
+
         // 경로의 TenantId가 요청에서 선택한 Tenant와 일치하고 활성 소속이 확인된 경우에만 업무 API를 실행합니다.
         var tenantGroup = group.MapGroup("/tenants")
             .RequireAuthorization("TenantMember")
