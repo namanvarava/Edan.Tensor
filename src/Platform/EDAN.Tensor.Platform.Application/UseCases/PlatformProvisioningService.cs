@@ -33,6 +33,20 @@ public sealed class PlatformProvisioningService(
         catch (ArgumentException ex) { return Fail<TenantId>("platform.validation", ex.Message); }
     }
 
+    /// <summary>준비 중인 테넌트를 활성화하여 후속 업무를 허용합니다.</summary>
+    public async Task<Result> ActivateTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default)
+    {
+        var tenant = await tenants.GetByIdAsync(tenantId, cancellationToken);
+        if (tenant is null) return Result.Failure(new Error("platform.tenant.not_found", "테넌트를 찾을 수 없습니다."));
+        try
+        {
+            tenant.Activate();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (DomainException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
+    }
+
     public async Task<Result<OrganizationId>> CreateOrganizationAsync(TenantId tenantId, string code, string name, CancellationToken cancellationToken = default)
     {
         try
