@@ -49,6 +49,29 @@ public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMe
     public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
 }
 
+/// <summary>조직·프로젝트 소속의 중복 여부와 쓰기 권한을 조회합니다.</summary>
+public sealed class ScopedMembershipRepository(PlatformDbContext db) : IScopedMembershipRepository
+{
+    public Task<bool> OrganizationMembershipExistsAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.OrganizationMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.SubjectId == subjectId, cancellationToken);
+
+    public Task<bool> ProjectMembershipExistsAsync(TenantId tenantId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.ProjectMemberships.AnyAsync(x => x.TenantId == tenantId && x.ProjectId == projectId && x.SubjectId == subjectId, cancellationToken);
+
+    public Task<bool> HasOrganizationWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.OrganizationMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId &&
+            x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
+            (x.Role == OrganizationRole.Contributor || x.Role == OrganizationRole.Manager), cancellationToken);
+
+    public Task<bool> HasProjectWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.ProjectMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId &&
+            x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
+            (x.Role == ProjectRole.Contributor || x.Role == ProjectRole.Manager), cancellationToken);
+
+    public void Add(OrganizationMembership membership) => db.OrganizationMemberships.Add(membership);
+    public void Add(ProjectMembership membership) => db.ProjectMemberships.Add(membership);
+}
+
 public sealed class ResourceRepository(PlatformDbContext db) : IResourceRepository
 {
     public void Add(Resource resource) => db.Resources.Add(resource);
