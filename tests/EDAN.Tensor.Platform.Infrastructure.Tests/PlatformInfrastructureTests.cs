@@ -59,7 +59,7 @@ public sealed class PlatformInfrastructureTests
         await connection.OpenAsync();
         var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
         await using var db = new PlatformDbContext(options);
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
 
         var repository = new TenantRepository(db);
         var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("SQLITE-A"), "SQLite 테넌트", DateTimeOffset.UtcNow);
@@ -93,6 +93,58 @@ public sealed class PlatformInfrastructureTests
         Assert.True(await new UserRepository(db).ExistsEmailAsync(secondTenant, email));
 
         db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant, email, "중복 사용자"));
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task SqliteRejectsProjectAssignedToAnotherTenantsOrganization()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantA = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-A"), "테넌트 A", DateTimeOffset.UtcNow);
+        var tenantB = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-B"), "테넌트 B", DateTimeOffset.UtcNow);
+        db.Tenants.AddRange(tenantA, tenantB);
+        var organization = Organization.Create(new OrganizationId(Guid.NewGuid()), tenantA.Id,
+            new OrganizationCode("ORG-A"), "조직 A");
+        db.Organizations.Add(organization);
+        await db.SaveChangesAsync();
+
+        var invalidProject = Project.Create(new ProjectId(Guid.NewGuid()), tenantB.Id, organization.Id,
+            new ProjectCode("PROJECT-X"), "잘못된 소속 프로젝트");
+        db.Projects.Add(invalidProject);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task SqliteRejectsResourceProjectFromDifferentOrganization()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-A"), "테넌트 A", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        var organizationA = Organization.Create(new OrganizationId(Guid.NewGuid()), tenant.Id,
+            new OrganizationCode("ORG-A"), "조직 A");
+        var organizationB = Organization.Create(new OrganizationId(Guid.NewGuid()), tenant.Id,
+            new OrganizationCode("ORG-B"), "조직 B");
+        db.Organizations.AddRange(organizationA, organizationB);
+        var project = Project.Create(new ProjectId(Guid.NewGuid()), tenant.Id, organizationA.Id,
+            new ProjectCode("PROJECT-A"), "프로젝트 A");
+        db.Projects.Add(project);
+        await db.SaveChangesAsync();
+
+        var invalidResource = Resource.Create(new ResourceId(Guid.NewGuid()),
+            new ResourceScope(tenant.Id, organizationB.Id, project.Id), "Document", "잘못된 범위");
+        db.Resources.Add(invalidResource);
+
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
