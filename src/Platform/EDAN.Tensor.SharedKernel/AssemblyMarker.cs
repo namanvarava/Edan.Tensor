@@ -1,4 +1,2 @@
-namespace EDAN_Tensor_SharedKernel;
-
-/// <summary>Identifies this assembly for module registration and architecture tests.</summary>
+namespace EDAN.Tensor.SharedKernel;
 public sealed class AssemblyMarker { }

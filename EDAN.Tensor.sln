@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.LicenseAuthorit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.WorkerHost", "src\Hosts\EDAN.Tensor.WorkerHost\EDAN.Tensor.WorkerHost.csproj", "{A10D0000-0000-4000-8000-000000000015}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.SharedKernel.Tests", "tests\EDAN.Tensor.SharedKernel.Tests\EDAN.Tensor.SharedKernel.Tests.csproj", "{A10D0000-0000-4000-8000-000000000016}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -98,5 +100,9 @@ Global
   {A10D0000-0000-4000-8000-000000000015}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {A10D0000-0000-4000-8000-000000000015}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {A10D0000-0000-4000-8000-000000000015}.Release|Any CPU.Build.0 = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000016}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000016}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A10D0000-0000-4000-8000-000000000016}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {A10D0000-0000-4000-8000-000000000016}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal
