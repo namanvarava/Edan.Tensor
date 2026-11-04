@@ -40,7 +40,9 @@ app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken ca
 {
     try
     {
-        var connected = await db.Database.CanConnectAsync(cancellationToken);\n        if (connected)\n            _ = await db.Tenants.AnyAsync(cancellationToken);
+        var connected = await db.Database.CanConnectAsync(cancellationToken);
+        if (connected)
+            _ = await db.Tenants.AnyAsync(cancellationToken);
         return Results.Ok(new
         {
             Status = connected ? "Connected" : "Disconnected",
