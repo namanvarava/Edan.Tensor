@@ -19,23 +19,23 @@ Platform API는 인증된 주체의 Tenant 범위를 기준으로 요청을 처�
 | 클레임 | 목적 |
 |---|---|
 | `sub` | 인증 주체의 고유 식별자 |
-| `tenant_id` | 현재 요청에서 사용할 Tenant GUID |
+| `role` | 플랫폼 관리자 등 전역 역할 |
 | `role` | 플랫폼 관리자 등 전역 역할 |
 
 현재 지원 역할은 다음과 같습니다.
 
 - `platform_admin`: Tenant 생성 및 최초 활성화
-- `tenant_member`: Tenant 범위의 조직·프로젝트·사용자·자원·정책 API 접근
+- Tenant 구성원 역할은 데이터베이스의 `platform_tenant_memberships`에서 확인합니다.\n- `Member`와 `Administrator`는 현재 모두 Tenant 기본 API 접근이 가능하며, 세부 권한은 후속 단계에서 분리합니다.
 
-## Tenant 경계
+## 다중 Tenant 소속\n\n`platform_tenant_memberships`는 외부 인증 주체(`sub`)와 Tenant를 연결합니다. 하나의 외부 주체는 여러 Tenant에 각각 소속될 수 있으며, 요청마다 `X-Tenant-Id`로 작업 범위를 선택합니다. Tenant 소속 상태와 역할은 데이터베이스에서 조회하므로 JWT의 Tenant 클레임을 권한 근거로 사용하지 않습니다.\n\n플랫폼 관리자는 `POST /api/platform/tenants/{tenantId}/memberships`로 소속을 부여합니다. 현재 역할은 `Member`와 `Administrator`이며, 세부 리소스 권한과 역할별 차등 정책은 후속 단계 대상입니다.\n\n## Tenant 경계
 
 ### Tenant 경로 API
 
-`/tenants/{tenantId}/...` 경로는 인증된 `tenant_id`와 경로의 `tenantId`가 일치해야 합니다. 불일치는 HTTP 403으로 거부합니다.
+`X-Tenant-Id` 요청 헤더로 현재 작업 Tenant를 선택합니다. `/tenants/{tenantId}/...` 경로는 선택된 Tenant와 일치해야 하며, 불일치는 HTTP 403으로 거부합니다.
 
 ### 자원 및 정책 API
 
-자원·정책 생성 요청은 TenantId를 본문에서 받지 않습니다. `ITenantContext`가 검증된 JWT의 `tenant_id`를 읽어 ResourceScope를 생성합니다. 조직·프로젝트 식별자는 응용 서비스의 소속 검증을 추가로 통과해야 합니다.
+자원·정책 생성 요청은 TenantId를 본문에서 받지 않습니다. `ITenantContext`가 `X-Tenant-Id` 선택값을 읽고, `TenantMembershipAuthorizationFilter`가 JWT의 `sub`와 선택 Tenant의 활성 소속을 데이터베이스에서 확인합니다. 조직·프로젝트 식별자는 응용 서비스의 소속 검증을 추가로 통과해야 합니다.
 
 ### Tenant 생성과 활성화
 
@@ -56,14 +56,14 @@ Tenant 생성과 최초 활성화는 `platform_admin` 역할만 수행할 수 �
 
 - 익명 Tenant 생성 요청은 401
 - 관리자 역할이 없는 Tenant 생성 요청은 403
-- Tenant 경로와 토큰의 Tenant가 다르면 403
-- Tenant 클레임이 없는 자원·정책 요청은 403
+- Tenant 경로와 `X-Tenant-Id` 선택값이 다르면 403\n- 활성 소속이 없는 주체는 403
+- 소속이 없는 주체의 자원·정책 요청은 403
 - 정상 Tenant 클레임으로 기존 프로비저닝 흐름이 동작
 - 자원·정책 요청 본문에는 TenantId를 포함하지 않음
 
 ## 후속 보안 과제
 
-현재 구현은 하나의 `tenant_id` 클레임을 현재 요청 범위로 사용합니다. 다음 항목은 별도 단계에서 설계·검증해야 합니다.
+현재 구현은 요청별 Tenant 선택과 데이터베이스 기반 Tenant 소속 확인을 제공합니다. 다음 항목은 별도 단계에서 설계·검증해야 합니다.
 
 1. 다중 Tenant 소속 사용자와 안전한 Tenant 전환
 2. 사용자·조직·프로젝트별 세부 권한 및 정책 평가
