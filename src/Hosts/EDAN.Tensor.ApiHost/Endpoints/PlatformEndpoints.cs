@@ -34,7 +34,7 @@ public static class PlatformEndpoints
             return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
         }).RequireAuthorization("PlatformAdministrator");
 
-        // 경로의 TenantId가 인증 주체의 TenantId와 일치할 때만 조직·프로젝트·사용자 API를 실행합니다.
+        // 경로의 TenantId가 요청에서 선택한 Tenant와 일치하고 활성 소속이 확인된 경우에만 업무 API를 실행합니다.
         var tenantGroup = group.MapGroup("/tenants")
             .RequireAuthorization("TenantMember")
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
@@ -58,7 +58,7 @@ public static class PlatformEndpoints
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
         });
 
-        // 자원과 정책의 Tenant 범위는 요청 본문이 아닌 검증된 인증 클레임에서 가져옵니다.
+        // 자원과 정책의 Tenant 범위는 요청 본문이 아닌 선택된 Tenant 헤더와 데이터베이스 소속 검증으로 결정합니다.
         group.MapPost("/resources", async (CreateResourceRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
         {
             try
