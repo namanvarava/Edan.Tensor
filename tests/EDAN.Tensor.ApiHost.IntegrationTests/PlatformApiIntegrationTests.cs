@@ -64,11 +64,33 @@ public sealed class PlatformApiIntegrationTests
             });
         Assert.Equal(HttpStatusCode.Created, membershipResponse.StatusCode);
 
+        using var secondTenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"IT2-{suffix}",
+            name = "두 번째 통합 테스트 테넌트"
+        });
+        Assert.Equal(HttpStatusCode.Created, secondTenantResponse.StatusCode);
+        var secondTenantId = await ReadIdAsync(secondTenantResponse);
+        using var secondActivationResponse = await client.PostAsync(
+            $"/api/platform/tenants/{secondTenantId}/activate", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, secondActivationResponse.StatusCode);
+        using var secondMembershipResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{secondTenantId}/memberships", new
+            {
+                subjectId = "tenant-user",
+                role = "Member"
+            });
+        Assert.Equal(HttpStatusCode.Created, secondMembershipResponse.StatusCode);
+
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Remove("X-Test-Role");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "tenant-user");
-        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
 
+        using var membershipsResponse = await client.GetAsync("/api/platform/tenants/mine");
+        Assert.Equal(HttpStatusCode.OK, membershipsResponse.StatusCode);
+        Assert.Equal(2, await ReadArrayLengthAsync(membershipsResponse));
+
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
         using var mismatchResponse = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{Guid.NewGuid()}/organizations", new
             {
@@ -140,6 +162,12 @@ public sealed class PlatformApiIntegrationTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private static async Task<int> ReadArrayLengthAsync(HttpResponseMessage response)
+    {
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        return document.RootElement.GetArrayLength();
     }
 
     private static async Task<Guid> ReadIdAsync(HttpResponseMessage response)
