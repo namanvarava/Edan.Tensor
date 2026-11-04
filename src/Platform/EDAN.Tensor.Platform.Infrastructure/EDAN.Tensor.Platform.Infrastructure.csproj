@@ -1,1 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>EDAN.Tensor.Platform.Infrastructure</AssemblyName><RootNamespace>EDAN_Tensor_Platform_Infrastructure</RootNamespace></PropertyGroup><ItemGroup><ProjectReference Include="../EDAN.Tensor.Platform.Domain/EDAN.Tensor.Platform.Domain.csproj" /><ProjectReference Include="../EDAN.Tensor.Platform.Application/EDAN.Tensor.Platform.Application.csproj" /><ProjectReference Include="../EDAN.Tensor.SharedKernel/EDAN.Tensor.SharedKernel.csproj" /></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.Platform.Infrastructure</AssemblyName>
+    <RootNamespace>EDAN.Tensor.Platform.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../EDAN.Tensor.Platform.Domain/EDAN.Tensor.Platform.Domain.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.Platform.Application/EDAN.Tensor.Platform.Application.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.SharedKernel/EDAN.Tensor.SharedKernel.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+</Project>
