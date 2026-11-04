@@ -25,7 +25,7 @@ Infrastructure는 Application의 추상화를 구현하며 Domain에서 Infrastr
 | Resource | platform_resources | Tenant 범위 인덱스 |
 | Policy | platform_policies | Version 동시성 토큰 |
 
-Resource와 Policy의 Scope는 동일 테이블의 소유 값 객체 열로 저장합니다.
+Resource와 Policy의 Scope는 TenantId, 선택적 OrganizationId, 선택적 ProjectId의 개별 열로 저장하며, 도메인에서는 ResourceScope 값 객체로 제공합니다.
 
 ## 테넌트 격리
 
