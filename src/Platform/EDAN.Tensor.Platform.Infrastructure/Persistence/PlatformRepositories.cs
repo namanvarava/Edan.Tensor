@@ -32,6 +32,17 @@ public sealed class UserRepository(PlatformDbContext db) : IUserRepository
     public void Add(User user) => db.Users.Add(user);
 }
 
+public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMembershipRepository
+{
+    public Task<TenantMembership?> GetAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.TenantMemberships.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.SubjectId == subjectId, cancellationToken);
+    public Task<bool> ExistsAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.TenantMemberships.AnyAsync(x => x.TenantId == tenantId && x.SubjectId == subjectId, cancellationToken);
+    public Task<bool> HasActiveMembershipAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default) =>
+        db.TenantMemberships.AnyAsync(x => x.TenantId == tenantId && x.SubjectId == subjectId && x.Status == TenantMembershipStatus.Active, cancellationToken);
+    public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
+}
+
 public sealed class ResourceRepository(PlatformDbContext db) : IResourceRepository
 {
     public void Add(Resource resource) => db.Resources.Add(resource);
