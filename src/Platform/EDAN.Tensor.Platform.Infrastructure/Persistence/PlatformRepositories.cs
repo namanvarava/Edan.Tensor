@@ -76,6 +76,29 @@ public sealed class ScopedMembershipRepository(PlatformDbContext db) : IScopedMe
     public void Add(ProjectMembership membership) => db.ProjectMemberships.Add(membership);
 }
 
+/// <summary>접근 정책을 계층형 범위에서 조회하고 감사 기록을 추가합니다.</summary>
+public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAuthorizationPolicyRepository
+{
+    public async Task<IReadOnlyList<AuthorizationPolicy>> GetApplicableAsync(TenantId tenantId,
+        OrganizationId? organizationId, ProjectId? projectId, string subjectId, string action,
+        string resourceType, CancellationToken cancellationToken = default) =>
+        await db.AuthorizationPolicies.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SubjectId == subjectId && x.IsEnabled &&
+                x.Action == action.ToLower() && (x.ResourceType == resourceType || x.ResourceType == "*") &&
+                (x.OrganizationId == null || x.OrganizationId == organizationId) &&
+                (x.ProjectId == null || x.ProjectId == projectId))
+            .OrderByDescending(x => x.Priority)
+            .ToListAsync(cancellationToken);
+
+    public void Add(AuthorizationPolicy policy) => db.AuthorizationPolicies.Add(policy);
+}
+
+/// <summary>감사 기록 저장소는 평가 결과를 삭제하거나 수정하지 않고 추가합니다.</summary>
+public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthorizationAuditRepository
+{
+    public void Add(AuthorizationAuditEntry entry) => db.AuthorizationAuditEntries.Add(entry);
+}
+
 public sealed class ResourceRepository(PlatformDbContext db) : IResourceRepository
 {
     public void Add(Resource resource) => db.Resources.Add(resource);
