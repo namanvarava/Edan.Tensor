@@ -23,6 +23,7 @@
 - 초기 스키마: `20261104100000_InitialPlatformSchema`
 - Tenant 소속 스키마: `20261105100000_AddTenantMemberships`
 - 조직·프로젝트 소속 스키마: `20261105120000_AddScopedMemberships`
+- 접근 정책·감사 스키마: `20261105140000_AddAuthorizationPoliciesAndAudit`
 
 ## 데이터베이스 연결
 API Host의 기본 개발 공급자는 SQLite이며, 연결 문자열은 `ConnectionStrings:PlatformDatabase`에서 관리합니다. 개발 환경에서는 `Database:ApplyMigrationsInDevelopment=true` 설정에 따라 EF Core Migration을 적용합니다. 운영 환경에서는 승인된 배포 단계에서 Migration을 적용해야 합니다.
