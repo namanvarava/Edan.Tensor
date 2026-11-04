@@ -12,6 +12,7 @@
 - `UseCases/PlatformAuthorizationService.cs`: 역할과 계층형 정책을 결합한 권한 평가 및 감사 저장
 - `UseCases/AuthorizationPolicyService.cs`: 소유권 검증을 포함한 접근 정책 등록·변경
 - `UseCases/AuthorizationAuditQueryService.cs`: Tenant 범위 권한 평가 감사 조회와 페이지 조건 검증
+- `UseCases/AuthorizationAuditIntegrityService.cs`: 기간별 감사 데이터 SHA-256 체크섬 생성과 외부 기준값 검증
 - `Abstractions/IAuthorizationPolicyRepository.cs`: 적용 가능한 정책 조회 및 정책 변경 감사 저장 계약
 - `IAuthorizationAuditRepository`: 권한 평가 감사 기록 추가 및 페이지 조회 계약
 
