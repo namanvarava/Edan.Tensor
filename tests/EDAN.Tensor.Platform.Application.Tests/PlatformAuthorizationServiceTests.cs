@@ -56,7 +56,7 @@ public sealed class PlatformAuthorizationServiceTests
         var tenantId = new TenantId(Guid.NewGuid());
         var organizationId = new OrganizationId(Guid.NewGuid());
         var projectId = new ProjectId(Guid.NewGuid());
-        var service = CreateService(tenantId, "project-contributor", TenantRole.Member, projectWrite: true);
+        var service = CreateService(tenantId, "project-contributor", TenantRole.Member, projectWrite: true, assignedProjectId: projectId);
         Assert.True(await service.CanCreateInScopeAsync(tenantId, organizationId, projectId, "project-contributor"));
         Assert.False(await service.CanCreateInScopeAsync(tenantId, organizationId, new ProjectId(Guid.NewGuid()), "project-contributor"));
     }
@@ -107,10 +107,11 @@ public sealed class PlatformAuthorizationServiceTests
         TenantRole tenantRole,
         bool organizationWrite = false,
         bool organizationManager = false,
-        bool projectWrite = false)
+        bool projectWrite = false,
+        ProjectId? assignedProjectId = null)
     {
         var tenantMemberships = new FakeTenantMembershipRepository(tenantId, subjectId, tenantRole);
-        var scopedMemberships = new FakeScopedMembershipRepository(organizationWrite, organizationManager, projectWrite);
+        var scopedMemberships = new FakeScopedMembershipRepository(organizationWrite, organizationManager, projectWrite, assignedProjectId);
         return new PlatformAuthorizationService(tenantMemberships, scopedMemberships, new FakePolicyRepository(), new FakeAuditRepository(), new FakeUnitOfWork(), new SystemClock());
     }
 
@@ -149,14 +150,14 @@ public sealed class PlatformAuthorizationServiceTests
         public void Add(TenantMembership membership) => throw new NotSupportedException();
     }
 
-    private sealed class FakeScopedMembershipRepository(bool organizationWrite, bool organizationManager, bool projectWrite)
+    private sealed class FakeScopedMembershipRepository(bool organizationWrite, bool organizationManager, bool projectWrite, ProjectId? assignedProjectId)
         : IScopedMembershipRepository
     {
         public Task<bool> OrganizationMembershipExistsAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public Task<bool> ProjectMembershipExistsAsync(TenantId tenantId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public Task<bool> HasOrganizationWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(organizationWrite);
         public Task<bool> HasOrganizationManagementAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(organizationManager);
-        public Task<bool> HasProjectWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(projectWrite);
+        public Task<bool> HasProjectWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(projectWrite && projectId == assignedProjectId);
         public void Add(OrganizationMembership membership) => throw new NotSupportedException();
         public void Add(ProjectMembership membership) => throw new NotSupportedException();
     }
