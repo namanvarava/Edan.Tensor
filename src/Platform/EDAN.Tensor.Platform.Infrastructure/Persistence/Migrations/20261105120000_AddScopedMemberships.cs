@@ -56,6 +56,10 @@ public sealed class AddScopedMemberships : Migration
             "platform_organization_memberships", new[] { "TenantId", "OrganizationId", "SubjectId" }, unique: true);
         migrationBuilder.CreateIndex("IX_platform_project_memberships_TenantId_OrganizationId_ProjectId_SubjectId",
             "platform_project_memberships", new[] { "TenantId", "OrganizationId", "ProjectId", "SubjectId" }, unique: true);
+        migrationBuilder.CreateIndex("IX_platform_organization_memberships_OrganizationId_TenantId",
+            "platform_organization_memberships", new[] { "OrganizationId", "TenantId" });
+        migrationBuilder.CreateIndex("IX_platform_project_memberships_ProjectId_OrganizationId_TenantId",
+            "platform_project_memberships", new[] { "ProjectId", "OrganizationId", "TenantId" });
     }
 
     /// <summary>조직·프로젝트 소속 테이블을 제거합니다.</summary>
