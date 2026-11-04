@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.ApiHost.Endpoints;
 
 namespace EDAN.Tensor.ApiHost.Security;
 
