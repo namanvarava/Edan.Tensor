@@ -4,6 +4,7 @@ using EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Xunit;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Tests;
