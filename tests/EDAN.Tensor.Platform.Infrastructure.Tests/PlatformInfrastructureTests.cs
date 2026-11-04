@@ -1,6 +1,8 @@
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Xunit;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Tests;
@@ -149,6 +151,18 @@ public sealed class PlatformInfrastructureTests
         db.Resources.Add(invalidResource);
 
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public void MigrationSnapshotMatchesCurrentPlatformModel()
+    {
+        using var db = CreateContext();
+        var differ = db.GetService<IMigrationsModelDiffer>();
+        var snapshot = new PlatformDbContextModelSnapshot().Model;
+        var differences = differ.GetDifferences(snapshot.GetRelationalModel(), db.Model.GetRelationalModel());
+
+        Assert.True(differences.Count == 0,
+            string.Join(", ", differences.Select(operation => operation.GetType().Name)));
     }
 
     private static PlatformDbContext CreateContext()
