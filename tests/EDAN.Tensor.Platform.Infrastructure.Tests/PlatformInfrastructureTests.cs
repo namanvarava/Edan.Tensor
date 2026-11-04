@@ -177,6 +177,38 @@ public sealed class PlatformInfrastructureTests
         Assert.True(differences.Count == 0, string.Join(" | ", descriptions));
     }
 
+    [Fact]
+    public async Task SqlitePersistsScopedMembershipsAndEnforcesUniqueOwnership()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("SCOPE-A"), "범위 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        var organization = Organization.Create(new OrganizationId(Guid.NewGuid()), tenant.Id, new OrganizationCode("ORG-A"), "조직 A");
+        db.Organizations.Add(organization);
+        var project = Project.Create(new ProjectId(Guid.NewGuid()), tenant.Id, organization.Id, new ProjectCode("PRJ-A"), "프로젝트 A");
+        db.Projects.Add(project);
+        await db.SaveChangesAsync();
+
+        var repository = new ScopedMembershipRepository(db);
+        repository.Add(OrganizationMembership.Grant(new OrganizationMembershipId(Guid.NewGuid()), tenant.Id, organization.Id,
+            "scope-user", OrganizationRole.Contributor));
+        repository.Add(ProjectMembership.Grant(new ProjectMembershipId(Guid.NewGuid()), tenant.Id, organization.Id, project.Id,
+            "scope-user", ProjectRole.Reader));
+        await db.SaveChangesAsync();
+
+        Assert.True(await repository.HasOrganizationWriteAccessAsync(tenant.Id, organization.Id, "scope-user"));
+        Assert.False(await repository.HasProjectWriteAccessAsync(tenant.Id, organization.Id, project.Id, "scope-user"));
+
+        repository.Add(OrganizationMembership.Grant(new OrganizationMembershipId(Guid.NewGuid()), tenant.Id, organization.Id,
+            "scope-user", OrganizationRole.Manager));
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
     private static PlatformDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<PlatformDbContext>()
