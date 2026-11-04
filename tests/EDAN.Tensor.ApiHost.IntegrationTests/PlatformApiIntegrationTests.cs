@@ -1,14 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
 
-/// <summary>API Host를 실제 HTTP 요청과 SQLite 데이터베이스로 검증합니다.</summary>
+/// <summary>API Host의 OpenAPI, 실제 HTTP 업무 흐름 및 Tenant 인가 경계를 검증합니다.</summary>
 public sealed class PlatformApiIntegrationTests
 {
     [Fact]
@@ -27,10 +30,20 @@ public sealed class PlatformApiIntegrationTests
     }
 
     [Fact]
-    public async Task TenantProvisioningFlowWorksThroughHttpEndpoints()
+    public async Task TenantProvisioningFlowRequiresAdministratorAndTenantMembership()
     {
         using var factory = new ApiHostFactory();
         using var client = factory.CreateClient();
+
+        using var anonymousResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = "ANON",
+            name = "익명 요청"
+        });
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
 
         var suffix = Guid.NewGuid().ToString("N")[..8];
         using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
@@ -45,6 +58,18 @@ public sealed class PlatformApiIntegrationTests
         using var activationResponse = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/activate", content: null);
         Assert.Equal(HttpStatusCode.NoContent, activationResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "tenant_member");
+        client.DefaultRequestHeaders.Add("X-Test-Tenant", tenantId.ToString());
+
+        using var mismatchResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{Guid.NewGuid()}/organizations", new
+            {
+                code = "NOPE",
+                name = "다른 테넌트 접근"
+            });
+        Assert.Equal(HttpStatusCode.Forbidden, mismatchResponse.StatusCode);
 
         using var organizationResponse = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/organizations", new
@@ -67,7 +92,6 @@ public sealed class PlatformApiIntegrationTests
 
         using var resourceResponse = await client.PostAsJsonAsync("/api/platform/resources", new
         {
-            tenantId,
             organizationId,
             projectId,
             resourceType = "DataSet",
@@ -77,7 +101,6 @@ public sealed class PlatformApiIntegrationTests
 
         using var policyResponse = await client.PostAsJsonAsync("/api/platform/policies", new
         {
-            tenantId,
             organizationId,
             projectId,
             key = "retention.days",
@@ -94,13 +117,31 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.Created, invitationResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task TenantScopedEndpointsRejectMissingTenantClaim()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "user-without-tenant");
+
+        using var response = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            organizationId = (Guid?)null,
+            projectId = (Guid?)null,
+            resourceType = "DataSet",
+            name = "범위 없는 자원"
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private static async Task<Guid> ReadIdAsync(HttpResponseMessage response)
     {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         return document.RootElement.GetProperty("id").GetGuid();
     }
 
-    /// <summary>각 테스트에 독립된 개발용 SQLite 파일과 Migration 설정을 제공합니다.</summary>
+    /// <summary>각 테스트에 독립된 SQLite 파일과 테스트 전용 인증 방식을 제공합니다.</summary>
     private sealed class ApiHostFactory : WebApplicationFactory<Program>
     {
         private readonly string _databasePath = Path.Combine(
@@ -116,6 +157,14 @@ public sealed class PlatformApiIntegrationTests
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
                     ["Database:ApplyMigrationsInDevelopment"] = "true"
                 });
+            });
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = "Integration";
+                    options.DefaultChallengeScheme = "Integration";
+                }).AddScheme<AuthenticationSchemeOptions, IntegrationAuthenticationHandler>("Integration", _ => { });
             });
         }
 
