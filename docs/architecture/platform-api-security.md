@@ -2,7 +2,7 @@
 
 ## 목적
 
-Platform API는 인증된 주체의 Tenant 범위를 기준으로 요청을 처리합니다. 클라이언트가 임의로 전달한 Tenant 식별자를 신뢰하지 않으며, 인증·인가 경계를 API Host에 명시합니다.
+Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청을 처리합니다. Tenant 식별자를 JWT에 고정하지 않고 요청마다 선택하며, 실제 접근 권한은 데이터베이스의 소속 레코드로 확인합니다.
 
 ## 인증 구조
 
@@ -18,16 +18,20 @@ Platform API는 인증된 주체의 Tenant 범위를 기준으로 요청을 처�
 
 | 클레임 | 목적 |
 |---|---|
-| `sub` | 인증 주체의 고유 식별자 |
+| `sub` | 외부 인증 주체의 고유 식별자 |
 | `role` | 플랫폼 관리자 등 전역 역할 |
-| `role` | 플랫폼 관리자 등 전역 역할 |
 
-현재 지원 역할은 다음과 같습니다.
+- `platform_admin`: Tenant 생성·활성화 및 Tenant 소속 부여
+- Tenant 내부 역할은 데이터베이스의 `platform_tenant_memberships`에서 관리합니다.
+- 현재 `Member`와 `Administrator`는 모두 Tenant 기본 API에 접근할 수 있습니다. 세부 권한 차등은 후속 단계에서 적용합니다.
 
-- `platform_admin`: Tenant 생성 및 최초 활성화
-- Tenant 구성원 역할은 데이터베이스의 `platform_tenant_memberships`에서 확인합니다.\n- `Member`와 `Administrator`는 현재 모두 Tenant 기본 API 접근이 가능하며, 세부 권한은 후속 단계에서 분리합니다.
+## 다중 Tenant 소속
 
-## 다중 Tenant 소속\n\n`platform_tenant_memberships`는 외부 인증 주체(`sub`)와 Tenant를 연결합니다. 하나의 외부 주체는 여러 Tenant에 각각 소속될 수 있으며, 요청마다 `X-Tenant-Id`로 작업 범위를 선택합니다. Tenant 소속 상태와 역할은 데이터베이스에서 조회하므로 JWT의 Tenant 클레임을 권한 근거로 사용하지 않습니다.\n\n플랫폼 관리자는 `POST /api/platform/tenants/{tenantId}/memberships`로 소속을 부여합니다. 현재 역할은 `Member`와 `Administrator`이며, 세부 리소스 권한과 역할별 차등 정책은 후속 단계 대상입니다.\n\n## Tenant 경계
+`platform_tenant_memberships`는 외부 인증 주체(`sub`)와 Tenant를 연결합니다. 하나의 외부 주체는 여러 Tenant에 각각 소속될 수 있으며, 요청마다 `X-Tenant-Id`로 작업 범위를 선택합니다. Tenant 소속 상태와 역할은 데이터베이스에서 조회하므로 JWT의 Tenant 클레임을 권한 근거로 사용하지 않습니다.
+
+플랫폼 관리자는 `POST /api/platform/tenants/{tenantId}/memberships`로 소속을 부여합니다. 요청 본문에는 외부 Identity Provider가 발급한 주체 식별자와 Tenant 역할을 전달합니다. 동일한 Tenant와 주체의 중복 소속은 차단합니다.
+
+## Tenant 경계
 
 ### Tenant 경로 API
 
@@ -37,16 +41,16 @@ Platform API는 인증된 주체의 Tenant 범위를 기준으로 요청을 처�
 
 자원·정책 생성 요청은 TenantId를 본문에서 받지 않습니다. `ITenantContext`가 `X-Tenant-Id` 선택값을 읽고, `TenantMembershipAuthorizationFilter`가 JWT의 `sub`와 선택 Tenant의 활성 소속을 데이터베이스에서 확인합니다. 조직·프로젝트 식별자는 응용 서비스의 소속 검증을 추가로 통과해야 합니다.
 
-### Tenant 생성과 활성화
+### Tenant 생성·활성화 및 소속 부여
 
-Tenant 생성과 최초 활성화는 `platform_admin` 역할만 수행할 수 있습니다. Tenant 구성원 토큰만으로는 이 작업을 수행할 수 없습니다.
+Tenant 생성, 최초 활성화, 구성원 소속 부여는 `platform_admin` 역할만 수행할 수 있습니다. Tenant 구성원 토큰만으로는 이 작업을 수행할 수 없습니다.
 
 ## 계층 및 책임
 
-- API Host: JWT 검증, 클레임에서 Tenant 컨텍스트 제공, HTTP 경로와 Tenant 범위 비교
-- Platform.Application: Tenant·Organization·Project 소속 관계 및 업무 규칙 검증
-- Platform.Domain: Tenant 소유권과 상태 전이 규칙 유지
-- Platform.Infrastructure: 데이터베이스 제약과 영속성 보장
+- API Host: JWT 검증, 요청 Tenant 선택값 처리, 소속 권한 검사 및 HTTP 경로 비교
+- Platform.Application: Tenant 소속 부여와 조직·프로젝트 소속 업무 규칙 검증
+- Platform.Domain: TenantMembership의 역할·상태 전이 규칙 유지
+- Platform.Infrastructure: TenantMembership 영속성과 Tenant 외래 키·고유 제약 보장
 
 도메인 계층은 ASP.NET Core 또는 JWT 구현에 의존하지 않습니다.
 
@@ -56,20 +60,18 @@ Tenant 생성과 최초 활성화는 `platform_admin` 역할만 수행할 수 �
 
 - 익명 Tenant 생성 요청은 401
 - 관리자 역할이 없는 Tenant 생성 요청은 403
-- Tenant 경로와 `X-Tenant-Id` 선택값이 다르면 403\n- 활성 소속이 없는 주체는 403
-- 소속이 없는 주체의 자원·정책 요청은 403
-- 정상 Tenant 클레임으로 기존 프로비저닝 흐름이 동작
+- Tenant 경로와 `X-Tenant-Id` 선택값이 다르면 403
+- 활성 소속이 없는 주체는 403
+- 활성 소속을 부여받은 주체는 선택 Tenant의 기본 API에 접근
 - 자원·정책 요청 본문에는 TenantId를 포함하지 않음
 
 ## 후속 보안 과제
 
-현재 구현은 요청별 Tenant 선택과 데이터베이스 기반 Tenant 소속 확인을 제공합니다. 다음 항목은 별도 단계에서 설계·검증해야 합니다.
-
-1. 다중 Tenant 소속 사용자와 안전한 Tenant 전환
+1. 사용자 초대 수락과 이메일 기반 외부 계정 연결
 2. 사용자·조직·프로젝트별 세부 권한 및 정책 평가
-3. 초대 수락과 사용자 계정 연결
-4. Identity Provider 연동, 토큰 발급·갱신·폐기
+3. Tenant 역할별 차등 권한과 권한 변경 감사
+4. Identity Provider 실제 연동 및 토큰 발급·갱신·폐기
 5. 비대칭 서명 및 JWKS 키 조회·회전
 6. 보안 감사 로그, 속도 제한, 비밀 키 운영 정책
 
-현재 구현은 기본 인증·인가 경계이며, 위 과제까지 완료되기 전에는 운영 보안 적합성을 최종 승인하지 않습니다.
+현재 구현은 기본 인증·인가 경계입니다. 위 과제가 완료되고 실제 Identity Provider와 운영 키 관리가 검증되기 전에는 운영 보안 적합성을 최종 승인하지 않습니다.
