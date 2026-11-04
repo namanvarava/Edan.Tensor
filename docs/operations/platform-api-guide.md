@@ -9,6 +9,24 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 - 데이터베이스 상태: `/health/database`
 - Platform API: `/api/platform`
 
+## OpenAPI 문서
+
+.NET 10 기본 OpenAPI 생성 기능을 사용하며, 개발 환경에서 다음 JSON 문서를 제공합니다.
+
+- OpenAPI 3.1 문서: `/openapi/v1.json`
+- API 경로 및 요청 모델 확인: OpenAPI 문서의 `paths` 및 `components/schemas`
+- Swagger UI를 사용하는 경우 위 JSON 주소를 문서 원본으로 등록할 수 있습니다.
+
+OpenAPI 문서는 개발 환경에서만 노출됩니다. 현재 API Host에는 Swagger UI 화면을 내장하지 않았으며, OpenAPI JSON을 Swagger UI 또는 호환 도구에 연결해 사용할 수 있습니다.
+
+## HTTP 통합 테스트
+
+`tests/EDAN.Tensor.ApiHost.IntegrationTests`는 실제 API Host를 시작하고 임시 SQLite 데이터베이스를 사용합니다.
+
+- OpenAPI 문서가 Platform 경로를 포함하는지 확인합니다.
+- 테넌트 생성 → 활성화 → 조직 생성 → 프로젝트 생성 → 사용자 초대 흐름을 HTTP로 검증합니다.
+- 테스트마다 별도의 데이터베이스 파일을 사용하고 종료 시 정리합니다.
+
 ## 테넌트 생성 및 활성화
 
 `POST /api/platform/tenants`
