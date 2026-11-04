@@ -23,7 +23,7 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 - Tenant 선택 헤더: `X-Tenant-Id: {tenant-guid}`
 - Tenant 소속 여부는 JWT의 Tenant 클레임이 아니라 데이터베이스의 활성 소속 레코드로 확인합니다.
 
-요청마다 `X-Tenant-Id`로 Tenant를 선택합니다. 한 외부 인증 주체는 여러 Tenant에 각각 소속될 수 있습니다. 선택한 Tenant에 활성 소속이 없으면 HTTP 403을 반환합니다.
+요청마다 `X-Tenant-Id`로 Tenant를 선택합니다. 한 외부 인증 주체는 여러 Tenant에 각각 소속될 수 있습니다. `GET /api/platform/tenants/mine`은 현재 인증 주체가 소속된 활성 Tenant와 역할 목록을 반환합니다. 선택한 Tenant에 활성 소속이 없으면 HTTP 403을 반환합니다.
 
 ## Tenant 생성 및 활성화
 
