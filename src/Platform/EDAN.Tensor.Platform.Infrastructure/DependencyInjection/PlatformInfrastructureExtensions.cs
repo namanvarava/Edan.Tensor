@@ -21,6 +21,7 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITenantMembershipRepository, TenantMembershipRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IPlatformUnitOfWork, PlatformUnitOfWork>();
