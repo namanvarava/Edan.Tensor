@@ -80,6 +80,38 @@ public static class PlatformEndpoints
                 }));
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 권한 감사 조회는 Tenant 관리자에게만 허용하며 감사 데이터는 읽기 전용으로 제공합니다.
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit",
+            async (Guid tenantId, AuthorizationAuditQueryService service, CancellationToken token,
+                string? subjectId, string? action, bool? isAllowed, DateTimeOffset? fromUtc,
+                DateTimeOffset? toUtc, int page = 1, int pageSize = 50) =>
+            {
+                try
+                {
+                    var result = await service.GetPageAsync(new TenantId(tenantId), subjectId, action,
+                        isAllowed, fromUtc, toUtc, page, pageSize, token);
+                    return Results.Ok(new
+                    {
+                        result.TotalCount,
+                        result.Page,
+                        result.PageSize,
+                        Items = result.Items.Select(x => new
+                        {
+                            Id = x.Id.Value,
+                            x.SubjectId,
+                            x.Action,
+                            x.ResourceType,
+                            x.Scope,
+                            x.IsAllowed,
+                            x.ReasonCode,
+                            x.MatchedPolicyId,
+                            x.OccurredAtUtc
+                        })
+                    });
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPut("/{tenantId:guid}/authorization-policies/{policyId:guid}",
             async (Guid tenantId, Guid policyId, UpdateAuthorizationPolicyRequest request, HttpContext context,
                 AuthorizationPolicyService service, CancellationToken token) =>
