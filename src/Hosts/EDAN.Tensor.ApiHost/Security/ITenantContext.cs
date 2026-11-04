@@ -1,5 +1,6 @@
 using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.Platform.Application.Abstractions;
+using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
 
 namespace EDAN.Tensor.ApiHost.Security;
