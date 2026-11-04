@@ -1,72 +1,80 @@
+using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.SharedKernel.Results;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
-/// <summary>플랫폼 관리 API는 응용 서비스의 업무 결과를 HTTP 응답으로 변환합니다.</summary>
+/// <summary>플랫폼 관리 API는 인증된 주체의 Tenant 권한을 기준으로 업무를 수행합니다.</summary>
 public static class PlatformEndpoints
 {
-    /// <summary>테넌트·조직·프로젝트·사용자·자원·정책 생성 API를 등록합니다.</summary>
+    /// <summary>플랫폼 관리 API를 관리자 및 Tenant 구성원 경계로 나누어 등록합니다.</summary>
     public static IEndpointRouteBuilder MapPlatformEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/platform").WithTags("Platform");
 
+        // Tenant 생성과 최초 활성화는 플랫폼 관리자에게만 허용합니다.
         group.MapPost("/tenants", async (CreateTenantRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateTenantAsync(request.Code, request.Name, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
-        });
+        }).RequireAuthorization("PlatformAdministrator");
 
         group.MapPost("/tenants/{tenantId:guid}/activate", async (Guid tenantId, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.ActivateTenantAsync(new TenantId(tenantId), token);
             return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
-        });
+        }).RequireAuthorization("PlatformAdministrator");
 
-        group.MapPost("/tenants/{tenantId:guid}/organizations", async (Guid tenantId, CreateOrganizationRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        // 경로의 TenantId가 인증 주체의 TenantId와 일치할 때만 조직·프로젝트·사용자 API를 실행합니다.
+        var tenantGroup = group.MapGroup("/tenants")
+            .RequireAuthorization("TenantMember")
+            .AddEndpointFilter<TenantRouteAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/organizations", async (Guid tenantId, CreateOrganizationRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateOrganizationAsync(new TenantId(tenantId), request.Code, request.Name, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
         });
 
-        group.MapPost("/tenants/{tenantId:guid}/organizations/{organizationId:guid}/projects", async (Guid tenantId, Guid organizationId, CreateProjectRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/projects", async (Guid tenantId, Guid organizationId, CreateProjectRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateProjectAsync(new TenantId(tenantId), new OrganizationId(organizationId), request.Code, request.Name, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
         });
 
-        group.MapPost("/tenants/{tenantId:guid}/users/invitations", async (Guid tenantId, InviteUserRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        tenantGroup.MapPost("/{tenantId:guid}/users/invitations", async (Guid tenantId, InviteUserRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.InviteUserAsync(new TenantId(tenantId), request.Email, request.DisplayName, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
         });
 
-        group.MapPost("/resources", async (CreateResourceRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        // 자원과 정책의 Tenant 범위는 요청 본문이 아닌 검증된 인증 클레임에서 가져옵니다.
+        group.MapPost("/resources", async (CreateResourceRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
         {
             try
             {
-                var scope = new ResourceScope(new TenantId(request.TenantId),
+                var scope = new ResourceScope(tenantContext.TenantId,
                     request.OrganizationId is Guid organizationId ? new OrganizationId(organizationId) : null,
                     request.ProjectId is Guid projectId ? new ProjectId(projectId) : null);
                 var result = await service.CreateResourceAsync(scope, request.ResourceType, request.Name, token);
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }
             catch (ArgumentException ex) { return ValidationError(ex.Message); }
-        });
+        }).RequireAuthorization("TenantMember");
 
-        group.MapPost("/policies", async (CreatePolicyRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        group.MapPost("/policies", async (CreatePolicyRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
         {
             try
             {
-                var scope = new ResourceScope(new TenantId(request.TenantId),
+                var scope = new ResourceScope(tenantContext.TenantId,
                     request.OrganizationId is Guid organizationId ? new OrganizationId(organizationId) : null,
                     request.ProjectId is Guid projectId ? new ProjectId(projectId) : null);
                 var result = await service.CreatePolicyAsync(scope, request.Key, request.Value, token);
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }
             catch (ArgumentException ex) { return ValidationError(ex.Message); }
-        });
+        }).RequireAuthorization("TenantMember");
 
         return endpoints;
     }
@@ -91,5 +99,5 @@ public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
-public sealed record CreateResourceRequest(Guid TenantId, Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
-public sealed record CreatePolicyRequest(Guid TenantId, Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
+public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
+public sealed record CreatePolicyRequest(Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
