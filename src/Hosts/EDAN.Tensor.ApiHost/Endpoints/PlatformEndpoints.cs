@@ -110,7 +110,7 @@ public static class PlatformEndpoints
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }
             catch (ArgumentException ex) { return ValidationError(ex.Message); }
-        }).RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+        }).RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>().AddEndpointFilter<ScopedResourceAuthorizationFilter>();
 
         return endpoints;
     }
