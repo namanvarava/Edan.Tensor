@@ -1,3 +1,5 @@
+using EDAN.Tensor.Platform.Application.DependencyInjection;
+using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,7 @@ if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSour
         Directory.CreateDirectory(databaseDirectory);
 }
 
+builder.Services.AddPlatformApplication();
 builder.Services.AddPlatformInfrastructure(options => options.UseSqlite(sqliteConnection.ConnectionString));
 builder.Services.AddHealthChecks();
 
@@ -34,6 +37,7 @@ if (app.Environment.IsDevelopment()
 }
 
 app.MapHealthChecks("/health");
+app.MapPlatformEndpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
 app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken cancellationToken) =>
