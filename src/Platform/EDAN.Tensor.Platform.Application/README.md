@@ -4,17 +4,19 @@
 
 ## 주요 구성
 - `Abstractions/PlatformRepositories.cs`: 플랫폼 도메인 저장소와 작업 단위 인터페이스
-- `Abstractions/ITenantMembershipRepository.cs`: Tenant 구성원 조회 및 권한 확인 계약
-- `UseCases/PlatformProvisioningService.cs`: 테넌트·조직·프로젝트·사용자·자원·정책 생성 업무
-- `UseCases/TenantMembershipService.cs`: 외부 인증 주체의 Tenant 소속 부여 업무
+- `Abstractions/ITenantMembershipRepository.cs`: Tenant 소속 조회 및 권한 확인 계약
+- `Abstractions/IScopedMembershipRepository.cs`: 조직·프로젝트 소속 조회와 범위 권한 확인 계약
+- `UseCases/PlatformProvisioningService.cs`: Tenant·조직·프로젝트·사용자·자원·정책 생성 업무
+- `UseCases/TenantMembershipService.cs`: 외부 인증 주체의 Tenant 소속 관리
+- `UseCases/ScopedMembershipService.cs`: 조직·프로젝트 소속 부여와 상위 소유권 검증
+- `UseCases/PlatformAuthorizationService.cs`: Tenant·Organization·Project 범위의 생성 권한 평가
 
-## 핵심 검증
-- 조직 생성은 활성 테넌트에서만 허용합니다.
-- 프로젝트 생성은 조직의 테넌트 소속을 확인합니다.
-- 사용자 이메일 중복은 테넌트 범위에서 확인합니다.
-- 자원과 정책 생성은 테넌트·조직·프로젝트의 소속 관계를 확인합니다.
-- Tenant 소속 부여는 활성 Tenant에서만 허용하며 중복 소속을 차단합니다.
-- 저장 작업은 작업 단위 인터페이스를 통해 완료합니다.
+## 권한 평가
+- Tenant 소속이 활성 상태인지 확인합니다.
+- Tenant Administrator는 선택 Tenant의 하위 범위에 전체 생성 권한을 가집니다.
+- Organization Contributor와 Manager는 조직 범위에서 생성할 수 있습니다.
+- Project Contributor와 Manager는 프로젝트 범위에서 생성할 수 있습니다.
+- Organization Manager만 하위 프로젝트에 생성 권한을 상속합니다.
+- Tenant 소속만 가진 Member는 조직·프로젝트 범위 자원을 생성할 수 없습니다.
 
-## 구현 경계
-실제 데이터베이스 연결과 트랜잭션 구현은 Platform.Infrastructure 단계에서 담당합니다. 응용 계층은 구체적인 저장 기술에 의존하지 않습니다.
+저장소와 Unit of Work는 인터페이스로 추상화하며, 실제 데이터베이스 구현은 Infrastructure 계층에서 담당합니다.
