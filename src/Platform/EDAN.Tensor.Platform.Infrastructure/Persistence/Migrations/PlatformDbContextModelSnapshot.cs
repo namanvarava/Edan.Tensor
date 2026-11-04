@@ -74,6 +74,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).HasConversion(IdConverter<UserId>(value => new UserId(value), id => id.Value));
             entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+            entity.Property(x => x.TenantId).IsRequired();
             entity.Property(x => x.Email).HasConversion(x => x.Value, x => new EmailAddress(x)).HasMaxLength(320).IsRequired();
             entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
@@ -118,11 +119,14 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.ScopeTenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
             entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
             entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
+            entity.Property(x => x.ScopeTenantId).IsRequired();
             entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
             entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
             entity.Property(x => x.Version).IsConcurrencyToken();
             entity.Property(x => x.IsEnabled).IsRequired();
             entity.HasIndex(x => x.ScopeTenantId);
+            entity.HasIndex(x => new { x.ScopeOrganizationId, x.ScopeTenantId });
+            entity.HasIndex(x => new { x.ScopeProjectId, x.ScopeOrganizationId, x.ScopeTenantId });
             entity.HasIndex(x => new { x.Key, x.Version });
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.ScopeTenantId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Organization>().WithMany()
