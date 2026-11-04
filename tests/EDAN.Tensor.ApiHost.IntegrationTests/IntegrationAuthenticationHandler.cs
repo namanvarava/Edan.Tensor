@@ -24,7 +24,7 @@ public sealed class IntegrationAuthenticationHandler(
         if (Request.Headers.TryGetValue("X-Test-Role", out var role))
             claims.Add(new Claim("role", role.ToString()));
 
-        var identity = new ClaimsIdentity(claims, Scheme.Name);
+        var identity = new ClaimsIdentity(claims, Scheme.Name, "name", "role");
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));
