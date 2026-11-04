@@ -37,9 +37,16 @@ Tenant 요청에는 Tenant 정책을 적용합니다. Organization 요청에는 
 
 ## API
 
-Tenant Administrator만 다음 API로 정책을 등록할 수 있습니다.
+Tenant Administrator만 접근 정책을 관리할 수 있습니다.
 
-POST /api/platform/tenants/{tenantId}/authorization-policies
+| Method | Endpoint | 설명 |
+|---|---|---|
+| POST | /api/platform/tenants/{tenantId}/authorization-policies | 정책 등록 |
+| GET | /api/platform/tenants/{tenantId}/authorization-policies | Tenant 정책 목록 조회 |
+| PUT | /api/platform/tenants/{tenantId}/authorization-policies/{policyId} | 효과와 우선순위 변경 |
+| PATCH | /api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled | 정책 활성 상태 변경 |
+
+정책 등록 예시:
 
 ```json
 {
@@ -53,19 +60,37 @@ POST /api/platform/tenants/{tenantId}/authorization-policies
 }
 ```
 
+정책 수정 예시:
+
+```json
+{
+  "effect": "Deny",
+  "priority": 200
+}
+```
+
+활성 상태 변경 예시:
+
+```json
+{
+  "isEnabled": false
+}
+```
+
 ## 감사 기록
 
 AuthorizationAuditEntry는 Tenant, 외부 주체, Action, ResourceType, 평가 범위, 허용 여부, 사유 코드, 일치 정책 식별자 및 UTC 평가 시각을 저장합니다.
 
-감사 저장에 실패하면 요청도 성공 처리하지 않습니다. 운영 환경에서는 보존 기간, 접근 통제, 무결성 보호 및 외부 로그 전송 정책이 추가로 필요합니다.
+AuthorizationPolicyChangeAuditEntry는 Tenant, 정책 식별자, 변경자 SubjectId, 변경 유형, 변경 전 JSON, 변경 후 JSON 및 UTC 변경 시각을 추가 전용으로 보관합니다. 정책 변경과 감사 기록은 동일한 Unit of Work로 저장하므로 감사 저장이 실패하면 정책 변경도 확정되지 않습니다.
 
 ## 저장 구조
 
 - platform_authorization_policies: 계층형 접근 정책
 - platform_authorization_audit: 권한 평가 감사 기록
+- platform_authorization_policy_changes: 정책 변경 전후 감사 기록
 
-정책 테이블은 Tenant·Organization·Project의 복합 소유권 외래 키를 사용합니다.
+정책 테이블은 Tenant·Organization·Project의 복합 소유권 외래 키를 사용합니다. 변경 감사 테이블은 Tenant 경계로 보호하고 정책·시각 및 Tenant·시각 조회 인덱스를 제공합니다.
 
 ## 현재 범위와 한계
 
-현재 정책은 외부 SubjectId에 직접 연결되며 정책 등록은 Tenant Administrator에게만 허용합니다. 정책 수정·비활성화 API, 역할 기반 정책 주체, 조건식 언어, 시간·네트워크·환경 속성 평가, 캐시 및 무효화는 아직 구현하지 않았습니다. 명시적 Deny는 우선순위와 무관하게 Allow보다 우선합니다.
+현재 정책은 외부 SubjectId에 직접 연결되며 정책 관리는 Tenant Administrator에게만 허용합니다. 역할 기반 정책 주체, 조건식 언어, 시간·네트워크·환경 속성 평가, 캐시 및 무효화, 감사 조회 API는 아직 구현하지 않았습니다. 명시적 Deny는 우선순위와 무관하게 Allow보다 우선합니다.
