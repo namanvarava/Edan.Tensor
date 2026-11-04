@@ -18,9 +18,17 @@ Platform Infrastructure는 Platform Application의 저장소 계약을 EF Core �
 - Resource와 Policy는 Tenant 및 선택적 Organization·Project 범위를 저장합니다.
 - Policy Version은 동시성 토큰으로 사용합니다.
 
+## 데이터베이스 연결
+
+- API Host의 기본 개발 공급자는 SQLite입니다.
+- 기본 파일 경로는 `src/Hosts/EDAN.Tensor.ApiHost/App_Data/edan-tensor-platform.db`입니다.
+- 연결 문자열은 `ConnectionStrings:PlatformDatabase`에서 관리하며 환경 변수 `ConnectionStrings__PlatformDatabase`로 덮어쓸 수 있습니다.
+- `/health/database`는 연결 성공 시 `Green`, 실패 시 `Red` 상태를 반환합니다.
+- 개발 환경에서는 `Database:EnsureCreatedInDevelopment=true`일 때 최초 실행 시 데이터베이스 파일과 테이블을 생성합니다.
+
 ## 공급자 선택
 
-Infrastructure는 특정 데이터베이스 공급자를 강제하지 않습니다. API Host 또는 Worker Host에서 `AddPlatformInfrastructure`에 SQLite, PostgreSQL, SQL Server 등 선택한 EF Core 공급자 설정을 전달합니다.
+Infrastructure는 특정 데이터베이스 공급자를 강제하지 않습니다. 현재 API Host는 로컬 실행과 관계형 통합 테스트를 위해 SQLite를 선택했습니다. 운영 환경에서는 연결 문자열과 EF Core 공급자를 운영 인프라 정책에 맞게 교체합니다.
 
 ## 트랜잭션
 
@@ -28,4 +36,4 @@ Infrastructure는 특정 데이터베이스 공급자를 강제하지 않습니�
 
 ## 운영 유의사항
 
-EF Core 인덱스 정의는 관계형 공급자에서 고유성 제약으로 동작합니다. InMemory 공급자는 관계형 제약과 트랜잭션 동작을 완전히 재현하지 않으므로 통합 검증에는 실제 선택 공급자를 사용해야 합니다. Tenant·Organization·Project 간 교차 행 소속 일관성은 현재 Application 검증으로 보장하며, 실제 관계형 공급자를 선택한 뒤 복합 외래 키 제약을 추가 검토합니다.
+EF Core 인덱스 정의는 관계형 공급자에서 고유성 제약으로 동작합니다. InMemory 공급자는 관계형 제약과 트랜잭션 동작을 완전히 재현하지 않으므로 SQLite 기반 통합 테스트를 별도로 수행합니다. 개발 환경의 `EnsureCreated`는 초기 검증 편의 기능이며, 운영 데이터베이스의 버전 관리에는 EF Core Migration이 필요합니다. Tenant·Organization·Project 간 교차 행 소속 일관성은 현재 Application 검증으로 보장하며, 실제 관계형 공급자를 선택한 뒤 복합 외래 키 제약을 추가 검토합니다.
