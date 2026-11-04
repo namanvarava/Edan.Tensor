@@ -1,16 +1,19 @@
 # 플랫폼 도메인
 
-테넌트, 조직, 프로젝트, 사용자, 테넌트 소속, 자원, 정책의 핵심 규칙을 관리합니다.
+테넌트, 조직, 프로젝트, 사용자 및 각 범위의 소속·역할·정책 규칙을 관리합니다.
 
 ## 주요 구성
 - `Model/PlatformDomainModel.cs`: 식별자, 소유권 범위, 집합체, 상태 전이 및 정책 버전 규칙
 - `Model/TenantMembership.cs`: 외부 인증 주체의 Tenant 소속, 역할 및 접근 상태
-- SharedKernel 참조
+- `Model/ScopedMemberships.cs`: Organization·Project 소속, 역할 및 폐기 규칙
 
-## 설계 원칙
-- 테넌트를 데이터 격리의 최상위 경계로 사용합니다.
-- 조직과 프로젝트의 소속 식별자를 명시적으로 보유합니다.
-- 외부 인증 주체는 여러 Tenant에 각각 소속될 수 있습니다.
-- TenantMembership은 외부 주체 식별자, Tenant, 역할 및 활성 상태를 관리합니다.
-- 사용자 이메일 중복 검사는 Tenant 범위에서 보장합니다.
-- 저장소 조회와 외부 시스템 연동은 도메인 계층에서 수행하지 않습니다.
+## 권한 범위
+- Tenant는 데이터 격리의 최상위 경계입니다.
+- OrganizationMembership은 Tenant와 Organization에 속한 외부 주체의 역할을 관리합니다.
+- ProjectMembership은 Tenant·Organization·Project에 속한 외부 주체의 역할을 관리합니다.
+- Reader는 생성할 수 없고 Contributor는 자신이 속한 범위에서 생성할 수 있습니다.
+- Organization Manager는 하위 Project 생성 권한을 상속합니다.
+- Project Contributor와 Manager는 지정 Project에서 생성할 수 있습니다.
+- Tenant Administrator는 선택 Tenant의 하위 범위에 전체 생성 권한을 가집니다.
+
+도메인 계층은 저장소, ASP.NET Core, JWT 구현에 의존하지 않습니다.
