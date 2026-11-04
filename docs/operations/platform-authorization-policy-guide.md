@@ -84,6 +84,26 @@ PATCH /api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled
 
 자원 및 정책 생성 권한을 평가할 때마다 Tenant, SubjectId, 작업, 자원 유형, 평가 범위, 허용·거부 결과, 사유 코드, 일치 정책 식별자 및 UTC 시각을 기록합니다.
 
+## 권한 평가 감사 조회
+
+GET /api/platform/tenants/{tenantId}/authorization-audit
+
+Tenant Administrator만 조회할 수 있습니다. X-Tenant-Id와 경로의 tenantId가 일치해야 하며, 다른 Tenant의 감사 기록은 조회할 수 없습니다.
+
+지원 쿼리 매개변수:
+
+| 매개변수 | 설명 |
+|---|---|
+| subjectId | 인증 주체 식별자 |
+| action | 권한 평가 작업 |
+| isAllowed | 허용 여부 (true 또는 false) |
+| fromUtc | 조회 시작 UTC 시각 |
+| toUtc | 조회 종료 UTC 시각 |
+| page | 1부터 시작하는 페이지 번호 |
+| pageSize | 페이지 크기, 1~100 (기본값 50) |
+
+응답은 totalCount, page, pageSize, items를 포함합니다. 감사 기록은 평가 시각 내림차순으로 반환합니다. 조회 API는 읽기 전용이며 수정·삭제 기능을 제공하지 않습니다.
+
 ## 현재 미지원 기능
 
-역할 그룹 기반 주체, 복합 조건식, 시간·IP·장치 조건, 캐시 및 캐시 무효화, 감사 조회 API는 후속 단계입니다. 운영 적용 전 감사 데이터 보존·접근 통제와 외부 로그 전송 정책을 확정해야 합니다.
+역할 그룹 기반 주체, 복합 조건식, 시간·IP·장치 조건, 캐시 및 캐시 무효화, 외부 로그 전송은 후속 단계입니다. 운영 적용 전 감사 데이터 보존 기간과 외부 보관 정책을 확정해야 합니다.
