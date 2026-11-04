@@ -135,7 +135,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity<Resource>(entity =>
         {
             entity.ToTable("platform_resources", table =>
-                table.HasCheckConstraint("CK_platform_resources_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
+                table.HasCheckConstraint("CK_platform_resources_project_requires_organization", "ProjectId IS NULL OR OrganizationId IS NOT NULL"));
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
             entity.Ignore(x => x.Scope);
