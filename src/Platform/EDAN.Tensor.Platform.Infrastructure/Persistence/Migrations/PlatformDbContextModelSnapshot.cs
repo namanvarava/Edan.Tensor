@@ -205,6 +205,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.IsEnabled).IsRequired();
             entity.Property(x => x.CreatedAtUtc).IsRequired();
             entity.HasIndex(x => new { x.TenantId, x.SubjectId, x.Action, x.ResourceType, x.IsEnabled });
+            entity.HasIndex(x => new { x.OrganizationId, x.TenantId });
             entity.HasIndex(x => new { x.ProjectId, x.OrganizationId, x.TenantId });
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Organization>().WithMany()
