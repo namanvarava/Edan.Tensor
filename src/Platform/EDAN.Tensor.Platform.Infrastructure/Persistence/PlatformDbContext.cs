@@ -45,7 +45,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.ToTable("platform_organizations");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
-        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         entity.Property(x => x.Code).HasConversion(x => x.Value, x => new OrganizationCode(x)).HasMaxLength(64).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -97,7 +97,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
         entity.Ignore(x => x.Scope);
-        entity.Property(x => x.ScopeTenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.ScopeTenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.HasIndex(x => x.ScopeTenantId);
