@@ -11,6 +11,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<Resource> Resources => Set<Resource>();
     public DbSet<Policy> Policies => Set<Policy>();
 
@@ -22,6 +23,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureOrganization(modelBuilder);
         ConfigureProject(modelBuilder);
         ConfigureUser(modelBuilder);
+        ConfigureTenantMembership(modelBuilder);
         ConfigureResource(modelBuilder);
         ConfigurePolicy(modelBuilder);
     }
@@ -88,6 +90,21 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
         entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>외부 인증 주체의 테넌트 소속과 역할을 고유하게 저장합니다.</summary>
+    private static void ConfigureTenantMembership(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TenantMembership>();
+        entity.ToTable("platform_tenant_memberships");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantMembershipId>(value => new TenantMembershipId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.SubjectId).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.SubjectId }).IsUnique();
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
