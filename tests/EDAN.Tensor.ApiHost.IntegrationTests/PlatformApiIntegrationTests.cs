@@ -63,6 +63,27 @@ public sealed class PlatformApiIntegrationTests
                 name = "통합 테스트 프로젝트"
             });
         Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
+        var projectId = await ReadIdAsync(projectResponse);
+
+        using var resourceResponse = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            tenantId,
+            organizationId,
+            projectId,
+            resourceType = "DataSet",
+            name = "통합 테스트 데이터"
+        });
+        Assert.Equal(HttpStatusCode.Created, resourceResponse.StatusCode);
+
+        using var policyResponse = await client.PostAsJsonAsync("/api/platform/policies", new
+        {
+            tenantId,
+            organizationId,
+            projectId,
+            key = "retention.days",
+            value = "30"
+        });
+        Assert.Equal(HttpStatusCode.Created, policyResponse.StatusCode);
 
         using var invitationResponse = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/users/invitations", new
