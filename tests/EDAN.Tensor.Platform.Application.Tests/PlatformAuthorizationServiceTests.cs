@@ -167,7 +167,7 @@ public sealed class PlatformAuthorizationServiceTests
         public void Add(TenantMembership membership) => throw new NotSupportedException();
     }
 
-    private sealed class FakeScopedMembershipRepository(bool organizationWrite, bool organizationManager, bool projectWrite, ProjectId? assignedProjectId)
+    private sealed class FakeScopedMembershipRepository(bool organizationWrite, bool organizationManager, bool projectWrite, ProjectId? assignedProjectId = null)
         : IScopedMembershipRepository
     {
         public Task<bool> OrganizationMembershipExistsAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default) => Task.FromResult(false);
