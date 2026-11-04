@@ -141,7 +141,7 @@ public sealed class PlatformAuthorizationServiceTests
     {
         private readonly IReadOnlyList<AuthorizationPolicy> _items = items ?? [];
         public Task<IReadOnlyList<AuthorizationPolicy>> GetApplicableAsync(TenantId tenantId, OrganizationId? organizationId, ProjectId? projectId, string subjectId, string action, string resourceType, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<AuthorizationPolicy>>(_items.Where(x => x.SubjectId == subjectId && x.Action == action && (x.ResourceType == resourceType || x.ResourceType == "*") && (x.OrganizationId is null || x.OrganizationId == organizationId) && (x.ProjectId is null || x.ProjectId == projectId)).ToList());
+            Task.FromResult<IReadOnlyList<AuthorizationPolicy>>(_items.Where(x => x.TenantId == tenantId && x.SubjectId == subjectId && x.Action == action && (x.ResourceType == resourceType || x.ResourceType == "*") && (x.OrganizationId is null || x.OrganizationId == organizationId) && (x.ProjectId is null || x.ProjectId == projectId)).ToList());
         public void Add(AuthorizationPolicy policy) => throw new NotSupportedException();
     }
 
