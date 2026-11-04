@@ -8,12 +8,16 @@ namespace EDAN.Tensor.Platform.Application.UseCases;
 public sealed class ScopedMembershipService(
     IOrganizationRepository organizations,
     IProjectRepository projects,
+    ITenantMembershipRepository tenantMemberships,
     IScopedMembershipRepository memberships,
     IPlatformUnitOfWork unitOfWork)
 {
     /// <summary>활성 조직에 인증 주체의 조직 역할을 부여합니다.</summary>
     public async Task<Result<OrganizationMembershipId>> GrantOrganizationAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, OrganizationRole role, CancellationToken cancellationToken = default)
     {
+        if (!await tenantMemberships.HasActiveMembershipAsync(tenantId, subjectId, cancellationToken))
+            return Fail<OrganizationMembershipId>("platform.membership.tenant_required", "대상 사용자는 해당 Tenant의 활성 구성원이어야 합니다.");
+
         var organization = await organizations.GetByIdAsync(organizationId, cancellationToken);
         if (organization is null || organization.TenantId != tenantId || organization.Status != OrganizationStatus.Active)
             return Fail<OrganizationMembershipId>("platform.organization.scope_mismatch", "조직이 선택한 Tenant에 속하지 않거나 활성 상태가 아닙니다.");
@@ -32,6 +36,9 @@ public sealed class ScopedMembershipService(
     /// <summary>활성 프로젝트에 인증 주체의 프로젝트 역할을 부여합니다.</summary>
     public async Task<Result<ProjectMembershipId>> GrantProjectAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, ProjectRole role, CancellationToken cancellationToken = default)
     {
+        if (!await tenantMemberships.HasActiveMembershipAsync(tenantId, subjectId, cancellationToken))
+            return Fail<ProjectMembershipId>("platform.membership.tenant_required", "대상 사용자는 해당 Tenant의 활성 구성원이어야 합니다.");
+
         var project = await projects.GetByIdAsync(projectId, cancellationToken);
         if (project is null || project.TenantId != tenantId || project.OrganizationId != organizationId || project.Status != ProjectStatus.Active)
             return Fail<ProjectMembershipId>("platform.project.scope_mismatch", "프로젝트의 Tenant·조직 소속이 일치하지 않거나 활성 상태가 아닙니다.");
