@@ -37,10 +37,27 @@ Infrastructure 프로젝트는 EF Core 핵심 패키지만 참조하고 실제 �
 
 `/health/database`는 DB 연결 가능 여부를 확인하고 `Green` 또는 `Red` 신호등 상태를 반환합니다. 개발 환경의 `Database:EnsureCreatedInDevelopment` 설정은 최초 실행 시 테이블을 생성하는 편의 기능이며 운영 마이그레이션을 대체하지 않습니다.
 
+## 관계형 무결성
+
+- Organization.TenantId는 Tenant.Id를 참조합니다.
+- Project는 TenantId와 OrganizationId를 함께 사용하여 동일 Tenant의 Organization만 참조합니다.
+- User.TenantId는 Tenant.Id를 참조합니다.
+- Resource와 Policy는 Tenant, 선택적 Organization, 선택적 Project를 복합 외래 키로 연결합니다.
+- Project 범위는 Organization 범위를 반드시 포함하도록 CHECK 제약을 둡니다.
+- 상위 데이터 삭제는 `RESTRICT`로 제한하여 소유 데이터의 우발적 연쇄 삭제를 방지합니다.
+
+## Migration 운영
+
+초기 스키마는 `20261104100000_InitialPlatformSchema` Migration으로 관리합니다. 개발 환경에서는 `Database:ApplyMigrationsInDevelopment=true`일 때 API Host 시작 과정에서 `MigrateAsync`를 실행합니다. 운영 환경에서는 배포 파이프라인의 승인된 마이그레이션 작업으로 스키마를 변경하며 API 인스턴스가 임의로 스키마를 변경하지 않도록 합니다.
+
 ## 트랜잭션 경계
 
-요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다. 관계형 공급자 선택 후 마이그레이션과 복합 외래 키 제약을 추가합니다.
+요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다. 요청 범위에서 하나의 PlatformDbContext를 공유합니다. 저장소는 변경을 추적하고 PlatformUnitOfWork가 SaveChangesAsync를 호출합니다.
+
+## SQLite 공급망 보안
+
+SQLite 네이티브 라이브러리의 취약 버전 경고를 해결하기 위해 `SQLitePCLRaw.lib.e_sqlite3`를 2.1.14로 고정합니다. 의존성 업데이트 후 CI의 NuGet 취약성 경고를 확인합니다.
 
 ## 검증 한계
 
-InMemory 공급자는 모델 구성과 저장소 동작을 빠르게 확인하기 위한 테스트 수단입니다. 관계형 인덱스, 외래 키, 격리 수준 및 트랜잭션 보장은 실제 선택 공급자로 별도 통합 테스트해야 합니다.
+SQLite Migration 기반 통합 테스트에서 저장·조회, 고유 인덱스, Tenant 소속 복합 외래 키를 검증합니다. 운영 환경의 백업·복구, 부하, 장애 조치 및 실제 배포 마이그레이션은 별도 운영 검증이 필요합니다.
