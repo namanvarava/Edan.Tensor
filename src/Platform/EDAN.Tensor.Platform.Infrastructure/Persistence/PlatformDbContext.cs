@@ -1,7 +1,6 @@
 using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using System.Text.Json;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
@@ -88,9 +87,11 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.ToTable("platform_resources");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
-        entity.Property(x => x.Scope).HasConversion(
-            scope => SerializeScope(scope),
-            json => DeserializeScope(json)).IsRequired();
+        entity.Ignore(x => x.Scope);
+        entity.Property(x => x.ScopeTenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+        entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
+        entity.HasIndex(x => x.ScopeTenantId);
         entity.Property(x => x.ResourceType).HasMaxLength(80).IsRequired();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
@@ -102,31 +103,16 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.ToTable("platform_policies");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>(value => new PolicyId(value), id => id.Value));
-        entity.Property(x => x.Scope).HasConversion(
-            scope => JsonSerializer.Serialize(scope, (JsonSerializerOptions?)null),
-            json => JsonSerializer.Deserialize<ResourceScope>(json, (JsonSerializerOptions?)null)!).IsRequired();
+        entity.Ignore(x => x.Scope);
+        entity.Property(x => x.ScopeTenantId).HasColumnName("tenant_id").HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
+        entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
+        entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
+        entity.HasIndex(x => x.ScopeTenantId);
         entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Value).HasMaxLength(4000).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken();
         entity.HasIndex(x => new { x.Key, x.Version });
     }
-
-    /// <summary>범위 식별자를 단순 JSON 값으로 직렬화합니다.</summary>
-    private static string SerializeScope(ResourceScope scope) =>
-        JsonSerializer.Serialize(new ResourceScopeData(scope.TenantId.Value, scope.OrganizationId?.Value, scope.ProjectId?.Value));
-
-    /// <summary>저장된 범위 식별자로 도메인 값 객체를 복원합니다.</summary>
-    private static ResourceScope DeserializeScope(string json)
-    {
-        var data = JsonSerializer.Deserialize<ResourceScopeData>(json)
-            ?? throw new InvalidOperationException("저장된 자원 범위를 읽을 수 없습니다.");
-        return new ResourceScope(
-            new TenantId(data.TenantId),
-            data.OrganizationId is Guid organizationId ? new OrganizationId(organizationId) : null,
-            data.ProjectId is Guid projectId ? new ProjectId(projectId) : null);
-    }
-
-    private sealed record ResourceScopeData(Guid TenantId, Guid? OrganizationId, Guid? ProjectId);
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
         new(id => value(id), raw => create(raw));
