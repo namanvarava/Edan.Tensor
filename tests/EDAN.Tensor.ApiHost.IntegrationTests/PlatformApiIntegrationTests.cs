@@ -155,7 +155,10 @@ public sealed class PlatformApiIntegrationTests
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
-                    ["Database:ApplyMigrationsInDevelopment"] = "true"
+                    ["Database:ApplyMigrationsInDevelopment"] = "true",
+                    ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
+                    ["Authentication:Audience"] = "edan-tensor-api",
+                    ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long"
                 });
             });
             builder.ConfigureTestServices(services =>
