@@ -26,6 +26,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/resources", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/policies", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
 
     [Fact]
