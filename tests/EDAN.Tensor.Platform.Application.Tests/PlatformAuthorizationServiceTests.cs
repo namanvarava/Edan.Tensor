@@ -153,6 +153,10 @@ public sealed class PlatformAuthorizationServiceTests
     private sealed class FakeAuditRepository : IAuthorizationAuditRepository
     {
         public List<AuthorizationAuditEntry> Entries { get; } = [];
+        public Task<AuthorizationAuditPage> GetPageAsync(TenantId tenantId, string? subjectId, string? action,
+            bool? isAllowed, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AuthorizationAuditPage([], 0, page, pageSize));
         public void Add(AuthorizationAuditEntry entry) => Entries.Add(entry);
     }
 
