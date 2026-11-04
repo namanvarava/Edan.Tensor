@@ -48,8 +48,8 @@ public sealed class PlatformInfrastructureTests
         db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant, email, "사용자"));
         await db.SaveChangesAsync();
 
-        Assert.True(await repository.ExistsEmailAsync(firstTenant, email));
-        Assert.False(await repository.ExistsEmailAsync(secondTenant, email));
+        Assert.True(await repository.ExistsEmailAsync(firstTenant.Id, email));
+        Assert.False(await repository.ExistsEmailAsync(secondTenant.Id, email));
     }
 
     [Fact]
@@ -82,17 +82,20 @@ public sealed class PlatformInfrastructureTests
         await using var db = new PlatformDbContext(options);
         await db.Database.EnsureCreatedAsync();
 
-        var firstTenant = new TenantId(Guid.NewGuid());
-        var secondTenant = new TenantId(Guid.NewGuid());
+        var firstTenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-A"), "테넌트 A", DateTimeOffset.UtcNow);
+        var secondTenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("TENANT-B"), "테넌트 B", DateTimeOffset.UtcNow);
+        db.Tenants.AddRange(firstTenant, secondTenant);
+        await db.SaveChangesAsync();
+
         var email = new EmailAddress("shared@example.com");
-        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant, email, "첫 번째 사용자"));
-        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), secondTenant, email, "두 번째 사용자"));
+        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant.Id, email, "첫 번째 사용자"));
+        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), secondTenant.Id, email, "두 번째 사용자"));
         await db.SaveChangesAsync();
 
         Assert.True(await new UserRepository(db).ExistsEmailAsync(firstTenant, email));
         Assert.True(await new UserRepository(db).ExistsEmailAsync(secondTenant, email));
 
-        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant, email, "중복 사용자"));
+        db.Users.Add(User.Invite(new UserId(Guid.NewGuid()), firstTenant.Id, email, "중복 사용자"));
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
