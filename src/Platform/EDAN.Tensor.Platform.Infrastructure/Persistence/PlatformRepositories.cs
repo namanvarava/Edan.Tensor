@@ -40,12 +40,13 @@ public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMe
         db.TenantMemberships.AnyAsync(x => x.TenantId == tenantId && x.SubjectId == subjectId, cancellationToken);
     public Task<bool> HasActiveMembershipAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default) =>
         db.TenantMemberships.AnyAsync(x => x.TenantId == tenantId && x.SubjectId == subjectId && x.Status == TenantMembershipStatus.Active, cancellationToken);
-    public Task<IReadOnlyList<TenantMembership>> GetActiveForSubjectAsync(string subjectId, CancellationToken cancellationToken = default) =>
-        db.TenantMemberships.AsNoTracking()
+    public async Task<IReadOnlyList<TenantMembership>> GetActiveForSubjectAsync(string subjectId, CancellationToken cancellationToken = default) =>
+        await db.TenantMemberships.AsNoTracking()
             .Where(x => x.SubjectId == subjectId && x.Status == TenantMembershipStatus.Active)
             .OrderBy(x => x.TenantId)
-            .ToListAsync(cancellationToken)
-            .ContinueWith<IReadOnlyList<TenantMembership>>(task => task.Result, cancellationToken);\n    public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
+            .ToListAsync(cancellationToken);
+
+    public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
 }
 
 public sealed class ResourceRepository(PlatformDbContext db) : IResourceRepository
