@@ -9,111 +9,157 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations;
 [Migration("20261104100000_InitialPlatformSchema")]
 public sealed class InitialPlatformSchema : Migration
 {
-    /// <summary>테넌트 경계와 복합 외래 키를 포함한 초기 스키마를 생성합니다.</summary>
+    /// <summary>관계형 공급자에 맞는 초기 테이블과 복합 외래 키를 생성합니다.</summary>
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.Sql("""
-            CREATE TABLE platform_tenants (
-                Id TEXT NOT NULL PRIMARY KEY,
-                Code TEXT NOT NULL,
-                Name TEXT NOT NULL,
-                Status TEXT NOT NULL,
-                CreatedAtUtc TEXT NOT NULL
-            );
-            CREATE UNIQUE INDEX IX_platform_tenants_Code ON platform_tenants (Code);
+        migrationBuilder.CreateTable(
+            name: "platform_tenants",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                Code = table.Column<string>(maxLength: 64, nullable: false),
+                Name = table.Column<string>(maxLength: 160, nullable: false),
+                Status = table.Column<string>(maxLength: 32, nullable: false),
+                CreatedAtUtc = table.Column<DateTimeOffset>(nullable: false)
+            },
+            constraints: table => table.PrimaryKey("PK_platform_tenants", x => x.Id));
 
-            CREATE TABLE platform_organizations (
-                Id TEXT NOT NULL PRIMARY KEY,
-                TenantId TEXT NOT NULL,
-                Code TEXT NOT NULL,
-                Name TEXT NOT NULL,
-                Status TEXT NOT NULL,
-                CONSTRAINT AK_platform_organizations_Id_TenantId UNIQUE (Id, TenantId),
-                CONSTRAINT FK_platform_organizations_platform_tenants_TenantId
-                    FOREIGN KEY (TenantId) REFERENCES platform_tenants (Id) ON DELETE RESTRICT
-            );
-            CREATE UNIQUE INDEX IX_platform_organizations_TenantId_Code ON platform_organizations (TenantId, Code);
-            CREATE INDEX IX_platform_organizations_TenantId ON platform_organizations (TenantId);
+        migrationBuilder.CreateTable(
+            name: "platform_organizations",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                TenantId = table.Column<Guid>(nullable: false),
+                Code = table.Column<string>(maxLength: 64, nullable: false),
+                Name = table.Column<string>(maxLength: 160, nullable: false),
+                Status = table.Column<string>(maxLength: 32, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_platform_organizations", x => x.Id);
+                table.UniqueConstraint("AK_platform_organizations_Id_TenantId", x => new { x.Id, x.TenantId });
+                table.ForeignKey("FK_platform_organizations_platform_tenants_TenantId",
+                    x => x.TenantId, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
+            });
 
-            CREATE TABLE platform_projects (
-                Id TEXT NOT NULL PRIMARY KEY,
-                TenantId TEXT NOT NULL,
-                OrganizationId TEXT NOT NULL,
-                Code TEXT NOT NULL,
-                Name TEXT NOT NULL,
-                Status TEXT NOT NULL,
-                CONSTRAINT AK_platform_projects_Id_OrganizationId_TenantId UNIQUE (Id, OrganizationId, TenantId),
-                CONSTRAINT FK_platform_projects_platform_tenants_TenantId
-                    FOREIGN KEY (TenantId) REFERENCES platform_tenants (Id) ON DELETE RESTRICT,
-                CONSTRAINT FK_platform_projects_platform_organizations_OrganizationId_TenantId
-                    FOREIGN KEY (OrganizationId, TenantId) REFERENCES platform_organizations (Id, TenantId) ON DELETE RESTRICT
-            );
-            CREATE UNIQUE INDEX IX_platform_projects_OrganizationId_Code ON platform_projects (OrganizationId, Code);
-            CREATE INDEX IX_platform_projects_TenantId_OrganizationId ON platform_projects (TenantId, OrganizationId);
+        migrationBuilder.CreateTable(
+            name: "platform_projects",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                TenantId = table.Column<Guid>(nullable: false),
+                OrganizationId = table.Column<Guid>(nullable: false),
+                Code = table.Column<string>(maxLength: 64, nullable: false),
+                Name = table.Column<string>(maxLength: 160, nullable: false),
+                Status = table.Column<string>(maxLength: 32, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_platform_projects", x => x.Id);
+                table.UniqueConstraint("AK_platform_projects_Id_OrganizationId_TenantId",
+                    x => new { x.Id, x.OrganizationId, x.TenantId });
+                table.ForeignKey("FK_platform_projects_platform_tenants_TenantId",
+                    x => x.TenantId, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_projects_platform_organizations_OrganizationId_TenantId",
+                    x => new { x.OrganizationId, x.TenantId }, "platform_organizations",
+                    new[] { "Id", "TenantId" }, onDelete: ReferentialAction.Restrict);
+            });
 
-            CREATE TABLE platform_users (
-                Id TEXT NOT NULL PRIMARY KEY,
-                TenantId TEXT NOT NULL,
-                Email TEXT NOT NULL,
-                DisplayName TEXT NOT NULL,
-                Status TEXT NOT NULL,
-                CONSTRAINT FK_platform_users_platform_tenants_TenantId
-                    FOREIGN KEY (TenantId) REFERENCES platform_tenants (Id) ON DELETE RESTRICT
-            );
-            CREATE UNIQUE INDEX IX_platform_users_TenantId_Email ON platform_users (TenantId, Email);
+        migrationBuilder.CreateTable(
+            name: "platform_users",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                TenantId = table.Column<Guid>(nullable: false),
+                Email = table.Column<string>(maxLength: 320, nullable: false),
+                DisplayName = table.Column<string>(maxLength: 120, nullable: false),
+                Status = table.Column<string>(maxLength: 32, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_platform_users", x => x.Id);
+                table.ForeignKey("FK_platform_users_platform_tenants_TenantId",
+                    x => x.TenantId, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
+            });
 
-            CREATE TABLE platform_resources (
-                Id TEXT NOT NULL PRIMARY KEY,
-                tenant_id TEXT NOT NULL,
-                organization_id TEXT NULL,
-                project_id TEXT NULL,
-                ResourceType TEXT NOT NULL,
-                Name TEXT NOT NULL,
-                Status TEXT NOT NULL,
-                CONSTRAINT CK_platform_resources_project_requires_organization
-                    CHECK (project_id IS NULL OR organization_id IS NOT NULL),
-                CONSTRAINT FK_platform_resources_platform_tenants_tenant_id
-                    FOREIGN KEY (tenant_id) REFERENCES platform_tenants (Id) ON DELETE RESTRICT,
-                CONSTRAINT FK_platform_resources_platform_organizations_organization_id_tenant_id
-                    FOREIGN KEY (organization_id, tenant_id) REFERENCES platform_organizations (Id, TenantId) ON DELETE RESTRICT,
-                CONSTRAINT FK_platform_resources_platform_projects_project_id_organization_id_tenant_id
-                    FOREIGN KEY (project_id, organization_id, tenant_id) REFERENCES platform_projects (Id, OrganizationId, TenantId) ON DELETE RESTRICT
-            );
-            CREATE INDEX IX_platform_resources_tenant_id ON platform_resources (tenant_id);
+        migrationBuilder.CreateTable(
+            name: "platform_resources",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                tenant_id = table.Column<Guid>(nullable: false),
+                organization_id = table.Column<Guid>(nullable: true),
+                project_id = table.Column<Guid>(nullable: true),
+                ResourceType = table.Column<string>(maxLength: 80, nullable: false),
+                Name = table.Column<string>(maxLength: 160, nullable: false),
+                Status = table.Column<string>(maxLength: 32, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_platform_resources", x => x.Id);
+                table.CheckConstraint("CK_platform_resources_project_requires_organization",
+                    "project_id IS NULL OR organization_id IS NOT NULL");
+                table.ForeignKey("FK_platform_resources_platform_tenants_tenant_id",
+                    x => x.tenant_id, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_resources_platform_organizations_organization_id_tenant_id",
+                    x => new { x.organization_id, x.tenant_id }, "platform_organizations",
+                    new[] { "Id", "TenantId" }, onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_resources_platform_projects_project_id_organization_id_tenant_id",
+                    x => new { x.project_id, x.organization_id, x.tenant_id }, "platform_projects",
+                    new[] { "Id", "OrganizationId", "TenantId" }, onDelete: ReferentialAction.Restrict);
+            });
 
-            CREATE TABLE platform_policies (
-                Id TEXT NOT NULL PRIMARY KEY,
-                tenant_id TEXT NOT NULL,
-                organization_id TEXT NULL,
-                project_id TEXT NULL,
-                Key TEXT NOT NULL,
-                Value TEXT NOT NULL,
-                Version INTEGER NOT NULL,
-                IsEnabled INTEGER NOT NULL,
-                CONSTRAINT CK_platform_policies_project_requires_organization
-                    CHECK (project_id IS NULL OR organization_id IS NOT NULL),
-                CONSTRAINT FK_platform_policies_platform_tenants_tenant_id
-                    FOREIGN KEY (tenant_id) REFERENCES platform_tenants (Id) ON DELETE RESTRICT,
-                CONSTRAINT FK_platform_policies_platform_organizations_organization_id_tenant_id
-                    FOREIGN KEY (organization_id, tenant_id) REFERENCES platform_organizations (Id, TenantId) ON DELETE RESTRICT,
-                CONSTRAINT FK_platform_policies_platform_projects_project_id_organization_id_tenant_id
-                    FOREIGN KEY (project_id, organization_id, tenant_id) REFERENCES platform_projects (Id, OrganizationId, TenantId) ON DELETE RESTRICT
-            );
-            CREATE INDEX IX_platform_policies_tenant_id ON platform_policies (tenant_id);
-            CREATE INDEX IX_platform_policies_Key_Version ON platform_policies (Key, Version);
-            """);
+        migrationBuilder.CreateTable(
+            name: "platform_policies",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(nullable: false),
+                tenant_id = table.Column<Guid>(nullable: false),
+                organization_id = table.Column<Guid>(nullable: true),
+                project_id = table.Column<Guid>(nullable: true),
+                Key = table.Column<string>(maxLength: 120, nullable: false),
+                Value = table.Column<string>(maxLength: 4000, nullable: false),
+                Version = table.Column<long>(nullable: false),
+                IsEnabled = table.Column<bool>(nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_platform_policies", x => x.Id);
+                table.CheckConstraint("CK_platform_policies_project_requires_organization",
+                    "project_id IS NULL OR organization_id IS NOT NULL");
+                table.ForeignKey("FK_platform_policies_platform_tenants_tenant_id",
+                    x => x.tenant_id, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_policies_platform_organizations_organization_id_tenant_id",
+                    x => new { x.organization_id, x.tenant_id }, "platform_organizations",
+                    new[] { "Id", "TenantId" }, onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_policies_platform_projects_project_id_organization_id_tenant_id",
+                    x => new { x.project_id, x.organization_id, x.tenant_id }, "platform_projects",
+                    new[] { "Id", "OrganizationId", "TenantId" }, onDelete: ReferentialAction.Restrict);
+            });
+
+        migrationBuilder.CreateIndex("IX_platform_tenants_Code", "platform_tenants", "Code", unique: true);
+        migrationBuilder.CreateIndex("IX_platform_organizations_TenantId_Code", "platform_organizations",
+            new[] { "TenantId", "Code" }, unique: true);
+        migrationBuilder.CreateIndex("IX_platform_organizations_TenantId", "platform_organizations", "TenantId");
+        migrationBuilder.CreateIndex("IX_platform_projects_OrganizationId_Code", "platform_projects",
+            new[] { "OrganizationId", "Code" }, unique: true);
+        migrationBuilder.CreateIndex("IX_platform_projects_TenantId_OrganizationId", "platform_projects",
+            new[] { "TenantId", "OrganizationId" });
+        migrationBuilder.CreateIndex("IX_platform_users_TenantId_Email", "platform_users",
+            new[] { "TenantId", "Email" }, unique: true);
+        migrationBuilder.CreateIndex("IX_platform_resources_tenant_id", "platform_resources", "tenant_id");
+        migrationBuilder.CreateIndex("IX_platform_policies_tenant_id", "platform_policies", "tenant_id");
+        migrationBuilder.CreateIndex("IX_platform_policies_Key_Version", "platform_policies", new[] { "Key", "Version" });
     }
 
-    /// <summary>초기 스키마를 역순으로 제거합니다.</summary>
+    /// <summary>초기 스키마를 외래 키 의존성의 역순으로 제거합니다.</summary>
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.Sql("""
-            DROP TABLE IF EXISTS platform_policies;
-            DROP TABLE IF EXISTS platform_resources;
-            DROP TABLE IF EXISTS platform_users;
-            DROP TABLE IF EXISTS platform_projects;
-            DROP TABLE IF EXISTS platform_organizations;
-            DROP TABLE IF EXISTS platform_tenants;
-            """);
+        migrationBuilder.DropTable(name: "platform_policies");
+        migrationBuilder.DropTable(name: "platform_resources");
+        migrationBuilder.DropTable(name: "platform_users");
+        migrationBuilder.DropTable(name: "platform_projects");
+        migrationBuilder.DropTable(name: "platform_organizations");
+        migrationBuilder.DropTable(name: "platform_tenants");
     }
 }
