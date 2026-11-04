@@ -6,6 +6,7 @@ namespace EDAN.Tensor.Platform.Application.UseCases;
 
 /// <summary>조직·프로젝트 소속을 상위 소유권과 대조하여 등록합니다.</summary>
 public sealed class ScopedMembershipService(
+    ITenantRepository tenants,
     IOrganizationRepository organizations,
     IProjectRepository projects,
     ITenantMembershipRepository tenantMemberships,
@@ -17,6 +18,10 @@ public sealed class ScopedMembershipService(
     {
         if (!await tenantMemberships.HasActiveMembershipAsync(tenantId, subjectId, cancellationToken))
             return Fail<OrganizationMembershipId>("platform.membership.tenant_required", "대상 사용자는 해당 Tenant의 활성 구성원이어야 합니다.");
+
+        var tenant = await tenants.GetByIdAsync(tenantId, cancellationToken);
+        if (tenant is null || tenant.Status != TenantStatus.Active)
+            return Fail<OrganizationMembershipId>("platform.tenant.unavailable", "활성 Tenant에서만 조직 소속을 부여할 수 있습니다.");
 
         var organization = await organizations.GetByIdAsync(organizationId, cancellationToken);
         if (organization is null || organization.TenantId != tenantId || organization.Status != OrganizationStatus.Active)
@@ -38,6 +43,10 @@ public sealed class ScopedMembershipService(
     {
         if (!await tenantMemberships.HasActiveMembershipAsync(tenantId, subjectId, cancellationToken))
             return Fail<ProjectMembershipId>("platform.membership.tenant_required", "대상 사용자는 해당 Tenant의 활성 구성원이어야 합니다.");
+
+        var tenant = await tenants.GetByIdAsync(tenantId, cancellationToken);
+        if (tenant is null || tenant.Status != TenantStatus.Active)
+            return Fail<ProjectMembershipId>("platform.tenant.unavailable", "활성 Tenant에서만 프로젝트 소속을 부여할 수 있습니다.");
 
         var project = await projects.GetByIdAsync(projectId, cancellationToken);
         if (project is null || project.TenantId != tenantId || project.OrganizationId != organizationId || project.Status != ProjectStatus.Active)
