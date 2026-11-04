@@ -1,4 +1,4 @@
-name: Build
+name: Build and Test
 on:
   push:
     branches: [ main ]
@@ -7,12 +7,16 @@ on:
 permissions:
   contents: read
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet restore EDAN.Tensor.sln
-      - run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+      - name: Restore
+        run: dotnet restore EDAN.Tensor.sln
+      - name: Build
+        run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+      - name: Test
+        run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results.trx"
