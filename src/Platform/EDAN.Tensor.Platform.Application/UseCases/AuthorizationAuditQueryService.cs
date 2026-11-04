@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
+using EDAN.Tensor.Platform.Domain.Model;
 
 namespace EDAN.Tensor.Platform.Application.UseCases;
 
