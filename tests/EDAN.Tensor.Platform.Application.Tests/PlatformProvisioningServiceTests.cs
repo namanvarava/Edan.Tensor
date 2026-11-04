@@ -20,6 +20,19 @@ public sealed class PlatformProvisioningServiceTests
     }
 
     [Fact]
+    public async Task TenantActivationEnablesOrganizationProvisioning()
+    {
+        var store = new Store();
+        var tenant = AddTenant(store, TenantStatus.Provisioning);
+        var service = Service(store);
+        var activation = await service.ActivateTenantAsync(tenant.Id);
+        var organization = await service.CreateOrganizationAsync(tenant.Id, "OPS", "운영");
+        Assert.True(activation.IsSuccess);
+        Assert.True(organization.IsSuccess);
+        Assert.Equal(TenantStatus.Active, tenant.Status);
+    }
+
+    [Fact]
     public async Task OrganizationCreationRejectsSuspendedTenant()
     {
         var store = new Store();
