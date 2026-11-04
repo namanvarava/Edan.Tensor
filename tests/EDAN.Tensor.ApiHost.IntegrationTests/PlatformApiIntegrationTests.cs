@@ -27,6 +27,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/resources", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/policies", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -181,6 +183,26 @@ public sealed class PlatformApiIntegrationTests
                 priority = 100
             });
         Assert.Equal(HttpStatusCode.Created, denyPolicyResponse.StatusCode);
+        var denyPolicyId = await ReadIdAsync(denyPolicyResponse);
+
+        using var policyListResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/authorization-policies");
+        Assert.Equal(HttpStatusCode.OK, policyListResponse.StatusCode);
+        Assert.True(await ReadArrayLengthAsync(policyListResponse) >= 1);
+
+        using var policyUpdateResponse = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-policies/{denyPolicyId}",
+            new { effect = "Deny", priority = 101 });
+        Assert.Equal(HttpStatusCode.NoContent, policyUpdateResponse.StatusCode);
+
+        using var policyDisableResponse = await client.PatchAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-policies/{denyPolicyId}/enabled",
+            new { isEnabled = false });
+        Assert.Equal(HttpStatusCode.NoContent, policyDisableResponse.StatusCode);
+
+        using var policyEnableResponse = await client.PatchAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-policies/{denyPolicyId}/enabled",
+            new { isEnabled = true });
+        Assert.Equal(HttpStatusCode.NoContent, policyEnableResponse.StatusCode);
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "scoped-user");
