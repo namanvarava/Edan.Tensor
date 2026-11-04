@@ -61,7 +61,7 @@ public sealed record EmailAddress
 /// <summary>사용자는 테넌트에 귀속되며 이메일 중복은 테넌트 범위에서 관리합니다.</summary>
 public sealed class User:AggregateRoot<UserId>
 {
- private User(UserId id,TenantId tenantId,EmailAddress email,string name):base(id){TenantId=tenantId;Email=email;DisplayName=Rules.Text(name,120);Status=UserStatus.Invited;}
+ private User(UserId id,TenantId tenantId,EmailAddress email,string displayName):base(id){TenantId=tenantId;Email=email;DisplayName=Rules.Text(displayName,120);Status=UserStatus.Invited;}
  public TenantId TenantId{get;} public EmailAddress Email{get;} public string DisplayName{get;private set;} public UserStatus Status{get;private set;}
  public static User Invite(UserId id,TenantId tenant,EmailAddress email,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(tenant);ArgumentNullException.ThrowIfNull(email);return new(id,tenant,email,name);}
  public void Rename(string name){Open();DisplayName=Rules.Text(name,120);} public void Activate(){if(Status is not(UserStatus.Invited or UserStatus.Suspended))Invalid();Status=UserStatus.Active;} public void Suspend(){if(Status!=UserStatus.Active)Invalid();Status=UserStatus.Suspended;} public void Deactivate(){Open();Status=UserStatus.Deactivated;}
