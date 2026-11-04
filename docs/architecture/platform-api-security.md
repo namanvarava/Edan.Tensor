@@ -65,6 +65,10 @@ Tenant 생성, 최초 활성화, 구성원 소속 부여는 `platform_admin` 역
 - 활성 소속을 부여받은 주체는 선택 Tenant의 기본 API에 접근
 - 자원·정책 요청 본문에는 TenantId를 포함하지 않음
 
+## Policy 기반 권한 평가 및 감사
+
+Platform API는 Tenant·Organization·Project 계층의 접근 정책을 평가합니다. 정책은 외부 주체, Action, ResourceType, Allow·Deny 효과와 우선순위를 가집니다. Tenant 정책은 하위 범위에 상속되고 Organization 정책은 해당 프로젝트에 상속됩니다. 명시적 Deny는 Allow 및 역할 권한보다 우선하며, 활성 Tenant 소속은 정책 Allow로 우회할 수 없습니다. 평가 결과는 platform_authorization_audit 테이블에 기록합니다. 상세 설계는 [Policy 기반 권한 평가 및 감사 설계](platform-authorization-policy.md)를 참고하십시오.
+
 ## 후속 보안 과제
 
 1. 사용자 초대 수락과 이메일 기반 외부 계정 연결
