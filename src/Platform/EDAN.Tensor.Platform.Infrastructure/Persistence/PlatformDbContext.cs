@@ -93,7 +93,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureResource(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Resource>();
-        entity.ToTable("platform_resources");
+        entity.ToTable("platform_resources", table => table.HasCheckConstraint("CK_platform_resources_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
         entity.Ignore(x => x.Scope);
@@ -101,7 +101,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.HasIndex(x => x.ScopeTenantId);
-        entity.HasCheckConstraint("CK_platform_resources_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.ScopeTenantId).OnDelete(DeleteBehavior.Restrict);
         entity.HasOne<Organization>().WithMany()
             .HasForeignKey(x => new { x.ScopeOrganizationId, x.ScopeTenantId })
@@ -119,7 +118,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigurePolicy(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Policy>();
-        entity.ToTable("platform_policies");
+        entity.ToTable("platform_policies", table => table.HasCheckConstraint("CK_platform_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>(value => new PolicyId(value), id => id.Value));
         entity.Ignore(x => x.Scope);
@@ -127,7 +126,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.ScopeOrganizationId).HasColumnName("organization_id").HasConversion(OptionalIdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.ScopeProjectId).HasColumnName("project_id").HasConversion(OptionalIdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.HasIndex(x => x.ScopeTenantId);
-        entity.HasCheckConstraint("CK_platform_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.ScopeTenantId).OnDelete(DeleteBehavior.Restrict);
         entity.HasOne<Organization>().WithMany()
             .HasForeignKey(x => new { x.ScopeOrganizationId, x.ScopeTenantId })
