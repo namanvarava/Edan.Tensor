@@ -42,13 +42,16 @@ public sealed class PlatformAuthorizationService(
 
         var applicable = await policies.GetApplicableAsync(tenantId, organizationId, projectId,
             subjectId, action, resourceType, cancellationToken);
+        var activeTenantMembership = membership is not null && membership.Status == TenantMembershipStatus.Active;
         var deny = applicable.Where(x => x.IsEnabled && x.Effect == AuthorizationPolicyEffect.Deny)
             .OrderByDescending(x => x.Priority).FirstOrDefault();
         var allow = applicable.Where(x => x.IsEnabled && x.Effect == AuthorizationPolicyEffect.Allow)
             .OrderByDescending(x => x.Priority).FirstOrDefault();
 
         AuthorizationDecision decision;
-        if (deny is not null)
+        if (!activeTenantMembership)
+            decision = new(false, "membership.required", null);
+        else if (deny is not null)
             decision = new(false, "policy.explicit_deny", deny.Id.Value.ToString());
         else if (allow is not null)
             decision = new(true, "policy.explicit_allow", allow.Id.Value.ToString());
