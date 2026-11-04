@@ -24,6 +24,7 @@ if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSour
 builder.Services.AddPlatformApplication();
 builder.Services.AddPlatformInfrastructure(options => options.UseSqlite(sqliteConnection.ConnectionString));
 builder.Services.AddHealthChecks();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -35,6 +36,10 @@ if (app.Environment.IsDevelopment()
     var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
     await db.Database.MigrateAsync();
 }
+
+// OpenAPI 문서는 개발 환경에서만 제공하여 운영 API 표면을 불필요하게 공개하지 않습니다.
+if (app.Environment.IsDevelopment())
+    app.MapOpenApi();
 
 app.MapHealthChecks("/health");
 app.MapPlatformEndpoints();
