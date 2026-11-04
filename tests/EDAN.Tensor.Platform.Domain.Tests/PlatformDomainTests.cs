@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.SharedKernel.Exceptions;
+using Xunit;
 namespace EDAN.Tensor.Platform.Domain.Tests;
 public sealed class PlatformDomainTests
 {
