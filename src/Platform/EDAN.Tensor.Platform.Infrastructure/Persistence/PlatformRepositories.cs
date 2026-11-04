@@ -90,7 +90,17 @@ public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAutho
             .OrderByDescending(x => x.Priority)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<AuthorizationPolicy>> GetByTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.AuthorizationPolicies.AsNoTracking().Where(x => x.TenantId == tenantId)
+            .OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+
+    public Task<AuthorizationPolicy?> GetByIdAsync(AuthorizationPolicyId id, CancellationToken cancellationToken = default) =>
+        db.AuthorizationPolicies.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
     public void Add(AuthorizationPolicy policy) => db.AuthorizationPolicies.Add(policy);
+
+    public void AddChangeAudit(AuthorizationPolicyChangeAuditEntry entry) =>
+        db.AuthorizationPolicyChangeAuditEntries.Add(entry);
 }
 
 /// <summary>감사 기록 저장소는 평가 결과를 삭제하거나 수정하지 않고 추가합니다.</summary>
