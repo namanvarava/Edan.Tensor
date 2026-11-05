@@ -312,6 +312,26 @@ public sealed class PlatformApiIntegrationTests
         using var archiveJobVerify = await JsonDocument.ParseAsync(await archiveJobVerifyResponse.Content.ReadAsStreamAsync());
         Assert.True(archiveJobVerify.RootElement.GetProperty("isValid").GetBoolean());
 
+        // Tenant별 예약 정책을 조회하고 실행 주기와 활성 상태를 변경합니다.
+        using var scheduleGetResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-schedule");
+        Assert.Equal(HttpStatusCode.OK, scheduleGetResponse.StatusCode);
+        using var scheduleDefault = await JsonDocument.ParseAsync(await scheduleGetResponse.Content.ReadAsStreamAsync());
+        Assert.False(scheduleDefault.RootElement.GetProperty("isEnabled").GetBoolean());
+
+        using var scheduleUpdateResponse = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-schedule",
+            new { intervalHours = 24, isEnabled = true });
+        Assert.Equal(HttpStatusCode.OK, scheduleUpdateResponse.StatusCode);
+        using var scheduleUpdated = await JsonDocument.ParseAsync(await scheduleUpdateResponse.Content.ReadAsStreamAsync());
+        Assert.True(scheduleUpdated.RootElement.GetProperty("isEnabled").GetBoolean());
+        Assert.Equal(24, scheduleUpdated.RootElement.GetProperty("intervalHours").GetInt32());
+
+        using var invalidScheduleResponse = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-schedule",
+            new { intervalHours = 800, isEnabled = true });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidScheduleResponse.StatusCode);
+
         // Tenant별 감사 보존 정책을 조회하고 법적 보존 상태를 변경합니다.
         using var retentionGetResponse = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/authorization-audit/retention");
