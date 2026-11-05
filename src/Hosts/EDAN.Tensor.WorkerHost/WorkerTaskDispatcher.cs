@@ -12,6 +12,8 @@ internal sealed class WorkerTaskDispatcher(
     TimeProvider timeProvider) : BackgroundService
 {
     private readonly ConcurrentDictionary<string, byte> _active = new(StringComparer.Ordinal);
+    private readonly object _activeSync = new();
+    private TaskCompletionSource _activeDrained = CompletedSource();
     private readonly string _workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
     private int _tenantCursor;
 
@@ -59,7 +61,7 @@ internal sealed class WorkerTaskDispatcher(
         if (tenantIds.Count == 0)
             return;
 
-        var start = Math.Abs(Interlocked.Increment(ref _tenantCursor) - 1) % tenantIds.Count;
+        var start = (int)(((uint)Interlocked.Increment(ref _tenantCursor) - 1) % (uint)tenantIds.Count);
         for (var offset = 0; offset < tenantIds.Count && slots > 0; offset++)
         {
             var tenantId = tenantIds[(start + offset) % tenantIds.Count];
@@ -76,11 +78,33 @@ internal sealed class WorkerTaskDispatcher(
             }
 
             var key = $"{tenantId:N}:{task.Id:N}";
-            if (!_active.TryAdd(key, 0))
+            if (!TryMarkActive(key))
                 continue;
 
             slots--;
             _ = RunTaskAsync(key, tenantId, task.Id);
+        }
+    }
+
+    private bool TryMarkActive(string key)
+    {
+        lock (_activeSync)
+        {
+            if (!_active.TryAdd(key, 0))
+                return false;
+            if (_active.Count == 1)
+                _activeDrained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            return true;
+        }
+    }
+
+    private void RemoveActive(string key)
+    {
+        lock (_activeSync)
+        {
+            _active.TryRemove(key, out _);
+            if (_active.IsEmpty)
+                _activeDrained.TrySetResult();
         }
     }
 
@@ -104,7 +128,7 @@ internal sealed class WorkerTaskDispatcher(
         }
         finally
         {
-            _active.TryRemove(key, out _);
+            RemoveActive(key);
         }
     }
 
@@ -119,11 +143,31 @@ internal sealed class WorkerTaskDispatcher(
             TimeSpan.FromSeconds(handoffSeconds),
             cancellationToken);
 
+        Task activeDrained;
+        lock (_activeSync)
+            activeDrained = _activeDrained.Task;
+
+        try
+        {
+            await activeDrained.WaitAsync(TimeSpan.FromSeconds(handoffSeconds), cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("종료 제한 시간 내 완료되지 않은 디스패치가 있습니다. Active={Active}", _active.Count);
+        }
+
         logger.LogInformation(
             "Worker 종료 조정 완료: 유예 시간 내 정리={Drained}, 인계 요청={Requested}, 인계 성공={Succeeded}, 실행 잔여={Remaining}",
             result.DrainedWithinGracePeriod,
             result.HandoffRequested,
             result.HandoffSucceeded,
             result.StillRunning);
+    }
+
+    private static TaskCompletionSource CompletedSource()
+    {
+        var source = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        source.SetResult();
+        return source;
     }
 }
