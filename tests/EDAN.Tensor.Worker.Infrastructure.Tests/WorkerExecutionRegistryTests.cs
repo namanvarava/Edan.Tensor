@@ -52,6 +52,43 @@ public sealed class WorkerExecutionRegistryTests
     }
 
     [Fact]
+    public async Task ShutdownReturnsWhenHandoffCallbackIgnoresCancellation()
+    {
+        var registry = new WorkerExecutionRegistry();
+        var handoffStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseHandoff = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handoffFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Assert.True(registry.TryEnter(async _ =>
+        {
+            handoffStarted.TrySetResult();
+            try
+            {
+                // 의도적으로 전달된 취소 토큰을 사용하지 않는 콜백을 시뮬레이션합니다.
+                await releaseHandoff.Task;
+                return true;
+            }
+            finally
+            {
+                handoffFinished.TrySetResult();
+            }
+        }, out var execution));
+
+        var shutdown = registry.StopAsync(TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(40));
+        await handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        var result = await shutdown.WaitAsync(TimeSpan.FromSeconds(1));
+
+        Assert.False(result.DrainedWithinGracePeriod);
+        Assert.Equal(1, result.HandoffRequested);
+        Assert.Equal(0, result.HandoffSucceeded);
+        Assert.Equal(1, result.StillRunning);
+
+        releaseHandoff.TrySetResult();
+        await handoffFinished.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        execution!.Dispose();
+    }
+
+    [Fact]
     public async Task HandoffRequestAfterExecutionLeaseIsDisposedIsIgnored()
     {
         var registry = new WorkerExecutionRegistry();

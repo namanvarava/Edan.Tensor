@@ -47,7 +47,11 @@ public sealed class WorkerExecutionRegistry
         timeout.CancelAfter(handoffTimeout);
         var outcomes = await Task.WhenAll(active.Select(async execution =>
         {
-            try { return await execution.RequestHandoffAsync(timeout.Token); }
+            try
+            {
+                // 콜백이 CancellationToken을 무시해도 종료 조정기가 인계 제한 시간을 넘기지 않도록 대기 자체를 제한합니다.
+                return await execution.RequestHandoffAsync(timeout.Token).WaitAsync(timeout.Token);
+            }
             catch (OperationCanceledException) when (timeout.IsCancellationRequested) { return false; }
             catch { return false; }
         }));
