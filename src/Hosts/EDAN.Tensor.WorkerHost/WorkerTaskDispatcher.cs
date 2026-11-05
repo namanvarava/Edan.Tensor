@@ -47,12 +47,14 @@ internal sealed class WorkerTaskDispatcher(
         for (var offset = 0; offset < tenantIds.Count && slots > 0; offset++)
         {
             var tenantId = tenantIds[(start + offset) % tenantIds.Count];
-            var tasks = await repository.GetReadyAsync(tenantId, now, 1, cancellationToken);
-            if (tasks.Count == 0) continue;
-            var task = tasks[0];
-            if (handlers.Resolve(task.TaskType) is null)
+            // 등록되지 않은 TaskType이 테넌트 큐 선두에 있어도 뒤의 실행 가능 작업을 막지 않도록 제한된 후보를 확인합니다.
+            var candidateBatchSize = Math.Clamp(configuration.GetValue("Worker:TenantCandidateBatchSize", 16), 1, 100);
+            var tasks = await repository.GetReadyAsync(tenantId, now, candidateBatchSize, cancellationToken);
+            var task = tasks.FirstOrDefault(x => handlers.Resolve(x.TaskType) is not null);
+            if (task is null)
             {
-                logger.LogDebug("등록된 핸들러가 없어 작업을 보류합니다. TenantId={TenantId}, TaskId={TaskId}, TaskType={TaskType}", tenantId, task.Id, task.TaskType);
+                if (tasks.Count > 0)
+                    logger.LogDebug("등록된 핸들러가 있는 작업이 후보 범위에 없습니다. TenantId={TenantId}, CandidateCount={CandidateCount}", tenantId, tasks.Count);
                 continue;
             }
             var key = $"{tenantId:N}:{task.Id:N}";
