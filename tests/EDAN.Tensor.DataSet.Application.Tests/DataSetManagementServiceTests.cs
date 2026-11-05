@@ -76,7 +76,9 @@ public sealed class DataSetManagementServiceTests
             Allocations++;
             return Task.FromResult(new StorageReference("tenant:01.dataset:" + allocation.DataSetId.Value.ToString("N")));
         }
-        public Task ReleaseAsync(StorageReference reference, CancellationToken cancellationToken = default) { Releases++; return Task.CompletedTask; }
+        public Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<Stream?> OpenReadAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default) => Task.FromResult<Stream?>(null);
+        public Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default) { Releases++; return Task.CompletedTask; }
         public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
             Task.FromResult(DataSets.SingleOrDefault(x => x.Id == id && x.Scope.TenantId == tenantId));
         public void Add(DataSetAggregate dataSet) => DataSets.Add(dataSet);
