@@ -288,6 +288,12 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
         {
             entity.ToTable("platform_authorization_audit_archive_jobs");
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).IsRequired();
+            entity.Property(x => x.ArchiveId);
+            entity.Property(x => x.RecordCount).IsRequired();
+            entity.Property(x => x.SizeBytes);
+            entity.Property(x => x.CompletedAtUtc);
+            entity.Property(x => x.AttemptCount).IsRequired();
             entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
             entity.Property(x => x.FromUtc).IsRequired();
             entity.Property(x => x.ToUtc).IsRequired();
@@ -306,6 +312,11 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
         {
             entity.ToTable("platform_authorization_audit_archive_attempts");
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).IsRequired();
+            entity.Property(x => x.JobId).IsRequired();
+            entity.Property(x => x.AttemptNumber).IsRequired();
+            entity.Property(x => x.FinishedAtUtc);
+            entity.Property(x => x.IsSuccessful);
             entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
             entity.Property(x => x.Operation).HasMaxLength(32).IsRequired();
             entity.Property(x => x.StartedAtUtc).IsRequired();
