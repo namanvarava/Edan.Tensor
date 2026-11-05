@@ -162,6 +162,54 @@ public static class PlatformEndpoints
                 return Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 아카이브 작업의 상태와 재시도·검증 이력을 Tenant 관리자에게 제공합니다.
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs",
+            async (Guid tenantId, CreateAuthorizationAuditArchiveRequest request, HttpContext context,
+                AuthorizationAuditArchiveJobService service, CancellationToken token) =>
+            {
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                try
+                {
+                    var result = await service.CreateAsync(new TenantId(tenantId), request.FromUtc,
+                        request.ToUtc, actor, token);
+                    return Results.Json(result, statusCode: StatusCodes.Status201Created);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/archive-jobs/{jobId:guid}",
+            async (Guid tenantId, Guid jobId, AuthorizationAuditArchiveJobService service, CancellationToken token) =>
+            {
+                var result = await service.GetAsync(new TenantId(tenantId), jobId, token);
+                return result is null ? Results.NotFound() : Results.Ok(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs/{jobId:guid}/retry",
+            async (Guid tenantId, Guid jobId, AuthorizationAuditArchiveJobService service, CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.RetryAsync(new TenantId(tenantId), jobId, token);
+                    return result is null ? Results.NotFound() : Results.Ok(result);
+                }
+                catch (InvalidOperationException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs/{jobId:guid}/verify",
+            async (Guid tenantId, Guid jobId, VerifyAuthorizationAuditArchiveRequest request,
+                AuthorizationAuditArchiveJobService service, CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.VerifyAsync(new TenantId(tenantId), jobId,
+                        request.ExpectedSha256, token);
+                    return result is null ? Results.NotFound() : Results.Ok(result);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+                catch (InvalidOperationException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         // 감사 보존 정책은 Tenant 관리자만 변경하며 모든 변경은 별도 감사 이력으로 남깁니다.
         tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/retention",
             async (Guid tenantId, AuthorizationAuditRetentionService service, CancellationToken token) =>
