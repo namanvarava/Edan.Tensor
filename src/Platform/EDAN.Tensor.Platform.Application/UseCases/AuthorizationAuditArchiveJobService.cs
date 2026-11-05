@@ -71,12 +71,10 @@ public sealed class AuthorizationAuditArchiveJobService(
         var attempt = AuthorizationAuditArchiveAttempt.Start(job.Id, job.TenantId,
             job.AttemptCount + 1, operation, clock.UtcNow);
         jobs.AddAttempt(attempt);
+        AuthorizationAuditArchiveResult result;
         try
         {
-            var result = await archives.CreateAsync(job.TenantId, job.FromUtc, job.ToUtc, cancellationToken);
-            job.Complete(result.ArchiveId, result.RecordCount, result.Sha256, result.SizeBytes, clock.UtcNow);
-            attempt.Finish(true, "archive.created", clock.UtcNow);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            result = await archives.CreateAsync(job.TenantId, job.FromUtc, job.ToUtc, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -85,6 +83,10 @@ public sealed class AuthorizationAuditArchiveJobService(
             await unitOfWork.SaveChangesAsync(cancellationToken);
             throw;
         }
+
+        job.Complete(result.ArchiveId, result.RecordCount, result.Sha256, result.SizeBytes, clock.UtcNow);
+        attempt.Finish(true, "archive.created", clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ToView(job);
     }
 
