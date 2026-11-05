@@ -63,8 +63,12 @@ public static class DataSetEndpoints
         }).WithName("GetDataSet");
 
         tenantGroup.MapPost("/{dataSetId:guid}/content", async (Guid tenantId, Guid dataSetId,
-            HttpRequest request, DataSetManagementService service, CancellationToken token) =>
+            HttpRequest request, DataSetManagementService service, IConfiguration configuration, CancellationToken token) =>
         {
+            var maxUploadBytes = configuration.GetValue<long>("DataSetContent:MaxUploadBytes", 67_108_864);
+            if (request.ContentLength is long contentLength && contentLength > maxUploadBytes)
+                return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+
             var result = await service.WriteContentAsync(new DataSetId(dataSetId), tenantId, request.Body, token);
             if (result.IsSuccess)
                 return Results.NoContent();
