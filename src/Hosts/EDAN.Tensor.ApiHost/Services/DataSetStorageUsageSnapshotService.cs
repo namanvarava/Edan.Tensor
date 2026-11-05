@@ -10,19 +10,28 @@ namespace EDAN.Tensor.ApiHost.Services;
 public sealed class DataSetStorageUsageSnapshotService(
     DataSetDbContext dataSetDb,
     PlatformDbContext platformDb,
-    IDataSetTenantStorageUsageReader usageReader,
+    IDataSetTenantStorageUsageReader tenantUsageReader,
+    IDataSetStorageUsageReader storageUsageReader,
     TimeProvider timeProvider)
 {
     public async Task<int> CaptureDueAsync(CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow();
         var period = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero);
-        var tenantIds = await dataSetDb.DataSets.AsNoTracking()
-            .Select(x => x.TenantId).Distinct().OrderBy(x => x).ToListAsync(cancellationToken);
+        var dataSets = await dataSetDb.DataSets.AsNoTracking()
+            .OrderBy(x => x.TenantId).ThenBy(x => x.OrganizationId).ThenBy(x => x.ProjectId)
+            .ToListAsync(cancellationToken);
+        var policies = await platformDb.StorageQuotaPolicies.AsNoTracking()
+            .Where(x => x.IsEnabled).ToListAsync(cancellationToken);
+
+        // 데이터가 아직 없는 Tenant도 활성 정책이 있으면 평가 대상에 포함합니다.
+        var tenantIds = dataSets.Select(x => x.TenantId)
+            .Concat(policies.Select(x => x.TenantId.Value))
+            .Distinct().OrderBy(x => x).ToArray();
 
         foreach (var tenantId in tenantIds)
         {
-            var usage = await usageReader.GetTenantUsageAsync(tenantId, cancellationToken);
+            var usage = await tenantUsageReader.GetTenantUsageAsync(tenantId, cancellationToken);
             var snapshot = await dataSetDb.StorageUsageSnapshots.SingleOrDefaultAsync(
                 x => x.TenantId == tenantId && x.PeriodStartUtc == period, cancellationToken);
             if (snapshot is null)
@@ -39,44 +48,97 @@ public sealed class DataSetStorageUsageSnapshotService(
                 snapshot.UsedBytes = usage.TenantBytes;
                 snapshot.DataSetCount = usage.TenantDataSetCount;
             }
-            await EvaluateTenantPolicyAsync(tenantId, usage.TenantBytes, now, cancellationToken);
+
+            var tenantPolicies = policies.Where(x => x.TenantId.Value == tenantId)
+                .OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
+            foreach (var policy in tenantPolicies)
+            {
+                var targetDataSet = policy.Scope switch
+                {
+                    StorageQuotaPolicyScope.Organization => dataSets.FirstOrDefault(x =>
+                        x.TenantId == tenantId && x.OrganizationId == policy.TargetId),
+                    StorageQuotaPolicyScope.Project => dataSets.FirstOrDefault(x =>
+                        x.TenantId == tenantId && x.ProjectId == policy.TargetId),
+                    StorageQuotaPolicyScope.DataSet => dataSets.FirstOrDefault(x =>
+                        x.TenantId == tenantId && x.Id.Value == policy.TargetId),
+                    _ => null
+                };
+
+                long usedBytes;
+                long? limitBytes;
+                if (policy.Scope == StorageQuotaPolicyScope.Tenant)
+                {
+                    usedBytes = usage.TenantBytes;
+                    limitBytes = policy.TenantLimitBytes;
+                }
+                else if (targetDataSet is null)
+                {
+                    // 해당 범위에 콘텐츠가 없거나 대상 DataSet이 제거된 경우 사용량은 0으로 간주합니다.
+                    usedBytes = 0;
+                    limitBytes = policy.Scope switch
+                    {
+                        StorageQuotaPolicyScope.Organization => policy.OrganizationLimitBytes,
+                        StorageQuotaPolicyScope.Project => policy.ProjectLimitBytes,
+                        StorageQuotaPolicyScope.DataSet => policy.DataSetLimitBytes,
+                        _ => null
+                    };
+                }
+                else
+                {
+                    var allocation = new DataSetStorageAllocation(targetDataSet.Id, targetDataSet.Scope);
+                    var scopedUsage = await storageUsageReader.GetUsageAsync(allocation, cancellationToken);
+                    usedBytes = policy.Scope switch
+                    {
+                        StorageQuotaPolicyScope.Organization => scopedUsage.OrganizationBytes,
+                        StorageQuotaPolicyScope.Project => scopedUsage.ProjectBytes,
+                        StorageQuotaPolicyScope.DataSet => scopedUsage.DataSetBytes,
+                        _ => 0
+                    };
+                    limitBytes = policy.Scope switch
+                    {
+                        StorageQuotaPolicyScope.Organization => policy.OrganizationLimitBytes,
+                        StorageQuotaPolicyScope.Project => policy.ProjectLimitBytes,
+                        StorageQuotaPolicyScope.DataSet => policy.DataSetLimitBytes,
+                        _ => null
+                    };
+                }
+
+                await EvaluatePolicyAsync(policy, usedBytes, limitBytes, now, cancellationToken);
+            }
         }
+
         await dataSetDb.SaveChangesAsync(cancellationToken);
-        return tenantIds.Count;
+        return tenantIds.Length;
     }
 
-    /// <summary>현재 상태와 다른 상태로 바뀔 때만 이벤트를 추가해 주기 실행의 중복 기록을 막습니다.</summary>
-    private async Task EvaluateTenantPolicyAsync(Guid tenantId, long usedBytes, DateTimeOffset now, CancellationToken token)
+    /// <summary>Tenant·Organization·Project·DataSet 범위별 실제 사용량으로 상태 전이를 멱등 기록합니다.</summary>
+    private async Task EvaluatePolicyAsync(
+        StorageQuotaPolicy policy, long usedBytes, long? limitBytes, DateTimeOffset now, CancellationToken token)
     {
-        var policy = await platformDb.StorageQuotaPolicies.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId)
-                && x.Scope == StorageQuotaPolicyScope.Tenant && x.TargetId == tenantId && x.IsEnabled, token);
-        if (policy?.TenantLimitBytes is not long limitBytes)
+        if (limitBytes is not long limit)
             return;
 
-        var utilization = limitBytes == 0
+        var utilization = limit == 0
             ? (usedBytes == 0 ? 0d : 100d)
-            : Math.Round(usedBytes * 100d / limitBytes, 2);
-        var currentState = usedBytes >= limitBytes
+            : Math.Round(usedBytes * 100d / limit, 2);
+        var currentState = usedBytes >= limit
             ? "Exceeded"
             : utilization >= policy.WarningThresholdPercent ? "Warning" : "Normal";
         var latest = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && x.PolicyId == policy.Id)
+            .Where(x => x.TenantId == policy.TenantId.Value && x.PolicyId == policy.Id)
             .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(token);
         var previousState = latest?.PolicyVersion == policy.Version
             ? latest.EventType == "Resolved" ? "Normal" : latest.EventType
             : "Normal";
-        if (currentState == previousState)
-            return;
-        if (currentState == "Normal" && latest is null)
+        if (currentState == previousState || (currentState == "Normal" && latest is null))
             return;
 
         dataSetDb.QuotaThresholdEvents.Add(new DataSetQuotaThresholdEvent
         {
-            TenantId = tenantId, PolicyId = policy.Id, Scope = policy.Scope.ToString(),
+            TenantId = policy.TenantId.Value, PolicyId = policy.Id, Scope = policy.Scope.ToString(),
             TargetId = policy.TargetId, EventType = currentState == "Normal" ? "Resolved" : currentState,
-            UsedBytes = usedBytes, LimitBytes = limitBytes, UtilizationPercent = utilization,
+            UsedBytes = usedBytes, LimitBytes = limit, UtilizationPercent = utilization,
             PolicyVersion = policy.Version, OccurredAtUtc = now
         });
     }
