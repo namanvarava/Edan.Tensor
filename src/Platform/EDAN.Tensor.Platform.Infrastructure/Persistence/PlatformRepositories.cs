@@ -142,6 +142,22 @@ public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthor
         return new AuthorizationAuditPage(ordered, totalCount, page, pageSize);
     }
 
+    /// <summary>SQLite의 DateTimeOffset 비교 변환 제약을 피하고 Tenant 범위에서 UTC 기간을 적용합니다.</summary>
+    public async Task<IReadOnlyList<AuthorizationAuditEntry>> GetForIntegrityAsync(TenantId tenantId,
+        DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default)
+    {
+        var tenantEntries = await db.AuthorizationAuditEntries.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .ToListAsync(cancellationToken);
+        var from = fromUtc.ToUniversalTime();
+        var to = toUtc.ToUniversalTime();
+        return tenantEntries
+            .Where(x => x.OccurredAtUtc >= from && x.OccurredAtUtc <= to)
+            .OrderBy(x => x.OccurredAtUtc)
+            .ThenBy(x => x.Id.Value)
+            .ToArray();
+    }
+
     public void Add(AuthorizationAuditEntry entry) => db.AuthorizationAuditEntries.Add(entry);
 }
 
