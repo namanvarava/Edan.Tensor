@@ -34,3 +34,6 @@
 - 아카이브 생성과 검증은 원본 감사 기록을 변경하거나 삭제하지 않습니다.
 
 - `AuthorizationAuditRetentionService`는 Tenant별 보존 기간과 법적 보존 상태를 관리하고 변경 이력을 동일 저장 작업으로 기록합니다.
+
+- `AuthorizationAuditArchiveJobService`는 아카이브 작업 상태, 생성·재시도·검증 실행 이력과 체크섬 검증 결과를 관리합니다.
+- 실패한 작업만 명시적으로 재시도할 수 있으며 예약 실행과 원본 삭제는 수행하지 않습니다.
