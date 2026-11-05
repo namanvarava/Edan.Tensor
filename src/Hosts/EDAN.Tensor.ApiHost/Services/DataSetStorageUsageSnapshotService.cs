@@ -64,7 +64,9 @@ public sealed class DataSetStorageUsageSnapshotService(
             .Where(x => x.TenantId == tenantId && x.PolicyId == policy.Id)
             .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(token);
-        var previousState = latest?.PolicyVersion == policy.Version ? latest.EventType : "Normal";
+        var previousState = latest?.PolicyVersion == policy.Version
+            ? latest.EventType == "Resolved" ? "Normal" : latest.EventType
+            : "Normal";
         if (currentState == previousState)
             return;
         if (currentState == "Normal" && latest is null)
