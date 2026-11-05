@@ -37,6 +37,37 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorReportsDeadLetterWhenMaximumAttemptsAreReached()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.failure", "failure-key", "payload://test",
+            DateTimeOffset.UtcNow, maxAttempts: 1);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new FailureResolver(), new SuccessfulLeaseRenewer(),
+            new WorkerExecutionRegistry(), TimeProvider.System);
+
+        var outcome = await coordinator.ExecuteAsync(tenantId, task.Id, "worker-test", TimeSpan.FromMinutes(5));
+
+        Assert.Equal(WorkerTaskExecutionOutcome.DeadLettered, outcome);
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.DeadLettered, persisted!.Status);
+        Assert.Equal(1, persisted.AttemptCount);
+        Assert.Equal("test.permanent", persisted.LastErrorCode);
+        Assert.Null(persisted.LeaseId);
+        Assert.Null(persisted.NextAttemptAtUtc);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -47,6 +78,27 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         Assert.Same(handler, registry.Resolve("test.success"));
         Assert.Null(registry.Resolve("test.unknown"));
         Assert.Throws<InvalidOperationException>(() => registry.Register("test.success", handler));
+    }
+
+    private sealed class FailureResolver : IWorkerTaskHandlerResolver
+    {
+        public IWorkerTaskHandler? Resolve(string taskType) =>
+            taskType == "test.failure" ? new FailureHandler() : null;
+    }
+
+    private sealed class FailureHandler : IWorkerTaskHandler
+    {
+        public Task<IWorkerTaskExecution> StartAsync(WorkerTask task, CancellationToken cancellationToken) =>
+            Task.FromResult<IWorkerTaskExecution>(new FailureExecution());
+    }
+
+    private sealed class FailureExecution : IWorkerTaskExecution
+    {
+        public Task<WorkerTaskExecutionResult> Completion =>
+            Task.FromResult(WorkerTaskExecutionResult.Failure("test.permanent", DateTimeOffset.UtcNow.AddMinutes(1)));
+        public Task<string?> RequestCheckpointAndStopAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<string?>("test:checkpoint");
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class SuccessfulLeaseRenewer : IWorkerTaskLeaseRenewer

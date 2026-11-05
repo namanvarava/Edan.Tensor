@@ -40,6 +40,7 @@ public enum WorkerTaskExecutionOutcome
     Started,
     Succeeded,
     RetryScheduled,
+    DeadLettered,
     HandedOff,
     LeaseLost
 }
@@ -158,10 +159,17 @@ public sealed class WorkerTaskExecutionCoordinator(
             var errorCode = string.IsNullOrWhiteSpace(result.ErrorCode)
                 ? "worker.execution.failed"
                 : result.ErrorCode;
-            return await repository.TryFailAsync(
-                tenantId, taskId, leaseId, fencingToken, errorCode, now, retryAt, cancellationToken)
-                ? WorkerTaskExecutionOutcome.RetryScheduled
-                : WorkerTaskExecutionOutcome.LeaseLost;
+            var failed = await repository.TryFailAsync(
+                tenantId, taskId, leaseId, fencingToken, errorCode, now, retryAt, cancellationToken);
+            if (!failed)
+                return WorkerTaskExecutionOutcome.LeaseLost;
+
+            // 최대 시도 횟수에 도달한 작업은 Domain에서 DLQ로 전이되므로
+            // 영속 상태를 다시 읽어 실제 결과를 Dispatcher 호출자에게 반환합니다.
+            var failedTask = await repository.GetAsync(tenantId, taskId, cancellationToken);
+            return failedTask?.Status == WorkerTaskStatus.DeadLettered
+                ? WorkerTaskExecutionOutcome.DeadLettered
+                : WorkerTaskExecutionOutcome.RetryScheduled;
         }
     }
 }
