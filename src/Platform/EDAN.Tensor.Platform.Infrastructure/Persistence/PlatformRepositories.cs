@@ -212,3 +212,55 @@ public sealed class PlatformUnitOfWork(PlatformDbContext db) : IPlatformUnitOfWo
 {
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => db.SaveChangesAsync(cancellationToken);
 }
+
+
+/// <summary>예약 아카이브 정책과 분산 실행 임대를 원자적으로 관리합니다.</summary>
+public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContext db)
+    : IAuthorizationAuditArchiveScheduleRepository
+{
+    public Task<AuthorizationAuditArchiveSchedule?> GetAsync(TenantId tenantId,
+        CancellationToken cancellationToken = default) =>
+        db.AuthorizationAuditArchiveSchedules.SingleOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+
+    public async Task<IReadOnlyList<TenantId>> GetDueTenantsAsync(DateTimeOffset nowUtc, int take,
+        CancellationToken cancellationToken = default) =>
+        await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
+            .Where(x => x.IsEnabled && x.NextRunAtUtc <= nowUtc &&
+                (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= nowUtc))
+            .OrderBy(x => x.NextRunAtUtc)
+            .Select(x => x.TenantId)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+    public async Task<bool> TryAcquireAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
+        DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default)
+    {
+        var affected = await db.AuthorizationAuditArchiveSchedules
+            .Where(x => x.TenantId == tenantId && x.IsEnabled && x.NextRunAtUtc <= nowUtc &&
+                (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= nowUtc))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.LeaseId, leaseId)
+                .SetProperty(x => x.LeaseExpiresAtUtc, leaseExpiresAtUtc)
+                .SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
+        return affected == 1;
+    }
+
+    public async Task CompleteAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
+        bool succeeded, CancellationToken cancellationToken = default)
+    {
+        var affected = await db.AuthorizationAuditArchiveSchedules
+            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.LastRunAtUtc, x => succeeded ? nowUtc : x.LastRunAtUtc)
+                .SetProperty(x => x.NextRunAtUtc, x => succeeded
+                    ? nowUtc.AddHours(x.IntervalHours) : nowUtc.AddMinutes(5))
+                .SetProperty(x => x.LeaseId, (Guid?)null)
+                .SetProperty(x => x.LeaseExpiresAtUtc, (DateTimeOffset?)null)
+                .SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
+        if (affected != 1)
+            throw new InvalidOperationException("아카이브 예약 실행 임대가 만료되었거나 다른 작업자가 소유합니다.");
+    }
+
+    public void Add(AuthorizationAuditArchiveSchedule schedule) =>
+        db.AuthorizationAuditArchiveSchedules.Add(schedule);
+}
