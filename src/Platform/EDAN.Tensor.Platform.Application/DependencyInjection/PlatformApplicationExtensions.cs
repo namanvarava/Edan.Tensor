@@ -20,6 +20,7 @@ public static class PlatformApplicationExtensions
         services.AddScoped<AuthorizationAuditQueryService>();
         services.AddScoped<AuthorizationAuditIntegrityService>();
         services.AddScoped<AuthorizationAuditArchiveService>();
+        services.AddScoped<AuthorizationAuditRetentionService>();
         return services;
     }
 }
