@@ -64,13 +64,50 @@ public sealed class WorkerTaskPersistenceTests
         Assert.Equal(leaseId, acquired.LeaseId);
         Assert.Equal(WorkerTaskStatus.Leased, acquired.Status);
 
-        var duplicate = await repository.TryAcquireLeaseAsync(
-            tenantA, task.Id, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5));
-        var crossTenant = await repository.TryAcquireLeaseAsync(
-            tenantB, task.Id, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5));
+        Assert.Null(await repository.TryAcquireLeaseAsync(
+            tenantA, task.Id, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5)));
+        Assert.Null(await repository.TryAcquireLeaseAsync(
+            tenantB, task.Id, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5)));
+    }
 
-        Assert.Null(duplicate);
-        Assert.Null(crossTenant);
+    [Fact]
+    public async Task CheckpointRenewalAndCompletionRequireCurrentLease()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "archive.generate", "lifecycle-key", "payload://archive/a", now);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var leaseId = Guid.NewGuid();
+        var leased = await repository.TryAcquireLeaseAsync(
+            tenantId, task.Id, "worker-a", leaseId, now, now.AddMinutes(5));
+        Assert.NotNull(leased);
+
+        Assert.True(await repository.TryStartAsync(tenantId, task.Id, leaseId, leased.FencingToken, now));
+        Assert.True(await repository.TrySaveCheckpointAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, "offset:42", now.AddMinutes(1)));
+        Assert.True(await repository.TryRenewLeaseAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(2), now.AddMinutes(10)));
+        Assert.False(await repository.TrySaveCheckpointAsync(
+            Guid.NewGuid(), task.Id, leaseId, leased.FencingToken, "cross-tenant", now.AddMinutes(3)));
+        Assert.True(await repository.TryCompleteAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(3)));
+
+        var completed = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.Succeeded, completed!.Status);
+        Assert.Equal("offset:42", completed.Checkpoint);
+        Assert.Null(completed.LeaseId);
+        Assert.Equal(now.AddMinutes(3), completed.CompletedAtUtc);
+        Assert.False(await repository.TryCompleteAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(4)));
     }
 
     [Fact]
