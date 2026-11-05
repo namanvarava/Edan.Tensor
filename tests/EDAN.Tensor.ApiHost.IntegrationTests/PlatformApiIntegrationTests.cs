@@ -34,6 +34,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}/verify", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/retention", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -281,6 +282,34 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
         using var verifyDocument = await JsonDocument.ParseAsync(await verifyResponse.Content.ReadAsStreamAsync());
         Assert.True(verifyDocument.RootElement.GetProperty("isValid").GetBoolean());
+        // Tenant별 감사 보존 정책을 조회하고 법적 보존 상태를 변경합니다.
+        using var retentionGetResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/retention");
+        Assert.Equal(HttpStatusCode.OK, retentionGetResponse.StatusCode);
+        using var retentionDefault = await JsonDocument.ParseAsync(await retentionGetResponse.Content.ReadAsStreamAsync());
+        Assert.Equal(365, retentionDefault.RootElement.GetProperty("retentionDays").GetInt32());
+
+        using var retentionUpdateResponse = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/retention", new
+            {
+                retentionDays = 730,
+                isLegalHold = true,
+                legalHoldReason = "보안 사고 조사 보존"
+            });
+        Assert.Equal(HttpStatusCode.OK, retentionUpdateResponse.StatusCode);
+        using var retentionUpdated = await JsonDocument.ParseAsync(await retentionUpdateResponse.Content.ReadAsStreamAsync());
+        Assert.True(retentionUpdated.RootElement.GetProperty("isLegalHold").GetBoolean());
+        Assert.Equal(730, retentionUpdated.RootElement.GetProperty("retentionDays").GetInt32());
+
+        using var invalidRetentionResponse = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/retention", new
+            {
+                retentionDays = 10,
+                isLegalHold = false,
+                legalHoldReason = (string?)null
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidRetentionResponse.StatusCode);
+
     }
 
     [Fact]
