@@ -21,6 +21,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationPolicyChangeAuditEntry> AuthorizationPolicyChangeAuditEntries => Set<AuthorizationPolicyChangeAuditEntry>();
     public DbSet<AuthorizationAuditRetentionPolicy> AuthorizationAuditRetentionPolicies => Set<AuthorizationAuditRetentionPolicy>();
     public DbSet<AuthorizationAuditRetentionChange> AuthorizationAuditRetentionChanges => Set<AuthorizationAuditRetentionChange>();
+    public DbSet<AuthorizationAuditArchiveJob> AuthorizationAuditArchiveJobs => Set<AuthorizationAuditArchiveJob>();
+    public DbSet<AuthorizationAuditArchiveAttempt> AuthorizationAuditArchiveAttempts => Set<AuthorizationAuditArchiveAttempt>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,6 +41,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationAuditEntry(modelBuilder);
         ConfigureAuthorizationPolicyChangeAuditEntry(modelBuilder);
         ConfigureAuthorizationAuditRetention(modelBuilder);
+        ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -314,6 +317,38 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         change.Property(x => x.OccurredAtUtc).IsRequired();
         change.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
         change.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+
+    /// <summary>감사 아카이브 작업과 실행 시도 이력을 Tenant 경계로 저장합니다.</summary>
+    private static void ConfigureAuthorizationAuditArchiveJobs(ModelBuilder modelBuilder)
+    {
+        var job = modelBuilder.Entity<AuthorizationAuditArchiveJob>();
+        job.ToTable("platform_authorization_audit_archive_jobs");
+        job.HasKey(x => x.Id);
+        job.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        job.Property(x => x.FromUtc).IsRequired();
+        job.Property(x => x.ToUtc).IsRequired();
+        job.Property(x => x.RequestedBy).HasMaxLength(200).IsRequired();
+        job.Property(x => x.CreatedAtUtc).IsRequired();
+        job.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        job.Property(x => x.Sha256).HasMaxLength(64);
+        job.Property(x => x.FailureReason).HasMaxLength(500);
+        job.Property(x => x.Version).IsConcurrencyToken();
+        job.HasIndex(x => new { x.TenantId, x.CreatedAtUtc });
+        job.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+
+        var attempt = modelBuilder.Entity<AuthorizationAuditArchiveAttempt>();
+        attempt.ToTable("platform_authorization_audit_archive_attempts");
+        attempt.HasKey(x => x.Id);
+        attempt.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        attempt.Property(x => x.Operation).HasMaxLength(32).IsRequired();
+        attempt.Property(x => x.StartedAtUtc).IsRequired();
+        attempt.Property(x => x.ResultCode).HasMaxLength(200);
+        attempt.HasIndex(x => new { x.TenantId, x.JobId, x.StartedAtUtc });
+        attempt.HasOne<AuthorizationAuditArchiveJob>().WithMany()
+            .HasForeignKey(x => x.JobId).OnDelete(DeleteBehavior.Restrict);
+        attempt.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
