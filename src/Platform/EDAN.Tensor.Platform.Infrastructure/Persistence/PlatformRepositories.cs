@@ -192,7 +192,6 @@ public sealed class AuthorizationAuditArchiveJobRepository(PlatformDbContext db)
             .ToListAsync(cancellationToken);
         return attempts.OrderBy(x => x.StartedAtUtc).ThenBy(x => x.Id).ToArray();
     }
-        return attempts.OrderBy(x => x.StartedAtUtc).ThenBy(x => x.Id).ToArray();
 
     public void Add(AuthorizationAuditArchiveJob job) => db.AuthorizationAuditArchiveJobs.Add(job);
     public void AddAttempt(AuthorizationAuditArchiveAttempt attempt) => db.AuthorizationAuditArchiveAttempts.Add(attempt);
