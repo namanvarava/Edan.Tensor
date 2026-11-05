@@ -146,13 +146,16 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             throw new ArgumentOutOfRangeException(nameof(skip));
         if (take is < 1 or > 100)
             throw new ArgumentOutOfRangeException(nameof(take));
-        return await db.WorkerTasks.AsNoTracking()
+        // SQLite는 DateTimeOffset ORDER BY를 지원하지 않으므로 Tenant/상태 필터 후 메모리에서 정렬합니다.
+        var tasks = await db.WorkerTasks.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.Status == WorkerTaskStatus.DeadLettered)
+            .ToListAsync(cancellationToken);
+        return tasks
             .OrderByDescending(x => x.CreatedAtUtc)
             .ThenBy(x => x.Id)
             .Skip(skip)
             .Take(take)
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
     }
 
     /// <summary>원본 DLQ 항목을 보존하면서 새 작업과 재처리 이력을 원자적으로 생성합니다.</summary>
