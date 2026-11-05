@@ -330,9 +330,6 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
-    }
-
-
         modelBuilder.Entity<AuthorizationAuditArchiveSchedule>(entity =>
         {
             entity.ToTable("platform_authorization_audit_archive_schedules");
@@ -350,6 +347,8 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasIndex(x => new { x.IsEnabled, x.NextRunAtUtc });
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
+
+    }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
         new(id => value(id), raw => create(raw));
