@@ -181,7 +181,7 @@ public sealed class PlatformInfrastructureTests
         Assert.True(await repository.TryAcquireAsync(tenant.Id, firstLease, now, now.AddMinutes(30)));
         Assert.False(await repository.TryAcquireAsync(tenant.Id, secondLease, now, now.AddMinutes(30)));
 
-        await repository.CompleteAsync(tenant.Id, firstLease, now.AddMinutes(1), succeeded: true);
+        await repository.CompleteAsync(tenant.Id, firstLease, now.AddMinutes(1), now.AddMinutes(1), succeeded: true);
         db.ChangeTracker.Clear();
         var updated = await repository.GetAsync(tenant.Id);
         Assert.NotNull(updated);
