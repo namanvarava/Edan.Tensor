@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Application.DependencyInjection;
+using EDAN.Tensor.ApiHost.BackgroundServices;
 using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
@@ -23,6 +24,7 @@ if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSour
 }
 
 builder.Services.AddPlatformApplication();
+builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
 builder.Services.AddPlatformSecurity(builder.Configuration);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
     ?? "App_Data/AuthorizationAuditArchives";
