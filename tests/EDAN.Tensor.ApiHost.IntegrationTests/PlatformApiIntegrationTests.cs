@@ -42,6 +42,9 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/retry", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
@@ -368,6 +371,107 @@ public sealed class PlatformApiIntegrationTests
     }
 
     [Fact]
+    public async Task DataSetManagementApiEnforcesTenantScopeAndPersistsMetadata()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+
+        using var anonymous = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{Guid.NewGuid()}/datasets",
+            new { organizationId = Guid.NewGuid(), projectId = Guid.NewGuid(), name = "anonymous" });
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"DS-{suffix}",
+            name = "DataSet API 테스트 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+
+        using var activation = await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null);
+        Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
+        using var membership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships",
+            new { subjectId = "dataset-admin", role = "Administrator" });
+        Assert.Equal(HttpStatusCode.Created, membership.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "dataset-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        using var organization = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations",
+            new { code = $"ORG-{suffix}", name = "DataSet 조직" });
+        Assert.Equal(HttpStatusCode.Created, organization.StatusCode);
+        var organizationId = await ReadIdAsync(organization);
+
+        using var project = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects",
+            new { code = $"PRJ-{suffix}", name = "DataSet 프로젝트" });
+        Assert.Equal(HttpStatusCode.Created, project.StatusCode);
+        var projectId = await ReadIdAsync(project);
+
+        using var invalidScope = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId = Guid.NewGuid(), projectId, name = "잘못된 소유 범위" });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidScope.StatusCode);
+
+        using var create = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId, projectId, name = "고객 원천 데이터", storageAdapter = "sqlite" });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var createdDocument = await JsonDocument.ParseAsync(await create.Content.ReadAsStreamAsync());
+        var dataSetId = createdDocument.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal("Draft", createdDocument.RootElement.GetProperty("status").GetString());
+
+        using var emptyActivation = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", null);
+        Assert.Equal(HttpStatusCode.Conflict, emptyActivation.StatusCode);
+
+        using var addSchema = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas",
+            new { schemaJson = "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\"}}}" });
+        Assert.Equal(HttpStatusCode.Created, addSchema.StatusCode);
+
+        using var activationAfterSchema = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", null);
+        Assert.Equal(HttpStatusCode.NoContent, activationAfterSchema.StatusCode);
+
+        using var get = await client.GetAsync($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}");
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        using var dataSetDocument = await JsonDocument.ParseAsync(await get.Content.ReadAsStreamAsync());
+        var dataSet = dataSetDocument.RootElement;
+        Assert.Equal(tenantId, dataSet.GetProperty("tenantId").GetGuid());
+        Assert.Equal(organizationId, dataSet.GetProperty("organizationId").GetGuid());
+        Assert.Equal(projectId, dataSet.GetProperty("projectId").GetGuid());
+        Assert.Equal("Active", dataSet.GetProperty("status").GetString());
+        Assert.Equal(1, dataSet.GetProperty("currentSchemaVersion").GetInt32());
+        Assert.Single(dataSet.GetProperty("schemaRevisions").EnumerateArray());
+        Assert.False(dataSet.TryGetProperty("storageReference", out _));
+
+        using var otherTenantAccess = await client.GetAsync(
+            $"/api/platform/tenants/{Guid.NewGuid()}/datasets/{dataSetId}");
+        Assert.Equal(HttpStatusCode.Forbidden, otherTenantAccess.StatusCode);
+
+        using var memberMembership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships",
+            new { subjectId = "dataset-member", role = "Member" });
+        Assert.Equal(HttpStatusCode.Created, memberMembership.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "dataset-member");
+        using var memberCreate = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId, projectId, name = "권한 없는 DataSet 생성" });
+        Assert.Equal(HttpStatusCode.Forbidden, memberCreate.StatusCode);
+    }
+
+    [Fact]
     public async Task WorkerDeadLetterOperationsRequireTenantAdministratorAndPreserveOriginalTask()
     {
         using var factory = new ApiHostFactory();
@@ -551,6 +655,10 @@ public sealed class PlatformApiIntegrationTests
             Path.GetTempPath(), $"edan-tensor-archives-{Guid.NewGuid():N}");
         private readonly string _workerDatabasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-worker-{Guid.NewGuid():N}.db");
+        private readonly string _dataSetDatabasePath = Path.Combine(
+            Path.GetTempPath(), $"edan-tensor-dataset-{Guid.NewGuid():N}.db");
+        private readonly string _dataSetContentDatabasePath = Path.Combine(
+            Path.GetTempPath(), $"edan-tensor-dataset-content-{Guid.NewGuid():N}.db");
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -561,6 +669,8 @@ public sealed class PlatformApiIntegrationTests
                 {
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
                     ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared",
+                    ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared",
+                    ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
@@ -585,6 +695,10 @@ public sealed class PlatformApiIntegrationTests
                 File.Delete(_databasePath);
             if (disposing && File.Exists(_workerDatabasePath))
                 File.Delete(_workerDatabasePath);
+            if (disposing && File.Exists(_dataSetDatabasePath))
+                File.Delete(_dataSetDatabasePath);
+            if (disposing && File.Exists(_dataSetContentDatabasePath))
+                File.Delete(_dataSetContentDatabasePath);
             if (disposing && Directory.Exists(_archivePath))
                 Directory.Delete(_archivePath, recursive: true);
         }
