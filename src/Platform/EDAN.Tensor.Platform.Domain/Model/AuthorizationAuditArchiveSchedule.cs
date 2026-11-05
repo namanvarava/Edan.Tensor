@@ -9,6 +9,7 @@ public sealed class AuthorizationAuditArchiveSchedule
     {
         if (intervalHours is < 1 or > 744)
             throw new ArgumentOutOfRangeException(nameof(intervalHours), "예약 주기는 1시간부터 31일까지 설정할 수 있습니다.");
+        Id = Guid.NewGuid();
         TenantId = new TenantId(tenantId);
         IntervalHours = intervalHours;
         IsEnabled = true;
@@ -38,8 +39,6 @@ public sealed class AuthorizationAuditArchiveSchedule
         IntervalHours = intervalHours;
         IsEnabled = isEnabled;
         NextRunAtUtc = nowUtc.ToUniversalTime().AddHours(intervalHours);
-        LeaseId = null;
-        LeaseExpiresAtUtc = null;
         Version++;
     }
 }
