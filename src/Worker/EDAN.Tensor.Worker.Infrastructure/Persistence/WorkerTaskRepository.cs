@@ -140,6 +140,8 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, Guid replayRequestId, string requestedBy,
         DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
+        WorkerTask? replayTask = null;
+        WorkerTaskReplayRecord? replayRecord = null;
         try
         {
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -151,22 +153,19 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             var original = await db.WorkerTasks.SingleOrDefaultAsync(
                 x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
             if (original is null || original.Status != WorkerTaskStatus.DeadLettered) return null;
-            var replayTask = WorkerTask.Create(tenantId, original.TaskType, "replay:" + Guid.NewGuid().ToString("N"),
+            replayTask = WorkerTask.Create(tenantId, original.TaskType, "replay:" + Guid.NewGuid().ToString("N"),
                 original.PayloadReference, nowUtc, original.MaxAttempts);
+            replayRecord = new WorkerTaskReplayRecord(
+                tenantId, original.Id, replayTask.Id, replayRequestId, requestedBy, nowUtc);
             db.WorkerTasks.Add(replayTask);
-            db.WorkerTaskReplayRecords.Add(new WorkerTaskReplayRecord(
-                tenantId, original.Id, replayTask.Id, replayRequestId, requestedBy, nowUtc));
+            db.WorkerTaskReplayRecords.Add(replayRecord);
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return replayTask.Id;
         }
         catch (DbUpdateException)
         {
-            foreach (var entry in db.ChangeTracker.Entries()
-                         .Where(x => x.State == EntityState.Added
-                             && (x.Entity is WorkerTask || x.Entity is WorkerTaskReplayRecord))
-                         .ToArray())
-                entry.State = EntityState.Detached;
+            DetachReplayEntities(replayTask, replayRecord);
 
             var prior = await db.WorkerTaskReplayRecords.AsNoTracking().SingleOrDefaultAsync(
                 x => x.TenantId == tenantId && x.OriginalTaskId == taskId && x.ReplayRequestId == replayRequestId,
@@ -176,7 +175,7 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         }
         catch
         {
-            DetachAddedReplayEntities();
+            DetachReplayEntities(replayTask, replayRecord);
             throw;
         }
     }
@@ -201,13 +200,10 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         }
     }
 
-    private void DetachAddedReplayEntities()
+    private void DetachReplayEntities(WorkerTask? replayTask, WorkerTaskReplayRecord? replayRecord)
     {
-        foreach (var entry in db.ChangeTracker.Entries()
-                     .Where(x => x.State == EntityState.Added
-                         && (x.Entity is WorkerTask || x.Entity is WorkerTaskReplayRecord))
-                     .ToArray())
-            entry.State = EntityState.Detached;
+        if (replayTask is not null) db.Entry(replayTask).State = EntityState.Detached;
+        if (replayRecord is not null) db.Entry(replayRecord).State = EntityState.Detached;
     }
 
     private Task<WorkerTask?> FindByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey, CancellationToken cancellationToken) =>
