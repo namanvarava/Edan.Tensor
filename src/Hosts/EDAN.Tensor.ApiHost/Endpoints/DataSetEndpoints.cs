@@ -78,8 +78,14 @@ public static class DataSetEndpoints
             catch (Exception exception)
             {
                 loggerFactory.CreateLogger("DataSetEndpoints").LogError(exception, "DataSet schema registration failed for {DataSetId}", dataSetId);
+                var concurrencyDetails = exception is DbUpdateConcurrencyException concurrency
+                    ? string.Join(" | ", concurrency.Entries.Select(entry =>
+                        $"{entry.Metadata.ClrType.Name} state={entry.State}: " +
+                        string.Join(", ", entry.Properties.Select(property =>
+                            $"{property.Metadata.Name} original={property.OriginalValue ?? "<null>"} current={property.CurrentValue ?? "<null>"}"))))
+                    : null;
                 return environment.IsDevelopment()
-                    ? Results.Problem(detail: exception.ToString())
+                    ? Results.Problem(detail: exception + (concurrencyDetails is null ? string.Empty : "\nEntries: " + concurrencyDetails))
                     : Results.Problem(title: "DataSet schema registration failed");
             }
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("AddDataSetSchema");

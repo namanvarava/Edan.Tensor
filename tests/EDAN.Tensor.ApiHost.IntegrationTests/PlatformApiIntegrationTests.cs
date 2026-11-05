@@ -436,8 +436,7 @@ public sealed class PlatformApiIntegrationTests
         using var addSchema = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas",
             new { schemaJson = "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\"}}}" });
-        Assert.True(addSchema.StatusCode == HttpStatusCode.Created,
-            await addSchema.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Created, addSchema.StatusCode);
 
         using var activationAfterSchema = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", null);
