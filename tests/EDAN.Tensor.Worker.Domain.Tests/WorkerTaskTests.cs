@@ -20,6 +20,14 @@ public sealed class WorkerTaskTests
     }
 
     [Fact]
+    public void CreateRejectsEmptyTenantId()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            WorkerTask.Create(Guid.Empty, "archive.generate", Guid.NewGuid().ToString("N"),
+                "payload://archive/1", Now));
+    }
+
+    [Fact]
     public void LeaseAndStartRequireMatchingOwnership()
     {
         var task = Create();

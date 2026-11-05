@@ -9,6 +9,7 @@ public sealed class WorkerTask
         string payloadReference, DateTimeOffset nowUtc)
     {
         if (id == Guid.Empty) throw new ArgumentException("작업 식별자는 비어 있을 수 없습니다.", nameof(id));
+        if (tenantId == Guid.Empty) throw new ArgumentException("테넌트 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
         Id = id;
         TenantId = tenantId;
         TaskType = ValidateText(taskType, 120, nameof(taskType));
