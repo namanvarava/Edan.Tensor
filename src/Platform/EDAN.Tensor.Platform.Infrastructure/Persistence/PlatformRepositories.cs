@@ -296,3 +296,32 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
     public void Add(AuthorizationAuditArchiveSchedule schedule) =>
         db.AuthorizationAuditArchiveSchedules.Add(schedule);
 }
+
+/// <summary>Worker 작업은 모든 조회에서 Tenant 소유권을 확인합니다.</summary>
+public sealed class WorkerTaskRepository(PlatformDbContext db) : IWorkerTaskRepository
+{
+    public Task<WorkerTask?> GetAsync(TenantId tenantId, Guid taskId,
+        CancellationToken cancellationToken = default) =>
+        db.WorkerTasks.SingleOrDefaultAsync(
+            x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
+
+    public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(TenantId tenantId, int take,
+        CancellationToken cancellationToken = default)
+    {
+        if (take is < 1 or > 500)
+            throw new ArgumentOutOfRangeException(nameof(take), "조회 건수는 1~500이어야 합니다.");
+        var tasks = await db.WorkerTasks.AsNoTracking()
+            .Where(x => x.TenantId == tenantId &&
+                (x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled ||
+                 x.Status == WorkerTaskStatus.Checkpointed))
+            .ToListAsync(cancellationToken);
+        return tasks
+            .Where(x => !x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= DateTimeOffset.UtcNow)
+            .OrderBy(x => x.NextAttemptAtUtc ?? x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
+            .Take(take)
+            .ToArray();
+    }
+
+    public void Add(WorkerTask task) => db.WorkerTasks.Add(task);
+}
