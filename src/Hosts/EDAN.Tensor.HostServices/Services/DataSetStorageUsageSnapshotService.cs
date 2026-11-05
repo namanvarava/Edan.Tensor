@@ -80,18 +80,18 @@ public sealed class DataSetStorageUsageSnapshotService(
                 snapshot.DataSetCount = usage.TenantDataSetCount;
             }
 
-            var tenantPolicies = policies.Where(x => x.TenantId == tenantId)
+            var tenantPolicies = policies.Where(x => x.TenantId.Value == tenantId)
                 .OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
             foreach (var policy in tenantPolicies)
             {
                 var targetDataSet = policy.Scope switch
                 {
                     StorageQuotaPolicyScope.Organization => dataSets.FirstOrDefault(x =>
-                        x.TenantId == tenantId && x.OrganizationId == policy.TargetId),
+                        x.TenantId.Value == tenantId && x.OrganizationId == policy.TargetId),
                     StorageQuotaPolicyScope.Project => dataSets.FirstOrDefault(x =>
-                        x.TenantId == tenantId && x.ProjectId == policy.TargetId),
+                        x.TenantId.Value == tenantId && x.ProjectId == policy.TargetId),
                     StorageQuotaPolicyScope.DataSet => dataSets.FirstOrDefault(x =>
-                        x.TenantId == tenantId && x.Id.Value == policy.TargetId),
+                        x.TenantId.Value == tenantId && x.Id.Value == policy.TargetId),
                     _ => null
                 };
 
