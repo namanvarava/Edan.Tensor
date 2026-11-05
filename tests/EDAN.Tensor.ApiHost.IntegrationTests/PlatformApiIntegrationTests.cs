@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 
@@ -734,12 +735,22 @@ public sealed class PlatformApiIntegrationTests
             });
             builder.ConfigureTestServices(services =>
             {
+                services.AddSingleton<IDataSetStorageQuotaPolicyProvider>(new IntegrationQuotaPolicyProvider());
                 services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = "Integration";
                     options.DefaultChallengeScheme = "Integration";
                 }).AddScheme<AuthenticationSchemeOptions, IntegrationAuthenticationHandler>("Integration", _ => { });
             });
+        }
+
+        private sealed class IntegrationQuotaPolicyProvider : IDataSetStorageQuotaPolicyProvider
+        {
+            public Task<DataSetStorageQuotaPolicy> GetPolicyAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return Task.FromResult(new DataSetStorageQuotaPolicy(50, 100, 100, 100));
+            }
         }
 
         protected override void Dispose(bool disposing)
