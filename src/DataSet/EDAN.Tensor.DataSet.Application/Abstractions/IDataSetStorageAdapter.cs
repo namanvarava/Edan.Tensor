@@ -20,3 +20,12 @@ public interface IDataSetStorageAdapterResolver
 {
     IDataSetStorageAdapter? Resolve(string adapterId);
 }
+
+/// <summary>소유 범위별 콘텐츠 사용량을 반환합니다. 값은 실제 저장된 바이트 기준입니다.</summary>
+public interface IDataSetStorageUsageReader
+{
+    Task<DataSetStorageUsage> GetUsageAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default);
+}
+
+/// <summary>현재 DataSet 및 그 소유 Project 범위의 콘텐츠 사용량 스냅샷입니다.</summary>
+public sealed record DataSetStorageUsage(long ScopeBytes, long ScopeDataSetCount, long DataSetBytes);

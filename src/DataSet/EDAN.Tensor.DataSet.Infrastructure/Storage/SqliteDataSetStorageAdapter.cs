@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace EDAN.Tensor.DataSet.Infrastructure.Storage;
 
 /// <summary>DataSet 콘텐츠를 전용 SQLite DB에 저장하며 메타데이터 DB와 물리적으로 분리합니다.</summary>
-public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter
+public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataSetStorageUsageReader
 {
     private readonly string connectionString;
     private readonly long maxContentBytes;
@@ -73,6 +73,27 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter
         AddScope(command, allocation, reference);
         var value = await command.ExecuteScalarAsync(cancellationToken);
         return value is byte[] bytes ? new MemoryStream(bytes, writable: false) : null;
+    }
+
+    public async Task<DataSetStorageUsage> GetUsageAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(allocation);
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COALESCE(SUM(length(Content)), 0),
+                   COUNT(DISTINCT DataSetId),
+                   COALESCE(SUM(CASE WHEN DataSetId = $dataSetId THEN length(Content) ELSE 0 END), 0)
+            FROM DataSetContent
+            WHERE TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId;
+            """;
+        command.Parameters.AddWithValue("$dataSetId", allocation.DataSetId.Value.ToString("D"));
+        command.Parameters.AddWithValue("$tenantId", allocation.Scope.TenantId.ToString("D"));
+        command.Parameters.AddWithValue("$organizationId", allocation.Scope.OrganizationId.ToString("D"));
+        command.Parameters.AddWithValue("$projectId", allocation.Scope.ProjectId.ToString("D"));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await reader.ReadAsync(cancellationToken);
+        return new DataSetStorageUsage(reader.GetInt64(0), reader.GetInt64(1), reader.GetInt64(2));
     }
 
     public async Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default)

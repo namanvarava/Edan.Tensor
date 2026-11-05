@@ -92,6 +92,18 @@ public sealed class DataSetManagementService(
     public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
         repository.GetAsync(id, tenantId, cancellationToken);
 
+    /// <summary>DataSet 및 동일 Project 소유 범위의 실제 콘텐츠 저장량을 조회합니다.</summary>
+    public async Task<DataSetStorageUsage?> GetStorageUsageAsync(
+        DataSetId id, Guid tenantId, IDataSetStorageUsageReader usageReader,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(usageReader);
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        return dataSet is null
+            ? null
+            : await usageReader.GetUsageAsync(new DataSetStorageAllocation(dataSet.Id, dataSet.Scope), cancellationToken);
+    }
+
     /// <summary>Tenant 범위가 일치하는 DataSet에 새 스키마 버전을 추가합니다.</summary>
     public async Task<Result<int>> AddSchemaAsync(
         DataSetId id, Guid tenantId, string schemaJson, DateTimeOffset nowUtc,

@@ -25,7 +25,9 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        services.AddSingleton<IDataSetStorageAdapter>(new SqliteDataSetStorageAdapter(connectionString, maxContentBytes));
+        var adapter = new SqliteDataSetStorageAdapter(connectionString, maxContentBytes);
+        services.AddSingleton<IDataSetStorageAdapter>(adapter);
+        services.AddSingleton<IDataSetStorageUsageReader>(adapter);
         services.AddSingleton<IDataSetStorageAdapterResolver, DataSetStorageAdapterResolver>();
         return services;
     }
