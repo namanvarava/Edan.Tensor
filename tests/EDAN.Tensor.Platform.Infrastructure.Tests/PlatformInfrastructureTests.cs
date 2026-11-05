@@ -156,6 +156,40 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task SqliteArchiveScheduleLeaseAllowsOnlyOneConcurrentWorker()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()),
+            new TenantCode("SCHEDULE-A"), "예약 테스트 Tenant", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        var now = DateTimeOffset.Parse("2026-11-05T00:00:00Z");
+        var schedule = AuthorizationAuditArchiveSchedule.Create(tenant.Id, 1, now.AddHours(-2));
+        db.AuthorizationAuditArchiveSchedules.Add(schedule);
+        await db.SaveChangesAsync();
+
+        var repository = new AuthorizationAuditArchiveScheduleRepository(db);
+        var due = await repository.GetDueTenantsAsync(now, 10);
+        Assert.Contains(tenant.Id, due);
+
+        var firstLease = Guid.NewGuid();
+        var secondLease = Guid.NewGuid();
+        Assert.True(await repository.TryAcquireAsync(tenant.Id, firstLease, now, now.AddMinutes(30)));
+        Assert.False(await repository.TryAcquireAsync(tenant.Id, secondLease, now, now.AddMinutes(30)));
+
+        await repository.CompleteAsync(tenant.Id, firstLease, now.AddMinutes(1), succeeded: true);
+        var updated = await repository.GetAsync(tenant.Id);
+        Assert.NotNull(updated);
+        Assert.Null(updated.LeaseId);
+        Assert.Equal(now.AddMinutes(1), updated.LastRunAtUtc);
+        Assert.Equal(now.AddHours(1).AddMinutes(1), updated.NextRunAtUtc);
+    }
+
+    [Fact]
     public void MigrationSnapshotMatchesCurrentPlatformModel()
     {
         var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite("Data Source=:memory:").Options;
