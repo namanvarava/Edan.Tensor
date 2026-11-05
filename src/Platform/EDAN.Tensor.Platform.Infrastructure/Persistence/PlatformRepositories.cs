@@ -185,10 +185,14 @@ public sealed class AuthorizationAuditArchiveJobRepository(PlatformDbContext db)
             x => x.TenantId == tenantId && x.Id == jobId, cancellationToken);
 
     public async Task<IReadOnlyList<AuthorizationAuditArchiveAttempt>> GetAttemptsAsync(TenantId tenantId,
-        Guid jobId, CancellationToken cancellationToken = default) =>
-        await db.AuthorizationAuditArchiveAttempts.AsNoTracking()
+        Guid jobId, CancellationToken cancellationToken = default)
+    {
+        var attempts = await db.AuthorizationAuditArchiveAttempts.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.JobId == jobId)
             .ToListAsync(cancellationToken);
+        return attempts.OrderBy(x => x.StartedAtUtc).ThenBy(x => x.Id).ToArray();
+    }
+        return attempts.OrderBy(x => x.StartedAtUtc).ThenBy(x => x.Id).ToArray();
 
     public void Add(AuthorizationAuditArchiveJob job) => db.AuthorizationAuditArchiveJobs.Add(job);
     public void AddAttempt(AuthorizationAuditArchiveAttempt attempt) => db.AuthorizationAuditArchiveAttempts.Add(attempt);
