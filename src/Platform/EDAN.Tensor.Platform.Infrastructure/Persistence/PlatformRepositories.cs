@@ -305,7 +305,7 @@ public sealed class WorkerTaskRepository(PlatformDbContext db) : IWorkerTaskRepo
         db.WorkerTasks.SingleOrDefaultAsync(
             x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
 
-    public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(TenantId tenantId, int take,
+    public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(TenantId tenantId, DateTimeOffset nowUtc, int take,
         CancellationToken cancellationToken = default)
     {
         if (take is < 1 or > 500)
@@ -316,7 +316,7 @@ public sealed class WorkerTaskRepository(PlatformDbContext db) : IWorkerTaskRepo
                  x.Status == WorkerTaskStatus.Checkpointed))
             .ToListAsync(cancellationToken);
         return tasks
-            .Where(x => !x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= DateTimeOffset.UtcNow)
+            .Where(x => !x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= nowUtc.ToUniversalTime())
             .OrderBy(x => x.NextAttemptAtUtc ?? x.CreatedAtUtc)
             .ThenBy(x => x.Id)
             .Take(take)
