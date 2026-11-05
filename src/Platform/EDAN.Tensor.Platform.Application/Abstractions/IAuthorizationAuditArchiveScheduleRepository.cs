@@ -9,6 +9,8 @@ public interface IAuthorizationAuditArchiveScheduleRepository
     Task<IReadOnlyList<TenantId>> GetDueTenantsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default);
     Task<bool> TryAcquireAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
         DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default);
+    Task<bool> RenewLeaseAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
+        DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default);
     Task CompleteAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
         DateTimeOffset? archivedThroughUtc, bool succeeded,
         CancellationToken cancellationToken = default);
