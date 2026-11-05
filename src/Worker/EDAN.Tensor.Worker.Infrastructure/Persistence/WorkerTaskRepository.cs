@@ -68,6 +68,12 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             {
                 db.Entry(task).State = EntityState.Detached;
             }
+            catch
+            {
+                // 복구 저장이 실패한 엔티티의 변경 추적을 정리하고 원래 오류를 보존합니다.
+                db.Entry(task).State = EntityState.Detached;
+                throw;
+            }
         }
         return recovered;
     }
@@ -80,6 +86,12 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         try { task.AcquireLease(workerId, leaseId, nowUtc, expiresAtUtc); await db.SaveChangesAsync(cancellationToken); return task; }
         catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return null; }
         catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return null; }
+        catch
+        {
+            // 저장 실패나 취소 후 변경된 추적 엔티티가 이후 SaveChanges에 섞이지 않도록 분리합니다.
+            db.Entry(task).State = EntityState.Detached;
+            throw;
+        }
     }
 
     public Task<bool> TryStartAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
@@ -104,6 +116,12 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         try { mutation(task); await db.SaveChangesAsync(cancellationToken); return true; }
         catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return false; }
         catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return false; }
+        catch
+        {
+            // DB 예외 및 취소도 실패한 도메인 변경을 추적기에서 제거한 뒤 호출자에게 전달합니다.
+            db.Entry(task).State = EntityState.Detached;
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<WorkerTask>> GetDeadLetteredAsync(Guid tenantId, int skip, int take, CancellationToken cancellationToken = default)
