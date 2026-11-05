@@ -22,7 +22,7 @@ public sealed class DataSetStorageUsageSnapshotService(
             .OrderBy(x => x.TenantId).ThenBy(x => x.OrganizationId).ThenBy(x => x.ProjectId)
             .ToListAsync(cancellationToken);
         var policies = await platformDb.StorageQuotaPolicies.AsNoTracking()
-            .Where(x => x.IsEnabled).ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
         // 데이터가 아직 없는 Tenant도 활성 정책이 있으면 평가 대상에 포함합니다.
         var tenantIds = dataSets.Select(x => x.TenantId)
@@ -66,7 +66,12 @@ public sealed class DataSetStorageUsageSnapshotService(
 
                 long usedBytes;
                 long? limitBytes;
-                if (policy.Scope == StorageQuotaPolicyScope.Tenant)
+                if (!policy.IsEnabled)
+                {
+                    usedBytes = 0;
+                    limitBytes = null;
+                }
+                else if (policy.Scope == StorageQuotaPolicyScope.Tenant)
                 {
                     usedBytes = usage.TenantBytes;
                     limitBytes = policy.TenantLimitBytes;
@@ -115,22 +120,35 @@ public sealed class DataSetStorageUsageSnapshotService(
     private async Task EvaluatePolicyAsync(
         StorageQuotaPolicy policy, long usedBytes, long? limitBytes, DateTimeOffset now, CancellationToken token)
     {
-        if (limitBytes is not long limit)
-            return;
+        var latest = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.TenantId == policy.TenantId.Value && x.PolicyId == policy.Id)
+            .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
+            .FirstOrDefaultAsync(token);
 
+        // 정책 비활성화 또는 한도 제거는 이전 Warning/Exceeded 상태를 해제하는 전이로 기록합니다.
+        if (!policy.IsEnabled || limitBytes is null)
+        {
+            if (latest is null || latest.EventType is "Resolved" or "Normal")
+                return;
+            dataSetDb.QuotaThresholdEvents.Add(new DataSetQuotaThresholdEvent
+            {
+                TenantId = policy.TenantId.Value, PolicyId = policy.Id, Scope = policy.Scope.ToString(),
+                TargetId = policy.TargetId, EventType = "Resolved", UsedBytes = 0,
+                LimitBytes = latest.LimitBytes, UtilizationPercent = 0,
+                PolicyVersion = policy.Version, OccurredAtUtc = now
+            });
+            return;
+        }
+
+        var limit = limitBytes.Value;
         var utilization = limit == 0
             ? (usedBytes == 0 ? 0d : 100d)
             : Math.Round(usedBytes * 100d / limit, 2);
         var currentState = usedBytes >= limit
             ? "Exceeded"
             : utilization >= policy.WarningThresholdPercent ? "Warning" : "Normal";
-        var latest = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
-            .Where(x => x.TenantId == policy.TenantId.Value && x.PolicyId == policy.Id)
-            .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
-            .FirstOrDefaultAsync(token);
-        var previousState = latest?.PolicyVersion == policy.Version
-            ? latest.EventType == "Resolved" ? "Normal" : latest.EventType
-            : "Normal";
+        var previousState = latest is null || latest.EventType is "Resolved" or "Normal"
+            ? "Normal" : latest.EventType;
         if (currentState == previousState || (currentState == "Normal" && latest is null))
             return;
 
