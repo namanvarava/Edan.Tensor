@@ -20,7 +20,7 @@ public sealed class WorkerTaskQueryService(IWorkerTaskRepository repository)
             task.Id, task.TaskType, task.Status.ToString(), task.AttemptCount,
             task.MaxAttempts, task.FencingToken, task.CheckpointVersion,
             task.CreatedAtUtc, task.NextAttemptAtUtc, task.CompletedAtUtc,
-            task.LastErrorCode, task.LeaseExpiresAtUtc);
+            task.LastErrorCode, task.LeaseExpiresAtUtc, task.ProgressPercent,\n            task.ProgressStage, task.ProgressMessage, task.ResultReference is not null);
     }
 }
 
@@ -37,4 +37,4 @@ public sealed record WorkerTaskStatusView(
     DateTimeOffset? NextAttemptAtUtc,
     DateTimeOffset? CompletedAtUtc,
     string? LastErrorCode,
-    DateTimeOffset? LeaseExpiresAtUtc);
+    DateTimeOffset? LeaseExpiresAtUtc,\n    int ProgressPercent,\n    string? ProgressStage,\n    string? ProgressMessage,\n    bool HasResult);

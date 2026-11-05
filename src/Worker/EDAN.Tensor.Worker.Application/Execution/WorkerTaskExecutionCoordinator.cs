@@ -26,7 +26,7 @@ public interface IWorkerTaskExecution : IAsyncDisposable
 public sealed record WorkerTaskExecutionResult(bool Succeeded, string? ErrorCode = null,
     DateTimeOffset? RetryAtUtc = null)
 {
-    public static WorkerTaskExecutionResult Success() => new(true);
+    public string? ResultReference { get; init; }\n    public static WorkerTaskExecutionResult Success(string? resultReference = null) => new(true) { ResultReference = resultReference };
     public static WorkerTaskExecutionResult Failure(string errorCode, DateTimeOffset retryAtUtc) =>
         new(false, errorCode, retryAtUtc);
 }
@@ -77,7 +77,7 @@ public sealed class WorkerTaskExecutionCoordinator(
 
         var fencingToken = leased.FencingToken;
         now = timeProvider.GetUtcNow();
-        if (!await repository.TryStartAsync(tenantId, taskId, leaseId, fencingToken, now, cancellationToken))
+        if (!await repository.TryStartAsync(tenantId, taskId, leaseId, fencingToken, now, result.ResultReference, cancellationToken))
             return WorkerTaskExecutionOutcome.LeaseLost;
 
         await using var execution = await handler.StartAsync(leased, cancellationToken);
