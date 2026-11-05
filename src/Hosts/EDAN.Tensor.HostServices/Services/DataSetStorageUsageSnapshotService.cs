@@ -14,7 +14,31 @@ public sealed class DataSetStorageUsageSnapshotService(
     IDataSetStorageUsageReader storageUsageReader,
     TimeProvider timeProvider)
 {
-    public async Task<int> CaptureDueAsync(CancellationToken cancellationToken = default)
+    public Task<int> CaptureDueAsync(CancellationToken cancellationToken = default)
+        => CaptureAsync(null, cancellationToken);
+
+    /// <summary>단일 Tenant의 사용량과 Quota 상태만 수집합니다.</summary>
+    public Task<int> CaptureTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
+        return CaptureAsync(tenantId, cancellationToken);
+    }
+
+    /// <summary>수집 대상 Tenant 식별자를 반환합니다.</summary>
+    public async Task<IReadOnlyList<Guid>> GetTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var dataSetTenantIds = await dataSetDb.DataSets.AsNoTracking()
+            .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
+        var policyTenantIds = await platformDb.StorageQuotaPolicies.AsNoTracking()
+            .Where(x => x.TenantId.HasValue).Select(x => x.TenantId!.Value).Distinct().ToListAsync(cancellationToken);
+        var eventTenantIds = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.EventType == "Warning" || x.EventType == "Exceeded")
+            .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
+        return dataSetTenantIds.Concat(policyTenantIds).Concat(eventTenantIds)
+            .Distinct().OrderBy(x => x).ToArray();
+    }
+
+    private async Task<int> CaptureAsync(Guid? onlyTenantId, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
         var period = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero);
@@ -31,8 +55,9 @@ public sealed class DataSetStorageUsageSnapshotService(
             .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
         var activePolicyIds = policies.Select(x => x.Id).ToHashSet();
         var tenantIds = dataSets.Select(x => x.TenantId)
-            .Concat(policies.Select(x => x.TenantId.Value))
+            .Concat(policies.Where(x => x.TenantId.HasValue).Select(x => x.TenantId!.Value))
             .Concat(eventTenantIds)
+            .Where(x => !onlyTenantId.HasValue || x == onlyTenantId.Value)
             .Distinct().OrderBy(x => x).ToArray();
 
         foreach (var tenantId in tenantIds)

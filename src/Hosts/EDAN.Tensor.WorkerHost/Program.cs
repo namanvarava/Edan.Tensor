@@ -5,6 +5,7 @@ using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.WorkerHost.Handlers;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.WorkerHost.BackgroundServices;
@@ -48,6 +49,8 @@ builder.Services.AddWorkerInfrastructure(options =>
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
+builder.Services.AddScoped<WorkerTaskEnqueueService>();
+builder.Services.AddWorkerTaskHandler<DataSetStorageUsageSnapshotTaskHandler>(DataSetStorageUsageSnapshotWorker.TaskType);
 builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
 // 업무별 Handler는 배포 구성에서 AddWorkerTaskHandler<THandler>(taskType)로 등록합니다.
