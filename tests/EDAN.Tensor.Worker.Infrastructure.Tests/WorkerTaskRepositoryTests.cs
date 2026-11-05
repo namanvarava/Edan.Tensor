@@ -66,6 +66,39 @@ public sealed class WorkerTaskRepositoryTests
     }
 
     [Fact]
+    public async Task DeadLetterQueryPagesInDatabaseOrderWithoutCrossTenantResults()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenantId = Guid.NewGuid();
+        var otherTenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var oldest = WorkerTask.Create(tenantId, "test.dlq", "oldest", "payload://oldest", now.AddMinutes(-3), maxAttempts: 1);
+        var middle = WorkerTask.Create(tenantId, "test.dlq", "middle", "payload://middle", now.AddMinutes(-2), maxAttempts: 1);
+        var newest = WorkerTask.Create(tenantId, "test.dlq", "newest", "payload://newest", now.AddMinutes(-1), maxAttempts: 1);
+        var other = WorkerTask.Create(otherTenantId, "test.dlq", "other", "payload://other", now, maxAttempts: 1);
+        foreach (var task in new[] { oldest, middle, newest, other })
+        {
+            var lease = Guid.NewGuid();
+            task.AcquireLease("worker", lease, now, now.AddMinutes(1));
+            task.Start(lease, task.FencingToken, now);
+            task.Fail(lease, task.FencingToken, "test.failed", now, now.AddMinutes(2));
+        }
+        db.WorkerTasks.AddRange(oldest, middle, newest, other);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var firstPage = await repository.GetDeadLetteredAsync(tenantId, 0, 2);
+        var secondPage = await repository.GetDeadLetteredAsync(tenantId, 2, 2);
+
+        Assert.Equal(new[] { "newest", "middle" }, firstPage.Select(x => x.IdempotencyKey));
+        Assert.Equal(new[] { "oldest" }, secondPage.Select(x => x.IdempotencyKey));
+    }
+
+    [Fact]
     public async Task ExpiredRunningLeaseIsRecoveredAndCanBeReacquiredWithNewFencingToken()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

@@ -36,6 +36,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
             {
                 var readyAt = entry.Entity.NextAttemptAtUtc ?? entry.Entity.CreatedAtUtc;
                 entry.Property<long>("ReadyAtUtcUnixMilliseconds").CurrentValue = readyAt.ToUnixTimeMilliseconds();
+                entry.Property<long>("CreatedAtUtcUnixMilliseconds").CurrentValue = entry.Entity.CreatedAtUtc.ToUnixTimeMilliseconds();
                 entry.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").CurrentValue =
                     entry.Entity.LeaseExpiresAtUtc?.ToUnixTimeMilliseconds();
             }
@@ -72,9 +73,11 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.Property(x => x.LastErrorCode).HasMaxLength(200);
         entity.Property(x => x.Version).IsConcurrencyToken();
         entity.Property<long>("ReadyAtUtcUnixMilliseconds").HasColumnType("INTEGER");
+        entity.Property<long>("CreatedAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
         entity.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds");
+        entity.HasIndex("TenantId", "Status", "CreatedAtUtcUnixMilliseconds", "Id");
         entity.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds");
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
 

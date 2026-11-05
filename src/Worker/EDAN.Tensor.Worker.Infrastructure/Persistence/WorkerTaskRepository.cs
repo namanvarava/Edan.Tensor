@@ -106,8 +106,13 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     {
         if (skip < 0) throw new ArgumentOutOfRangeException(nameof(skip));
         if (take is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(take));
-        var tasks = await db.WorkerTasks.AsNoTracking().Where(x => x.TenantId == tenantId && x.Status == WorkerTaskStatus.DeadLettered).ToListAsync(cancellationToken);
-        return tasks.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id).Skip(skip).Take(take).ToArray();
+        return await db.WorkerTasks.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Status == WorkerTaskStatus.DeadLettered)
+            .OrderByDescending(x => EF.Property<long>(x, "CreatedAtUtcUnixMilliseconds"))
+            .ThenBy(x => x.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToArrayAsync(cancellationToken);
     }
 
     public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, string requestedBy, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
