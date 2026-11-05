@@ -28,9 +28,7 @@ public sealed class AuthorizationAuditArchiveScheduleService(
         var schedule = await schedules.GetAsync(tenantId, cancellationToken);
         if (schedule is null)
         {
-            if (!isEnabled)
-                return new AuthorizationAuditArchiveScheduleView(tenantId.Value, false, intervalHours, null, null, 0);
-            schedule = AuthorizationAuditArchiveSchedule.Create(tenantId, intervalHours, clock.UtcNow);
+            schedule = AuthorizationAuditArchiveSchedule.Create(tenantId, intervalHours, clock.UtcNow, isEnabled);
             schedules.Add(schedule);
         }
         else
