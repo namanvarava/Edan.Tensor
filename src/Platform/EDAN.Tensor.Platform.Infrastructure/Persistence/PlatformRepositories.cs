@@ -108,6 +108,20 @@ public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAutho
         db.AuthorizationPolicyChangeAuditEntries.Add(entry);
 }
 
+
+/// <summary>감사 보존 정책과 변경 이력을 Tenant 범위로 저장합니다.</summary>
+public sealed class AuthorizationAuditRetentionRepository(PlatformDbContext db) : IAuthorizationAuditRetentionRepository
+{
+    public Task<AuthorizationAuditRetentionPolicy?> GetByTenantAsync(TenantId tenantId,
+        CancellationToken cancellationToken = default) =>
+        db.AuthorizationAuditRetentionPolicies.SingleOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+
+    public void Add(AuthorizationAuditRetentionPolicy policy) => db.AuthorizationAuditRetentionPolicies.Add(policy);
+
+    public void AddChange(AuthorizationAuditRetentionChange change) =>
+        db.AuthorizationAuditRetentionChanges.Add(change);
+}
+
 /// <summary>감사 기록 저장소는 평가 결과를 삭제하거나 수정하지 않고 추가합니다.</summary>
 public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthorizationAuditRepository
 {
