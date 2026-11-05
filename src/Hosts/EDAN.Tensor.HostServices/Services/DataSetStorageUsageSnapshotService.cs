@@ -87,11 +87,11 @@ public sealed class DataSetStorageUsageSnapshotService(
                 var targetDataSet = policy.Scope switch
                 {
                     StorageQuotaPolicyScope.Organization => dataSets.FirstOrDefault(x =>
-                        x.TenantId.Value == tenantId && x.OrganizationId == policy.TargetId),
+                        x.TenantId == tenantId && x.OrganizationId == policy.TargetId),
                     StorageQuotaPolicyScope.Project => dataSets.FirstOrDefault(x =>
-                        x.TenantId.Value == tenantId && x.ProjectId == policy.TargetId),
+                        x.TenantId == tenantId && x.ProjectId == policy.TargetId),
                     StorageQuotaPolicyScope.DataSet => dataSets.FirstOrDefault(x =>
-                        x.TenantId.Value == tenantId && x.Id.Value == policy.TargetId),
+                        x.TenantId == tenantId && x.Id.Value == policy.TargetId),
                     _ => null
                 };
 
