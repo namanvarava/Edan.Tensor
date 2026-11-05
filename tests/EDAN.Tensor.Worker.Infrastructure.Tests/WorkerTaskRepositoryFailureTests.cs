@@ -171,6 +171,67 @@ public sealed class WorkerTaskRepositoryFailureTests
         Assert.Empty(await verifyDb.WorkerTaskReplayRecords.AsNoTracking().ToArrayAsync());
     }
 
+
+    [Fact]
+    public async Task EnqueuePersistenceFailureDetachesAddedTaskAndPropagatesFailure()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using (var setup = new WorkerDbContext(baseOptions)) await setup.Database.MigrateAsync();
+        var task = WorkerTask.Create(Guid.NewGuid(), "test.enqueue", "failed-enqueue", "payload://enqueue", DateTimeOffset.UtcNow);
+        var failingOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailingSaveChangesInterceptor(new IOException("Simulated enqueue failure."))).Options;
+
+        await using (var failingDb = new WorkerDbContext(failingOptions))
+        {
+            var repository = new WorkerTaskRepository(failingDb);
+            await Assert.ThrowsAsync<IOException>(() => repository.EnqueueAsync(task));
+            Assert.Equal(EntityState.Detached, failingDb.Entry(task).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        Assert.Empty(await verifyDb.WorkerTasks.AsNoTracking().ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task ReplayPersistenceFailureDetachesAddedTaskAndHistoryAndPropagatesFailure()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid originalId;
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            var original = WorkerTask.Create(tenantId, "test.replay", "dead-lettered-failure", "payload://replay", now, maxAttempts: 1);
+            var leaseId = Guid.NewGuid();
+            original.AcquireLease("worker", leaseId, now, now.AddMinutes(1));
+            original.Start(leaseId, original.FencingToken, now);
+            original.Fail(leaseId, original.FencingToken, "test.failed", now, now.AddMinutes(2));
+            setup.WorkerTasks.Add(original);
+            await setup.SaveChangesAsync();
+            originalId = original.Id;
+        }
+
+        var failingOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailingSaveChangesInterceptor(new IOException("Simulated replay failure."))).Options;
+        await using (var failingDb = new WorkerDbContext(failingOptions))
+        {
+            var repository = new WorkerTaskRepository(failingDb);
+            await Assert.ThrowsAsync<IOException>(() => repository.ReplayAsync(
+                tenantId, originalId, Guid.NewGuid(), "operator:test", now.AddMinutes(3)));
+            Assert.DoesNotContain(failingDb.ChangeTracker.Entries(), entry => entry.State == EntityState.Added
+                && (entry.Entity is WorkerTask || entry.Entity is WorkerTaskReplayRecord));
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        Assert.Single(await verifyDb.WorkerTasks.AsNoTracking().ToArrayAsync());
+        Assert.Empty(await verifyDb.WorkerTaskReplayRecords.AsNoTracking().ToArrayAsync());
+    }
+
     private sealed class FailingSaveChangesInterceptor(Exception exception) : SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
