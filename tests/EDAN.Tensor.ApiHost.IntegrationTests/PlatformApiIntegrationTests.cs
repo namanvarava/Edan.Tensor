@@ -45,6 +45,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
@@ -459,6 +460,16 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content");
         Assert.Equal(HttpStatusCode.OK, download.StatusCode);
         Assert.Equal(payload, await download.Content.ReadAsStringAsync());
+
+        using var usageResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage");
+        Assert.Equal(HttpStatusCode.OK, usageResponse.StatusCode);
+        using var usageDocument = await JsonDocument.ParseAsync(await usageResponse.Content.ReadAsStreamAsync());
+        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+            usageDocument.RootElement.GetProperty("scopeBytes").GetInt64());
+        Assert.Equal(1, usageDocument.RootElement.GetProperty("scopeDataSetCount").GetInt64());
+        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+            usageDocument.RootElement.GetProperty("dataSetBytes").GetInt64());
 
         using var oversizedContent = new ByteArrayContent(new byte[1025]);
         using var oversizedUpload = await client.PostAsync(

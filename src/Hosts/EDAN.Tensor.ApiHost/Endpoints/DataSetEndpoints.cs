@@ -89,6 +89,23 @@ public static class DataSetEndpoints
                 ? Results.NotFound(new { Code = "dataset.content_not_found", Description = "Tenant 범위에서 콘텐츠를 찾을 수 없습니다." })
                 : Results.Stream(content, "application/octet-stream");
         }).WithName("ReadDataSetContent");
+
+        tenantGroup.MapGet("/{dataSetId:guid}/usage", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, EDAN.Tensor.DataSet.Application.Abstractions.IDataSetStorageUsageReader usageReader,
+            CancellationToken token) =>
+        {
+            var usage = await service.GetStorageUsageAsync(new DataSetId(dataSetId), tenantId, usageReader, token);
+            return usage is null
+                ? Results.NotFound(new { Code = "dataset.not_found", Description = "Tenant 범위에서 DataSet을 찾을 수 없습니다." })
+                : Results.Ok(new
+                {
+                    Scope = "Project",
+                    usage.ScopeBytes,
+                    usage.ScopeDataSetCount,
+                    usage.DataSetBytes,
+                    MeasuredAtUtc = DateTimeOffset.UtcNow
+                });
+        }).WithName("GetDataSetStorageUsage");
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
             AddDataSetSchemaRequest request, DataSetManagementService service, ILoggerFactory loggerFactory,
             IWebHostEnvironment environment, CancellationToken token) =>

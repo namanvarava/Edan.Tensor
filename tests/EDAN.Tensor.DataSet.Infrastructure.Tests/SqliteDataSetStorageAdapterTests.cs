@@ -23,7 +23,16 @@ public sealed class SqliteDataSetStorageAdapterTests
             using var reader = new StreamReader(result!);
             Assert.Equal("tensor-payload", await reader.ReadToEndAsync());
 
+            var usage = await adapter.GetUsageAsync(allocation);
+            Assert.Equal(14, usage.ScopeBytes);
+            Assert.Equal(1, usage.ScopeDataSetCount);
+            Assert.Equal(14, usage.DataSetBytes);
+
             await adapter.ReleaseAsync(allocation, reference);
+            var emptyUsage = await adapter.GetUsageAsync(allocation);
+            Assert.Equal(0, emptyUsage.ScopeBytes);
+            Assert.Equal(0, emptyUsage.ScopeDataSetCount);
+            Assert.Equal(0, emptyUsage.DataSetBytes);
             Assert.Null(await adapter.OpenReadAsync(allocation, reference));
         }
         finally
