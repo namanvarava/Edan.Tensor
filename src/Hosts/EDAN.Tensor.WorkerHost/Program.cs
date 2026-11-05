@@ -1,6 +1,5 @@
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
-using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
