@@ -4,7 +4,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Xunit;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
@@ -31,7 +30,12 @@ public sealed class DataSetRepositoryTests
             var initializedSnapshot = db.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
             var differences = differ.GetDifferences(initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
             Assert.True(differences.Count == 0,
-                "DataSet Migration Snapshot 차이: " + string.Join(", ", differences.Select(x => x.GetType().Name)));
+                "DataSet Migration Snapshot 차이: " + string.Join("; ", differences.Select(x => x switch
+                {
+                    Microsoft.EntityFrameworkCore.Migrations.Operations.DropForeignKeyOperation fk => $"DropForeignKey table={fk.Table}, name={fk.Name}, schema={fk.Schema}",
+                    Microsoft.EntityFrameworkCore.Migrations.Operations.DropColumnOperation column => $"DropColumn table={column.Table}, name={column.Name}, schema={column.Schema}",
+                    _ => x.GetType().Name
+                })));
             await db.Database.MigrateAsync();
             var aggregate = DataSetAggregate.Create(id,
                 new DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()),
