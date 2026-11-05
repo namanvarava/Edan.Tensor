@@ -13,7 +13,6 @@ using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.ApiHost.Services;
-using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
