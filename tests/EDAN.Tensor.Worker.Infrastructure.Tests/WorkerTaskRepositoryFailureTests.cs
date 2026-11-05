@@ -273,6 +273,83 @@ public sealed class WorkerTaskRepositoryFailureTests
         }
     }
 
+    [Fact]
+    public async Task ExpiredLeaseRecoveryPersistenceFailureDetachesTaskAndPreservesDatabaseState()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid taskId;
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            var task = WorkerTask.Create(tenantId, "test.recovery", "recovery-failure", "payload://recovery", now);
+            var leaseId = Guid.NewGuid();
+            task.AcquireLease("worker", leaseId, now, now.AddMinutes(1));
+            task.Start(leaseId, task.FencingToken, now);
+            setup.WorkerTasks.Add(task);
+            await setup.SaveChangesAsync();
+            taskId = task.Id;
+        }
+
+        var failingOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailingSaveChangesInterceptor(new IOException("Simulated recovery failure."))).Options;
+        await using (var failingDb = new WorkerDbContext(failingOptions))
+        {
+            var repository = new WorkerTaskRepository(failingDb);
+            var tracked = await repository.GetAsync(tenantId, taskId);
+            Assert.NotNull(tracked);
+            await Assert.ThrowsAsync<IOException>(() => repository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 10));
+            Assert.Equal(EntityState.Detached, failingDb.Entry(tracked).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().SingleAsync(x => x.Id == taskId);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Status);
+        Assert.NotNull(persisted.LeaseId);
+    }
+
+    [Fact]
+    public async Task ExpiredLeaseRecoveryCancellationDetachesTaskAndPropagatesCancellation()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid taskId;
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            var task = WorkerTask.Create(tenantId, "test.recovery", "recovery-cancel", "payload://recovery", now);
+            var leaseId = Guid.NewGuid();
+            task.AcquireLease("worker", leaseId, now, now.AddMinutes(1));
+            task.Start(leaseId, task.FencingToken, now);
+            setup.WorkerTasks.Add(task);
+            await setup.SaveChangesAsync();
+            taskId = task.Id;
+        }
+
+        var cancelledOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailingSaveChangesInterceptor(new OperationCanceledException("Simulated recovery cancellation."))).Options;
+        await using (var cancelledDb = new WorkerDbContext(cancelledOptions))
+        {
+            var repository = new WorkerTaskRepository(cancelledDb);
+            var tracked = await repository.GetAsync(tenantId, taskId);
+            Assert.NotNull(tracked);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 10));
+            Assert.Equal(EntityState.Detached, cancelledDb.Entry(tracked).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().SingleAsync(x => x.Id == taskId);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Status);
+        Assert.NotNull(persisted.LeaseId);
+    }
+
     private sealed class FailingSaveChangesInterceptor(Exception exception) : SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
