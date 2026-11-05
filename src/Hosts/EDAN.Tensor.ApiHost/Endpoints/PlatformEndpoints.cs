@@ -163,6 +163,24 @@ public static class PlatformEndpoints
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         // 아카이브 작업의 상태와 재시도·검증 이력을 Tenant 관리자에게 제공합니다.
+        // Tenant 관리자는 아카이브 예약 주기와 활성 상태를 관리합니다.
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/archive-schedule",
+            async (Guid tenantId, AuthorizationAuditArchiveScheduleService service, CancellationToken token) =>
+                Results.Ok(await service.GetAsync(new TenantId(tenantId), token)))
+            .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/authorization-audit/archive-schedule",
+            async (Guid tenantId, UpdateAuthorizationAuditArchiveScheduleRequest request,
+                AuthorizationAuditArchiveScheduleService service, CancellationToken token) =>
+            {
+                try
+                {
+                    return Results.Ok(await service.UpdateAsync(new TenantId(tenantId),
+                        request.IntervalHours, request.IsEnabled, token));
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs",
             async (Guid tenantId, CreateAuthorizationAuditArchiveRequest request, HttpContext context,
                 AuthorizationAuditArchiveJobService service, CancellationToken token) =>
@@ -350,6 +368,7 @@ public sealed record VerifyAuthorizationAuditIntegrityRequest(DateTimeOffset Fro
 public sealed record CreateAuthorizationAuditArchiveRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc);
 public sealed record VerifyAuthorizationAuditArchiveRequest(string? ExpectedSha256);
 public sealed record UpdateAuthorizationAuditRetentionRequest(int RetentionDays, bool IsLegalHold, string? LegalHoldReason);
+public sealed record UpdateAuthorizationAuditArchiveScheduleRequest(int IntervalHours, bool IsEnabled);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
