@@ -15,8 +15,8 @@ public static class WorkerEndpoints
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>()
             .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        group.MapGet("/", async (Guid tenantId, int page, int pageSize,
-            WorkerTaskDeadLetterService service, CancellationToken token) =>
+        group.MapGet("", async (Guid tenantId, WorkerTaskDeadLetterService service,
+            CancellationToken token, int page = 1, int pageSize = 50) =>
         {
             try
             {

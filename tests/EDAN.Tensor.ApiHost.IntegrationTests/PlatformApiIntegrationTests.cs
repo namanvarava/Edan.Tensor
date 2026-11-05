@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using EDAN.Tensor.Worker.Domain.Model;
+using EDAN.Tensor.Worker.Infrastructure.Persistence;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
 
@@ -40,6 +42,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/retry", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
@@ -360,6 +364,87 @@ public sealed class PlatformApiIntegrationTests
             });
         Assert.Equal(HttpStatusCode.BadRequest, invalidRetentionResponse.StatusCode);
 
+    }
+
+    [Fact]
+    public async Task WorkerDeadLetterOperationsRequireTenantAdministratorAndPreserveOriginalTask()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        var tenantId = Guid.NewGuid();
+
+        using var anonymous = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"DLQ-{suffix}",
+            name = "DLQ 통합 테스트 테넌트"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        tenantId = await ReadIdAsync(tenantResponse);
+        using var activation = await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null);
+        Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
+
+        using var adminMembership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships",
+            new { subjectId = "worker-admin", role = "Administrator" });
+        Assert.Equal(HttpStatusCode.Created, adminMembership.StatusCode);
+        using var memberMembership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships",
+            new { subjectId = "worker-member", role = "Member" });
+        Assert.Equal(HttpStatusCode.Created, memberMembership.StatusCode);
+
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "integration.test", $"dlq:{Guid.NewGuid():N}",
+            "private://payload/should-not-be-exposed", now, maxAttempts: 1);
+        var leaseId = Guid.NewGuid();
+        task.AcquireLease("integration-worker", leaseId, now, now.AddMinutes(5));
+        task.Start(leaseId, task.FencingToken, now.AddSeconds(1));
+        task.Fail(leaseId, task.FencingToken, "integration.failure",
+            now.AddSeconds(2), now.AddMinutes(1));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+            workerDb.WorkerTasks.Add(task);
+            await workerDb.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "worker-member");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        using var memberDenied = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters");
+        Assert.Equal(HttpStatusCode.Forbidden, memberDenied.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "worker-admin");
+        using var listResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        using var listDocument = await JsonDocument.ParseAsync(await listResponse.Content.ReadAsStreamAsync());
+        var items = listDocument.RootElement.GetProperty("items");
+        Assert.Single(items.EnumerateArray());
+        Assert.Equal(task.Id, items[0].GetProperty("id").GetGuid());
+        Assert.False(items[0].TryGetProperty("payloadReference", out _));
+
+        using var replayResponse = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters/{task.Id}/replay", null);
+        Assert.Equal(HttpStatusCode.Created, replayResponse.StatusCode);
+        using var replayDocument = await JsonDocument.ParseAsync(await replayResponse.Content.ReadAsStreamAsync());
+        var replayTaskId = replayDocument.RootElement.GetProperty("replayTaskId").GetGuid();
+        Assert.NotEqual(task.Id, replayTaskId);
+
+        using var repeatedList = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters");
+        Assert.Equal(HttpStatusCode.OK, repeatedList.StatusCode);
+        using var repeatedDocument = await JsonDocument.ParseAsync(await repeatedList.Content.ReadAsStreamAsync());
+        Assert.Equal(task.Id, repeatedDocument.RootElement.GetProperty("items")[0].GetProperty("id").GetGuid());
     }
 
     [Fact]
