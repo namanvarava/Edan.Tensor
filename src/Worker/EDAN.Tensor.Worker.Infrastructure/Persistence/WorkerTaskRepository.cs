@@ -174,6 +174,11 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             if (prior is not null) return prior.ReplayTaskId;
             throw;
         }
+        catch
+        {
+            DetachAddedReplayEntities();
+            throw;
+        }
     }
 
     public async Task<WorkerTaskEnqueueResult> EnqueueAsync(WorkerTask task, CancellationToken cancellationToken = default)
@@ -189,6 +194,20 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             if (existing is null) throw;
             return CreateEnqueueResult(existing, task, created: false);
         }
+        catch
+        {
+            db.Entry(task).State = EntityState.Detached;
+            throw;
+        }
+    }
+
+    private void DetachAddedReplayEntities()
+    {
+        foreach (var entry in db.ChangeTracker.Entries()
+                     .Where(x => x.State == EntityState.Added
+                         && (x.Entity is WorkerTask || x.Entity is WorkerTaskReplayRecord))
+                     .ToArray())
+            entry.State = EntityState.Detached;
     }
 
     private Task<WorkerTask?> FindByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey, CancellationToken cancellationToken) =>
