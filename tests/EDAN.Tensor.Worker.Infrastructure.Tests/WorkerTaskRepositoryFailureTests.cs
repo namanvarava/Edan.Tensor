@@ -396,6 +396,47 @@ public sealed class WorkerTaskRepositoryFailureTests
     }
 
     [Fact]
+    public async Task ExpiredLeaseRecoveryIgnoresLeasesThatHaveNotExpired()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid taskId;
+        Guid leaseId;
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            var task = WorkerTask.Create(tenantId, "test.recovery", "not-expired", "payload://not-expired", now);
+            leaseId = Guid.NewGuid();
+            task.AcquireLease("worker", leaseId, now, now.AddMinutes(5));
+            task.Start(leaseId, task.FencingToken, now);
+            setup.WorkerTasks.Add(task);
+            await setup.SaveChangesAsync();
+            taskId = task.Id;
+        }
+
+        var failingOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailingSaveChangesInterceptor(new IOException("Recovery must not save an unexpired lease.")))
+            .Options;
+        await using (var failingDb = new WorkerDbContext(failingOptions))
+        {
+            var repository = new WorkerTaskRepository(failingDb);
+
+            var recovered = await repository.RecoverExpiredLeasesAsync(now.AddMinutes(1), 10);
+
+            Assert.Equal(0, recovered);
+            Assert.Empty(failingDb.ChangeTracker.Entries());
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().SingleAsync(x => x.Id == taskId);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Status);
+        Assert.Equal(leaseId, persisted.LeaseId);
+    }
+
+    [Fact]
     public async Task ExpiredLeaseRecoveryConcurrencyConflictDetachesTaskAndContinuesBatch()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
