@@ -11,10 +11,11 @@ public static class PlatformInfrastructureExtensions
     /// <summary>플랫폼 DbContext와 저장소 구현을 서비스 컨테이너에 등록합니다.</summary>
     public static IServiceCollection AddPlatformInfrastructure(
         this IServiceCollection services,
-        Action<DbContextOptionsBuilder> configureDatabase)
+        Action<DbContextOptionsBuilder> configureDatabase, string authorizationAuditArchivePath)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureDatabase);
+        ArgumentException.ThrowIfNullOrWhiteSpace(authorizationAuditArchivePath);
 
         services.AddDbContext<PlatformDbContext>(configureDatabase);
         services.AddScoped<ITenantRepository, TenantRepository>();
@@ -25,6 +26,8 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IScopedMembershipRepository, ScopedMembershipRepository>();
         services.AddScoped<IAuthorizationPolicyRepository, AuthorizationPolicyRepository>();
         services.AddScoped<IAuthorizationAuditRepository, AuthorizationAuditRepository>();
+        services.AddSingleton<IAuthorizationAuditArchiveStore>(_ =>
+            new FileSystemAuthorizationAuditArchiveStore(authorizationAuditArchivePath));
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IPlatformUnitOfWork, PlatformUnitOfWork>();
