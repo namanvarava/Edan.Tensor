@@ -396,6 +396,55 @@ public sealed class WorkerTaskRepositoryFailureTests
     }
 
     [Fact]
+    public async Task ExpiredLeaseRecoveryCancellationAfterFirstSaveKeepsEarlierRecoveryAndStopsBatch()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var taskIds = new List<Guid>();
+
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            for (var index = 0; index < 3; index++)
+            {
+                var task = WorkerTask.Create(tenantId, "test.recovery", $"cancel-batch-{index}", $"payload://{index}", now);
+                var leaseId = Guid.NewGuid();
+                task.AcquireLease("worker", leaseId, now, now.AddMinutes(index + 1));
+                task.Start(leaseId, task.FencingToken, now);
+                setup.WorkerTasks.Add(task);
+                taskIds.Add(task.Id);
+            }
+            await setup.SaveChangesAsync();
+        }
+
+        var cancelledOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailOnSaveChangesNumberInterceptor(
+                2, new OperationCanceledException("Second recovery save was cancelled.")))
+            .Options;
+
+        await using (var cancelledDb = new WorkerDbContext(cancelledOptions))
+        {
+            var repository = new WorkerTaskRepository(cancelledDb);
+            var second = await repository.GetAsync(tenantId, taskIds[1]);
+            Assert.NotNull(second);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.RecoverExpiredLeasesAsync(now.AddMinutes(5), 3));
+
+            Assert.Equal(EntityState.Detached, cancelledDb.Entry(second).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().ToArrayAsync();
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted.Single(x => x.Id == taskIds[0]).Status);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Single(x => x.Id == taskIds[1]).Status);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Single(x => x.Id == taskIds[2]).Status);
+    }
+
+    [Fact]
     public async Task ExpiredLeaseRecoveryIgnoresLeasesThatHaveNotExpired()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
