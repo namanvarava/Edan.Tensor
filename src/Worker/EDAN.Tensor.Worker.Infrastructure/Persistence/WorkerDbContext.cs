@@ -11,6 +11,12 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        ConfigureModel(modelBuilder);
+    }
+
+    /// <summary>실제 컨텍스트와 마이그레이션 스냅샷이 공유하는 저장 모델을 구성합니다.</summary>
+    internal static void ConfigureModel(ModelBuilder modelBuilder)
+    {
         var entity = modelBuilder.Entity<WorkerTask>();
         entity.ToTable("worker_tasks");
         entity.HasKey(x => x.Id);
