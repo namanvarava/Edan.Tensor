@@ -40,7 +40,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         {
             storage.Property(x => x.Value).HasColumnName("StorageReference").HasMaxLength(256).IsRequired();
         });
-        entity.HasIndex(x => new { x.Scope.TenantId, x.Scope.OrganizationId, x.Scope.ProjectId });
+        entity.HasIndex("Scope.TenantId", "Scope.OrganizationId", "Scope.ProjectId");
 
         entity.OwnsMany(x => x.SchemaRevisions, revisions =>
         {
