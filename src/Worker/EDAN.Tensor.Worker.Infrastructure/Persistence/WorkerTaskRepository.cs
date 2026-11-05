@@ -74,7 +74,11 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
         MutateAsync(tenantId, taskId, task => task.Complete(leaseId, fencingToken, nowUtc), cancellationToken);
 
-    public Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,\n        DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default) =>\n        MutateAsync(tenantId, taskId, task => task.Fail(leaseId, fencingToken, errorCode, nowUtc, retryAtUtc), cancellationToken);\n\n    public Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+    public Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,
+        DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.Fail(leaseId, fencingToken, errorCode, nowUtc, retryAtUtc), cancellationToken);
+
+    public Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
         string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
         MutateAsync(tenantId, taskId,
             task => task.Handoff(leaseId, fencingToken, checkpoint, nowUtc), cancellationToken);
