@@ -88,7 +88,14 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     {
         var task = await GetAsync(tenantId, taskId, cancellationToken);
         if (task is null) return null;
-        try { task.AcquireLease(workerId, leaseId, nowUtc, expiresAtUtc); await db.SaveChangesAsync(cancellationToken); return task; }
+        try
+        {
+            await db.Entry(task).ReloadAsync(cancellationToken);
+            if (db.Entry(task).State == EntityState.Detached) return null;
+            task.AcquireLease(workerId, leaseId, nowUtc, expiresAtUtc);
+            await db.SaveChangesAsync(cancellationToken);
+            return task;
+        }
         catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return null; }
         catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return null; }
         catch
@@ -118,7 +125,15 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     {
         var task = await GetAsync(tenantId, taskId, cancellationToken);
         if (task is null) return false;
-        try { mutation(task); await db.SaveChangesAsync(cancellationToken); return true; }
+        try
+        {
+            // Another scoped DbContext may have renewed the lease and advanced the concurrency version.
+            await db.Entry(task).ReloadAsync(cancellationToken);
+            if (db.Entry(task).State == EntityState.Detached) return false;
+            mutation(task);
+            await db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
         catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return false; }
         catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return false; }
         catch

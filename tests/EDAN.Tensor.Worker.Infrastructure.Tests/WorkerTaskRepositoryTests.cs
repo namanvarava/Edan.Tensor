@@ -189,6 +189,47 @@ public sealed class WorkerTaskRepositoryTests
     }
 
     [Fact]
+    public async Task LeaseRenewalFromAnotherContextDoesNotPreventCompletionInOriginalContext()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "test.renewal", "renewal-completion",
+            "payload://renewal", now);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var leaseId = Guid.NewGuid();
+        var leased = await repository.TryAcquireLeaseAsync(
+            tenantId, task.Id, "worker-a", leaseId, now, now.AddMinutes(1));
+        Assert.NotNull(leased);
+        Assert.True(await repository.TryStartAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now));
+
+        await using (var renewalDb = new WorkerDbContext(options))
+        {
+            var renewedTask = await renewalDb.WorkerTasks.SingleAsync(x => x.TenantId == tenantId && x.Id == task.Id);
+            renewedTask.RenewLease(leaseId, renewedTask.FencingToken, now.AddSeconds(30), now.AddMinutes(10));
+            await renewalDb.SaveChangesAsync();
+        }
+
+        Assert.True(await repository.TryCompleteAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(2), "result://complete"));
+
+        var persisted = await db.WorkerTasks.AsNoTracking().SingleAsync(x => x.TenantId == tenantId && x.Id == task.Id);
+        Assert.Equal(WorkerTaskStatus.Succeeded, persisted.Status);
+        Assert.Equal("result://complete", persisted.ResultReference);
+        Assert.Null(persisted.LeaseId);
+        Assert.Null(persisted.LeaseExpiresAtUtc);
+    }
+
+    [Fact]
     public async Task ActiveCheckpointedLeaseIsNotReturnedAsReadyWork()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
