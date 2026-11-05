@@ -42,7 +42,7 @@ public sealed class DataSetDomainTests
     [Fact]
     public void InvalidSchemaDocumentsAreRejected()
     {
-        Assert.Throws<System.Text.Json.JsonException>(() => DataSetSchemaRevision.Create(1, "{invalid", DateTimeOffset.UtcNow));
+        Assert.ThrowsAny<System.Text.Json.JsonException>(() => DataSetSchemaRevision.Create(1, "{invalid", DateTimeOffset.UtcNow));
         Assert.Throws<ArgumentException>(() => DataSetSchemaRevision.Create(1, "[]", DateTimeOffset.UtcNow));
         Assert.Throws<ArgumentOutOfRangeException>(() => DataSetSchemaRevision.Create(0, "{}", DateTimeOffset.UtcNow));
     }
