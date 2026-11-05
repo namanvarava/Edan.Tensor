@@ -1,5 +1,6 @@
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.Worker.Application.Abstractions;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -117,6 +118,10 @@ public static class WorkerEndpoints
                 return result.Created
                     ? Results.Created($"/api/platform/tenants/{tenantId}/worker/tasks/{result.Task.Id}", response)
                     : Results.Ok(response);
+            }
+            catch (WorkerTaskTypeNotAvailableException ex)
+            {
+                return Results.UnprocessableEntity(new { Code = "worker.enqueue.task_type_unavailable", Description = ex.Message });
             }
             catch (ArgumentException ex)
             {

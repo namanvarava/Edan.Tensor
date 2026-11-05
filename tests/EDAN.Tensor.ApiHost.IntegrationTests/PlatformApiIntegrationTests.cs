@@ -425,6 +425,23 @@ public sealed class PlatformApiIntegrationTests
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "worker-admin");
+        // WorkerHost가 등록하지 않은 작업 유형은 작업 레코드를 만들지 않고 거부합니다.
+        client.DefaultRequestHeaders.Add("Idempotency-Key", $"unknown:{Guid.NewGuid():N}");
+        using var unknownTaskType = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.unknown", payloadReference = "private://payload/input", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, unknownTaskType.StatusCode);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+
+        // 테스트 WorkerHost가 등록한 유형을 카탈로그에 준비합니다.
+        using (var catalogScope = factory.Services.CreateScope())
+        {
+            var workerDb = catalogScope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+            workerDb.WorkerTaskTypes.Add(new WorkerTaskTypeCatalogEntry(
+                "integration.enqueue", "통합 테스트 작업 유형", DateTimeOffset.UtcNow));
+            await workerDb.SaveChangesAsync();
+        }
+
         // 동일 Idempotency Key 재요청은 기존 작업을 반환하고, 다른 내용은 충돌로 거부합니다.
         var idempotencyKey = $"api-enqueue:{Guid.NewGuid():N}";
         client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);

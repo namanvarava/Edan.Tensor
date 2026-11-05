@@ -8,6 +8,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
 {
     public DbSet<WorkerTask> WorkerTasks => Set<WorkerTask>();
     public DbSet<WorkerTaskReplayRecord> WorkerTaskReplayRecords => Set<WorkerTaskReplayRecord>();
+    public DbSet<WorkerTaskTypeCatalogEntry> WorkerTaskTypes => Set<WorkerTaskTypeCatalogEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,5 +59,14 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         replay.Property(x => x.CreatedAtUtc).IsRequired();
         replay.HasIndex(x => new { x.TenantId, x.OriginalTaskId, x.CreatedAtUtc });
         replay.HasIndex(x => new { x.TenantId, x.ReplayTaskId }).IsUnique();
+
+        var taskType = modelBuilder.Entity<WorkerTaskTypeCatalogEntry>();
+        taskType.ToTable("worker_task_types");
+        taskType.HasKey(x => x.TaskType);
+        taskType.Property(x => x.TaskType).HasMaxLength(120).IsRequired();
+        taskType.Property(x => x.Description).HasMaxLength(500);
+        taskType.Property(x => x.IsEnabled).IsRequired();
+        taskType.Property(x => x.UpdatedAtUtc).IsRequired();
+        taskType.Property(x => x.Version).IsConcurrencyToken();
     }
 }

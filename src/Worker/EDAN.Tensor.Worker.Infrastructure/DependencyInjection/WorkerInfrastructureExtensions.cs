@@ -18,6 +18,7 @@ public static class WorkerInfrastructureExtensions
         ArgumentNullException.ThrowIfNull(configureDatabase);
         services.AddDbContext<WorkerDbContext>(configureDatabase);
         services.AddScoped<WorkerTaskRepository>();
+        services.AddScoped<IWorkerTaskTypeCatalog, WorkerTaskTypeCatalog>();
         services.AddScoped<IWorkerTaskRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
         services.AddScoped<IWorkerTaskDeadLetterRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
         services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
