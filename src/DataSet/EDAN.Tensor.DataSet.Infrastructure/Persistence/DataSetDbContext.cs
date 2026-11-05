@@ -32,6 +32,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
 
         entity.OwnsOne(x => x.Scope, scope =>
         {
+            scope.WithOwner().HasForeignKey("Id");
             scope.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
             scope.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
             scope.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
@@ -41,6 +42,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
 
         entity.OwnsOne(x => x.StorageReference, storage =>
         {
+            storage.WithOwner().HasForeignKey("Id");
             storage.Property(x => x.Value).HasColumnName("StorageReference").HasMaxLength(256).IsRequired();
         });
         entity.Navigation(x => x.StorageReference).IsRequired();
