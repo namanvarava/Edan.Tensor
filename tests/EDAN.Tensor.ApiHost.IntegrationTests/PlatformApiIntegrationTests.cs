@@ -398,7 +398,6 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/memberships",
             new { subjectId = "dataset-admin", role = "Administrator" });
         Assert.Equal(HttpStatusCode.Created, membership.StatusCode);
-
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Remove("X-Test-Role");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "dataset-admin");
