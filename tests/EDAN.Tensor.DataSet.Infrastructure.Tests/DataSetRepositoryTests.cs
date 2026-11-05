@@ -20,7 +20,7 @@ public sealed class DataSetRepositoryTests
 
         await using (var db = new DataSetDbContext(options))
         {
-            await db.Database.EnsureCreatedAsync();
+            await db.Database.MigrateAsync();
             var aggregate = DataSetAggregate.Create(id,
                 new DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()),
                 "Sales", new StorageReference("storage:dataset-01"), "sqlite");

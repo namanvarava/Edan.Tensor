@@ -7,6 +7,8 @@ using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
+using EDAN.Tensor.DataSet.Infrastructure;
+using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
@@ -52,6 +54,21 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddWorkerInfrastructure(options =>
     options.UseSqlite(workerSqliteConnection.ConnectionString,
         sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
+
+// DataSet 메타데이터는 Platform·Worker와 분리된 전용 SQLite 데이터베이스에 저장합니다.
+var dataSetConnectionString = builder.Configuration.GetConnectionString("DataSetDatabase")
+    ?? "Data Source=App_Data/edan-tensor-dataset.db;Cache=Shared";
+var dataSetSqliteConnection = new SqliteConnectionStringBuilder(dataSetConnectionString);
+if (!Path.IsPathRooted(dataSetSqliteConnection.DataSource) && dataSetSqliteConnection.DataSource != ":memory:")
+{
+    dataSetSqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, dataSetSqliteConnection.DataSource);
+    var dataSetDirectory = Path.GetDirectoryName(dataSetSqliteConnection.DataSource);
+    if (!string.IsNullOrWhiteSpace(dataSetDirectory))
+        Directory.CreateDirectory(dataSetDirectory);
+}
+builder.Services.AddDataSetInfrastructure(options =>
+    options.UseSqlite(dataSetSqliteConnection.ConnectionString,
+        sqlite => sqlite.MigrationsAssembly(typeof(DataSetDbContext).Assembly.FullName)));
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
@@ -69,6 +86,8 @@ if (app.Environment.IsDevelopment()
     await db.Database.MigrateAsync();
     var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
     await workerDb.Database.MigrateAsync();
+    var dataSetDb = scope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+    await dataSetDb.Database.MigrateAsync();
 }
 
 // OpenAPI 문서는 개발 환경에서만 제공하여 운영 API 표면을 불필요하게 공개하지 않습니다.
