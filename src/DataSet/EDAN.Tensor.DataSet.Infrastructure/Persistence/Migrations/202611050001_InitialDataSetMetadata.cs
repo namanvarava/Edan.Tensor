@@ -1,3 +1,5 @@
+using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -53,5 +55,12 @@ public sealed class InitialDataSetMetadata : Migration
     {
         migrationBuilder.DropTable("dataset_schema_revisions");
         migrationBuilder.DropTable("datasets");
+    }
+
+    /// <summary>마이그레이션이 생성하는 모델을 현재 런타임 모델과 동일하게 고정합니다.</summary>
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+        DataSetDbContext.ConfigureModel(modelBuilder);
     }
 }
