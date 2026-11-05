@@ -23,6 +23,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationAuditRetentionChange> AuthorizationAuditRetentionChanges => Set<AuthorizationAuditRetentionChange>();
     public DbSet<AuthorizationAuditArchiveJob> AuthorizationAuditArchiveJobs => Set<AuthorizationAuditArchiveJob>();
     public DbSet<AuthorizationAuditArchiveAttempt> AuthorizationAuditArchiveAttempts => Set<AuthorizationAuditArchiveAttempt>();
+    public DbSet<AuthorizationAuditArchiveSchedule> AuthorizationAuditArchiveSchedules => Set<AuthorizationAuditArchiveSchedule>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +43,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationPolicyChangeAuditEntry(modelBuilder);
         ConfigureAuthorizationAuditRetention(modelBuilder);
         ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
+        ConfigureAuthorizationAuditArchiveSchedule(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -364,6 +366,26 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             .HasPrincipalKey(x => new { x.Id, x.TenantId })
             .OnDelete(DeleteBehavior.Restrict);
         attempt.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+
+    /// <summary>예약 정책과 실행 임대 정보를 Tenant별 단일 행으로 저장합니다.</summary>
+    private static void ConfigureAuthorizationAuditArchiveSchedule(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AuthorizationAuditArchiveSchedule>();
+        entity.ToTable("platform_authorization_audit_archive_schedules");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.IntervalHours).IsRequired();
+        entity.Property(x => x.IsEnabled).IsRequired();
+        entity.Property(x => x.NextRunAtUtc).IsRequired();
+        entity.Property(x => x.LastRunAtUtc);
+        entity.Property(x => x.LeaseId);
+        entity.Property(x => x.LeaseExpiresAtUtc);
+        entity.Property(x => x.Version).IsConcurrencyToken();
+        entity.HasIndex(x => x.TenantId).IsUnique();
+        entity.HasIndex(x => new { x.IsEnabled, x.NextRunAtUtc });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
