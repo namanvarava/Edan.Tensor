@@ -269,7 +269,8 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
         DateTimeOffset? archivedThroughUtc, bool succeeded, CancellationToken cancellationToken = default)
     {
         var schedule = await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.LeaseId == leaseId, cancellationToken);
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
+                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc, cancellationToken);
         if (schedule is null)
             throw new InvalidOperationException("아카이브 예약 실행 임대가 만료되었거나 다른 작업자가 소유합니다.");
 
@@ -278,7 +279,8 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
                 ? nowUtc : nowUtc.AddHours(schedule.IntervalHours))
             : nowUtc.AddMinutes(5);
         var affected = await db.AuthorizationAuditArchiveSchedules
-            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId)
+            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
+                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.LastRunAtUtc, succeeded ? archivedThroughUtc : schedule.LastRunAtUtc)
                 .SetProperty(x => x.NextRunAtUtc, nextRunAtUtc)
