@@ -162,6 +162,29 @@ public static class PlatformEndpoints
                 return Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 감사 보존 정책은 Tenant 관리자만 변경하며 모든 변경은 별도 감사 이력으로 남깁니다.
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/retention",
+            async (Guid tenantId, AuthorizationAuditRetentionService service, CancellationToken token) =>
+            {
+                var result = await service.GetAsync(new TenantId(tenantId), token);
+                return Results.Ok(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/authorization-audit/retention",
+            async (Guid tenantId, UpdateAuthorizationAuditRetentionRequest request, HttpContext context,
+                AuthorizationAuditRetentionService service, CancellationToken token) =>
+            {
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                try
+                {
+                    var result = await service.UpdateAsync(new TenantId(tenantId), request.RetentionDays,
+                        request.IsLegalHold, request.LegalHoldReason, actor, token);
+                    return Results.Ok(result);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPut("/{tenantId:guid}/authorization-policies/{policyId:guid}",
             async (Guid tenantId, Guid policyId, UpdateAuthorizationPolicyRequest request, HttpContext context,
                 AuthorizationPolicyService service, CancellationToken token) =>
@@ -278,6 +301,7 @@ public sealed record SetAuthorizationPolicyEnabledRequest(bool IsEnabled);
 public sealed record VerifyAuthorizationAuditIntegrityRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
 public sealed record CreateAuthorizationAuditArchiveRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc);
 public sealed record VerifyAuthorizationAuditArchiveRequest(string? ExpectedSha256);
+public sealed record UpdateAuthorizationAuditRetentionRequest(int RetentionDays, bool IsLegalHold, string? LegalHoldReason);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
