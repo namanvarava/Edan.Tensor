@@ -656,12 +656,23 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(task.Id, items[0].GetProperty("id").GetGuid());
         Assert.False(items[0].TryGetProperty("payloadReference", out _));
 
+        var replayRequestId = Guid.NewGuid();
+        client.DefaultRequestHeaders.Add("Replay-Request-Id", replayRequestId.ToString());
         using var replayResponse = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/worker/dead-letters/{task.Id}/replay", null);
         Assert.Equal(HttpStatusCode.Created, replayResponse.StatusCode);
         using var replayDocument = await JsonDocument.ParseAsync(await replayResponse.Content.ReadAsStreamAsync());
         var replayTaskId = replayDocument.RootElement.GetProperty("replayTaskId").GetGuid();
         Assert.NotEqual(task.Id, replayTaskId);
+
+        // 동일 요청 ID의 재전송은 새 작업을 만들지 않고 기존 재처리 작업을 반환합니다.
+        using var duplicateReplayResponse = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters/{task.Id}/replay", null);
+        Assert.Equal(HttpStatusCode.Created, duplicateReplayResponse.StatusCode);
+        using var duplicateReplayDocument = await JsonDocument.ParseAsync(
+            await duplicateReplayResponse.Content.ReadAsStreamAsync());
+        Assert.Equal(replayTaskId, duplicateReplayDocument.RootElement.GetProperty("replayTaskId").GetGuid());
+        client.DefaultRequestHeaders.Remove("Replay-Request-Id");
 
         using var repeatedList = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/worker/dead-letters");
