@@ -43,8 +43,13 @@ public sealed class AuthorizationAuditArchiveJobService(
             && job.Status != AuthorizationAuditArchiveJobStatus.Verified)
             throw new InvalidOperationException("완료된 아카이브 작업만 검증할 수 있습니다.");
 
+        if (expectedSha256 is not null && (expectedSha256.Length != 64
+            || expectedSha256.Any(x => !Uri.IsHexDigit(x))))
+            throw new ArgumentException("기준 체크섬은 64자리 16진수여야 합니다.");
+
+        var previousAttempts = await jobs.GetAttemptsAsync(tenantId, jobId, cancellationToken);
         var attempt = AuthorizationAuditArchiveAttempt.Start(job.Id, tenantId,
-            job.AttemptCount + 1, "Verify", clock.UtcNow);
+            previousAttempts.Count + 1, "Verify", clock.UtcNow);
         jobs.AddAttempt(attempt);
         var result = await archives.VerifyAsync(tenantId, job.ArchiveId!.Value,
             expectedSha256 ?? job.Sha256, cancellationToken);
@@ -68,8 +73,9 @@ public sealed class AuthorizationAuditArchiveJobService(
     private async Task<AuthorizationAuditArchiveJobView> ExecuteAsync(AuthorizationAuditArchiveJob job,
         string operation, CancellationToken cancellationToken)
     {
+        var previousAttempts = await jobs.GetAttemptsAsync(job.TenantId, job.Id, cancellationToken);
         var attempt = AuthorizationAuditArchiveAttempt.Start(job.Id, job.TenantId,
-            job.AttemptCount + 1, operation, clock.UtcNow);
+            previousAttempts.Count + 1, operation, clock.UtcNow);
         jobs.AddAttempt(attempt);
         AuthorizationAuditArchiveResult result;
         try
