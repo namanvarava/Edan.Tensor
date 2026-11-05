@@ -94,7 +94,7 @@ public sealed class SqliteDataSetStorageAdapterTests
             var policy = new DataSetStorageQuotaPolicy(10, 10, 10, 10);
             await using (var first = new MemoryStream("12345678"u8.ToArray()))
                 await adapter.WriteAsync(allocation, reference, first, policy);
-            await using (var replacement = new MemoryStream("1234567890"u8.ToArray()))
+            await using (var replacement = new MemoryStream("12345678901"u8.ToArray()))
                 await Assert.ThrowsAsync<DataSetStorageQuotaExceededException>(() => adapter.WriteAsync(allocation, reference, replacement, policy));
             await using var existing = await adapter.OpenReadAsync(allocation, reference);
             Assert.NotNull(existing);
