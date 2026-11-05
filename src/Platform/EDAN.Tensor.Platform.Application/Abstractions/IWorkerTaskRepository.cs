@@ -7,7 +7,7 @@ public interface IWorkerTaskRepository
 {
     Task<WorkerTask?> GetAsync(TenantId tenantId, Guid taskId,
         CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<WorkerTask>> GetReadyAsync(TenantId tenantId, int take,
+    Task<IReadOnlyList<WorkerTask>> GetReadyAsync(TenantId tenantId, DateTimeOffset nowUtc, int take,
         CancellationToken cancellationToken = default);
     void Add(WorkerTask task);
 }
