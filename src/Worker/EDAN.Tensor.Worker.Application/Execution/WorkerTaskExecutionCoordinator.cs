@@ -81,7 +81,31 @@ public sealed class WorkerTaskExecutionCoordinator(
         if (!await repository.TryStartAsync(tenantId, taskId, leaseId, fencingToken, now, cancellationToken))
             return WorkerTaskExecutionOutcome.LeaseLost;
 
-        await using var execution = await handler.StartAsync(leased, cancellationToken);
+        IWorkerTaskExecution execution;
+        try
+        {
+            execution = await handler.StartAsync(leased, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            now = timeProvider.GetUtcNow();
+            var failed = await repository.TryFailAsync(
+                tenantId, taskId, leaseId, fencingToken, "worker.handler.start_failed",
+                now, now.AddMinutes(1), cancellationToken);
+            if (!failed)
+                return WorkerTaskExecutionOutcome.LeaseLost;
+
+            var failedTask = await repository.GetAsync(tenantId, taskId, cancellationToken);
+            return failedTask?.Status == WorkerTaskStatus.DeadLettered
+                ? WorkerTaskExecutionOutcome.DeadLettered
+                : WorkerTaskExecutionOutcome.RetryScheduled;
+        }
+
+        await using var executionScope = execution;
         var handedOff = 0;
 
         async Task<bool> HandoffAsync(CancellationToken token)

@@ -68,6 +68,36 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorSchedulesRetryWhenHandlerStartupThrows()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.start-failure", "start-failure-key",
+            "payload://test", DateTimeOffset.UtcNow, maxAttempts: 1);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new StartupFailureResolver(), new SuccessfulLeaseRenewer(),
+            new WorkerExecutionRegistry(), TimeProvider.System);
+
+        var outcome = await coordinator.ExecuteAsync(
+            tenantId, task.Id, "worker-test", TimeSpan.FromMinutes(5));
+
+        Assert.Equal(WorkerTaskExecutionOutcome.DeadLettered, outcome);
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.DeadLettered, persisted!.Status);
+        Assert.Equal("worker.handler.start_failed", persisted.LastErrorCode);
+        Assert.Null(persisted.LeaseId);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -78,6 +108,18 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         Assert.Same(handler, registry.Resolve("test.success"));
         Assert.Null(registry.Resolve("test.unknown"));
         Assert.Throws<InvalidOperationException>(() => registry.Register("test.success", handler));
+    }
+
+    private sealed class StartupFailureResolver : IWorkerTaskHandlerResolver
+    {
+        public IWorkerTaskHandler? Resolve(string taskType) =>
+            taskType == "test.start-failure" ? new StartupFailureHandler() : null;
+    }
+
+    private sealed class StartupFailureHandler : IWorkerTaskHandler
+    {
+        public Task<IWorkerTaskExecution> StartAsync(WorkerTask task, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Simulated handler startup failure.");
     }
 
     private sealed class FailureResolver : IWorkerTaskHandlerResolver
