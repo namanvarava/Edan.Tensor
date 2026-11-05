@@ -286,6 +286,37 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
 
     }
 
+
+        modelBuilder.Entity<AuthorizationAuditArchiveJob>(entity =>
+        {
+            entity.ToTable("platform_authorization_audit_archive_jobs");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.FromUtc).IsRequired();
+            entity.Property(x => x.ToUtc).IsRequired();
+            entity.Property(x => x.RequestedBy).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.CreatedAtUtc).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Sha256).HasMaxLength(64);
+            entity.Property(x => x.FailureReason).HasMaxLength(500);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => new { x.TenantId, x.CreatedAtUtc });
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AuthorizationAuditArchiveAttempt>(entity =>
+        {
+            entity.ToTable("platform_authorization_audit_archive_attempts");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.Operation).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.StartedAtUtc).IsRequired();
+            entity.Property(x => x.ResultCode).HasMaxLength(200);
+            entity.HasIndex(x => new { x.TenantId, x.JobId, x.StartedAtUtc });
+            entity.HasOne<AuthorizationAuditArchiveJob>().WithMany().HasForeignKey(x => x.JobId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
         new(id => value(id), raw => create(raw));
 
