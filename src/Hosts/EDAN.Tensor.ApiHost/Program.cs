@@ -36,6 +36,7 @@ builder.Services.AddPlatformApplication();
 builder.Services.AddDataSetApplication();
 builder.Services.AddScoped<IDataSetScopeValidator, PlatformDataSetScopeValidator>();
 builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
+builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddPlatformSecurity(builder.Configuration);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
     ?? "App_Data/AuthorizationAuditArchives";
@@ -109,6 +110,7 @@ var quotaAssignments = builder.Configuration.GetSection("DataSetContent:Quota:As
 builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy, quotaAssignments);
 builder.Services.AddScoped<IDataSetStorageQuotaPolicyProvider, PlatformDataSetStorageQuotaPolicyProvider>();
 builder.Services.AddScoped<StorageQuotaPolicyManagementService>();
+builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();

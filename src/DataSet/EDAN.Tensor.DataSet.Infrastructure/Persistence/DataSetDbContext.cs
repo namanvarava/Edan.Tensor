@@ -9,6 +9,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
 public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options) : DbContext(options)
 {
     public DbSet<DataSetAggregate> DataSets => Set<DataSetAggregate>();
+    public DbSet<DataSetStorageUsageSnapshot> StorageUsageSnapshots => Set<DataSetStorageUsageSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,5 +52,16 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         });
         entity.Navigation(x => x.SchemaRevisions).UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+
+        var usageSnapshot = modelBuilder.Entity<DataSetStorageUsageSnapshot>();
+        usageSnapshot.ToTable("dataset_storage_usage_snapshots");
+        usageSnapshot.HasKey(x => x.Id);
+        usageSnapshot.Property(x => x.TenantId).IsRequired();
+        usageSnapshot.Property(x => x.PeriodStartUtc).IsRequired();
+        usageSnapshot.Property(x => x.CapturedAtUtc).IsRequired();
+        usageSnapshot.Property(x => x.UsedBytes).IsRequired();
+        usageSnapshot.Property(x => x.DataSetCount).IsRequired();
+        usageSnapshot.HasIndex(x => new { x.TenantId, x.PeriodStartUtc }).IsUnique();
+        usageSnapshot.HasIndex(x => new { x.TenantId, x.CapturedAtUtc });
     }
 }

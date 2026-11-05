@@ -1,4 +1,5 @@
 using EDAN.Tensor.ApiHost.Security;
+using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.UseCases;
 using EDAN.Tensor.DataSet.Domain.Model;
