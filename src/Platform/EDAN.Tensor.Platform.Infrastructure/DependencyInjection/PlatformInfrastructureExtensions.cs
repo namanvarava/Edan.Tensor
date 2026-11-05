@@ -28,6 +28,7 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IAuthorizationAuditRepository, AuthorizationAuditRepository>();
         services.AddScoped<IAuthorizationAuditRetentionRepository, AuthorizationAuditRetentionRepository>();
         services.AddScoped<IAuthorizationAuditArchiveJobRepository, AuthorizationAuditArchiveJobRepository>();
+        services.AddScoped<IWorkerTaskRepository, WorkerTaskRepository>();
         services.AddScoped<IAuthorizationAuditArchiveScheduleRepository, AuthorizationAuditArchiveScheduleRepository>();
         services.AddSingleton<IAuthorizationAuditArchiveStore>(_ =>
             new FileSystemAuthorizationAuditArchiveStore(authorizationAuditArchivePath));
