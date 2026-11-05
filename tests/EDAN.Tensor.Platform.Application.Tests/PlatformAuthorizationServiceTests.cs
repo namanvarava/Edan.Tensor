@@ -157,6 +157,9 @@ public sealed class PlatformAuthorizationServiceTests
             bool? isAllowed, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(new AuthorizationAuditPage([], 0, page, pageSize));
+        public Task<IReadOnlyList<AuthorizationAuditEntry>> GetForIntegrityAsync(TenantId tenantId,
+            DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AuthorizationAuditEntry>>([]);
         public void Add(AuthorizationAuditEntry entry) => Entries.Add(entry);
     }
 
