@@ -1,3 +1,4 @@
+using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 using EDAN.Tensor.DataSet.Domain.Model;
 
 namespace EDAN.Tensor.DataSet.Application.Abstractions;
@@ -5,8 +6,8 @@ namespace EDAN.Tensor.DataSet.Application.Abstractions;
 /// <summary>DataSet 메타데이터 저장소는 항상 Tenant 경계를 포함해 조회합니다.</summary>
 public interface IDataSetRepository
 {
-    Task<DataSet?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default);
-    void Add(DataSet dataSet);
+    Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default);
+    void Add(DataSetAggregate dataSet);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

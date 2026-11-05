@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.DataSet.Infrastructure</AssemblyName>
+    <RootNamespace>EDAN.Tensor.DataSet.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../EDAN.Tensor.DataSet.Domain/EDAN.Tensor.DataSet.Domain.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.DataSet.Application/EDAN.Tensor.DataSet.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+</Project>

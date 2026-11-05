@@ -1,5 +1,6 @@
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Domain.Model;
+using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
 
@@ -32,7 +33,7 @@ public sealed class DataSetManagementService(
             var reference = await adapter.AllocateAsync(new DataSetStorageAllocation(id, scope), cancellationToken);
             try
             {
-                var dataSet = DataSet.Domain.Model.DataSet.Create(id, scope, name, reference, adapter.AdapterId);
+                var dataSet = DataSetAggregate.Create(id, scope, name, reference, adapter.AdapterId);
                 repository.Add(dataSet);
                 await repository.SaveChangesAsync(cancellationToken);
                 return Result<DataSetId>.Success(id);
