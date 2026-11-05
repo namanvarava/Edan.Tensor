@@ -56,6 +56,9 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         var usageSnapshot = modelBuilder.Entity<DataSetStorageUsageSnapshot>();
         usageSnapshot.ToTable("dataset_storage_usage_snapshots");
         usageSnapshot.HasKey(x => x.Id);
+        usageSnapshot.Property(x => x.Id)
+            .ValueGeneratedOnAdd()
+            .HasAnnotation("Sqlite:Autoincrement", true);
         usageSnapshot.Property(x => x.TenantId).IsRequired();
         usageSnapshot.Property(x => x.PeriodStartUtc).IsRequired();
         usageSnapshot.Property(x => x.CapturedAtUtc).IsRequired();
