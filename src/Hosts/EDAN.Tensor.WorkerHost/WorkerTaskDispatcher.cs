@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.Worker.Domain.Model;
 using Microsoft.Extensions.DependencyInjection;
 
 internal sealed class WorkerTaskDispatcher(
