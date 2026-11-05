@@ -32,7 +32,7 @@ public sealed class AuthorizationAuditIntegrityService(IAuthorizationAuditReposi
         });
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalJson)));
         return new AuthorizationAuditIntegrityResult(tenantId.Value, fromUtc.ToUniversalTime(),
-            toUtc.ToUniversalTime(), records.Count, digest);
+            toUtc.ToUniversalTime(), records.Length, digest);
     }
 
     /// <summary>새로 계산한 체크섬을 외부에 보관한 기준 체크섬과 상수 시간으로 비교합니다.</summary>
