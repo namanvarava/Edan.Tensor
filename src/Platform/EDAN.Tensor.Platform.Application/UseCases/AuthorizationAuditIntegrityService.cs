@@ -32,7 +32,13 @@ public sealed class AuthorizationAuditIntegrityService(AuthorizationAuditQuerySe
             records.AddRange(result.Items.Select(IntegrityRecord.From));
         }
 
-        var canonicalJson = JsonSerializer.Serialize(records);
+        var canonicalJson = JsonSerializer.Serialize(new
+        {
+            TenantId = tenantId.Value,
+            FromUtc = fromUtc.ToUniversalTime(),
+            ToUtc = toUtc.ToUniversalTime(),
+            Records = records
+        });
         var digest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalJson)));
         return new AuthorizationAuditIntegrityResult(tenantId.Value, fromUtc.ToUniversalTime(),
             toUtc.ToUniversalTime(), records.Count, digest);
