@@ -24,7 +24,13 @@ if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSour
 
 builder.Services.AddPlatformApplication();
 builder.Services.AddPlatformSecurity(builder.Configuration);
-builder.Services.AddPlatformInfrastructure(options => options.UseSqlite(sqliteConnection.ConnectionString));
+var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
+    ?? "App_Data/AuthorizationAuditArchives";
+if (!Path.IsPathRooted(archivePath))
+    archivePath = Path.Combine(builder.Environment.ContentRootPath, archivePath);
+
+builder.Services.AddPlatformInfrastructure(
+    options => options.UseSqlite(sqliteConnection.ConnectionString), archivePath);
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
