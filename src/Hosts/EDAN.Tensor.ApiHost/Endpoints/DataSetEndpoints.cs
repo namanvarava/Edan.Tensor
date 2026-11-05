@@ -63,7 +63,7 @@ public static class DataSetEndpoints
         }).WithName("GetDataSet");
 
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
-            AddDataSetSchemaRequest request, DataSetManagementService service, ILogger<DataSetEndpoints> logger,
+            AddDataSetSchemaRequest request, DataSetManagementService service, ILogger logger,
             IWebHostEnvironment environment, CancellationToken token) =>
         {
             try
