@@ -424,6 +424,30 @@ public sealed class PlatformApiIntegrationTests
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "worker-admin");
+        // 동일 Idempotency Key 재요청은 기존 작업을 반환하고, 다른 내용은 충돌로 거부합니다.
+        var idempotencyKey = $"api-enqueue:{Guid.NewGuid():N}";
+        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+        using var enqueueResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.enqueue", payloadReference = "private://payload/input", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.Created, enqueueResponse.StatusCode);
+        using var enqueueDocument = await JsonDocument.ParseAsync(await enqueueResponse.Content.ReadAsStreamAsync());
+        var enqueuedTaskId = enqueueDocument.RootElement.GetProperty("id").GetGuid();
+        Assert.False(enqueueDocument.RootElement.TryGetProperty("payloadReference", out _));
+
+        using var duplicateEnqueue = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.enqueue", payloadReference = "private://payload/input", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.OK, duplicateEnqueue.StatusCode);
+        using var duplicateDocument = await JsonDocument.ParseAsync(await duplicateEnqueue.Content.ReadAsStreamAsync());
+        Assert.Equal(enqueuedTaskId, duplicateDocument.RootElement.GetProperty("id").GetGuid());
+
+        using var conflictingEnqueue = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.enqueue", payloadReference = "private://payload/changed", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.Conflict, conflictingEnqueue.StatusCode);
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
+
         using var listResponse = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=10");
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);

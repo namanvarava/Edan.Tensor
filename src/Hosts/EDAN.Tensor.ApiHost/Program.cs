@@ -53,6 +53,7 @@ builder.Services.AddWorkerInfrastructure(options =>
     options.UseSqlite(workerSqliteConnection.ConnectionString,
         sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
+builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 

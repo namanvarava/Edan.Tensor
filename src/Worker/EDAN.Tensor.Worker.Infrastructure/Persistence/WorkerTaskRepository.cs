@@ -178,6 +178,42 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         return replayTask.Id;
     }
 
+    /// <summary>Tenant와 Idempotency Key의 유일성으로 중복 요청을 안전하게 수렴시킵니다.</summary>
+    public async Task<WorkerTaskEnqueueResult> EnqueueAsync(WorkerTask task,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await FindByIdempotencyKeyAsync(task.TenantId, task.IdempotencyKey, cancellationToken);
+        if (existing is not null)
+            return CreateEnqueueResult(existing, task, created: false);
+
+        db.WorkerTasks.Add(task);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            return new WorkerTaskEnqueueResult(task, Created: true, Conflict: false);
+        }
+        catch (DbUpdateException)
+        {
+            // 동시 요청이 먼저 유일 키를 선점했을 수 있으므로 저장 후 기존 레코드를 다시 확인합니다.
+            db.Entry(task).State = EntityState.Detached;
+            existing = await FindByIdempotencyKeyAsync(task.TenantId, task.IdempotencyKey, cancellationToken);
+            if (existing is null)
+                throw;
+            return CreateEnqueueResult(existing, task, created: false);
+        }
+    }
+
+    private Task<WorkerTask?> FindByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey,
+        CancellationToken cancellationToken) =>
+        db.WorkerTasks.AsNoTracking().SingleOrDefaultAsync(
+            x => x.TenantId == tenantId && x.IdempotencyKey == idempotencyKey, cancellationToken);
+
+    private static WorkerTaskEnqueueResult CreateEnqueueResult(WorkerTask existing, WorkerTask requested,
+        bool created) =>
+        new(existing, created, existing.TaskType != requested.TaskType ||
+            existing.PayloadReference != requested.PayloadReference ||
+            existing.MaxAttempts != requested.MaxAttempts);
+
     public void Add(WorkerTask task) => db.WorkerTasks.Add(task);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>

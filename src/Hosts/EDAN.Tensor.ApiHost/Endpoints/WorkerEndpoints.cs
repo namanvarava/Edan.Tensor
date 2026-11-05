@@ -69,6 +69,55 @@ public static class WorkerEndpoints
             }
         }).WithName("ReplayWorkerDeadLetter");
 
+        var taskGroup = endpoints.MapGroup("/api/platform/tenants/{tenantId:guid}/worker/tasks")
+            .WithTags("Worker Operations")
+            .RequireAuthorization("TenantMember")
+            .AddEndpointFilter<TenantRouteAuthorizationFilter>()
+            .AddEndpointFilter<TenantMembershipAuthorizationFilter>()
+            .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
+            EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>
+        {
+            var idempotencyKey = request.Headers["Idempotency-Key"].ToString();
+            if (string.IsNullOrWhiteSpace(idempotencyKey))
+                return Results.BadRequest(new
+                {
+                    Code = "worker.enqueue.idempotency_key_required",
+                    Description = "Idempotency-Key 헤더가 필요합니다."
+                });
+
+            try
+            {
+                var result = await service.EnqueueAsync(tenantId, idempotencyKey,
+                    body.TaskType, body.PayloadReference, body.MaxAttempts, token);
+                if (result.Conflict)
+                    return Results.Conflict(new
+                    {
+                        Code = "worker.enqueue.idempotency_conflict",
+                        Description = "동일 Idempotency Key가 다른 작업 내용으로 이미 사용되었습니다."
+                    });
+
+                var response = new
+                {
+                    result.Task.Id,
+                    result.Task.TaskType,
+                    Status = result.Task.Status.ToString(),
+                    result.Task.CreatedAtUtc
+                };
+                return result.Created
+                    ? Results.Created($"/api/platform/tenants/{tenantId}/worker/tasks/{result.Task.Id}", response)
+                    : Results.Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { Code = "worker.enqueue.invalid_request", Description = ex.Message });
+            }
+        }).WithName("EnqueueWorkerTask");
+
         return endpoints;
     }
+
+    /// <summary>외부 작업 등록에 허용되는 최소 입력입니다. 작업 본문 대신 보안이 적용된 Payload 참조를 전달합니다.</summary>
+    public sealed record EnqueueWorkerTaskRequest(string TaskType, string PayloadReference, int MaxAttempts = 5);
 }
