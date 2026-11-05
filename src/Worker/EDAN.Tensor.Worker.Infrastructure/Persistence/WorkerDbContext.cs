@@ -77,6 +77,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
         entity.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds");
+        entity.HasIndex("Status", "ReadyAtUtcUnixMilliseconds", "TenantId");
         entity.HasIndex("TenantId", "Status", "CreatedAtUtcUnixMilliseconds", "Id");
         entity.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds");
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
