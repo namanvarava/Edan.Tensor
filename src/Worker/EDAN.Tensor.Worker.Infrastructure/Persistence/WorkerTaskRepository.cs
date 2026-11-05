@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
 
 /// <summary>Worker 작업을 Tenant 범위로 조회하고 실행 상태를 동시성 검증과 함께 영속화합니다.</summary>
-public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskRepository
+public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskRepository, IWorkerTaskDeadLetterRepository
 {
     public Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId,
         CancellationToken cancellationToken = default) =>
@@ -136,6 +136,43 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             db.Entry(task).State = EntityState.Detached;
             return false;
         }
+    }
+
+    /// <summary>특정 Tenant의 DLQ 작업을 최신 실패 순서로 조회합니다.</summary>
+    public async Task<IReadOnlyList<WorkerTask>> GetDeadLetteredAsync(Guid tenantId, int skip, int take,
+        CancellationToken cancellationToken = default)
+    {
+        if (skip < 0)
+            throw new ArgumentOutOfRangeException(nameof(skip));
+        if (take is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(take));
+        return await db.WorkerTasks.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Status == WorkerTaskStatus.DeadLettered)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToArrayAsync(cancellationToken);
+    }
+
+    /// <summary>원본 DLQ 항목을 보존하면서 새 작업과 재처리 이력을 원자적으로 생성합니다.</summary>
+    public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, string requestedBy,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var original = await db.WorkerTasks.SingleOrDefaultAsync(
+            x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
+        if (original is null || original.Status != WorkerTaskStatus.DeadLettered)
+            return null;
+
+        var replayTask = WorkerTask.Create(tenantId, original.TaskType,
+            "replay:" + Guid.NewGuid().ToString("N"), original.PayloadReference, nowUtc, original.MaxAttempts);
+        db.WorkerTasks.Add(replayTask);
+        db.WorkerTaskReplayRecords.Add(new WorkerTaskReplayRecord(
+            tenantId, original.Id, replayTask.Id, requestedBy, nowUtc));
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return replayTask.Id;
     }
 
     public void Add(WorkerTask task) => db.WorkerTasks.Add(task);

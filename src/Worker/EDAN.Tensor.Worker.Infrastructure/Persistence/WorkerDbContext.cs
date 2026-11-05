@@ -7,6 +7,7 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
 public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) : DbContext(options)
 {
     public DbSet<WorkerTask> WorkerTasks => Set<WorkerTask>();
+    public DbSet<WorkerTaskReplayRecord> WorkerTaskReplayRecords => Set<WorkerTaskReplayRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,5 +43,16 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
         entity.HasIndex(x => new { x.TenantId, x.Status, x.NextAttemptAtUtc });
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
+
+        var replay = modelBuilder.Entity<WorkerTaskReplayRecord>();
+        replay.ToTable("worker_task_replays");
+        replay.HasKey(x => x.Id);
+        replay.Property(x => x.TenantId).IsRequired();
+        replay.Property(x => x.OriginalTaskId).IsRequired();
+        replay.Property(x => x.ReplayTaskId).IsRequired();
+        replay.Property(x => x.RequestedBy).HasMaxLength(200).IsRequired();
+        replay.Property(x => x.CreatedAtUtc).IsRequired();
+        replay.HasIndex(x => new { x.TenantId, x.OriginalTaskId, x.CreatedAtUtc });
+        replay.HasIndex(x => new { x.TenantId, x.ReplayTaskId }).IsUnique();
     }
 }
