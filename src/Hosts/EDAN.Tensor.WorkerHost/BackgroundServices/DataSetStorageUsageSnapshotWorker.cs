@@ -47,7 +47,7 @@ public sealed class DataSetStorageUsageSnapshotWorker(
                 TaskType,
                 PayloadReference,
                 maxAttempts: 5,
-                cancellationToken);
+                cancellationToken: cancellationToken);
             if (result.Conflict)
                 logger.LogWarning("스냅샷 작업 Idempotency 충돌: TenantId={TenantId}, TaskId={TaskId}", tenantId, result.Task.Id);
             if (result.Created) created++;

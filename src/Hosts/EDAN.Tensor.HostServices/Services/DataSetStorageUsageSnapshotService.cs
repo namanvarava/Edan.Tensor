@@ -80,7 +80,7 @@ public sealed class DataSetStorageUsageSnapshotService(
                 snapshot.DataSetCount = usage.TenantDataSetCount;
             }
 
-            var tenantPolicies = policies.Where(x => x.TenantId.Value == tenantId)
+            var tenantPolicies = policies.Where(x => x.TenantId == tenantId)
                 .OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
             foreach (var policy in tenantPolicies)
             {
