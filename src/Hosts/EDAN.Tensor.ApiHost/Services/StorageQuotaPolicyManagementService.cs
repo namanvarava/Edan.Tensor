@@ -1,12 +1,13 @@
 using System.Text.Json;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.Services;
 
 /// <summary>Tenant 경계를 지키며 Quota 정책과 변경 감사 기록을 원자적으로 관리합니다.</summary>
-public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db)
+public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, DataSetDbContext dataSetDb)
 {
     public async Task<IReadOnlyList<StorageQuotaPolicy>> GetPoliciesAsync(TenantId tenantId, CancellationToken token) =>
         await db.StorageQuotaPolicies.AsNoTracking()
@@ -109,7 +110,9 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db)
                 x => x.TenantId == tenantId && x.Id == new OrganizationId(targetId), token),
             StorageQuotaPolicyScope.Project => await db.Projects.AnyAsync(
                 x => x.TenantId == tenantId && x.Id == new ProjectId(targetId), token),
-            StorageQuotaPolicyScope.DataSet => true,
+            StorageQuotaPolicyScope.DataSet => await dataSetDb.DataSets.AnyAsync(
+                x => x.Id == new EDAN.Tensor.DataSet.Domain.Model.DataSetId(targetId)
+                    && x.TenantId == tenantId.Value, token),
             _ => false
         };
         if (!valid) throw new ArgumentException("정책 대상이 지정한 Tenant에 속하지 않거나 범위가 올바르지 않습니다.");
