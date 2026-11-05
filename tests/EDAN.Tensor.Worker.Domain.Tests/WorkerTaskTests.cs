@@ -149,6 +149,25 @@ public sealed class WorkerTaskTests
     }
 
     [Fact]
+    public void InvalidProgressMessageDoesNotPartiallyMutateTask()
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(10));
+        task.Start(leaseId, token, Now);
+        var version = task.Version;
+
+        Assert.Throws<ArgumentException>(() =>
+            task.ReportProgress(leaseId, token, 25, "preparing", new string('x', 501), Now.AddMinutes(1)));
+
+        Assert.Equal(0, task.ProgressPercent);
+        Assert.Null(task.ProgressStage);
+        Assert.Null(task.ProgressMessage);
+        Assert.Equal(WorkerTaskStatus.Running, task.Status);
+        Assert.Equal(version, task.Version);
+    }
+
+    [Fact]
     public void FailedTaskSchedulesRetryUntilAttemptLimitThenMovesToDeadLetter()
     {
         var task = Create(maxAttempts: 2);
