@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.DataSet.Domain</AssemblyName>
+    <RootNamespace>EDAN.Tensor.DataSet.Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/EDAN.Tensor.SharedKernel/EDAN.Tensor.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>
