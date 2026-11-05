@@ -2,6 +2,7 @@ using EDAN.Tensor.DataSet.Domain.Model;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Tests;
