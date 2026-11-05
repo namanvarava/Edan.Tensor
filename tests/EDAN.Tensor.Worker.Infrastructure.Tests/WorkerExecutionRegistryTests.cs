@@ -18,6 +18,7 @@ public sealed class WorkerExecutionRegistryTests
         Assert.True(result.DrainedWithinGracePeriod);
         Assert.Equal(0, result.HandoffRequested);
         Assert.Equal(0, result.StillRunning);
+        Assert.Equal(TimeSpan.Zero, result.HandoffElapsed);
     }
 
     [Fact]
@@ -38,6 +39,8 @@ public sealed class WorkerExecutionRegistryTests
         Assert.Equal(1, result.HandoffRequested);
         Assert.Equal(1, result.HandoffSucceeded);
         Assert.Equal(0, result.StillRunning);
+        Assert.True(result.HandoffElapsed >= TimeSpan.Zero);
+        Assert.True(result.HandoffElapsed < TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -87,6 +90,7 @@ public sealed class WorkerExecutionRegistryTests
         Assert.Equal(1, result.HandoffRequested);
         Assert.Equal(0, result.HandoffSucceeded);
         Assert.Equal(1, result.StillRunning);
+        Assert.True(result.HandoffElapsed <= TimeSpan.FromMilliseconds(350));
 
         releaseHandoff.TrySetResult();
         await handoffFinished.Task.WaitAsync(TimeSpan.FromSeconds(1));
