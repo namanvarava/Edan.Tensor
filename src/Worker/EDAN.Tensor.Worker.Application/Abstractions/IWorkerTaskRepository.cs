@@ -10,6 +10,16 @@ public interface IWorkerTaskRepository
         CancellationToken cancellationToken = default);
     Task<WorkerTask?> TryAcquireLeaseAsync(Guid tenantId, Guid taskId, string workerId, Guid leaseId,
         DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryStartAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<bool> TrySaveCheckpointAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryRenewLeaseAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryCompleteAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     void Add(WorkerTask task);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
