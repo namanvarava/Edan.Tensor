@@ -4,7 +4,7 @@ using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace EDAN.Tensor.ApiHost.Services;
+namespace EDAN.Tensor.HostServices.Services;
 
 /// <summary>실제 콘텐츠 DB 사용량 스냅샷과 Quota 임계치 상태 전이를 멱등 기록합니다.</summary>
 public sealed class DataSetStorageUsageSnapshotService(

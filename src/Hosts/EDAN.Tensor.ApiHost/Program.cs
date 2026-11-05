@@ -13,6 +13,7 @@ using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.HostServices.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
@@ -36,7 +37,6 @@ builder.Services.AddPlatformApplication();
 builder.Services.AddDataSetApplication();
 builder.Services.AddScoped<IDataSetScopeValidator, PlatformDataSetScopeValidator>();
 builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
-builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddPlatformSecurity(builder.Configuration);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
     ?? "App_Data/AuthorizationAuditArchives";

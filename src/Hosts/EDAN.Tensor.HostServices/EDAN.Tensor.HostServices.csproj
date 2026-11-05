@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.HostServices</AssemblyName>
+    <RootNamespace>EDAN.Tensor.HostServices</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/EDAN.Tensor.Platform.Infrastructure/EDAN.Tensor.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

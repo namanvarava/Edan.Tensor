@@ -1,6 +1,6 @@
-using EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.HostServices.Services;
 
-namespace EDAN.Tensor.ApiHost.BackgroundServices;
+namespace EDAN.Tensor.WorkerHost.BackgroundServices;
 
 /// <summary>5분 간격으로 Tenant 저장량을 확인하되 시간 구간당 스냅샷은 하나만 유지합니다.</summary>
 public sealed class DataSetStorageUsageSnapshotWorker(

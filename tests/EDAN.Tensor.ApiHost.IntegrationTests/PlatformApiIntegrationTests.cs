@@ -14,7 +14,7 @@ using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
-using EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.HostServices.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
