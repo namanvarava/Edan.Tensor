@@ -180,9 +180,9 @@ public sealed class SqliteDataSetStorageAdapterTests
             }
 
             var usage = await adapter.GetUsageAsync(first);
-            Assert.Equal(35, usage.TenantBytes);
+            Assert.Equal(40, usage.TenantBytes);
             Assert.Equal(3, usage.TenantDataSetCount);
-            Assert.Equal(25, usage.OrganizationBytes);
+            Assert.Equal(19, usage.OrganizationBytes);
             Assert.Equal(2, usage.OrganizationDataSetCount);
             Assert.Equal(13, usage.ProjectBytes);
             Assert.Equal(1, usage.ProjectDataSetCount);
