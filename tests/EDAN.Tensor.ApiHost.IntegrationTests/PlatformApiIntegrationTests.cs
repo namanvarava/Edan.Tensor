@@ -44,6 +44,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
@@ -447,6 +448,22 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", null);
         Assert.Equal(HttpStatusCode.NoContent, activationAfterSchema.StatusCode);
 
+        const string payload = "EDAN Tensor DataSet content round-trip";
+        using var uploadContent = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(payload));
+        uploadContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        using var upload = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", uploadContent);
+        Assert.Equal(HttpStatusCode.NoContent, upload.StatusCode);
+
+        using var download = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content");
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(payload, await download.Content.ReadAsStringAsync());
+
+        using var oversizedContent = new ByteArrayContent(new byte[1025]);
+        using var oversizedUpload = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", oversizedContent);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, oversizedUpload.StatusCode);
         using var get = await client.GetAsync($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}");
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         using var dataSetDocument = await JsonDocument.ParseAsync(await get.Content.ReadAsStreamAsync());
@@ -469,7 +486,13 @@ public sealed class PlatformApiIntegrationTests
         using var memberCreate = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/datasets",
             new { organizationId, projectId, name = "권한 없는 DataSet 생성" });
-        Assert.Equal(HttpStatusCode.Forbidden, memberCreate.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, memberCreate.StatusCode);        using var memberRead = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content");
+        Assert.Equal(HttpStatusCode.OK, memberRead.StatusCode);
+        using var memberUploadContent = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("unauthorized"));
+        using var memberUpload = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", memberUploadContent);
+        Assert.Equal(HttpStatusCode.Forbidden, memberUpload.StatusCode);
     }
 
     [Fact]
@@ -672,6 +695,7 @@ public sealed class PlatformApiIntegrationTests
                     ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared",
                     ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared",
                     ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared",
+                    ["DataSetContent:MaxUploadBytes"] = "1024",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",

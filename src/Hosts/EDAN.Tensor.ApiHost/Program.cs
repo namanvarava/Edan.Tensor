@@ -86,7 +86,8 @@ if (!Path.IsPathRooted(dataSetContentSqliteConnection.DataSource) && dataSetCont
     if (!string.IsNullOrWhiteSpace(contentDirectory))
         Directory.CreateDirectory(contentDirectory);
 }
-builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString);
+var maxDataSetContentBytes = builder.Configuration.GetValue<long?>("DataSetContent:MaxUploadBytes") ?? 67_108_864;
+builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes);
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();

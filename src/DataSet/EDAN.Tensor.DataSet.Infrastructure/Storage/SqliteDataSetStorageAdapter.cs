@@ -5,8 +5,18 @@ using Microsoft.Data.Sqlite;
 namespace EDAN.Tensor.DataSet.Infrastructure.Storage;
 
 /// <summary>DataSet 콘텐츠를 전용 SQLite DB에 저장하며 메타데이터 DB와 물리적으로 분리합니다.</summary>
-public sealed class SqliteDataSetStorageAdapter(string connectionString) : IDataSetStorageAdapter
+public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter
 {
+    private readonly string connectionString;
+    private readonly long maxContentBytes;
+
+    public SqliteDataSetStorageAdapter(string connectionString, long maxContentBytes = 67_108_864)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        if (maxContentBytes <= 0) throw new ArgumentOutOfRangeException(nameof(maxContentBytes));
+        this.connectionString = connectionString;
+        this.maxContentBytes = maxContentBytes;
+    }
     public string AdapterId => "sqlite";
 
     public async Task<StorageReference> AllocateAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default)
@@ -28,7 +38,16 @@ public sealed class SqliteDataSetStorageAdapter(string connectionString) : IData
     {
         ArgumentNullException.ThrowIfNull(content);
         await using var buffer = new MemoryStream();
-        await content.CopyToAsync(buffer, cancellationToken);
+        var chunk = new byte[81_920];
+        long totalBytes = 0;
+        int bytesRead;
+        while ((bytesRead = await content.ReadAsync(chunk.AsMemory(), cancellationToken)) > 0)
+        {
+            totalBytes += bytesRead;
+            if (totalBytes > maxContentBytes)
+                throw new InvalidDataException("DataSet 콘텐츠 크기 제한을 초과했습니다.");
+            await buffer.WriteAsync(chunk.AsMemory(0, bytesRead), cancellationToken);
+        }
         await using var connection = await OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """

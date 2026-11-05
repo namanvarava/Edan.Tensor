@@ -49,6 +49,45 @@ public sealed class DataSetManagementService(
         catch (InvalidOperationException ex) { return Failure<DataSetId>("dataset.operation_failed", ex.Message); }
     }
 
+    /// <summary>Tenant 소유 범위에서 DataSet 콘텐츠를 기록합니다.</summary>
+    public async Task<Result> WriteContentAsync(
+        DataSetId id, Guid tenantId, Stream content, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null)
+            return Result.Failure(new Error("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."));
+        if (dataSet.Status == DataSetStatus.Archived)
+            return Result.Failure(new Error("dataset.archived", "보관된 DataSet에는 콘텐츠를 기록할 수 없습니다."));
+
+        var adapter = adapters.Resolve(dataSet.StorageAdapter);
+        if (adapter is null)
+            return Result.Failure(new Error("dataset.adapter_unavailable", "저장소 어댑터를 사용할 수 없습니다."));
+
+        try
+        {
+            await adapter.WriteAsync(new DataSetStorageAllocation(dataSet.Id, dataSet.Scope),
+                dataSet.StorageReference, content, cancellationToken);
+            return Result.Success();
+        }
+        catch (InvalidDataException ex)
+        {
+            return Result.Failure(new Error("dataset.content_too_large", ex.Message));
+        }
+    }
+
+    /// <summary>Tenant 소유 범위에서 DataSet 콘텐츠 스트림을 엽니다.</summary>
+    public async Task<Stream?> OpenContentReadAsync(
+        DataSetId id, Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null)
+            return null;
+        var adapter = adapters.Resolve(dataSet.StorageAdapter)
+            ?? throw new InvalidOperationException("DataSet 저장소 어댑터를 사용할 수 없습니다.");
+        return await adapter.OpenReadAsync(new DataSetStorageAllocation(dataSet.Id, dataSet.Scope),
+            dataSet.StorageReference, cancellationToken);
+    }
     /// <summary>Tenant 범위에서 DataSet 메타데이터를 조회합니다.</summary>
     public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
         repository.GetAsync(id, tenantId, cancellationToken);

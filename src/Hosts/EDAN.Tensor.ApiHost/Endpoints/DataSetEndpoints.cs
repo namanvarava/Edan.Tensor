@@ -62,6 +62,29 @@ public static class DataSetEndpoints
                 });
         }).WithName("GetDataSet");
 
+        tenantGroup.MapPost("/{dataSetId:guid}/content", async (Guid tenantId, Guid dataSetId,
+            HttpRequest request, DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.WriteContentAsync(new DataSetId(dataSetId), tenantId, request.Body, token);
+            if (result.IsSuccess)
+                return Results.NoContent();
+            return result.Error.Code switch
+            {
+                "dataset.not_found" => Results.NotFound(new { result.Error.Code, result.Error.Description }),
+                "dataset.content_too_large" => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+                "dataset.archived" => Results.Conflict(new { result.Error.Code, result.Error.Description }),
+                _ => Results.BadRequest(new { result.Error.Code, result.Error.Description })
+            };
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("WriteDataSetContent");
+
+        tenantGroup.MapGet("/{dataSetId:guid}/content", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var content = await service.OpenContentReadAsync(new DataSetId(dataSetId), tenantId, token);
+            return content is null
+                ? Results.NotFound(new { Code = "dataset.content_not_found", Description = "Tenant 범위에서 콘텐츠를 찾을 수 없습니다." })
+                : Results.Stream(content, "application/octet-stream");
+        }).WithName("ReadDataSetContent");
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
             AddDataSetSchemaRequest request, DataSetManagementService service, ILoggerFactory loggerFactory,
             IWebHostEnvironment environment, CancellationToken token) =>

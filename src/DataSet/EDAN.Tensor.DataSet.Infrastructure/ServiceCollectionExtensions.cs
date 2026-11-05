@@ -21,11 +21,11 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>메타데이터 DB와 별도인 SQLite 콘텐츠 DB를 등록합니다.</summary>
-    public static IServiceCollection AddDataSetSqliteStorage(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddDataSetSqliteStorage(this IServiceCollection services, string connectionString, long maxContentBytes = 67_108_864)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        services.AddSingleton<IDataSetStorageAdapter>(new SqliteDataSetStorageAdapter(connectionString));
+        services.AddSingleton<IDataSetStorageAdapter>(new SqliteDataSetStorageAdapter(connectionString, maxContentBytes));
         services.AddSingleton<IDataSetStorageAdapterResolver, DataSetStorageAdapterResolver>();
         return services;
     }
