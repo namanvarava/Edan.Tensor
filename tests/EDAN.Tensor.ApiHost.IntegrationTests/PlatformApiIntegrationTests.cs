@@ -797,6 +797,64 @@ public sealed class PlatformApiIntegrationTests
     }
 
     [Fact]
+    public async Task RemovingQuotaLimitResolvesActiveThresholdEventOnlyOnce()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"QR-{suffix}",
+            name = "Quota 한도 제거 테스트 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var platformDb = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        var dataSetDb = scope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        var storageAdapter = scope.ServiceProvider.GetRequiredService<IDataSetStorageAdapter>();
+        var snapshotService = scope.ServiceProvider.GetRequiredService<DataSetStorageUsageSnapshotService>();
+
+        var allocation = new DataSetStorageAllocation(
+            new EDAN.Tensor.DataSet.Domain.Model.DataSetId(Guid.NewGuid()),
+            new EDAN.Tensor.DataSet.Domain.Model.DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()));
+        var storageReference = await storageAdapter.AllocateAsync(allocation);
+        await using (var content = new MemoryStream(new byte[45]))
+            await storageAdapter.WriteAsync(allocation, storageReference, content,
+                new DataSetStorageQuotaPolicy(null, null, null, null));
+
+        var policy = StorageQuotaPolicy.Create(
+            Guid.NewGuid(), new TenantId(tenantId), StorageQuotaPolicyScope.Tenant, tenantId,
+            tenantLimitBytes: 50, organizationLimitBytes: null, projectLimitBytes: null, dataSetLimitBytes: null,
+            warningThresholdPercent: 80, planCode: "Community", updatedBy: "integration-test",
+            nowUtc: DateTimeOffset.UtcNow);
+        platformDb.StorageQuotaPolicies.Add(policy);
+        await platformDb.SaveChangesAsync();
+
+        await snapshotService.CaptureDueAsync();
+        Assert.Equal("Warning", (await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .SingleAsync(x => x.PolicyId == policy.Id)).EventType);
+
+        policy.Update(tenantLimitBytes: null, organizationLimitBytes: null, projectLimitBytes: null,
+            dataSetLimitBytes: null, warningThresholdPercent: 80, planCode: "Community",
+            updatedBy: "integration-test", expectedVersion: policy.Version, nowUtc: DateTimeOffset.UtcNow);
+        await platformDb.SaveChangesAsync();
+
+        await snapshotService.CaptureDueAsync();
+        await snapshotService.CaptureDueAsync();
+
+        var events = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.PolicyId == policy.Id).OrderBy(x => x.Id).ToListAsync();
+        Assert.Collection(events,
+            item => { Assert.Equal("Warning", item.EventType); Assert.Equal(1, item.PolicyVersion); },
+            item => { Assert.Equal("Resolved", item.EventType); Assert.Equal(2, item.PolicyVersion); });
+    }
+
+    [Fact]
     public async Task AuthenticatedSubjectWithoutMembershipCannotAccessSelectedTenant()
     {
         using var factory = new ApiHostFactory();
