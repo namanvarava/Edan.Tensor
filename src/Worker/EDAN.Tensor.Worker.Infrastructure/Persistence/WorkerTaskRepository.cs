@@ -12,6 +12,12 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
     {
         if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
+        if (db.ChangeTracker.HasChanges())
+        {
+            throw new InvalidOperationException(
+                "Expired lease recovery requires a clean WorkerDbContext so it cannot persist unrelated pending changes.");
+        }
+
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         return await db.WorkerTasks.AsNoTracking()
             .Where(x => x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled || x.Status == WorkerTaskStatus.Checkpointed)

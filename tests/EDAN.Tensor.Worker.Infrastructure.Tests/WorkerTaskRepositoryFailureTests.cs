@@ -437,6 +437,47 @@ public sealed class WorkerTaskRepositoryFailureTests
     }
 
     [Fact]
+    public async Task ExpiredLeaseRecoveryRejectsUnrelatedPendingChanges()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid expiredTaskId;
+        await using (var setup = new WorkerDbContext(options))
+        {
+            await setup.Database.MigrateAsync();
+            var expiredTask = WorkerTask.Create(tenantId, "test.recovery", "expired-before-pending", "payload://expired", now);
+            var leaseId = Guid.NewGuid();
+            expiredTask.AcquireLease("worker", leaseId, now, now.AddMinutes(1));
+            expiredTask.Start(leaseId, expiredTask.FencingToken, now);
+            setup.WorkerTasks.Add(expiredTask);
+            await setup.SaveChangesAsync();
+            expiredTaskId = expiredTask.Id;
+        }
+
+        await using (var db = new WorkerDbContext(options))
+        {
+            var repository = new WorkerTaskRepository(db);
+            var unrelatedTask = WorkerTask.Create(
+                tenantId, "test.pending", "unrelated-pending", "payload://unrelated", now);
+            db.WorkerTasks.Add(unrelatedTask);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => repository.RecoverExpiredLeasesAsync(now.AddMinutes(5), 10));
+
+            Assert.Equal(EntityState.Added, db.Entry(unrelatedTask).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(options);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().SingleAsync(x => x.Id == expiredTaskId);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Status);
+        Assert.Equal(1, await verifyDb.WorkerTasks.CountAsync(x => x.IdempotencyKey == "expired-before-pending"));
+        Assert.Equal(0, await verifyDb.WorkerTasks.CountAsync(x => x.IdempotencyKey == "unrelated-pending"));
+    }
+
+    [Fact]
     public async Task ExpiredLeaseRecoveryConcurrencyConflictDetachesTaskAndContinuesBatch()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
