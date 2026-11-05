@@ -175,6 +175,25 @@ public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthor
     public void Add(AuthorizationAuditEntry entry) => db.AuthorizationAuditEntries.Add(entry);
 }
 
+
+/// <summary>감사 아카이브 작업과 실행 이력을 Tenant 범위로 조회하고 추가합니다.</summary>
+public sealed class AuthorizationAuditArchiveJobRepository(PlatformDbContext db) : IAuthorizationAuditArchiveJobRepository
+{
+    public Task<AuthorizationAuditArchiveJob?> GetAsync(TenantId tenantId, Guid jobId,
+        CancellationToken cancellationToken = default) =>
+        db.AuthorizationAuditArchiveJobs.SingleOrDefaultAsync(
+            x => x.TenantId == tenantId && x.Id == jobId, cancellationToken);
+
+    public async Task<IReadOnlyList<AuthorizationAuditArchiveAttempt>> GetAttemptsAsync(TenantId tenantId,
+        Guid jobId, CancellationToken cancellationToken = default) =>
+        await db.AuthorizationAuditArchiveAttempts.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.JobId == jobId)
+            .ToListAsync(cancellationToken);
+
+    public void Add(AuthorizationAuditArchiveJob job) => db.AuthorizationAuditArchiveJobs.Add(job);
+    public void AddAttempt(AuthorizationAuditArchiveAttempt attempt) => db.AuthorizationAuditArchiveAttempts.Add(attempt);
+}
+
 public sealed class ResourceRepository(PlatformDbContext db) : IResourceRepository
 {
     public void Add(Resource resource) => db.Resources.Add(resource);
