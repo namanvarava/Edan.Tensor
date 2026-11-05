@@ -30,7 +30,7 @@ public sealed class DataSetStorageUsageSnapshotService(
         var dataSetTenantIds = await dataSetDb.DataSets.AsNoTracking()
             .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
         var policyTenantIds = await platformDb.StorageQuotaPolicies.AsNoTracking()
-            .Where(x => x.TenantId.HasValue).Select(x => x.TenantId!.Value).Distinct().ToListAsync(cancellationToken);
+            .Select(x => x.TenantId.Value).Distinct().ToListAsync(cancellationToken);
         var eventTenantIds = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
             .Where(x => x.EventType == "Warning" || x.EventType == "Exceeded")
             .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
@@ -55,7 +55,7 @@ public sealed class DataSetStorageUsageSnapshotService(
             .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
         var activePolicyIds = policies.Select(x => x.Id).ToHashSet();
         var tenantIds = dataSets.Select(x => x.TenantId)
-            .Concat(policies.Where(x => x.TenantId.HasValue).Select(x => x.TenantId!.Value))
+            .Concat(policies.Select(x => x.TenantId.Value))
             .Concat(eventTenantIds)
             .Where(x => !onlyTenantId.HasValue || x == onlyTenantId.Value)
             .Distinct().OrderBy(x => x).ToArray();
