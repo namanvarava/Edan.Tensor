@@ -22,7 +22,6 @@ public static class WorkerInfrastructureExtensions
         services.AddScoped<IWorkerTaskDeadLetterRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
         services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
         services.AddScoped<WorkerTaskProgressReporter>();
-        services.AddScoped<WorkerTaskProgressReporter>();
         return services;
     }
 
