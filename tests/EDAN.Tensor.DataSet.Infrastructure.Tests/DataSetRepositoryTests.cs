@@ -3,7 +3,6 @@ using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Xunit;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
@@ -29,16 +28,8 @@ public sealed class DataSetRepositoryTests
             var snapshotModel = migrationsAssembly.ModelSnapshot!.Model;
             var initializedSnapshot = db.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
             var differences = differ.GetDifferences(initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
-            static string DescribeModel(IModel model) => string.Join(" | ", model.GetEntityTypes()
-                .Where(entity => entity.GetTableName() == "datasets")
-                .Select(entity => $"Entity={entity.DisplayName()}; Properties={string.Join(",", entity.GetProperties().Select(property => property.Name + ":" + property.GetColumnName()))}; FKs={string.Join(",", entity.GetForeignKeys().Select(fk => fk.Properties.First().Name + "->" + fk.PrincipalEntityType.DisplayName()))}"));
             Assert.True(differences.Count == 0,
-                "DataSet Migration Snapshot 차이: " + string.Join("; ", differences.Select(x => x switch
-                {
-                    Microsoft.EntityFrameworkCore.Migrations.Operations.DropForeignKeyOperation fk => $"DropForeignKey table={fk.Table}, name={fk.Name}, schema={fk.Schema}",
-                    Microsoft.EntityFrameworkCore.Migrations.Operations.DropColumnOperation column => $"DropColumn table={column.Table}, name={column.Name}, schema={column.Schema}",
-                    _ => x.GetType().Name
-                })) + $" | Snapshot: {DescribeModel(initializedSnapshot)} | Runtime: {DescribeModel(currentModel)}");
+                "DataSet Migration Snapshot 차이: " + string.Join("; ", differences.Select(x => x.GetType().Name)));
             await db.Database.MigrateAsync();
             var aggregate = DataSetAggregate.Create(id,
                 new DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()),
@@ -78,9 +69,8 @@ public sealed class DataSetRepositoryTests
             .UseSqlite("Data Source=:memory:").Options;
         await using var db = new DataSetDbContext(options);
         var entity = db.Model.FindEntityType(typeof(DataSetAggregate))!;
-        var scope = entity.FindNavigation(nameof(DataSetAggregate.Scope))!.TargetEntityType;
-        Assert.Contains(scope.GetIndexes(), index =>
-            index.Properties.Select(property => property.Name).SequenceEqual(
-                new[] { nameof(DataSetScope.TenantId), nameof(DataSetScope.OrganizationId), nameof(DataSetScope.ProjectId) }));
+        Assert.Contains(entity.GetIndexes(), index =>
+            index.Properties.Select(property => property.GetColumnName()).SequenceEqual(
+                new[] { "TenantId", "OrganizationId", "ProjectId" }));
     }
 }

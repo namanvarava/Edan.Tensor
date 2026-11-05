@@ -1,6 +1,5 @@
 using EDAN.Tensor.DataSet.Domain.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
@@ -30,22 +29,17 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken().IsRequired();
 
-        entity.OwnsOne(x => x.Scope, scope =>
+        entity.ComplexProperty(x => x.Scope, scope =>
         {
-            scope.WithOwner().HasForeignKey("Id");
             scope.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
             scope.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
             scope.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
-            scope.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId });
         });
-        entity.Navigation(x => x.Scope).IsRequired();
-
-        entity.OwnsOne(x => x.StorageReference, storage =>
+        entity.ComplexProperty(x => x.StorageReference, storage =>
         {
-            storage.WithOwner().HasForeignKey("Id");
             storage.Property(x => x.Value).HasColumnName("StorageReference").HasMaxLength(256).IsRequired();
         });
-        entity.Navigation(x => x.StorageReference).IsRequired();
+        entity.HasIndex(x => new { x.Scope.TenantId, x.Scope.OrganizationId, x.Scope.ProjectId });
 
         entity.OwnsMany(x => x.SchemaRevisions, revisions =>
         {
