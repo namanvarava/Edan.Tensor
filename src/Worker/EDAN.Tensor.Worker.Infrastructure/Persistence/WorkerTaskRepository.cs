@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
 
-/// <summary>Worker 작업을 Tenant 범위로 조회하고 실행 임대를 영속화합니다.</summary>
+/// <summary>Worker 작업을 Tenant 범위로 조회하고 실행 상태를 동시성 검증과 함께 영속화합니다.</summary>
 public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskRepository
 {
     public Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId,
@@ -38,7 +38,6 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         var task = await GetAsync(tenantId, taskId, cancellationToken);
         if (task is null)
             return null;
-
         try
         {
             task.AcquireLease(workerId, leaseId, nowUtc, expiresAtUtc);
@@ -54,6 +53,53 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         {
             db.Entry(task).State = EntityState.Detached;
             return null;
+        }
+    }
+
+    public Task<bool> TryStartAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.Start(leaseId, fencingToken, nowUtc), cancellationToken);
+
+    public Task<bool> TrySaveCheckpointAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId,
+            task => task.SaveCheckpoint(leaseId, fencingToken, checkpoint, nowUtc), cancellationToken);
+
+    public Task<bool> TryRenewLeaseAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId,
+            task => task.RenewLease(leaseId, fencingToken, nowUtc, expiresAtUtc), cancellationToken);
+
+    public Task<bool> TryCompleteAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.Complete(leaseId, fencingToken, nowUtc), cancellationToken);
+
+    public Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId,
+            task => task.Handoff(leaseId, fencingToken, checkpoint, nowUtc), cancellationToken);
+
+    private async Task<bool> MutateAsync(Guid tenantId, Guid taskId, Action<WorkerTask> mutation,
+        CancellationToken cancellationToken)
+    {
+        var task = await GetAsync(tenantId, taskId, cancellationToken);
+        if (task is null)
+            return false;
+        try
+        {
+            mutation(task);
+            await db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            db.Entry(task).State = EntityState.Detached;
+            return false;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            db.Entry(task).State = EntityState.Detached;
+            return false;
         }
     }
 
