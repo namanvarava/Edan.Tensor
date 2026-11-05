@@ -156,7 +156,7 @@ public static class PlatformEndpoints
             async (Guid tenantId, Guid archiveId, VerifyAuthorizationAuditArchiveRequest request,
                 AuthorizationAuditArchiveService service, CancellationToken token) =>
             {
-                var result = await service.VerifyAsync(archiveId, request.ExpectedSha256, token);
+                var result = await service.VerifyAsync(new TenantId(tenantId), archiveId, request.ExpectedSha256, token);
                 if (result.ReasonCode == "archive.not_found")
                     return Results.NotFound(result);
                 return Results.Ok(result);
