@@ -23,16 +23,28 @@ public sealed class SqliteDataSetStorageAdapterTests
             using var reader = new StreamReader(result!);
             Assert.Equal("tensor-payload", await reader.ReadToEndAsync());
 
+            var secondAllocation = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()), allocation.Scope);
+            var secondReference = await adapter.AllocateAsync(secondAllocation);
+            await using var secondContent = new MemoryStream("other"u8.ToArray());
+            await adapter.WriteAsync(secondAllocation, secondReference, secondContent);
+
             var usage = await adapter.GetUsageAsync(allocation);
-            Assert.Equal(14, usage.TenantBytes);
-            Assert.Equal(1, usage.TenantDataSetCount);
-            Assert.Equal(14, usage.OrganizationBytes);
-            Assert.Equal(1, usage.OrganizationDataSetCount);
-            Assert.Equal(14, usage.ProjectBytes);
-            Assert.Equal(1, usage.ProjectDataSetCount);
+            Assert.Equal(19, usage.TenantBytes);
+            Assert.Equal(2, usage.TenantDataSetCount);
+            Assert.Equal(19, usage.OrganizationBytes);
+            Assert.Equal(2, usage.OrganizationDataSetCount);
+            Assert.Equal(19, usage.ProjectBytes);
+            Assert.Equal(2, usage.ProjectDataSetCount);
             Assert.Equal(14, usage.DataSetBytes);
 
             await adapter.ReleaseAsync(allocation, reference);
+            var remainingUsage = await adapter.GetUsageAsync(allocation);
+            Assert.Equal(5, remainingUsage.TenantBytes);
+            Assert.Equal(1, remainingUsage.TenantDataSetCount);
+            Assert.Equal(5, remainingUsage.ProjectBytes);
+            Assert.Equal(0, remainingUsage.DataSetBytes);
+
+            await adapter.ReleaseAsync(secondAllocation, secondReference);
             var emptyUsage = await adapter.GetUsageAsync(allocation);
             Assert.Equal(0, emptyUsage.TenantBytes);
             Assert.Equal(0, emptyUsage.TenantDataSetCount);
