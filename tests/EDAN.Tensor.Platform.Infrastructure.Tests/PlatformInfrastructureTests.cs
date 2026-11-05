@@ -205,7 +205,8 @@ public sealed class PlatformInfrastructureTests
         Assert.NotNull(updated);
         Assert.Null(updated.LeaseId);
         Assert.Equal(now.AddMinutes(1), updated.LastRunAtUtc);
-        Assert.Equal(now.AddHours(1).AddMinutes(42), updated.NextRunAtUtc);
+        // 미처리 구간이 남아 있으면 다음 예약을 현재 시각으로 설정해 이어서 처리합니다.
+        Assert.Equal(now.AddMinutes(42), updated.NextRunAtUtc);
         Assert.False(await repository.RenewLeaseAsync(tenant.Id, firstLease,
             now.AddMinutes(13), now.AddMinutes(43)));
     }
