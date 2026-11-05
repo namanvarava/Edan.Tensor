@@ -108,7 +108,8 @@ var quotaAssignments = builder.Configuration.GetSection("DataSetContent:Quota:As
     .ToArray();
 builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy, quotaAssignments);
 builder.Services.AddScoped<IDataSetStorageQuotaPolicyProvider, PlatformDataSetStorageQuotaPolicyProvider>();
-builder.Services.AddScoped<StorageQuotaPolicyManagementService>();\nbuilder.Services.AddScoped<WorkerTaskDeadLetterService>();
+builder.Services.AddScoped<StorageQuotaPolicyManagementService>();
+builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
 builder.Services.AddHealthChecks();

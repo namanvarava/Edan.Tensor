@@ -1,4 +1,5 @@
-using EDAN.Tensor.ApiHost.Security;\nusing EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.ApiHost.Security;
+using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.SharedKernel.Results;
@@ -374,7 +375,8 @@ public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
 public sealed record CreatePolicyRequest(Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
-\npublic sealed record CreateStorageQuotaPolicyRequest(string Scope, Guid TargetId, long? TenantLimitBytes,
+
+public sealed record CreateStorageQuotaPolicyRequest(string Scope, Guid TargetId, long? TenantLimitBytes,
     long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes,
     int WarningThresholdPercent = 80, string? PlanCode = "Community");
 public sealed record UpdateStorageQuotaPolicyRequest(long ExpectedVersion, long? TenantLimitBytes,
