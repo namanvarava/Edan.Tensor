@@ -40,3 +40,29 @@
 - 외부 기준 체크섬은 원본 데이터베이스 및 아카이브 저장 경로와 분리해 보관합니다.
 - 현재 원본 삭제 API와 자동 보존 만료 작업은 제공하지 않습니다.
 - 파일 시스템 저장 경로는 `AuthorizationAuditArchive:RootPath`로 설정합니다. 기본값은 API Host의 `App_Data/AuthorizationAuditArchives`입니다.
+
+## Tenant별 감사 보존 정책
+
+정책 조회:
+
+`GET /api/platform/tenants/{tenantId}/authorization-audit/retention`
+
+정책 변경:
+
+`PUT /api/platform/tenants/{tenantId}/authorization-audit/retention`
+
+요청 본문 예시:
+
+```json
+{
+  "retentionDays": 730,
+  "isLegalHold": true,
+  "legalHoldReason": "보안 사고 조사 보존"
+}
+```
+
+- 보존 기간은 30~3,650일로 제한합니다. 미설정 Tenant의 기본 정책은 365일입니다.
+- 법적 보존 활성화 시 사유를 반드시 입력해야 합니다.
+- 정책 변경은 Tenant 관리자만 수행할 수 있으며 변경 전·후 상태와 변경 주체가 이력으로 저장됩니다.
+- 법적 보존 해제도 동일한 변경 이력으로 기록됩니다.
+- 현재 정책은 보존 기준만 정의하며 감사 기록 삭제·정리 작업을 자동 실행하지 않습니다.
