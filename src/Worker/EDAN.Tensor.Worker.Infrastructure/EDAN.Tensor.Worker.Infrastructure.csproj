@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>EDAN.Tensor.Worker.Infrastructure</AssemblyName><RootNamespace>EDAN.Tensor.Worker.Infrastructure</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../EDAN.Tensor.Worker.Domain/EDAN.Tensor.Worker.Domain.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.Worker.Application/EDAN.Tensor.Worker.Application.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+</Project>
