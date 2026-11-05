@@ -53,7 +53,7 @@ public sealed class AuthorizationAuditIntegrityServiceTests
     }
 
     private static AuthorizationAuditIntegrityService CreateService() =>
-        new(new AuthorizationAuditQueryService(new EmptyAuditRepository()));
+        new(new EmptyAuditRepository());
 
     private sealed class EmptyAuditRepository : IAuthorizationAuditRepository
     {
