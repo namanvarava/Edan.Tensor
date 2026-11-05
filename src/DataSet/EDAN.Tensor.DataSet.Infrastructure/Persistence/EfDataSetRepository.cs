@@ -11,7 +11,7 @@ public sealed class EfDataSetRepository(DataSetDbContext dbContext) : IDataSetRe
     public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
         dbContext.DataSets
             .Include(x => x.SchemaRevisions)
-            .SingleOrDefaultAsync(x => x.Id == id && x.Scope.TenantId == tenantId, cancellationToken);
+            .SingleOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, cancellationToken);
 
     public void Add(DataSetAggregate dataSet) => dbContext.DataSets.Add(dataSet);
 

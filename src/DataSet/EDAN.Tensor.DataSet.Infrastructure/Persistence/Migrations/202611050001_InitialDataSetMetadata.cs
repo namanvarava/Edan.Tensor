@@ -25,6 +25,9 @@ public sealed class InitialDataSetMetadata : Migration
                 TenantId = table.Column<Guid>(type: "TEXT", nullable: false),
                 OrganizationId = table.Column<Guid>(type: "TEXT", nullable: false),
                 ProjectId = table.Column<Guid>(type: "TEXT", nullable: false),
+                Scope_TenantId = table.Column<Guid>(type: "TEXT", nullable: false),
+                Scope_OrganizationId = table.Column<Guid>(type: "TEXT", nullable: false),
+                Scope_ProjectId = table.Column<Guid>(type: "TEXT", nullable: false),
                 StorageReference = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
             },
             constraints: table => table.PrimaryKey("PK_datasets", x => x.Id));

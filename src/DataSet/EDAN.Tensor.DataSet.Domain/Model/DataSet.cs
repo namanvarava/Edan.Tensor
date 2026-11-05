@@ -20,6 +20,10 @@ public sealed class DataSet : AggregateRoot<DataSetId>
     }
 
     public DataSetScope Scope { get; private set; } = null!;
+    // 복합 객체 속성은 EF 인덱스 키로 직접 사용할 수 없어 조회·인덱싱용 스칼라 키를 함께 유지합니다.
+    public Guid TenantId { get; private set; }
+    public Guid OrganizationId { get; private set; }
+    public Guid ProjectId { get; private set; }
     public string Name { get; private set; }
     public StorageReference StorageReference { get; private set; } = null!;
     public string StorageAdapter { get; }
@@ -43,6 +47,9 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         var dataSet = new DataSet(id, name, storageAdapter)
         {
             Scope = scope,
+            TenantId = scope.TenantId,
+            OrganizationId = scope.OrganizationId,
+            ProjectId = scope.ProjectId,
             StorageReference = storageReference
         };
         return dataSet;

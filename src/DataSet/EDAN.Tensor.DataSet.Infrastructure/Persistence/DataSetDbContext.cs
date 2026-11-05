@@ -30,17 +30,21 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken().IsRequired();
 
+        // 복합 소유 범위는 원본 값으로 보존하고, 동일한 식별자를 스칼라 컬럼에도 저장해 인덱스·조회에 사용합니다.
+        entity.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
+        entity.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
+        entity.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
         entity.ComplexProperty(x => x.Scope, scope =>
         {
-            scope.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
-            scope.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
-            scope.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
+            scope.Property(x => x.TenantId).HasColumnName("Scope_TenantId").IsRequired();
+            scope.Property(x => x.OrganizationId).HasColumnName("Scope_OrganizationId").IsRequired();
+            scope.Property(x => x.ProjectId).HasColumnName("Scope_ProjectId").IsRequired();
         });
         entity.ComplexProperty(x => x.StorageReference, storage =>
         {
             storage.Property(x => x.Value).HasColumnName("StorageReference").HasMaxLength(256).IsRequired();
         });
-        entity.HasIndex("Scope.TenantId", "Scope.OrganizationId", "Scope.ProjectId");
+        entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId });
 
         entity.OwnsMany(x => x.SchemaRevisions, revisions =>
         {
