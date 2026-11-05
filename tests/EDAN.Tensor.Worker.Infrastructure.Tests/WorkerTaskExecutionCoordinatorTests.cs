@@ -224,6 +224,39 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorReleasesLeaseWhenHeartbeatRenewalIsCancelled()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.heartbeat-cancelled", "heartbeat-cancelled-key",
+            "payload://test", DateTimeOffset.UtcNow, maxAttempts: 3);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        using var cancellation = new CancellationTokenSource();
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new FixedResolver("test.heartbeat-cancelled",
+                new PendingExecutionHandler(new PendingExecution())),
+            new CancellingLeaseRenewer(cancellation), new WorkerExecutionRegistry(), TimeProvider.System);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            coordinator.ExecuteAsync(tenantId, task.Id, "worker-test",
+                TimeSpan.FromSeconds(3), cancellation.Token));
+
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted!.Status);
+        Assert.Equal("worker.execution.cancelled", persisted.LastErrorCode);
+        Assert.Null(persisted.LeaseId);
+        Assert.Null(persisted.LeaseExpiresAtUtc);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -273,6 +306,17 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
             DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated lease renewal storage failure.");
+    }
+
+    private sealed class CancellingLeaseRenewer(CancellationTokenSource cancellation)
+        : IWorkerTaskLeaseRenewer
+    {
+        public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+            DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default)
+        {
+            cancellation.Cancel();
+            throw new OperationCanceledException(cancellation.Token);
+        }
     }
 
     private sealed class ExecutionCancellationResolver(CancellationTokenSource cancellation)
