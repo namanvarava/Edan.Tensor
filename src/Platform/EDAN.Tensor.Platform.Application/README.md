@@ -32,3 +32,5 @@
 - `AuthorizationAuditArchiveService`는 Tenant별 권한 감사 기록을 기간 단위 JSON 아카이브로 생성하고 SHA-256 무결성을 검증합니다.
 - `IAuthorizationAuditArchiveStore`로 저장소 구현을 분리하며 파일 시스템 Adapter는 Infrastructure에서 제공합니다.
 - 아카이브 생성과 검증은 원본 감사 기록을 변경하거나 삭제하지 않습니다.
+
+- `AuthorizationAuditRetentionService`는 Tenant별 보존 기간과 법적 보존 상태를 관리하고 변경 이력을 동일 저장 작업으로 기록합니다.
