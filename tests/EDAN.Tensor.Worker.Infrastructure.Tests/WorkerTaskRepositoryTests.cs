@@ -188,4 +188,30 @@ public sealed class WorkerTaskRepositoryTests
         Assert.Equal(WorkerTaskStatus.Running, (await repository.GetAsync(tenantId, tasks[2].Id))!.Status);
     }
 
+    [Fact]
+    public async Task ActiveCheckpointedLeaseIsNotReturnedAsReadyWork()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "test.checkpointed", "checkpointed-active",
+            "payload://checkpointed", now);
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, now, now.AddMinutes(10));
+        task.Start(leaseId, token, now);
+        task.SaveCheckpoint(leaseId, token, "offset:42", now.AddMinutes(1));
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+
+        Assert.Empty(await repository.GetReadyTenantIdsAsync(now.AddMinutes(2), 10));
+        Assert.Empty(await repository.GetReadyAsync(tenantId, now.AddMinutes(2), 10));
+    }
+
 }

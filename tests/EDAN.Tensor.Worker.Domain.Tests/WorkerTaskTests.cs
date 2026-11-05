@@ -266,4 +266,25 @@ public sealed class WorkerTaskTests
         Assert.Equal(version, task.Version);
     }
 
+    [Fact]
+    public void CheckpointedTaskWithActiveLeaseCannotBeReacquired()
+    {
+        var task = Create();
+        var originalLease = Guid.NewGuid();
+        var originalToken = task.AcquireLease("worker-a", originalLease, Now, Now.AddMinutes(10));
+        task.Start(originalLease, originalToken, Now);
+        task.SaveCheckpoint(originalLease, originalToken, "offset:42", Now.AddMinutes(1));
+        var version = task.Version;
+
+        Assert.Equal(WorkerTaskStatus.Checkpointed, task.Status);
+        Assert.Throws<InvalidOperationException>(() =>
+            task.AcquireLease("worker-b", Guid.NewGuid(), Now.AddMinutes(2), Now.AddMinutes(12)));
+
+        Assert.Equal(WorkerTaskStatus.Checkpointed, task.Status);
+        Assert.Equal(originalLease, task.LeaseId);
+        Assert.Equal("worker-a", task.WorkerId);
+        Assert.Equal(originalToken, task.FencingToken);
+        Assert.Equal(version, task.Version);
+    }
+
 }

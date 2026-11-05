@@ -57,7 +57,7 @@ public sealed class WorkerTask
 
     public long AcquireLease(string workerId, Guid leaseId, DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc)
     {
-        if (Status is not (WorkerTaskStatus.Pending or WorkerTaskStatus.RetryScheduled or WorkerTaskStatus.Checkpointed))
+        if (Status is not (WorkerTaskStatus.Pending or WorkerTaskStatus.RetryScheduled))
             throw new InvalidOperationException("실행 가능한 상태의 작업만 임대를 획득할 수 있습니다.");
         if (NextAttemptAtUtc.HasValue && NextAttemptAtUtc.Value > nowUtc)
             throw new InvalidOperationException("재시도 예약 시각이 아직 도래하지 않았습니다.");

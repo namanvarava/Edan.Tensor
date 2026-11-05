@@ -14,7 +14,7 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         return await db.WorkerTasks.AsNoTracking()
-            .Where(x => x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled || x.Status == WorkerTaskStatus.Checkpointed)
+            .Where(x => x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled)
             .Where(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") <= nowMilliseconds)
             .GroupBy(x => x.TenantId)
             .Select(group => new
@@ -34,7 +34,7 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         return await db.WorkerTasks.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && (x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled || x.Status == WorkerTaskStatus.Checkpointed))
+            .Where(x => x.TenantId == tenantId && (x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled))
             .Where(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") <= nowMilliseconds)
             .OrderBy(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds"))
             .ThenBy(x => x.Id)
