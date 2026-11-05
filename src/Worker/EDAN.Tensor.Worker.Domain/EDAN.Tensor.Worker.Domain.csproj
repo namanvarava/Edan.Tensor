@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>EDAN.Tensor.Worker.Domain</AssemblyName><RootNamespace>EDAN.Tensor.Worker.Domain</RootNamespace></PropertyGroup></Project>
