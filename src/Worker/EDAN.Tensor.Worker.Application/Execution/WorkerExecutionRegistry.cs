@@ -94,10 +94,12 @@ public sealed class WorkerExecutionLease : IDisposable
 
     public async Task<bool> RequestHandoffAsync(CancellationToken cancellationToken)
     {
+        if (Volatile.Read(ref _disposed) == 1) return false;
         if (Volatile.Read(ref _handoffSucceeded) == 1) return true;
         await _handoffGate.WaitAsync(cancellationToken);
         try
         {
+            if (Volatile.Read(ref _disposed) == 1) return false;
             if (_handoffSucceeded == 1) return true;
             var succeeded = await _requestHandoff(cancellationToken);
             if (succeeded) Volatile.Write(ref _handoffSucceeded, 1);

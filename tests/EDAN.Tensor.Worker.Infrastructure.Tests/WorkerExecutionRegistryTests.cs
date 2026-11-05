@@ -52,6 +52,23 @@ public sealed class WorkerExecutionRegistryTests
     }
 
     [Fact]
+    public async Task HandoffRequestAfterExecutionLeaseIsDisposedIsIgnored()
+    {
+        var registry = new WorkerExecutionRegistry();
+        var calls = 0;
+        Assert.True(registry.TryEnter(_ =>
+        {
+            Interlocked.Increment(ref calls);
+            return Task.FromResult(true);
+        }, out var execution));
+
+        execution!.Dispose();
+
+        Assert.False(await execution.RequestHandoffAsync(CancellationToken.None));
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
     public async Task ConcurrentHandoffRequestsAreSerializedAndSuccessfulHandoffIsIdempotent()
     {
         var registry = new WorkerExecutionRegistry();
