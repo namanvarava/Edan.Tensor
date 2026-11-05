@@ -39,8 +39,12 @@ public sealed class WorkerTaskDeadLetterRepositoryTests
         Assert.Single(listed);
         Assert.Equal(original.Id, listed[0].Id);
 
-        var replayId = await service.ReplayAsync(tenantId, original.Id, "operator:test");
+        var replayRequestId = Guid.NewGuid();
+        var replayId = await service.ReplayAsync(tenantId, original.Id, replayRequestId, "operator:test");
+        var repeatedReplayId = await service.ReplayAsync(tenantId, original.Id, replayRequestId, "operator:test");
         Assert.NotNull(replayId);
+        Assert.Equal(replayId, repeatedReplayId);
+
         var unchangedOriginal = await repository.GetAsync(tenantId, original.Id);
         var replay = await repository.GetAsync(tenantId, replayId!.Value);
         var history = await db.WorkerTaskReplayRecords.SingleAsync();
@@ -54,7 +58,9 @@ public sealed class WorkerTaskDeadLetterRepositoryTests
         Assert.Equal(original.MaxAttempts, replay.MaxAttempts);
         Assert.Equal(original.Id, history.OriginalTaskId);
         Assert.Equal(replay.Id, history.ReplayTaskId);
+        Assert.Equal(replayRequestId, history.ReplayRequestId);
         Assert.Equal("operator:test", history.RequestedBy);
+        Assert.Single(await db.WorkerTaskReplayRecords.ToArrayAsync());
     }
 
     [Fact]
@@ -72,8 +78,8 @@ public sealed class WorkerTaskDeadLetterRepositoryTests
         await db.SaveChangesAsync();
 
         var repository = new WorkerTaskRepository(db);
-        Assert.Null(await repository.ReplayAsync(Guid.NewGuid(), task.Id, "operator:test", DateTimeOffset.UtcNow));
-        Assert.Null(await repository.ReplayAsync(tenantId, task.Id, "operator:test", DateTimeOffset.UtcNow));
+        Assert.Null(await repository.ReplayAsync(Guid.NewGuid(), task.Id, Guid.NewGuid(), "operator:test", DateTimeOffset.UtcNow));
+        Assert.Null(await repository.ReplayAsync(tenantId, task.Id, Guid.NewGuid(), "operator:test", DateTimeOffset.UtcNow));
         Assert.Empty(await repository.GetDeadLetteredAsync(Guid.NewGuid(), 0, 10));
         Assert.Empty(await db.WorkerTaskReplayRecords.ToArrayAsync());
     }

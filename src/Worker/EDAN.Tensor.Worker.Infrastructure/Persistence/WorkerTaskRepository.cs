@@ -115,17 +115,43 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, string requestedBy, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, Guid replayRequestId, string requestedBy,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        var original = await db.WorkerTasks.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
-        if (original is null || original.Status != WorkerTaskStatus.DeadLettered) return null;
-        var replayTask = WorkerTask.Create(tenantId, original.TaskType, "replay:" + Guid.NewGuid().ToString("N"), original.PayloadReference, nowUtc, original.MaxAttempts);
-        db.WorkerTasks.Add(replayTask);
-        db.WorkerTaskReplayRecords.Add(new WorkerTaskReplayRecord(tenantId, original.Id, replayTask.Id, requestedBy, nowUtc));
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return replayTask.Id;
+        try
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+            var prior = await db.WorkerTaskReplayRecords.AsNoTracking().SingleOrDefaultAsync(
+                x => x.TenantId == tenantId && x.OriginalTaskId == taskId && x.ReplayRequestId == replayRequestId,
+                cancellationToken);
+            if (prior is not null) return prior.ReplayTaskId;
+
+            var original = await db.WorkerTasks.SingleOrDefaultAsync(
+                x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
+            if (original is null || original.Status != WorkerTaskStatus.DeadLettered) return null;
+            var replayTask = WorkerTask.Create(tenantId, original.TaskType, "replay:" + Guid.NewGuid().ToString("N"),
+                original.PayloadReference, nowUtc, original.MaxAttempts);
+            db.WorkerTasks.Add(replayTask);
+            db.WorkerTaskReplayRecords.Add(new WorkerTaskReplayRecord(
+                tenantId, original.Id, replayTask.Id, replayRequestId, requestedBy, nowUtc));
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return replayTask.Id;
+        }
+        catch (DbUpdateException)
+        {
+            foreach (var entry in db.ChangeTracker.Entries()
+                         .Where(x => x.State == EntityState.Added
+                             && (x.Entity is WorkerTask || x.Entity is WorkerTaskReplayRecord))
+                         .ToArray())
+                entry.State = EntityState.Detached;
+
+            var prior = await db.WorkerTaskReplayRecords.AsNoTracking().SingleOrDefaultAsync(
+                x => x.TenantId == tenantId && x.OriginalTaskId == taskId && x.ReplayRequestId == replayRequestId,
+                cancellationToken);
+            if (prior is not null) return prior.ReplayTaskId;
+            throw;
+        }
     }
 
     public async Task<WorkerTaskEnqueueResult> EnqueueAsync(WorkerTask task, CancellationToken cancellationToken = default)

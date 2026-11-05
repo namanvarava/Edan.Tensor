@@ -21,18 +21,20 @@ public sealed class WorkerTaskDeadLetterService(
         return repository.GetDeadLetteredAsync(tenantId, skip, pageSize, cancellationToken);
     }
 
-    /// <summary>DLQ 원본을 유지하고 새 작업과 재처리 이력을 생성합니다.</summary>
-    public Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, string requestedBy,
+    /// <summary>같은 요청 ID의 재시도는 기존 재처리 작업을 반환하고, 새 요청 ID는 별도 재처리를 생성합니다.</summary>
+    public Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, Guid replayRequestId, string requestedBy,
         CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty)
             throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
         if (taskId == Guid.Empty)
             throw new ArgumentException("작업 식별자는 비어 있을 수 없습니다.", nameof(taskId));
+        if (replayRequestId == Guid.Empty)
+            throw new ArgumentException("재처리 요청 식별자는 비어 있을 수 없습니다.", nameof(replayRequestId));
         ArgumentException.ThrowIfNullOrWhiteSpace(requestedBy);
         if (requestedBy.Trim().Length > 200)
             throw new ArgumentException("요청자 식별자는 200자를 초과할 수 없습니다.", nameof(requestedBy));
-        return repository.ReplayAsync(tenantId, taskId, requestedBy.Trim(),
+        return repository.ReplayAsync(tenantId, taskId, replayRequestId, requestedBy.Trim(),
             timeProvider.GetUtcNow(), cancellationToken);
     }
 }
