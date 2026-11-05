@@ -12,6 +12,37 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         db.WorkerTasks.SingleOrDefaultAsync(
             x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
 
+    /// <summary>실행 가능한 작업이 있는 Tenant를 준비 시각이 오래된 순서로 조회합니다.</summary>
+    public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(
+        DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
+    {
+        if (take is < 1 or > 1000)
+            throw new ArgumentOutOfRangeException(nameof(take), "Tenant 조회 건수는 1~1000이어야 합니다.");
+
+        // SQLite DateTimeOffset 비교 제약을 피하기 위해 시각 비교는 메모리에서 수행합니다.
+        var candidates = await db.WorkerTasks.AsNoTracking()
+            .Where(x => x.Status == WorkerTaskStatus.Pending ||
+                        x.Status == WorkerTaskStatus.RetryScheduled ||
+                        x.Status == WorkerTaskStatus.Checkpointed)
+            .Select(x => new { x.TenantId, x.NextAttemptAtUtc, x.CreatedAtUtc })
+            .ToListAsync(cancellationToken);
+
+        return candidates
+            .Where(x => !x.NextAttemptAtUtc.HasValue ||
+                        x.NextAttemptAtUtc.Value <= nowUtc.ToUniversalTime())
+            .GroupBy(x => x.TenantId)
+            .Select(group => new
+            {
+                TenantId = group.Key,
+                ReadyAtUtc = group.Min(x => x.NextAttemptAtUtc ?? x.CreatedAtUtc)
+            })
+            .OrderBy(x => x.ReadyAtUtc)
+            .ThenBy(x => x.TenantId)
+            .Take(take)
+            .Select(x => x.TenantId)
+            .ToArray();
+    }
+
     public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take,
         CancellationToken cancellationToken = default)
     {
