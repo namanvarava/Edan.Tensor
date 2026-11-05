@@ -1,4 +1,5 @@
 using EDAN.Tensor.DataSet.Domain.Model;
+using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Infrastructure.Storage;
 using Xunit;
 
