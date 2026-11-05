@@ -1,3 +1,4 @@
+using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 using EDAN.Tensor.DataSet.Domain.Model;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using Xunit;
@@ -7,7 +8,7 @@ namespace EDAN.Tensor.DataSet.Domain.Tests;
 /// <summary>DataSet 소유 경계, 스키마 버전, 저장소 참조 및 수명 주기 규칙을 검증합니다.</summary>
 public sealed class DataSetDomainTests
 {
-    private static DataSet Create() => DataSet.Create(
+    private static DataSetAggregate Create() => DataSetAggregate.Create(
         new DataSetId(Guid.NewGuid()),
         new DataSetScope(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),
         "  고객 데이터  ",
@@ -41,7 +42,7 @@ public sealed class DataSetDomainTests
     [Fact]
     public void InvalidSchemaDocumentsAreRejected()
     {
-        Assert.ThrowsAny<Exception>(() => DataSetSchemaRevision.Create(1, "{invalid", DateTimeOffset.UtcNow));
+        Assert.Throws<System.Text.Json.JsonException>(() => DataSetSchemaRevision.Create(1, "{invalid", DateTimeOffset.UtcNow));
         Assert.Throws<ArgumentException>(() => DataSetSchemaRevision.Create(1, "[]", DateTimeOffset.UtcNow));
         Assert.Throws<ArgumentOutOfRangeException>(() => DataSetSchemaRevision.Create(0, "{}", DateTimeOffset.UtcNow));
     }
