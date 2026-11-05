@@ -66,3 +66,34 @@
 - 정책 변경은 Tenant 관리자만 수행할 수 있으며 변경 전·후 상태와 변경 주체가 이력으로 저장됩니다.
 - 법적 보존 해제도 동일한 변경 이력으로 기록됩니다.
 - 현재 정책은 보존 기준만 정의하며 감사 기록 삭제·정리 작업을 자동 실행하지 않습니다.
+
+## 아카이브 작업 관리
+
+아카이브 작업 생성:
+
+`POST /api/platform/tenants/{tenantId}/authorization-audit/archive-jobs`
+
+```json
+{
+  "fromUtc": "2026-11-01T00:00:00Z",
+  "toUtc": "2026-11-02T00:00:00Z"
+}
+```
+
+작업과 실행 이력 조회:
+
+`GET /api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}`
+
+실패 작업 재시도:
+
+`POST /api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/retry`
+
+아카이브 검증:
+
+`POST /api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify`
+
+- 작업 상태는 Pending, Completed, Verified, Failed로 관리합니다.
+- 생성 실패 작업만 재시도할 수 있습니다.
+- 각 생성·재시도·검증 실행은 시작 시각, 완료 시각, 성공 여부, 결과 코드로 기록합니다.
+- 예약 실행은 아직 제공하지 않으며 Tenant 관리자가 API로 작업을 시작합니다.
+- 원본 감사 기록은 이 작업에서 삭제되지 않습니다.
