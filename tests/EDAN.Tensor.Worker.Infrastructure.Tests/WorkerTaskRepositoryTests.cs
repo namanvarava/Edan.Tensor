@@ -34,6 +34,35 @@ public sealed class WorkerTaskRepositoryTests
         Assert.Contains(readyTenant, tenants);
         Assert.Contains(secondReadyTenant, tenants);
         Assert.DoesNotContain(delayedTenant, tenants);
+
+        var ordered = await repository.GetReadyAsync(readyTenant, now, 10);
+        Assert.Single(ordered);
+        Assert.Equal("ready-1", ordered[0].IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task ReadyQueriesUsePersistedUtcMillisecondsAndExcludeFutureRetries()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var now = DateTimeOffset.UtcNow;
+        var tenantId = Guid.NewGuid();
+        var early = WorkerTask.Create(tenantId, "test.ready", "early", "payload://early", now.AddMinutes(-2));
+        var later = WorkerTask.Create(tenantId, "test.ready", "later", "payload://later", now.AddMinutes(-1));
+        var future = WorkerTask.Create(tenantId, "test.retry", "future", "payload://future", now);
+        future.AcquireLease("worker", Guid.NewGuid(), now, now.AddMinutes(1));
+        future.Start(future.LeaseId!.Value, future.FencingToken, now);
+        future.Fail(future.LeaseId!.Value, future.FencingToken, "test.retry", now, now.AddHours(1));
+        db.WorkerTasks.AddRange(later, future, early);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var ready = await repository.GetReadyAsync(tenantId, now, 10);
+        Assert.Equal(new[] { "early", "later" }, ready.Select(x => x.IdempotencyKey));
+        Assert.DoesNotContain(ready, x => x.IdempotencyKey == "future");
     }
 
     [Fact]

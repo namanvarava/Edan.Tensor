@@ -16,6 +16,32 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         ConfigureModel(modelBuilder);
     }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        PrepareWorkerTaskIndexValues();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        PrepareWorkerTaskIndexValues();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void PrepareWorkerTaskIndexValues()
+    {
+        foreach (var entry in ChangeTracker.Entries<WorkerTask>())
+        {
+            if (entry.State is EntityState.Added or EntityState.Modified)
+            {
+                var readyAt = entry.Entity.NextAttemptAtUtc ?? entry.Entity.CreatedAtUtc;
+                entry.Property<long>("ReadyAtUtcUnixMilliseconds").CurrentValue = readyAt.ToUnixTimeMilliseconds();
+                entry.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").CurrentValue =
+                    entry.Entity.LeaseExpiresAtUtc?.ToUnixTimeMilliseconds();
+            }
+        }
+    }
+
     /// <summary>실제 컨텍스트와 마이그레이션 스냅샷이 공유하는 저장 모델을 구성합니다.</summary>
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
@@ -45,8 +71,11 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.Property(x => x.ResultReference).HasMaxLength(500);
         entity.Property(x => x.LastErrorCode).HasMaxLength(200);
         entity.Property(x => x.Version).IsConcurrencyToken();
+        entity.Property<long>("ReadyAtUtcUnixMilliseconds").HasColumnType("INTEGER");
+        entity.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
-        entity.HasIndex(x => new { x.TenantId, x.Status, x.NextAttemptAtUtc });
+        entity.HasIndex(x => new { x.TenantId, x.Status, EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") });
+        entity.HasIndex(x => new { x.Status, EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds") });
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
 
         var replay = modelBuilder.Entity<WorkerTaskReplayRecord>();

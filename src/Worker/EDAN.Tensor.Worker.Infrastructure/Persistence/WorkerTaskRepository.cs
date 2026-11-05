@@ -12,30 +12,44 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
     {
         if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
-        var candidates = await db.WorkerTasks.AsNoTracking()
+        var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
+        return await db.WorkerTasks.AsNoTracking()
             .Where(x => x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled || x.Status == WorkerTaskStatus.Checkpointed)
-            .Select(x => new { x.TenantId, x.NextAttemptAtUtc, x.CreatedAtUtc }).ToListAsync(cancellationToken);
-        return candidates.Where(x => !x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= nowUtc.ToUniversalTime())
+            .Where(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") <= nowMilliseconds)
             .GroupBy(x => x.TenantId)
-            .Select(group => new { TenantId = group.Key, ReadyAtUtc = group.Min(x => x.NextAttemptAtUtc ?? x.CreatedAtUtc) })
-            .OrderBy(x => x.ReadyAtUtc).ThenBy(x => x.TenantId).Take(take).Select(x => x.TenantId).ToArray();
+            .Select(group => new
+            {
+                TenantId = group.Key,
+                ReadyAtMilliseconds = group.Min(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds"))
+            })
+            .OrderBy(x => x.ReadyAtMilliseconds)
+            .ThenBy(x => x.TenantId)
+            .Take(take)
+            .Select(x => x.TenantId)
+            .ToArrayAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
     {
         if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
-        var tasks = await db.WorkerTasks.AsNoTracking()
+        var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
+        return await db.WorkerTasks.AsNoTracking()
             .Where(x => x.TenantId == tenantId && (x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled || x.Status == WorkerTaskStatus.Checkpointed))
-            .ToListAsync(cancellationToken);
-        return tasks.Where(x => !x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= nowUtc.ToUniversalTime())
-            .OrderBy(x => x.NextAttemptAtUtc ?? x.CreatedAtUtc).ThenBy(x => x.Id).Take(take).ToArray();
+            .Where(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") <= nowMilliseconds)
+            .OrderBy(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds"))
+            .ThenBy(x => x.Id)
+            .Take(take)
+            .ToArrayAsync(cancellationToken);
     }
 
     /// <summary>만료된 Lease를 재시도 대기 또는 DLQ로 전이하여 Worker 비정상 종료 후 작업을 복구합니다.</summary>
     public async Task<int> RecoverExpiredLeasesAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
+        var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         var candidates = await db.WorkerTasks
             .Where(x => x.Status == WorkerTaskStatus.Leased || x.Status == WorkerTaskStatus.Running || x.Status == WorkerTaskStatus.Checkpointed)
+            .Where(x => EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds").HasValue
+                && EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds") <= nowMilliseconds)
             .ToListAsync(cancellationToken);
         var recovered = 0;
         foreach (var task in candidates)
