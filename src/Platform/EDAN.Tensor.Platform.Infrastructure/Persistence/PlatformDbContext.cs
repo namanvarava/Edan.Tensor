@@ -375,6 +375,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var entity = modelBuilder.Entity<AuthorizationAuditArchiveSchedule>();
         entity.ToTable("platform_authorization_audit_archive_schedules");
         entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).IsRequired();
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         entity.Property(x => x.IntervalHours).IsRequired();
         entity.Property(x => x.IsEnabled).IsRequired();
