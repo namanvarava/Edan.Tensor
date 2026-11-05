@@ -58,9 +58,9 @@ public sealed class DataSetManagementServiceTests
     }
 
     private static DataSetScope Scope() => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-    private static DataSetManagementService Service(Store store) => new(store, store, store);
+    private static DataSetManagementService Service(Store store) => new(store, store, store, store);
 
-    private sealed class Store : IDataSetRepository, IDataSetScopeValidator, IDataSetStorageAdapterResolver, IDataSetStorageAdapter
+    private sealed class Store : IDataSetRepository, IDataSetScopeValidator, IDataSetStorageAdapterResolver, IDataSetStorageAdapter, IDataSetStorageQuotaPolicyProvider
     {
         public List<DataSetAggregate> DataSets { get; } = [];
         public bool ScopeValid { get; set; } = true;
@@ -76,7 +76,8 @@ public sealed class DataSetManagementServiceTests
             Allocations++;
             return Task.FromResult(new StorageReference("tenant:01.dataset:" + allocation.DataSetId.Value.ToString("N")));
         }
-        public Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, DataSetStorageQuotaPolicy quotaPolicy, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<DataSetStorageQuotaPolicy> GetPolicyAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default) => Task.FromResult(new DataSetStorageQuotaPolicy(null, null, null, null));
         public Task<Stream?> OpenReadAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default) => Task.FromResult<Stream?>(null);
         public Task<DataSetStorageUsage> GetUsageAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default) =>
             Task.FromResult(new DataSetStorageUsage(0, 0, 0, 0, 0, 0, 0));

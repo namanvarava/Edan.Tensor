@@ -76,7 +76,7 @@ public static class DataSetEndpoints
             {
                 "dataset.not_found" => Results.NotFound(new { result.Error.Code, result.Error.Description }),
                 "dataset.content_too_large" => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
-                "dataset.archived" => Results.Conflict(new { result.Error.Code, result.Error.Description }),
+                "dataset.archived" or "dataset.quota_exceeded" => Results.Conflict(new { result.Error.Code, result.Error.Description }),
                 _ => Results.BadRequest(new { result.Error.Code, result.Error.Description })
             };
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("WriteDataSetContent");
@@ -92,12 +92,17 @@ public static class DataSetEndpoints
 
         tenantGroup.MapGet("/{dataSetId:guid}/usage", async (Guid tenantId, Guid dataSetId,
             DataSetManagementService service, EDAN.Tensor.DataSet.Application.Abstractions.IDataSetStorageUsageReader usageReader,
+            EDAN.Tensor.DataSet.Application.Abstractions.IDataSetStorageQuotaPolicyProvider quotaProvider,
             CancellationToken token) =>
         {
-            var usage = await service.GetStorageUsageAsync(new DataSetId(dataSetId), tenantId, usageReader, token);
-            return usage is null
-                ? Results.NotFound(new { Code = "dataset.not_found", Description = "Tenant 범위에서 DataSet을 찾을 수 없습니다." })
-                : Results.Ok(new
+            var dataSet = await service.GetAsync(new DataSetId(dataSetId), tenantId, token);
+            if (dataSet is null)
+                return Results.NotFound(new { Code = "dataset.not_found", Description = "Tenant 범위에서 DataSet을 찾을 수 없습니다." });
+            var allocation = new DataSetStorageAllocation(dataSet.Id, dataSet.Scope);
+            var usage = await usageReader.GetUsageAsync(allocation, token);
+            var policy = await quotaProvider.GetPolicyAsync(allocation, token);
+            double? Percent(long bytes, long? limit) => limit is > 0 ? Math.Round(bytes * 100d / limit.Value, 2) : null;
+            return Results.Ok(new
                 {
                     TenantBytes = usage.TenantBytes,
                     TenantDataSetCount = usage.TenantDataSetCount,
@@ -106,6 +111,16 @@ public static class DataSetEndpoints
                     ProjectBytes = usage.ProjectBytes,
                     ProjectDataSetCount = usage.ProjectDataSetCount,
                     usage.DataSetBytes,
+                    Limits = new { policy.TenantLimitBytes, policy.OrganizationLimitBytes, policy.ProjectLimitBytes, policy.DataSetLimitBytes },
+                    UtilizationPercent = new { Tenant = Percent(usage.TenantBytes, policy.TenantLimitBytes), Organization = Percent(usage.OrganizationBytes, policy.OrganizationLimitBytes), Project = Percent(usage.ProjectBytes, policy.ProjectLimitBytes), DataSet = Percent(usage.DataSetBytes, policy.DataSetLimitBytes) },
+                    WarningThresholdPercent = policy.WarningThresholdPercent,
+                    Warnings = new[]
+                    {
+                        new { Scope = "Tenant", Active = Percent(usage.TenantBytes, policy.TenantLimitBytes) is double tenantPercent && tenantPercent >= policy.WarningThresholdPercent },
+                        new { Scope = "Organization", Active = Percent(usage.OrganizationBytes, policy.OrganizationLimitBytes) is double organizationPercent && organizationPercent >= policy.WarningThresholdPercent },
+                        new { Scope = "Project", Active = Percent(usage.ProjectBytes, policy.ProjectLimitBytes) is double projectPercent && projectPercent >= policy.WarningThresholdPercent },
+                        new { Scope = "DataSet", Active = Percent(usage.DataSetBytes, policy.DataSetLimitBytes) is double dataSetPercent && dataSetPercent >= policy.WarningThresholdPercent }
+                    }.Where(x => x.Active).Select(x => x.Scope).ToArray(),
                     MeasuredAtUtc = DateTimeOffset.UtcNow
                 });
         }).WithName("GetDataSetStorageUsage");

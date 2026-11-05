@@ -476,6 +476,14 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(1, usageDocument.RootElement.GetProperty("projectDataSetCount").GetInt64());
         Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("dataSetBytes").GetInt64());
+        Assert.Equal(50, usageDocument.RootElement.GetProperty("limits").GetProperty("tenantLimitBytes").GetInt64());
+
+        using var quotaExceededContent = new ByteArrayContent(new byte[51]);
+        using var quotaExceededUpload = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", quotaExceededContent);
+        Assert.Equal(HttpStatusCode.Conflict, quotaExceededUpload.StatusCode);
+        using var quotaExceededDocument = await JsonDocument.ParseAsync(await quotaExceededUpload.Content.ReadAsStreamAsync());
+        Assert.Equal("dataset.quota_exceeded", quotaExceededDocument.RootElement.GetProperty("code").GetString());
 
         using var oversizedContent = new ByteArrayContent(new byte[1025]);
         using var oversizedUpload = await client.PostAsync(
@@ -713,6 +721,10 @@ public sealed class PlatformApiIntegrationTests
                     ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared",
                     ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared",
                     ["DataSetContent:MaxUploadBytes"] = "1024",
+                    ["DataSetContent:Quota:TenantLimitBytes"] = "50",
+                    ["DataSetContent:Quota:OrganizationLimitBytes"] = "100",
+                    ["DataSetContent:Quota:ProjectLimitBytes"] = "100",
+                    ["DataSetContent:Quota:DataSetLimitBytes"] = "100",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",

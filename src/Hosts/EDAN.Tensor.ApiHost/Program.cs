@@ -87,7 +87,13 @@ if (!Path.IsPathRooted(dataSetContentSqliteConnection.DataSource) && dataSetCont
         Directory.CreateDirectory(contentDirectory);
 }
 var maxDataSetContentBytes = builder.Configuration.GetValue<long?>("DataSetContent:MaxUploadBytes") ?? 67_108_864;
-builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes);
+var dataSetQuotaPolicy = new DataSetStorageQuotaPolicy(
+    builder.Configuration.GetValue<long?>("DataSetContent:Quota:TenantLimitBytes"),
+    builder.Configuration.GetValue<long?>("DataSetContent:Quota:OrganizationLimitBytes"),
+    builder.Configuration.GetValue<long?>("DataSetContent:Quota:ProjectLimitBytes"),
+    builder.Configuration.GetValue<long?>("DataSetContent:Quota:DataSetLimitBytes"),
+    builder.Configuration.GetValue<int?>("DataSetContent:Quota:WarningThresholdPercent") ?? 80);
+builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy);
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();

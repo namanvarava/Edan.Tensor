@@ -10,7 +10,8 @@ namespace EDAN.Tensor.DataSet.Application.UseCases;
 public sealed class DataSetManagementService(
     IDataSetRepository repository,
     IDataSetScopeValidator scopeValidator,
-    IDataSetStorageAdapterResolver adapters)
+    IDataSetStorageAdapterResolver adapters,
+    IDataSetStorageQuotaPolicyProvider quotaPolicies)
 {
     /// <summary>검증된 소유 범위에 DataSet 초안을 생성합니다. 메타데이터 저장 실패 시 저장소 할당을 보상 해제합니다.</summary>
     public async Task<Result<DataSetId>> CreateAsync(
@@ -66,13 +67,18 @@ public sealed class DataSetManagementService(
 
         try
         {
-            await adapter.WriteAsync(new DataSetStorageAllocation(dataSet.Id, dataSet.Scope),
-                dataSet.StorageReference, content, cancellationToken);
+            var allocation = new DataSetStorageAllocation(dataSet.Id, dataSet.Scope);
+            var policy = await quotaPolicies.GetPolicyAsync(allocation, cancellationToken);
+            await adapter.WriteAsync(allocation, dataSet.StorageReference, content, policy, cancellationToken);
             return Result.Success();
         }
         catch (InvalidDataException ex)
         {
             return Result.Failure(new Error("dataset.content_too_large", ex.Message));
+        }
+        catch (DataSetStorageQuotaExceededException ex)
+        {
+            return Result.Failure(new Error("dataset.quota_exceeded", ex.Message));
         }
     }
 

@@ -34,9 +34,14 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
         return reference;
     }
 
-    public async Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, DataSetStorageQuotaPolicy quotaPolicy, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(allocation);
+        ArgumentNullException.ThrowIfNull(reference);
+        ArgumentNullException.ThrowIfNull(quotaPolicy);
+        if (quotaPolicy.WarningThresholdPercent is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(quotaPolicy), "Warning threshold must be between 1 and 100.");
         await using var buffer = new MemoryStream();
         var chunk = new byte[81_920];
         long totalBytes = 0;
@@ -49,16 +54,46 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
             await buffer.WriteAsync(chunk.AsMemory(0, bytesRead), cancellationToken);
         }
         await using var connection = await OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            UPDATE DataSetContent SET Content = $content
-            WHERE StorageReference = $reference AND DataSetId = $dataSetId
-              AND TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId;
-            """;
-        AddScope(command, allocation, reference);
-        command.Parameters.Add("$content", SqliteType.Blob).Value = buffer.ToArray();
-        if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
-            throw new KeyNotFoundException("Tenant 소유 범위에서 저장소 참조를 찾을 수 없습니다.");
+        using var transaction = connection.BeginTransaction(deferred: false);
+        await using (var usageCommand = connection.CreateCommand())
+        {
+            usageCommand.Transaction = transaction;
+            usageCommand.CommandText = """
+                SELECT
+                    COALESCE(SUM(CASE WHEN TenantId = $tenantId THEN length(Content) ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId THEN length(Content) ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId THEN length(Content) ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId AND DataSetId = $dataSetId THEN length(Content) ELSE 0 END), 0)
+                FROM DataSetContent
+                WHERE StorageReference <> $reference;
+                """;
+            usageCommand.Parameters.AddWithValue("$reference", reference.Value);
+            usageCommand.Parameters.AddWithValue("$dataSetId", allocation.DataSetId.Value.ToString("D"));
+            usageCommand.Parameters.AddWithValue("$tenantId", allocation.Scope.TenantId.ToString("D"));
+            usageCommand.Parameters.AddWithValue("$organizationId", allocation.Scope.OrganizationId.ToString("D"));
+            usageCommand.Parameters.AddWithValue("$projectId", allocation.Scope.ProjectId.ToString("D"));
+            await using var reader = await usageCommand.ExecuteReaderAsync(cancellationToken);
+            await reader.ReadAsync(cancellationToken);
+            var projected = new[] { reader.GetInt64(0) + totalBytes, reader.GetInt64(1) + totalBytes, reader.GetInt64(2) + totalBytes, reader.GetInt64(3) + totalBytes };
+            EnsureWithinLimit("Tenant", quotaPolicy.TenantLimitBytes, projected[0]);
+            EnsureWithinLimit("Organization", quotaPolicy.OrganizationLimitBytes, projected[1]);
+            EnsureWithinLimit("Project", quotaPolicy.ProjectLimitBytes, projected[2]);
+            EnsureWithinLimit("DataSet", quotaPolicy.DataSetLimitBytes, projected[3]);
+        }
+        await using (var command = connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText = """
+                UPDATE DataSetContent SET Content = $content
+                WHERE StorageReference = $reference AND DataSetId = $dataSetId
+                  AND TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId;
+                """;
+            AddScope(command, allocation, reference);
+            command.Parameters.Add("$content", SqliteType.Blob).Value = buffer.ToArray();
+            if (await command.ExecuteNonQueryAsync(cancellationToken) != 1)
+                throw new KeyNotFoundException("Tenant 소유 범위에서 저장소 참조를 찾을 수 없습니다.");
+        }
+        transaction.Commit();
     }
 
     public async Task<Stream?> OpenReadAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default)
@@ -115,6 +150,13 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
             """;
         AddScope(command, allocation, reference);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static void EnsureWithinLimit(string scope, long? limitBytes, long projectedBytes)
+    {
+        if (limitBytes is < 0) throw new ArgumentOutOfRangeException(nameof(limitBytes));
+        if (limitBytes is long limit && projectedBytes > limit)
+            throw new DataSetStorageQuotaExceededException(scope, limit, projectedBytes);
     }
 
     private async Task<SqliteConnection> OpenAsync(CancellationToken cancellationToken)

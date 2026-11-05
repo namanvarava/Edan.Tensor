@@ -7,7 +7,7 @@ public interface IDataSetStorageAdapter
 {
     string AdapterId { get; }
     Task<StorageReference> AllocateAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default);
-    Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, CancellationToken cancellationToken = default);
+    Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, DataSetStorageQuotaPolicy quotaPolicy, CancellationToken cancellationToken = default);
     Task<Stream?> OpenReadAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default);
     Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default);
 }
@@ -33,3 +33,21 @@ public sealed record DataSetStorageUsage(
     long OrganizationBytes, long OrganizationDataSetCount,
     long ProjectBytes, long ProjectDataSetCount,
     long DataSetBytes);
+
+/// <summary>Tenant·Organization·Project·DataSet 계층의 저장 용량 한도입니다. null은 무제한입니다.</summary>
+public sealed record DataSetStorageQuotaPolicy(long? TenantLimitBytes, long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes, int WarningThresholdPercent = 80);
+
+/// <summary>소유 범위별 저장 용량 정책을 제공합니다.</summary>
+public interface IDataSetStorageQuotaPolicyProvider
+{
+    Task<DataSetStorageQuotaPolicy> GetPolicyAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default);
+}
+
+/// <summary>저장 용량 한도 초과로 콘텐츠 쓰기가 거부되었습니다.</summary>
+public sealed class DataSetStorageQuotaExceededException(string scope, long limitBytes, long projectedBytes)
+    : Exception($"DataSet storage quota exceeded for {scope}: limit {limitBytes} bytes, projected {projectedBytes} bytes.")
+{
+    public string Scope { get; } = scope;
+    public long LimitBytes { get; } = limitBytes;
+    public long ProjectedBytes { get; } = projectedBytes;
+}
