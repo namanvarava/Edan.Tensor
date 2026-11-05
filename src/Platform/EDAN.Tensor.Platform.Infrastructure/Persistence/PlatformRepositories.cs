@@ -224,20 +224,27 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
 
     public async Task<IReadOnlyList<TenantId>> GetDueTenantsAsync(DateTimeOffset nowUtc, int take,
         CancellationToken cancellationToken = default) =>
-        await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
-            .Where(x => x.IsEnabled && x.NextRunAtUtc <= nowUtc &&
+        (await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
+            .Where(x => x.IsEnabled)
+            .ToListAsync(cancellationToken))
+            .Where(x => x.NextRunAtUtc <= nowUtc &&
                 (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= nowUtc))
             .OrderBy(x => x.NextRunAtUtc)
-            .Select(x => x.TenantId)
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .Select(x => x.TenantId)
+            .ToArray();
 
     public async Task<bool> TryAcquireAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
         DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default)
     {
+        var schedule = await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
+        if (schedule is null || !schedule.IsEnabled || schedule.NextRunAtUtc > nowUtc
+            || (schedule.LeaseExpiresAtUtc.HasValue && schedule.LeaseExpiresAtUtc.Value > nowUtc))
+            return false;
+
         var affected = await db.AuthorizationAuditArchiveSchedules
-            .Where(x => x.TenantId == tenantId && x.IsEnabled && x.NextRunAtUtc <= nowUtc &&
-                (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= nowUtc))
+            .Where(x => x.TenantId == tenantId && x.Version == schedule.Version && x.IsEnabled)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.LeaseId, leaseId)
                 .SetProperty(x => x.LeaseExpiresAtUtc, leaseExpiresAtUtc)
