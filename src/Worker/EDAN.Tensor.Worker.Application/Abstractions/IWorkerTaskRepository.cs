@@ -8,5 +8,8 @@ public interface IWorkerTaskRepository
     Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take,
         CancellationToken cancellationToken = default);
+    Task<WorkerTask?> TryAcquireLeaseAsync(Guid tenantId, Guid taskId, string workerId, Guid leaseId,
+        DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
     void Add(WorkerTask task);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
