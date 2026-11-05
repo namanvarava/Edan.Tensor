@@ -122,7 +122,7 @@ public sealed class DataSetStorageUsageSnapshotService(
     {
         var latest = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
             .Where(x => x.TenantId == policy.TenantId.Value && x.PolicyId == policy.Id)
-            .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
+            .OrderByDescending(x => x.Id)
             .FirstOrDefaultAsync(token);
 
         // 정책 비활성화 또는 한도 제거는 이전 Warning/Exceeded 상태를 해제하는 전이로 기록합니다.
@@ -166,7 +166,7 @@ public sealed class DataSetStorageUsageSnapshotService(
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
         return dataSetDb.StorageUsageSnapshots.AsNoTracking().Where(x => x.TenantId == tenantId)
-            .OrderByDescending(x => x.PeriodStartUtc).Take(Math.Clamp(take, 1, 744)).ToListAsync(cancellationToken);
+            .OrderByDescending(x => x.Id).Take(Math.Clamp(take, 1, 744)).ToListAsync(cancellationToken);
     }
 
     public Task<List<DataSetQuotaThresholdEvent>> GetQuotaEventHistoryAsync(
