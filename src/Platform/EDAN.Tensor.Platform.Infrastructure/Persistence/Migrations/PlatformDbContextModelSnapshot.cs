@@ -332,6 +332,24 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
 
     }
 
+
+        modelBuilder.Entity<AuthorizationAuditArchiveSchedule>(entity =>
+        {
+            entity.ToTable("platform_authorization_audit_archive_schedules");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.IntervalHours).IsRequired();
+            entity.Property(x => x.IsEnabled).IsRequired();
+            entity.Property(x => x.NextRunAtUtc).IsRequired();
+            entity.Property(x => x.LastRunAtUtc);
+            entity.Property(x => x.LeaseId);
+            entity.Property(x => x.LeaseExpiresAtUtc);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => x.TenantId).IsUnique();
+            entity.HasIndex(x => new { x.IsEnabled, x.NextRunAtUtc });
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
         new(id => value(id), raw => create(raw));
 
