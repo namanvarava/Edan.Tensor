@@ -395,6 +395,52 @@ public sealed class WorkerTaskRepositoryFailureTests
         Assert.Equal(WorkerTaskStatus.Running, persisted.Single(x => x.Id == taskIds[2]).Status);
     }
 
+    [Fact]
+    public async Task ExpiredLeaseRecoveryConcurrencyConflictDetachesTaskAndContinuesBatch()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var taskIds = new List<Guid>();
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            for (var index = 0; index < 2; index++)
+            {
+                var task = WorkerTask.Create(tenantId, "test.recovery", $"concurrency-{index}", $"payload://{index}", now);
+                var leaseId = Guid.NewGuid();
+                task.AcquireLease("worker", leaseId, now, now.AddMinutes(index + 1));
+                task.Start(leaseId, task.FencingToken, now);
+                setup.WorkerTasks.Add(task);
+                taskIds.Add(task.Id);
+            }
+            await setup.SaveChangesAsync();
+        }
+
+        var concurrencyOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new FailOnSaveChangesNumberInterceptor(
+                1, new DbUpdateConcurrencyException("Simulated recovery concurrency conflict.")))
+            .Options;
+        await using (var concurrencyDb = new WorkerDbContext(concurrencyOptions))
+        {
+            var repository = new WorkerTaskRepository(concurrencyDb);
+            var conflicted = await repository.GetAsync(tenantId, taskIds[0]);
+            Assert.NotNull(conflicted);
+
+            var recovered = await repository.RecoverExpiredLeasesAsync(now.AddMinutes(5), 2);
+
+            Assert.Equal(1, recovered);
+            Assert.Equal(EntityState.Detached, concurrencyDb.Entry(conflicted).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().ToArrayAsync();
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Single(x => x.Id == taskIds[0]).Status);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted.Single(x => x.Id == taskIds[1]).Status);
+    }
+
     private sealed class FailingSaveChangesInterceptor(Exception exception) : SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
