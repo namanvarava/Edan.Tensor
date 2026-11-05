@@ -572,6 +572,81 @@ public sealed class WorkerTaskRepositoryFailureTests
         Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted.Single(x => x.Id == taskIds[1]).Status);
     }
 
+    [Fact]
+    public async Task ExpiredLeaseRecoveryDoesNotOverwriteLeaseRenewedByAnotherContext()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var baseOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var leaseId = Guid.NewGuid();
+        Guid taskId;
+
+        await using (var setup = new WorkerDbContext(baseOptions))
+        {
+            await setup.Database.MigrateAsync();
+            var task = WorkerTask.Create(tenantId, "test.recovery", "concurrent-renewal", "payload://renewal", now);
+            task.AcquireLease("worker", leaseId, now, now.AddMinutes(1));
+            task.Start(leaseId, task.FencingToken, now);
+            setup.WorkerTasks.Add(task);
+            await setup.SaveChangesAsync();
+            taskId = task.Id;
+        }
+
+        var recoveryOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection)
+            .AddInterceptors(new RenewLeaseBeforeRecoverySaveInterceptor(
+                baseOptions, tenantId, taskId, leaseId, now, now.AddMinutes(10)))
+            .Options;
+
+        await using (var recoveryDb = new WorkerDbContext(recoveryOptions))
+        {
+            var repository = new WorkerTaskRepository(recoveryDb);
+            var tracked = await repository.GetAsync(tenantId, taskId);
+            Assert.NotNull(tracked);
+
+            var recovered = await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 10);
+
+            Assert.Equal(0, recovered);
+            Assert.Equal(EntityState.Detached, recoveryDb.Entry(tracked).State);
+        }
+
+        await using var verifyDb = new WorkerDbContext(baseOptions);
+        var persisted = await verifyDb.WorkerTasks.AsNoTracking().SingleAsync(x => x.Id == taskId);
+        Assert.Equal(WorkerTaskStatus.Running, persisted.Status);
+        Assert.Equal(leaseId, persisted.LeaseId);
+        Assert.Equal(now.AddMinutes(10), persisted.LeaseExpiresAtUtc);
+    }
+
+    private sealed class RenewLeaseBeforeRecoverySaveInterceptor(
+        DbContextOptions<WorkerDbContext> competingOptions,
+        Guid tenantId,
+        Guid taskId,
+        Guid leaseId,
+        DateTimeOffset nowUtc,
+        DateTimeOffset renewedExpiryUtc) : SaveChangesInterceptor
+    {
+        private bool _renewed;
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!_renewed)
+            {
+                _renewed = true;
+                await using var competingDb = new WorkerDbContext(competingOptions);
+                var competingTask = await competingDb.WorkerTasks.SingleAsync(
+                    x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
+                competingTask.RenewLease(leaseId, competingTask.FencingToken, nowUtc, renewedExpiryUtc);
+                await competingDb.SaveChangesAsync(cancellationToken);
+            }
+
+            return result;
+        }
+    }
+
     private sealed class FailingSaveChangesInterceptor(Exception exception) : SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
