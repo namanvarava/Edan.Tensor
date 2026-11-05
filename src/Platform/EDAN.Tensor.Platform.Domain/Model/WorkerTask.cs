@@ -122,7 +122,10 @@ public sealed class WorkerTask
         EnsureLease(leaseId, fencingToken, nowUtc);
         if (Status is not (WorkerTaskStatus.Leased or WorkerTaskStatus.Running or WorkerTaskStatus.Checkpointed))
             throw new InvalidOperationException("실행 중인 작업만 실패 처리할 수 있습니다.");
-        LastErrorCode = ValidateText(errorCode, 200, nameof(errorCode));
+        var normalizedErrorCode = ValidateText(errorCode, 200, nameof(errorCode));
+        if (AttemptCount < MaxAttempts && retryAtUtc.ToUniversalTime() <= nowUtc.ToUniversalTime())
+            throw new ArgumentOutOfRangeException(nameof(retryAtUtc), "재시도 시각은 현재 시각보다 늦어야 합니다.");
+        LastErrorCode = normalizedErrorCode;
         ClearLease();
         if (AttemptCount >= MaxAttempts)
         {
@@ -131,8 +134,6 @@ public sealed class WorkerTask
         }
         else
         {
-            if (retryAtUtc.ToUniversalTime() <= nowUtc.ToUniversalTime())
-                throw new ArgumentOutOfRangeException(nameof(retryAtUtc), "재시도 시각은 현재 시각보다 늦어야 합니다.");
             Status = WorkerTaskStatus.RetryScheduled;
             NextAttemptAtUtc = retryAtUtc.ToUniversalTime();
         }
