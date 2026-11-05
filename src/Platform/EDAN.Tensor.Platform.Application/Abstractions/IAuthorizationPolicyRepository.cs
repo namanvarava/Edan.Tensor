@@ -19,6 +19,8 @@ public interface IAuthorizationAuditRepository
     Task<AuthorizationAuditPage> GetPageAsync(TenantId tenantId, string? subjectId, string? action,
         bool? isAllowed, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AuthorizationAuditEntry>> GetForIntegrityAsync(TenantId tenantId,
+        DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default);
     void Add(AuthorizationAuditEntry entry);
 }
 
