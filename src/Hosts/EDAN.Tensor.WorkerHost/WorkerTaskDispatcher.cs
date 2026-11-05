@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Domain.Model;
@@ -151,15 +152,21 @@ internal sealed class WorkerTaskDispatcher(
         }
 
         var graceSeconds = Math.Clamp(configuration.GetValue("Worker:ShutdownGraceSeconds", 30), 1, 300);
-        var handoffSeconds = Math.Clamp(configuration.GetValue("Worker:ShutdownHandoffSeconds", 15), 1, 120);
+        var handoffTimeout = TimeSpan.FromSeconds(Math.Clamp(configuration.GetValue("Worker:ShutdownHandoffSeconds", 15), 1, 120));
         var result = await executions.StopAsync(
             TimeSpan.FromSeconds(graceSeconds),
-            TimeSpan.FromSeconds(handoffSeconds),
+            handoffTimeout,
             CancellationToken.None);
         Task activeDrained;
         lock (_activeSync) activeDrained = _activeDrained.Task;
-        try { await activeDrained.WaitAsync(TimeSpan.FromSeconds(handoffSeconds)); }
-        catch (TimeoutException) { logger.LogWarning("종료 제한 시간 내 완료되지 않은 디스패치가 있습니다. Active={Active}", _active.Count); }
+
+        // Registry가 소비한 handoff 시간을 제외한 나머지만 디스패치 정리에 사용합니다.
+        var remainingHandoffTime = handoffTimeout - result.HandoffElapsed;
+        if (remainingHandoffTime > TimeSpan.Zero)
+        {
+            try { await activeDrained.WaitAsync(remainingHandoffTime); }
+            catch (TimeoutException) { logger.LogWarning("종료 제한 시간 내 완료되지 않은 디스패치가 있습니다. Active={Active}", _active.Count); }
+        }
         logger.LogInformation("Worker 종료 조정 완료: 유예 시간 내 정리={Drained}, 인계 요청={Requested}, 인계 성공={Succeeded}, 실행 잔여={Remaining}",
             result.DrainedWithinGracePeriod, result.HandoffRequested, result.HandoffSucceeded, result.StillRunning);
     }
