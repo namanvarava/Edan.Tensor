@@ -286,6 +286,31 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
         using var verifyDocument = await JsonDocument.ParseAsync(await verifyResponse.Content.ReadAsStreamAsync());
         Assert.True(verifyDocument.RootElement.GetProperty("isValid").GetBoolean());
+        // 아카이브 작업 생성 후 상태와 실행 이력을 조회하고 체크섬을 검증합니다.
+        using var archiveJobResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs", new
+            {
+                fromUtc,
+                toUtc
+            });
+        Assert.Equal(HttpStatusCode.Created, archiveJobResponse.StatusCode);
+        using var archiveJobDocument = await JsonDocument.ParseAsync(await archiveJobResponse.Content.ReadAsStreamAsync());
+        var archiveJobId = archiveJobDocument.RootElement.GetProperty("jobId").GetGuid();
+        Assert.Equal("Completed", archiveJobDocument.RootElement.GetProperty("status").GetString());
+
+        using var archiveJobDetailsResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{archiveJobId}");
+        Assert.Equal(HttpStatusCode.OK, archiveJobDetailsResponse.StatusCode);
+        using var archiveJobDetails = await JsonDocument.ParseAsync(await archiveJobDetailsResponse.Content.ReadAsStreamAsync());
+        Assert.Single(archiveJobDetails.RootElement.GetProperty("attempts").EnumerateArray());
+
+        using var archiveJobVerifyResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{archiveJobId}/verify",
+            new { expectedSha256 = (string?)null });
+        Assert.Equal(HttpStatusCode.OK, archiveJobVerifyResponse.StatusCode);
+        using var archiveJobVerify = await JsonDocument.ParseAsync(await archiveJobVerifyResponse.Content.ReadAsStreamAsync());
+        Assert.True(archiveJobVerify.RootElement.GetProperty("isValid").GetBoolean());
+
         // Tenant별 감사 보존 정책을 조회하고 법적 보존 상태를 변경합니다.
         using var retentionGetResponse = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/authorization-audit/retention");
@@ -352,6 +377,8 @@ public sealed class PlatformApiIntegrationTests
     {
         private readonly string _databasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-api-{Guid.NewGuid():N}.db");
+        private readonly string _archivePath = Path.Combine(
+            Path.GetTempPath(), $"edan-tensor-archives-{Guid.NewGuid():N}");
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -362,6 +389,7 @@ public sealed class PlatformApiIntegrationTests
                 {
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
+                    ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
                     ["Authentication:Audience"] = "edan-tensor-api",
                     ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long"
@@ -382,6 +410,8 @@ public sealed class PlatformApiIntegrationTests
             base.Dispose(disposing);
             if (disposing && File.Exists(_databasePath))
                 File.Delete(_databasePath);
+            if (disposing && Directory.Exists(_archivePath))
+                Directory.Delete(_archivePath, recursive: true);
         }
     }
 }
