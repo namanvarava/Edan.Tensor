@@ -1,0 +1,12 @@
+using EDAN.Tensor.Worker.Domain.Model;
+
+namespace EDAN.Tensor.Worker.Application.Abstractions;
+
+/// <summary>작업 저장소는 Tenant 경계를 모든 조회와 쓰기에 적용합니다.</summary>
+public interface IWorkerTaskRepository
+{
+    Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take,
+        CancellationToken cancellationToken = default);
+    void Add(WorkerTask task);
+}
