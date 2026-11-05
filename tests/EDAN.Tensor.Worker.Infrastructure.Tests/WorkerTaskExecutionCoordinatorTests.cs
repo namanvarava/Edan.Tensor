@@ -162,6 +162,37 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorStopsExecutionWhenLeaseRenewalIsRejected()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.lease-lost", "lease-lost-key",
+            "payload://test", DateTimeOffset.UtcNow, maxAttempts: 3);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var execution = new PendingExecution();
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new FixedResolver("test.lease-lost", new PendingExecutionHandler(execution)),
+            new RejectedLeaseRenewer(), new WorkerExecutionRegistry(), TimeProvider.System);
+
+        var outcome = await coordinator.ExecuteAsync(
+            tenantId, task.Id, "worker-test", TimeSpan.FromSeconds(3));
+
+        Assert.Equal(WorkerTaskExecutionOutcome.LeaseLost, outcome);
+        Assert.Equal(1, execution.CheckpointRequests);
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.Running, persisted!.Status);
+        Assert.NotNull(persisted.LeaseId);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -172,6 +203,38 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         Assert.Same(handler, registry.Resolve("test.success"));
         Assert.Null(registry.Resolve("test.unknown"));
         Assert.Throws<InvalidOperationException>(() => registry.Register("test.success", handler));
+    }
+
+    private sealed class FixedResolver(string taskType, IWorkerTaskHandler handler) : IWorkerTaskHandlerResolver
+    {
+        public IWorkerTaskHandler? Resolve(string requestedType) => requestedType == taskType ? handler : null;
+    }
+
+    private sealed class PendingExecutionHandler(PendingExecution execution) : IWorkerTaskHandler
+    {
+        public Task<IWorkerTaskExecution> StartAsync(WorkerTask task, CancellationToken cancellationToken) =>
+            Task.FromResult<IWorkerTaskExecution>(execution);
+    }
+
+    private sealed class PendingExecution : IWorkerTaskExecution
+    {
+        private readonly TaskCompletionSource<WorkerTaskExecutionResult> _completion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int CheckpointRequests { get; private set; }
+        public Task<WorkerTaskExecutionResult> Completion => _completion.Task;
+        public Task<string?> RequestCheckpointAndStopAsync(CancellationToken cancellationToken)
+        {
+            CheckpointRequests++;
+            return Task.FromResult<string?>(null);
+        }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    private sealed class RejectedLeaseRenewer : IWorkerTaskLeaseRenewer
+    {
+        public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+            DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 
     private sealed class ExecutionCancellationResolver(CancellationTokenSource cancellation)
