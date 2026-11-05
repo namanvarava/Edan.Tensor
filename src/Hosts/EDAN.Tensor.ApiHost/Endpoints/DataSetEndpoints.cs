@@ -175,6 +175,27 @@ public static class DataSetEndpoints
             });
         }).WithName("GetTenantStorageUsage");
 
+        tenantUsageGroup.MapGet("/storage-usage/history", async (Guid tenantId, int? take,
+            DataSetStorageUsageSnapshotService snapshotService, CancellationToken token) =>
+        {
+            var history = await snapshotService.GetHistoryAsync(tenantId, take ?? 168, token);
+            return Results.Ok(history.Select(x => new
+            {
+                x.PeriodStartUtc, x.CapturedAtUtc, x.UsedBytes, x.DataSetCount
+            }));
+        }).WithName("GetTenantStorageUsageHistory");
+
+        tenantUsageGroup.MapGet("/storage-usage/quota-events", async (Guid tenantId, int? take,
+            DataSetStorageUsageSnapshotService snapshotService, CancellationToken token) =>
+        {
+            var history = await snapshotService.GetQuotaEventHistoryAsync(tenantId, take ?? 100, token);
+            return Results.Ok(history.Select(x => new
+            {
+                x.PolicyId, x.Scope, x.TargetId, x.EventType, x.UsedBytes, x.LimitBytes,
+                x.UtilizationPercent, x.PolicyVersion, x.OccurredAtUtc
+            }));
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("GetTenantQuotaEventHistory");
+
         return endpoints;
     }
 

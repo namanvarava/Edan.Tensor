@@ -10,6 +10,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
 {
     public DbSet<DataSetAggregate> DataSets => Set<DataSetAggregate>();
     public DbSet<DataSetStorageUsageSnapshot> StorageUsageSnapshots => Set<DataSetStorageUsageSnapshot>();
+    public DbSet<DataSetQuotaThresholdEvent> QuotaThresholdEvents => Set<DataSetQuotaThresholdEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,7 +18,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         ConfigureModel(modelBuilder);
     }
 
-    /// <summary>실행 컨텍스트와 모델 검증이 공유하는 DataSet 저장 모델을 구성합니다.</summary>
+    /// <summary>실행 컨텍스트와 마이그레이션 모델이 공유하는 DataSet 저장 모델을 구성합니다.</summary>
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
         var idConverter = new ValueConverter<DataSetId, Guid>(id => id.Value, value => new DataSetId(value));
@@ -31,15 +32,12 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(24).IsRequired();
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken().IsRequired();
-
-        // 소유 범위와 저장소 참조는 명시적 스칼라 컬럼으로 저장해 EF 복합 객체 nullability drift를 방지합니다.
         entity.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
         entity.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
         entity.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
         entity.Property(x => x.StorageReference).HasConversion(storageReferenceConverter)
             .HasColumnName("StorageReference").HasMaxLength(256).IsRequired();
         entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId });
-
         entity.OwnsMany(x => x.SchemaRevisions, revisions =>
         {
             revisions.ToTable("dataset_schema_revisions");
@@ -56,9 +54,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         var usageSnapshot = modelBuilder.Entity<DataSetStorageUsageSnapshot>();
         usageSnapshot.ToTable("dataset_storage_usage_snapshots");
         usageSnapshot.HasKey(x => x.Id);
-        usageSnapshot.Property(x => x.Id)
-            .ValueGeneratedOnAdd()
-            .HasAnnotation("Sqlite:Autoincrement", true);
+        usageSnapshot.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
         usageSnapshot.Property(x => x.TenantId).IsRequired();
         usageSnapshot.Property(x => x.PeriodStartUtc).IsRequired();
         usageSnapshot.Property(x => x.CapturedAtUtc).IsRequired();
@@ -66,5 +62,22 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         usageSnapshot.Property(x => x.DataSetCount).IsRequired();
         usageSnapshot.HasIndex(x => new { x.TenantId, x.PeriodStartUtc }).IsUnique();
         usageSnapshot.HasIndex(x => new { x.TenantId, x.CapturedAtUtc });
+
+        var quotaEvent = modelBuilder.Entity<DataSetQuotaThresholdEvent>();
+        quotaEvent.ToTable("dataset_quota_threshold_events");
+        quotaEvent.HasKey(x => x.Id);
+        quotaEvent.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
+        quotaEvent.Property(x => x.TenantId).IsRequired();
+        quotaEvent.Property(x => x.PolicyId).IsRequired();
+        quotaEvent.Property(x => x.Scope).HasMaxLength(24).IsRequired();
+        quotaEvent.Property(x => x.TargetId).IsRequired();
+        quotaEvent.Property(x => x.EventType).HasMaxLength(16).IsRequired();
+        quotaEvent.Property(x => x.UsedBytes).IsRequired();
+        quotaEvent.Property(x => x.LimitBytes).IsRequired();
+        quotaEvent.Property(x => x.UtilizationPercent).IsRequired();
+        quotaEvent.Property(x => x.PolicyVersion).IsRequired();
+        quotaEvent.Property(x => x.OccurredAtUtc).IsRequired();
+        quotaEvent.HasIndex(x => new { x.TenantId, x.PolicyId, x.OccurredAtUtc });
+        quotaEvent.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
     }
 }
