@@ -18,7 +18,9 @@ public interface IWorkerTaskRepository
         DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
     Task<bool> TryCompleteAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
         DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
-    Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,\n        DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default);\n    Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+    Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,
+        DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
         string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     void Add(WorkerTask task);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
