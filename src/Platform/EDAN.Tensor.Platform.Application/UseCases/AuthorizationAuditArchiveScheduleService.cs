@@ -53,8 +53,9 @@ public sealed class AuthorizationAuditArchiveScheduleService(
                 continue;
 
             var schedule = await schedules.GetAsync(tenantId, cancellationToken);
-            var fromUtc = schedule?.LastRunAtUtc ?? now.AddHours(-(schedule?.IntervalHours ?? 24));
-            var toUtc = now;
+            var fromUtc = schedule?.LastRunAtUtc?.AddTicks(1)
+                ?? now.AddHours(-(schedule?.IntervalHours ?? 24));
+            var toUtc = fromUtc.AddDays(31) < now ? fromUtc.AddDays(31) : now;
             var succeeded = false;
             try
             {
@@ -68,7 +69,8 @@ public sealed class AuthorizationAuditArchiveScheduleService(
             }
             finally
             {
-                await schedules.CompleteAsync(tenantId, leaseId, clock.UtcNow, succeeded, cancellationToken);
+                await schedules.CompleteAsync(tenantId, leaseId, clock.UtcNow,
+                    succeeded ? toUtc : null, succeeded, cancellationToken);
             }
         }
         return executed;
