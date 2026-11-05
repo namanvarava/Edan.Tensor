@@ -181,13 +181,27 @@ public sealed class PlatformInfrastructureTests
         Assert.True(await repository.TryAcquireAsync(tenant.Id, firstLease, now, now.AddMinutes(30)));
         Assert.False(await repository.TryAcquireAsync(tenant.Id, secondLease, now, now.AddMinutes(30)));
 
-        await repository.CompleteAsync(tenant.Id, firstLease, now.AddMinutes(1), now.AddMinutes(1), succeeded: true);
+        var renewedUntil = now.AddMinutes(40);
+        Assert.True(await repository.RenewLeaseAsync(tenant.Id, firstLease,
+            now.AddMinutes(10), renewedUntil));
+        db.ChangeTracker.Clear();
+
+        // 갱신된 임대가 유효한 동안 다른 작업자는 인수할 수 없습니다.
+        Assert.False(await repository.TryAcquireAsync(tenant.Id, secondLease,
+            now.AddMinutes(31), now.AddMinutes(61)));
+        Assert.False(await repository.RenewLeaseAsync(tenant.Id, secondLease,
+            now.AddMinutes(31), now.AddMinutes(61)));
+
+        await repository.CompleteAsync(tenant.Id, firstLease,
+            now.AddMinutes(12), now.AddMinutes(1), succeeded: true);
         db.ChangeTracker.Clear();
         var updated = await repository.GetAsync(tenant.Id);
         Assert.NotNull(updated);
         Assert.Null(updated.LeaseId);
         Assert.Equal(now.AddMinutes(1), updated.LastRunAtUtc);
-        Assert.Equal(now.AddHours(1).AddMinutes(1), updated.NextRunAtUtc);
+        Assert.Equal(now.AddHours(1).AddMinutes(12), updated.NextRunAtUtc);
+        Assert.False(await repository.RenewLeaseAsync(tenant.Id, firstLease,
+            now.AddMinutes(13), now.AddMinutes(43)));
     }
 
     [Fact]
