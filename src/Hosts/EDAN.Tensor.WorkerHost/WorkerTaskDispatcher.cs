@@ -140,13 +140,25 @@ internal sealed class WorkerTaskDispatcher(
     }
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        await base.StopAsync(cancellationToken);
+        try
+        {
+            await base.StopAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Host의 종료 대기 토큰이 취소되어도 실행 중 작업의 인계/정리 단계는 별도로 수행합니다.
+            logger.LogWarning("Worker 디스패처의 기본 종료 대기가 취소되었습니다. 실행 작업 종료 조정을 계속합니다.");
+        }
+
         var graceSeconds = Math.Clamp(configuration.GetValue("Worker:ShutdownGraceSeconds", 30), 1, 300);
         var handoffSeconds = Math.Clamp(configuration.GetValue("Worker:ShutdownHandoffSeconds", 15), 1, 120);
-        var result = await executions.StopAsync(TimeSpan.FromSeconds(graceSeconds), TimeSpan.FromSeconds(handoffSeconds), cancellationToken);
+        var result = await executions.StopAsync(
+            TimeSpan.FromSeconds(graceSeconds),
+            TimeSpan.FromSeconds(handoffSeconds),
+            CancellationToken.None);
         Task activeDrained;
         lock (_activeSync) activeDrained = _activeDrained.Task;
-        try { await activeDrained.WaitAsync(TimeSpan.FromSeconds(handoffSeconds), cancellationToken); }
+        try { await activeDrained.WaitAsync(TimeSpan.FromSeconds(handoffSeconds)); }
         catch (TimeoutException) { logger.LogWarning("종료 제한 시간 내 완료되지 않은 디스패치가 있습니다. Active={Active}", _active.Count); }
         logger.LogInformation("Worker 종료 조정 완료: 유예 시간 내 정리={Drained}, 인계 요청={Requested}, 인계 성공={Succeeded}, 실행 잔여={Remaining}",
             result.DrainedWithinGracePeriod, result.HandoffRequested, result.HandoffSucceeded, result.StillRunning);
