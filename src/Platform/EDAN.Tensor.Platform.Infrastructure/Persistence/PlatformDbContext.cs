@@ -24,6 +24,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationAuditArchiveJob> AuthorizationAuditArchiveJobs => Set<AuthorizationAuditArchiveJob>();
     public DbSet<AuthorizationAuditArchiveAttempt> AuthorizationAuditArchiveAttempts => Set<AuthorizationAuditArchiveAttempt>();
     public DbSet<AuthorizationAuditArchiveSchedule> AuthorizationAuditArchiveSchedules => Set<AuthorizationAuditArchiveSchedule>();
+    public DbSet<StorageQuotaPolicy> StorageQuotaPolicies => Set<StorageQuotaPolicy>();
+    public DbSet<StorageQuotaPolicyChangeAuditEntry> StorageQuotaPolicyChangeAuditEntries => Set<StorageQuotaPolicyChangeAuditEntry>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,6 +46,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationAuditRetention(modelBuilder);
         ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
         ConfigureAuthorizationAuditArchiveSchedule(modelBuilder);
+        ConfigureStorageQuotaPolicies(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -387,6 +390,49 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.HasIndex(x => x.TenantId).IsUnique();
         entity.HasIndex(x => new { x.IsEnabled, x.NextRunAtUtc });
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>계층형 저장 용량 정책과 변경 감사 기록을 Tenant 경계로 저장합니다.</summary>
+    private static void ConfigureStorageQuotaPolicies(ModelBuilder modelBuilder)
+    {
+        var policy = modelBuilder.Entity<StorageQuotaPolicy>();
+        policy.ToTable("platform_storage_quota_policies");
+        policy.HasKey(x => x.Id);
+        policy.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        policy.Property(x => x.Scope).HasConversion<string>().HasMaxLength(24).IsRequired();
+        policy.Property(x => x.TargetId).IsRequired();
+        policy.Property(x => x.TenantLimitBytes);
+        policy.Property(x => x.OrganizationLimitBytes);
+        policy.Property(x => x.ProjectLimitBytes);
+        policy.Property(x => x.DataSetLimitBytes);
+        policy.Property(x => x.WarningThresholdPercent).IsRequired();
+        policy.Property(x => x.PlanCode).HasMaxLength(64).IsRequired();
+        policy.Property(x => x.IsEnabled).IsRequired();
+        policy.Property(x => x.Version).IsConcurrencyToken();
+        policy.Property(x => x.UpdatedBy).HasMaxLength(200).IsRequired();
+        policy.Property(x => x.UpdatedAtUtc).IsRequired();
+        policy.HasIndex(x => new { x.TenantId, x.Scope, x.TargetId }).IsUnique();
+        policy.HasIndex(x => new { x.TenantId, x.IsEnabled });
+        policy.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+
+        var audit = modelBuilder.Entity<StorageQuotaPolicyChangeAuditEntry>();
+        audit.ToTable("platform_storage_quota_policy_changes");
+        audit.HasKey(x => x.Id);
+        audit.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        audit.Property(x => x.PolicyId).IsRequired();
+        audit.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+        audit.Property(x => x.ChangeType).HasMaxLength(32).IsRequired();
+        audit.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+        audit.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired();
+        audit.Property(x => x.OccurredAtUtc).IsRequired();
+        audit.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+        audit.HasIndex(x => new { x.PolicyId, x.TenantId });
+        audit.HasOne<StorageQuotaPolicy>().WithMany()
+            .HasForeignKey(x => new { x.PolicyId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
+        policy.HasAlternateKey(x => new { x.Id, x.TenantId });
+        audit.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>

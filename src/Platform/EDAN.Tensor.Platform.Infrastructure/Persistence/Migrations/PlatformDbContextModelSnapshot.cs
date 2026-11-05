@@ -330,6 +330,65 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<StorageQuotaPolicy>(entity =>
+        {
+            entity.ToTable("platform_storage_quota_policies");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.Scope).HasConversion<string>().HasMaxLength(24).IsRequired();
+            entity.Property(x => x.TargetId).IsRequired();
+            entity.Property(x => x.WarningThresholdPercent).IsRequired();
+            entity.Property(x => x.PlanCode).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.IsEnabled).IsRequired();
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.Property(x => x.UpdatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.Scope, x.TargetId }).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.IsEnabled });
+            entity.HasAlternateKey(x => new { x.Id, x.TenantId });
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<StorageQuotaPolicyChangeAuditEntry>(entity =>
+        {
+            entity.ToTable("platform_storage_quota_policy_changes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.PolicyId).IsRequired();
+            entity.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ChangeType).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.OccurredAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+            entity.HasIndex(x => new { x.PolicyId, x.TenantId });
+            entity.HasOne<StorageQuotaPolicy>().WithMany().HasForeignKey(x => new { x.PolicyId, x.TenantId }).HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<StorageQuotaPolicy>(entity =>
+        {
+            entity.ToTable("platform_storage_quota_policies"); entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.Scope).HasConversion<string>().HasMaxLength(24).IsRequired(); entity.Property(x => x.TargetId).IsRequired();
+            entity.Property(x => x.WarningThresholdPercent).IsRequired(); entity.Property(x => x.PlanCode).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.IsEnabled).IsRequired(); entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.Property(x => x.UpdatedBy).HasMaxLength(200).IsRequired(); entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.Scope, x.TargetId }).IsUnique(); entity.HasIndex(x => new { x.TenantId, x.IsEnabled });
+            entity.HasAlternateKey(x => new { x.Id, x.TenantId }); entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<StorageQuotaPolicyChangeAuditEntry>(entity =>
+        {
+            entity.ToTable("platform_storage_quota_policy_changes"); entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.PolicyId).IsRequired(); entity.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ChangeType).HasMaxLength(32).IsRequired(); entity.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired(); entity.Property(x => x.OccurredAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc }); entity.HasIndex(x => new { x.PolicyId, x.TenantId });
+            entity.HasOne<StorageQuotaPolicy>().WithMany().HasForeignKey(x => new { x.PolicyId, x.TenantId }).HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<AuthorizationAuditArchiveSchedule>(entity =>
         {
             entity.ToTable("platform_authorization_audit_archive_schedules");

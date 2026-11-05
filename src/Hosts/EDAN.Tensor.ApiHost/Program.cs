@@ -12,6 +12,8 @@ using EDAN.Tensor.DataSet.Infrastructure;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
@@ -106,6 +108,7 @@ var quotaAssignments = builder.Configuration.GetSection("DataSetContent:Quota:As
             section.GetValue<int?>("WarningThresholdPercent") ?? dataSetQuotaPolicy.WarningThresholdPercent)))
     .ToArray();
 builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy, quotaAssignments);
+builder.Services.AddScoped<IDataSetStorageQuotaPolicyProvider, PlatformDataSetStorageQuotaPolicyProvider>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
