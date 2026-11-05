@@ -88,6 +88,11 @@ public sealed class WorkerTaskExecutionCoordinator(
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            // Handler 시작 중 취소되어도 실행 Lease를 만료까지 방치하지 않습니다.
+            now = timeProvider.GetUtcNow();
+            await repository.TryFailAsync(
+                tenantId, taskId, leaseId, fencingToken, "worker.handler.start_cancelled",
+                now, now.AddMinutes(1), CancellationToken.None);
             throw;
         }
         catch
