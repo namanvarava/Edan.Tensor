@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace EDAN.Tensor.Worker.Application.Execution;
 
 public sealed class WorkerExecutionRegistry
@@ -43,6 +45,7 @@ public sealed class WorkerExecutionRegistry
         }
         catch (TimeoutException) { }
 
+        var handoffStartedAt = Stopwatch.GetTimestamp();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(handoffTimeout);
         var outcomes = await Task.WhenAll(active.Select(async execution =>
@@ -55,8 +58,12 @@ public sealed class WorkerExecutionRegistry
             catch (OperationCanceledException) when (timeout.IsCancellationRequested) { return false; }
             catch { return false; }
         }));
-        try { await _drained.Task.WaitAsync(handoffTimeout, cancellationToken); }
-        catch (TimeoutException) { }
+        var remainingHandoffTime = handoffTimeout - Stopwatch.GetElapsedTime(handoffStartedAt);
+        if (remainingHandoffTime > TimeSpan.Zero)
+        {
+            try { await _drained.Task.WaitAsync(remainingHandoffTime, cancellationToken); }
+            catch (TimeoutException) { }
+        }
         int remaining;
         lock (_sync) remaining = _active.Count;
         return new WorkerShutdownResult(false, outcomes.Length, outcomes.Count(x => x), remaining);
