@@ -34,7 +34,7 @@ public sealed class AuthorizationAuditArchiveJobService(
     }
 
     /// <summary>아카이브 체크섬을 확인하고 검증 결과를 실행 이력에 기록합니다.</summary>
-    public async Task<AuthorizationAuditArchiveJobVerification?> VerifyAsync(TenantId tenantId,
+    public async Task<AuthorizationAuditJobVerification?> VerifyAsync(TenantId tenantId,
         Guid jobId, string? expectedSha256, CancellationToken cancellationToken = default)
     {
         var job = await jobs.GetAsync(tenantId, jobId, cancellationToken);
