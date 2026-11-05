@@ -143,6 +143,57 @@ public sealed class SqliteDataSetStorageAdapterTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+
+    [Fact]
+    public async Task UsageReaderAggregatesOrganizationAcrossProjectsAndIsolatesProjectAndTenantScopes()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "edan-content-hierarchical-usage-" + Guid.NewGuid().ToString("N") + ".db");
+        try
+        {
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var tenantId = Guid.NewGuid();
+            var organizationId = Guid.NewGuid();
+            var firstProjectId = Guid.NewGuid();
+            var secondProjectId = Guid.NewGuid();
+            var otherOrganizationId = Guid.NewGuid();
+
+            var first = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()),
+                new DataSetScope(tenantId, organizationId, firstProjectId));
+            var second = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()),
+                new DataSetScope(tenantId, organizationId, secondProjectId));
+            var otherOrganization = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()),
+                new DataSetScope(tenantId, otherOrganizationId, Guid.NewGuid()));
+            var otherTenant = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()),
+                new DataSetScope(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+
+            foreach (var (allocation, payload) in new[]
+            {
+                (first, "first-project"),
+                (second, "second"),
+                (otherOrganization, "other-org"),
+                (otherTenant, "other-tenant")
+            })
+            {
+                var reference = await adapter.AllocateAsync(allocation);
+                await using var content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(payload));
+                await adapter.WriteAsync(allocation, reference, content, Unlimited());
+            }
+
+            var usage = await adapter.GetUsageAsync(first);
+            Assert.Equal(35, usage.TenantBytes);
+            Assert.Equal(3, usage.TenantDataSetCount);
+            Assert.Equal(25, usage.OrganizationBytes);
+            Assert.Equal(2, usage.OrganizationDataSetCount);
+            Assert.Equal(13, usage.ProjectBytes);
+            Assert.Equal(1, usage.ProjectDataSetCount);
+            Assert.Equal(13, usage.DataSetBytes);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
     private static DataSetStorageQuotaPolicy Unlimited() => new(null, null, null, null);
 
     private static DataSetStorageAllocation Allocation() =>
