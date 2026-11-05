@@ -40,7 +40,7 @@ public sealed class WorkerTask
     public long Version { get; private set; }
 
     /// <summary>새 작업을 생성합니다.</summary>
-    public static WorkerTask Create(TenantId tenantId, string taskType, string idempotencyKey,
+    public static WorkerTask Create(Guid tenantId, string taskType, string idempotencyKey,
         string payloadReference, DateTimeOffset nowUtc, int maxAttempts = 5)
     {
         if (maxAttempts is < 1 or > 100)
