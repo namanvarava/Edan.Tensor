@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Domain.Model;
@@ -98,13 +97,30 @@ internal sealed class WorkerTaskDispatcher(
             if (reachedEnd || !taskAfterId.HasValue)
                 _tenantTaskAfterIds.TryRemove(tenantId, out _);
             else
-                _tenantTaskAfterIds[tenantId] = taskAfterId.Value;
+                StoreTenantTaskCursor(tenantId, taskAfterId.Value);
 
             if (task is null) continue;
             var key = $"{tenantId:N}:{task.Id:N}";
             if (!TryMarkActive(key)) continue;
             slots--;
             _ = RunTaskAsync(key, tenantId, task.Id);
+        }
+    }
+
+    private void StoreTenantTaskCursor(Guid tenantId, Guid taskId)
+    {
+        _tenantTaskAfterIds[tenantId] = taskId;
+
+        // Removed tenants may never appear in a ready-tenant page again. Bound cursor memory
+        // and let an evicted tenant resume from the beginning on its next dispatch cycle.
+        var cursorLimit = Math.Clamp(configuration.GetValue("Worker:TenantTaskCursorLimit", 10_000), 500, 100_000);
+        if (_tenantTaskAfterIds.Count <= cursorLimit) return;
+
+        foreach (var candidateTenantId in _tenantTaskAfterIds.Keys)
+        {
+            if (candidateTenantId == tenantId) continue;
+            _tenantTaskAfterIds.TryRemove(candidateTenantId, out _);
+            if (_tenantTaskAfterIds.Count <= cursorLimit) break;
         }
     }
 
