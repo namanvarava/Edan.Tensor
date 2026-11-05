@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Primitives;
 
@@ -19,7 +20,8 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         Version = 1;
     }
 
-    public DataSetScope Scope { get; private set; } = null!;
+    [NotMapped]
+    public DataSetScope Scope => new(TenantId, OrganizationId, ProjectId);
     // 복합 객체 속성은 EF 인덱스 키로 직접 사용할 수 없어 조회·인덱싱용 스칼라 키를 함께 유지합니다.
     public Guid TenantId { get; private set; }
     public Guid OrganizationId { get; private set; }
@@ -46,7 +48,6 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         ArgumentNullException.ThrowIfNull(storageReference);
         var dataSet = new DataSet(id, name, storageAdapter)
         {
-            Scope = scope,
             TenantId = scope.TenantId,
             OrganizationId = scope.OrganizationId,
             ProjectId = scope.ProjectId,
