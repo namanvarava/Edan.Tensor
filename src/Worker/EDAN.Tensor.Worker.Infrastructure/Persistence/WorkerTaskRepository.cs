@@ -91,13 +91,34 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         try
         {
             await db.Entry(task).ReloadAsync(cancellationToken);
-            if (db.Entry(task).State == EntityState.Detached) return null;
+        }
+        catch
+        {
+            db.Entry(task).State = EntityState.Detached;
+            throw;
+        }
+        if (db.Entry(task).State == EntityState.Detached) return null;
+
+        try
+        {
             task.AcquireLease(workerId, leaseId, nowUtc, expiresAtUtc);
+        }
+        catch (InvalidOperationException)
+        {
+            db.Entry(task).State = EntityState.Detached;
+            return null;
+        }
+
+        try
+        {
             await db.SaveChangesAsync(cancellationToken);
             return task;
         }
-        catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return null; }
-        catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return null; }
+        catch (DbUpdateConcurrencyException)
+        {
+            db.Entry(task).State = EntityState.Detached;
+            return null;
+        }
         catch
         {
             // 저장 실패나 취소 후 변경된 추적 엔티티가 이후 SaveChanges에 섞이지 않도록 분리합니다.
@@ -129,13 +150,35 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         {
             // Another scoped DbContext may have renewed the lease and advanced the concurrency version.
             await db.Entry(task).ReloadAsync(cancellationToken);
-            if (db.Entry(task).State == EntityState.Detached) return false;
+        }
+        catch
+        {
+            db.Entry(task).State = EntityState.Detached;
+            throw;
+        }
+        if (db.Entry(task).State == EntityState.Detached) return false;
+
+        try
+        {
             mutation(task);
+        }
+        catch (InvalidOperationException)
+        {
+            // 도메인 전이 거부만 정상적인 mutation 실패(false)로 변환합니다.
+            db.Entry(task).State = EntityState.Detached;
+            return false;
+        }
+
+        try
+        {
             await db.SaveChangesAsync(cancellationToken);
             return true;
         }
-        catch (InvalidOperationException) { db.Entry(task).State = EntityState.Detached; return false; }
-        catch (DbUpdateConcurrencyException) { db.Entry(task).State = EntityState.Detached; return false; }
+        catch (DbUpdateConcurrencyException)
+        {
+            db.Entry(task).State = EntityState.Detached;
+            return false;
+        }
         catch
         {
             // DB 예외 및 취소도 실패한 도메인 변경을 추적기에서 제거한 뒤 호출자에게 전달합니다.
