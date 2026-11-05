@@ -192,14 +192,20 @@ public sealed class PlatformInfrastructureTests
         Assert.False(await repository.RenewLeaseAsync(tenant.Id, secondLease,
             now.AddMinutes(31), now.AddMinutes(61)));
 
-        await repository.CompleteAsync(tenant.Id, firstLease,
-            now.AddMinutes(12), now.AddMinutes(1), succeeded: true);
+        Assert.False(await repository.RenewLeaseAsync(tenant.Id, firstLease,
+            now.AddMinutes(41), now.AddMinutes(71)));
+        Assert.True(await repository.TryAcquireAsync(tenant.Id, secondLease,
+            now.AddMinutes(41), now.AddMinutes(71)));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.CompleteAsync(
+            tenant.Id, firstLease, now.AddMinutes(42), now.AddMinutes(1), succeeded: true));
+        await repository.CompleteAsync(tenant.Id, secondLease,
+            now.AddMinutes(42), now.AddMinutes(1), succeeded: true);
         db.ChangeTracker.Clear();
         var updated = await repository.GetAsync(tenant.Id);
         Assert.NotNull(updated);
         Assert.Null(updated.LeaseId);
         Assert.Equal(now.AddMinutes(1), updated.LastRunAtUtc);
-        Assert.Equal(now.AddHours(1).AddMinutes(12), updated.NextRunAtUtc);
+        Assert.Equal(now.AddHours(1).AddMinutes(42), updated.NextRunAtUtc);
         Assert.False(await repository.RenewLeaseAsync(tenant.Id, firstLease,
             now.AddMinutes(13), now.AddMinutes(43)));
     }
