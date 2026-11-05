@@ -1,6 +1,7 @@
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.DataSet.Application.UseCases;
 using EDAN.Tensor.DataSet.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
