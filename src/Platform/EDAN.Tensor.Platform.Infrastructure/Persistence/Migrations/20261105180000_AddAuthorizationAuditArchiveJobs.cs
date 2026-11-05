@@ -36,6 +36,7 @@ public sealed class AddAuthorizationAuditArchiveJobs : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_platform_authorization_audit_archive_jobs", x => x.Id);
+                table.UniqueConstraint("AK_platform_authorization_audit_archive_jobs_Id_TenantId", x => new { x.Id, x.TenantId });
                 table.ForeignKey("FK_platform_authorization_audit_archive_jobs_platform_tenants_TenantId",
                     x => x.TenantId, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
             });
@@ -57,8 +58,9 @@ public sealed class AddAuthorizationAuditArchiveJobs : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_platform_authorization_audit_archive_attempts", x => x.Id);
-                table.ForeignKey("FK_platform_authorization_audit_archive_attempts_platform_authorization_audit_archive_jobs_JobId",
-                    x => x.JobId, "platform_authorization_audit_archive_jobs", "Id", onDelete: ReferentialAction.Restrict);
+                table.ForeignKey("FK_platform_authorization_audit_archive_attempts_platform_authorization_audit_archive_jobs_JobId_TenantId",
+                    x => new { x.JobId, x.TenantId }, "platform_authorization_audit_archive_jobs",
+                    new[] { "Id", "TenantId" }, onDelete: ReferentialAction.Restrict);
                 table.ForeignKey("FK_platform_authorization_audit_archive_attempts_platform_tenants_TenantId",
                     x => x.TenantId, "platform_tenants", "Id", onDelete: ReferentialAction.Restrict);
             });
@@ -67,8 +69,8 @@ public sealed class AddAuthorizationAuditArchiveJobs : Migration
             "platform_authorization_audit_archive_jobs", new[] { "TenantId", "CreatedAtUtc" });
         migrationBuilder.CreateIndex("IX_platform_authorization_audit_archive_attempts_TenantId_JobId_StartedAtUtc",
             "platform_authorization_audit_archive_attempts", new[] { "TenantId", "JobId", "StartedAtUtc" });
-        migrationBuilder.CreateIndex("IX_platform_authorization_audit_archive_attempts_JobId",
-            "platform_authorization_audit_archive_attempts", "JobId");
+        migrationBuilder.CreateIndex("IX_platform_authorization_audit_archive_attempts_JobId_TenantId",
+            "platform_authorization_audit_archive_attempts", new[] { "JobId", "TenantId" });
     }
 
     /// <summary>아카이브 작업과 실행 이력 테이블을 제거합니다.</summary>
