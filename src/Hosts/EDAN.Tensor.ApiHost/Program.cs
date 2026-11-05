@@ -69,6 +69,19 @@ if (!Path.IsPathRooted(dataSetSqliteConnection.DataSource) && dataSetSqliteConne
 builder.Services.AddDataSetInfrastructure(options =>
     options.UseSqlite(dataSetSqliteConnection.ConnectionString,
         sqlite => sqlite.MigrationsAssembly(typeof(DataSetDbContext).Assembly.FullName)));
+
+// 콘텐츠 본문은 DataSet 메타데이터와 분리된 전용 SQLite DB에 저장합니다.
+var dataSetContentConnectionString = builder.Configuration.GetConnectionString("DataSetContentDatabase")
+    ?? "Data Source=App_Data/edan-tensor-dataset-content.db;Cache=Shared";
+var dataSetContentSqliteConnection = new SqliteConnectionStringBuilder(dataSetContentConnectionString);
+if (!Path.IsPathRooted(dataSetContentSqliteConnection.DataSource) && dataSetContentSqliteConnection.DataSource != ":memory:")
+{
+    dataSetContentSqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, dataSetContentSqliteConnection.DataSource);
+    var contentDirectory = Path.GetDirectoryName(dataSetContentSqliteConnection.DataSource);
+    if (!string.IsNullOrWhiteSpace(contentDirectory))
+        Directory.CreateDirectory(contentDirectory);
+}
+builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString);
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();

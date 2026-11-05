@@ -40,7 +40,7 @@ public sealed class DataSetManagementService(
             }
             catch
             {
-                await adapter.ReleaseAsync(reference, CancellationToken.None);
+                await adapter.ReleaseAsync(new DataSetStorageAllocation(id, scope), reference, CancellationToken.None);
                 throw;
             }
         }

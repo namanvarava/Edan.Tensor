@@ -7,10 +7,12 @@ public interface IDataSetStorageAdapter
 {
     string AdapterId { get; }
     Task<StorageReference> AllocateAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default);
-    Task ReleaseAsync(StorageReference reference, CancellationToken cancellationToken = default);
+    Task WriteAsync(DataSetStorageAllocation allocation, StorageReference reference, Stream content, CancellationToken cancellationToken = default);
+    Task<Stream?> OpenReadAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default);
+    Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default);
 }
 
-/// <summary>저장소 할당에 필요한 논리 식별자만 전달합니다.</summary>
+/// <summary>저장소 작업은 DataSet ID와 소유 범위를 함께 전달하여 교차 Tenant 접근을 방지합니다.</summary>
 public sealed record DataSetStorageAllocation(DataSetId DataSetId, DataSetScope Scope);
 
 /// <summary>설정된 저장소 어댑터를 조회하는 계약입니다.</summary>
