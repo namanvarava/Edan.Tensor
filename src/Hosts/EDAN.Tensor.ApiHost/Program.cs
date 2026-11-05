@@ -2,12 +2,15 @@ using EDAN.Tensor.Platform.Application.DependencyInjection;
 using EDAN.Tensor.ApiHost.BackgroundServices;
 using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.ApiHost.Security;
+using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure;
+using EDAN.Tensor.DataSet.Application.Abstractions;
+using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
@@ -29,6 +32,8 @@ if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSour
 }
 
 builder.Services.AddPlatformApplication();
+builder.Services.AddDataSetApplication();
+builder.Services.AddScoped<IDataSetScopeValidator, PlatformDataSetScopeValidator>();
 builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
 builder.Services.AddPlatformSecurity(builder.Configuration);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
@@ -113,6 +118,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPlatformEndpoints();
 app.MapWorkerEndpoints();
+app.MapDataSetEndpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
 app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken cancellationToken) =>

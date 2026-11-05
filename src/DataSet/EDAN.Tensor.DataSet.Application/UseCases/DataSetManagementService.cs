@@ -49,6 +49,10 @@ public sealed class DataSetManagementService(
         catch (InvalidOperationException ex) { return Failure<DataSetId>("dataset.operation_failed", ex.Message); }
     }
 
+    /// <summary>Tenant 범위에서 DataSet 메타데이터를 조회합니다.</summary>
+    public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
+        repository.GetAsync(id, tenantId, cancellationToken);
+
     /// <summary>Tenant 범위가 일치하는 DataSet에 새 스키마 버전을 추가합니다.</summary>
     public async Task<Result<int>> AddSchemaAsync(
         DataSetId id, Guid tenantId, string schemaJson, DateTimeOffset nowUtc,
