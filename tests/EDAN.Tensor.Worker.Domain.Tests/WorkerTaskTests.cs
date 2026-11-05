@@ -97,6 +97,25 @@ public sealed class WorkerTaskTests
         Assert.Equal(WorkerTaskStatus.Leased, task.Status);
     }
 
+    [Theory]
+    [InlineData(7)]
+    [InlineData(10)]
+    public void RenewalCannotShortenOrPreserveLeaseExpiry(int expiryMinute)
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(10));
+        var version = task.Version;
+        var now = Now.AddMinutes(2);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            task.RenewLease(leaseId, token, now, Now.AddMinutes(expiryMinute)));
+
+        Assert.Equal(Now.AddMinutes(10), task.LeaseExpiresAtUtc);
+        Assert.Equal(WorkerTaskStatus.Leased, task.Status);
+        Assert.Equal(version, task.Version);
+    }
+
     [Fact]
     public void FailedTaskSchedulesRetryUntilAttemptLimitThenMovesToDeadLetter()
     {

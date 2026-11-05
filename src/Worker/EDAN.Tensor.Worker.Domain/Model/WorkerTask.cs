@@ -120,6 +120,8 @@ public sealed class WorkerTask
         EnsureLease(leaseId, fencingToken, nowUtc);
         if (expiresAtUtc.ToUniversalTime() <= nowUtc.ToUniversalTime())
             throw new ArgumentOutOfRangeException(nameof(expiresAtUtc), "임대 만료 시각은 현재 시각보다 늦어야 합니다.");
+        if (expiresAtUtc.ToUniversalTime() <= LeaseExpiresAtUtc!.Value.ToUniversalTime())
+            throw new ArgumentOutOfRangeException(nameof(expiresAtUtc), "갱신 만료 시각은 기존 임대 만료 시각보다 늦어야 합니다.");
         LeaseExpiresAtUtc = expiresAtUtc.ToUniversalTime();
         Version++;
     }
