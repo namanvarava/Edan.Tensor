@@ -32,6 +32,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
     }
