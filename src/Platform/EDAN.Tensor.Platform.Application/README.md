@@ -25,3 +25,10 @@
 - Tenant 소속만 가진 Member는 조직·프로젝트 범위 자원을 생성할 수 없습니다.
 
 저장소와 Unit of Work는 인터페이스로 추상화하며, 실제 데이터베이스 구현은 Infrastructure 계층에서 담당합니다.
+
+
+## 감사 아카이브
+
+- `AuthorizationAuditArchiveService`는 Tenant별 권한 감사 기록을 기간 단위 JSON 아카이브로 생성하고 SHA-256 무결성을 검증합니다.
+- `IAuthorizationAuditArchiveStore`로 저장소 구현을 분리하며 파일 시스템 Adapter는 Infrastructure에서 제공합니다.
+- 아카이브 생성과 검증은 원본 감사 기록을 변경하거나 삭제하지 않습니다.
