@@ -107,11 +107,29 @@ public sealed class WorkerTask
     }
 
     /// <summary>작업을 완료하고 실행 소유권을 해제합니다.</summary>
-    public void ReportProgress(Guid leaseId, long fencingToken, int percentage, string stage, string? message, DateTimeOffset nowUtc)\n    {\n        EnsureLease(leaseId, fencingToken, nowUtc);\n        if (Status is not (WorkerTaskStatus.Running or WorkerTaskStatus.Checkpointed))\n            throw new InvalidOperationException("실행 중인 작업만 진행률을 보고할 수 있습니다.");\n        if (percentage is < 0 or > 100)\n            throw new ArgumentOutOfRangeException(nameof(percentage), "진행률은 0~100이어야 합니다.");\n        ProgressStage = ValidateText(stage, 120, nameof(stage));\n        if (message is not null && message.Length > 500)\n            throw new ArgumentException("진행 메시지는 500자를 초과할 수 없습니다.", nameof(message));\n        ProgressMessage = message?.Trim();\n        ProgressPercent = percentage;\n        Version++;\n    }\n\n    public void Complete(Guid leaseId, long fencingToken, DateTimeOffset nowUtc, string? resultReference = null)
+    public void ReportProgress(Guid leaseId, long fencingToken, int percentage, string stage, string? message, DateTimeOffset nowUtc)
+    {
+        EnsureLease(leaseId, fencingToken, nowUtc);
+        if (Status is not (WorkerTaskStatus.Running or WorkerTaskStatus.Checkpointed))
+            throw new InvalidOperationException("실행 중인 작업만 진행률을 보고할 수 있습니다.");
+        if (percentage is < 0 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(percentage), "진행률은 0~100이어야 합니다.");
+        ProgressStage = ValidateText(stage, 120, nameof(stage));
+        if (message is not null && message.Length > 500)
+            throw new ArgumentException("진행 메시지는 500자를 초과할 수 없습니다.", nameof(message));
+        ProgressMessage = message?.Trim();
+        ProgressPercent = percentage;
+        Version++;
+    }
+
+    public void Complete(Guid leaseId, long fencingToken, DateTimeOffset nowUtc, string? resultReference = null)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
         if (Status is not (WorkerTaskStatus.Running or WorkerTaskStatus.Checkpointed))
             throw new InvalidOperationException("실행 중인 작업만 완료할 수 있습니다.");
+        if (resultReference is not null)
+            ResultReference = ValidateText(resultReference, 500, nameof(resultReference));
+        ProgressPercent = 100;
         Status = WorkerTaskStatus.Succeeded;
         CompletedAtUtc = nowUtc.ToUniversalTime();
         ClearLease();

@@ -18,8 +18,10 @@ public interface IWorkerTaskRepository
         string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     Task<bool> TryRenewLeaseAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
         DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
+    Task<bool> TryReportProgressAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        int percentage, string stage, string? message, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     Task<bool> TryCompleteAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
-        DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+        DateTimeOffset nowUtc, string? resultReference = null, CancellationToken cancellationToken = default);
     Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,
         DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default);
     Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,

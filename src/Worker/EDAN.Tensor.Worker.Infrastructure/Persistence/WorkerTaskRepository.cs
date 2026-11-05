@@ -101,9 +101,14 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         MutateAsync(tenantId, taskId,
             task => task.RenewLease(leaseId, fencingToken, nowUtc, expiresAtUtc), cancellationToken);
 
+    public Task<bool> TryReportProgressAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+        int percentage, string stage, string? message, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId,
+            task => task.ReportProgress(leaseId, fencingToken, percentage, stage, message, nowUtc), cancellationToken);
+
     public Task<bool> TryCompleteAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
-        DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
-        MutateAsync(tenantId, taskId, task => task.Complete(leaseId, fencingToken, nowUtc), cancellationToken);
+        DateTimeOffset nowUtc, string? resultReference = null, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.Complete(leaseId, fencingToken, nowUtc, resultReference), cancellationToken);
 
     public Task<bool> TryFailAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string errorCode,
         DateTimeOffset nowUtc, DateTimeOffset retryAtUtc, CancellationToken cancellationToken = default) =>

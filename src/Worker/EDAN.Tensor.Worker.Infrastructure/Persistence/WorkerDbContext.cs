@@ -37,7 +37,11 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.Property(x => x.CompletedAtUtc);
         entity.Property(x => x.NextAttemptAtUtc);
         entity.Property(x => x.WorkerId).HasMaxLength(200);
-        entity.Property(x => x.Checkpoint).HasMaxLength(4000);\n        entity.Property(x => x.ProgressPercent).IsRequired();\n        entity.Property(x => x.ProgressStage).HasMaxLength(120);\n        entity.Property(x => x.ProgressMessage).HasMaxLength(500);\n        entity.Property(x => x.ResultReference).HasMaxLength(500);
+        entity.Property(x => x.Checkpoint).HasMaxLength(4000);
+        entity.Property(x => x.ProgressPercent).IsRequired();
+        entity.Property(x => x.ProgressStage).HasMaxLength(120);
+        entity.Property(x => x.ProgressMessage).HasMaxLength(500);
+        entity.Property(x => x.ResultReference).HasMaxLength(500);\n        entity.Property(x => x.ProgressPercent).IsRequired();\n        entity.Property(x => x.ProgressStage).HasMaxLength(120);\n        entity.Property(x => x.ProgressMessage).HasMaxLength(500);\n        entity.Property(x => x.ResultReference).HasMaxLength(500);
         entity.Property(x => x.LastErrorCode).HasMaxLength(200);
         entity.Property(x => x.Version).IsConcurrencyToken();
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();

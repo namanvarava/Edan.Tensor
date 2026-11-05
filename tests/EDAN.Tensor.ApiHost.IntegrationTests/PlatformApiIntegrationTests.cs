@@ -445,7 +445,9 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal("Pending", taskStatus.GetProperty("status").GetString());
         Assert.Equal(0, taskStatus.GetProperty("attemptCount").GetInt32());
         Assert.False(taskStatus.TryGetProperty("payloadReference", out _));
-        Assert.False(taskStatus.TryGetProperty("checkpoint", out _));\n        Assert.Equal(0, taskStatus.GetProperty("progressPercent").GetInt32());\n        Assert.False(taskStatus.GetProperty("hasResult").GetBoolean());
+        Assert.False(taskStatus.TryGetProperty("checkpoint", out _));
+        Assert.Equal(0, taskStatus.GetProperty("progressPercent").GetInt32());
+        Assert.False(taskStatus.GetProperty("hasResult").GetBoolean());
 
         using var crossTenantTaskStatus = await client.GetAsync(
             $"/api/platform/tenants/{Guid.NewGuid()}/worker/tasks/{enqueuedTaskId}");

@@ -20,7 +20,8 @@ public static class WorkerInfrastructureExtensions
         services.AddScoped<WorkerTaskRepository>();
         services.AddScoped<IWorkerTaskRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
         services.AddScoped<IWorkerTaskDeadLetterRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
-        services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();\n        services.AddScoped<WorkerTaskProgressReporter>();
+        services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
+        services.AddScoped<WorkerTaskProgressReporter>();\n        services.AddScoped<WorkerTaskProgressReporter>();
         return services;
     }
 
