@@ -69,6 +69,35 @@ public sealed class WorkerTaskTests
     }
 
     [Fact]
+    public void ExpiredLeaseCannotBeRenewed()
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(1));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            task.RenewLease(leaseId, token, Now.AddMinutes(1), Now.AddMinutes(10)));
+
+        Assert.Equal(Now.AddMinutes(1), task.LeaseExpiresAtUtc);
+        Assert.Equal(WorkerTaskStatus.Leased, task.Status);
+    }
+
+    [Fact]
+    public void RenewalWithNonFutureExpiryDoesNotMutateLease()
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(10));
+        var now = Now.AddMinutes(2);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            task.RenewLease(leaseId, token, now, now));
+
+        Assert.Equal(Now.AddMinutes(10), task.LeaseExpiresAtUtc);
+        Assert.Equal(WorkerTaskStatus.Leased, task.Status);
+    }
+
+    [Fact]
     public void FailedTaskSchedulesRetryUntilAttemptLimitThenMovesToDeadLetter()
     {
         var task = Create(maxAttempts: 2);
