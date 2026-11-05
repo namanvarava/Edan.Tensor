@@ -2,7 +2,7 @@
 
 ## 목적과 범위
 
-이 문서는 WorkerHost의 작업 수명주기, 비정상 종료 복구, Dead Letter Queue(DLQ), 정상 종료 시 작업 인계에 필요한 구현 계약을 정의합니다. 현재 WorkerHost는 기초 호스트만 제공하므로 이 문서는 구현 완료 보고가 아니라 3-24 단계의 설계 기준입니다.
+이 문서는 WorkerHost의 작업 수명주기, 비정상 종료 복구, Dead Letter Queue(DLQ), 정상 종료 시 작업 인계에 필요한 구현 계약과 운영 설정을 정의합니다. Domain 상태 전이, 영속 Lease/체크포인트, 재시도·DLQ, 실행 Registry 및 디스패처가 구현되어 있으며, 아래 핵심 보장과 검증 기준은 지속적인 회귀 검증을 위한 계약으로 유지합니다.
 
 작업 저장소는 플랫폼 메타데이터 저장소와 분리 가능한 계약으로 설계합니다. 초기 SQLite 구현은 플랫폼 메타데이터 DB를 사용할 수 있지만, 작업량 증가 시 전용 저장소나 메시지 브로커로 이전할 수 있어야 합니다.
 
@@ -89,3 +89,32 @@ DLQ 항목은 원본 작업 식별자, TenantId, 마지막 오류 코드, 오류
 6. 강제 종료·Lease 만료·중복 전달·다중 Worker 경쟁 통합 테스트
 
 완료 기준은 정상 종료뿐 아니라 체크포인트 저장 실패, Lease 만료, 오래된 Worker의 쓰기 거부, 외부 전달 응답 유실, 프로세스 강제 종료 후 복구, Tenant 간 작업 격리까지 자동 테스트로 입증하는 것입니다.
+
+
+## WorkerHost 디스패처 운영 설정
+
+WorkerHost는 다음 설정을 사용합니다. 설정값은 코드에서 안전 범위로 제한되며, 범위를 벗어난 값은 아래 clamp 범위의 최솟값 또는 최댓값으로 보정됩니다.
+
+| 설정 키 | 기본값 | 허용 범위 | 목적 |
+| --- | ---: | ---: | --- |
+| `Worker:PollIntervalSeconds` | 5 | 1–60초 | 디스패처의 반복 조회 간격 |
+| `Worker:MaxConcurrentTasks` | 4 | 1–128 | Worker 프로세스의 동시 실행 작업 상한 |
+| `Worker:LeaseRecoveryBatchSize` | 100 | 1–500 | 한 번의 디스패치 주기에서 복구할 만료 Lease 최대 건수 |
+| `Worker:TenantCandidateBatchSize` | 16 | 1–100 | Tenant별 준비 작업 조회 배치 크기 |
+| `Worker:TenantCandidateScanLimit` | 500 | 배치 크기–5,000 | Tenant별 한 주기에서 검사할 후보 작업 상한 |
+| `Worker:TenantTaskCursorLimit` | 10,000 | 500–100,000 | Tenant별 작업 순회 커서 메모리 상한 |
+| `Worker:LeaseSeconds` | 300 | 3–3,600초 | 작업 Lease 유효 기간 |
+| `Worker:ShutdownGraceSeconds` | 30 | 1–300초 | 정상 완료를 기다리는 종료 유예 시간 |
+| `Worker:ShutdownHandoffSeconds` | 15 | 1–120초 | 체크포인트/인계 및 남은 실행 정리에 사용하는 전체 추가 시간 예산 |
+
+### Tenant 작업 커서 관리
+
+디스패처는 Tenant 목록과 Tenant별 작업 목록에 keyset cursor를 사용하여 매 주기마다 처음부터 전체 후보를 조회하지 않습니다. 작업 커서는 해당 Tenant의 후보를 이어서 조회하기 위한 프로세스 내 메모리 상태이며, 영속 작업 상태나 Lease 소유권을 대신하지 않습니다.
+
+준비 Tenant 수가 장기간 증가하거나 삭제된 Tenant의 커서가 남는 경우를 대비해 `Worker:TenantTaskCursorLimit`으로 커서 수를 제한합니다. 상한을 넘으면 현재 처리 중인 Tenant를 제외한 일부 커서를 제거합니다. 제거된 Tenant는 다음 조회에서 처음부터 후보 순회를 재개할 수 있으므로 추가 조회 비용이 발생할 수 있지만, 작업의 영속 상태와 Lease 기반 정합성에는 영향을 주지 않습니다. 이 설정을 낮게 조정하면 메모리 사용량은 줄지만 후보 재검색이 늘어날 수 있습니다.
+
+### 종료 시간 예산
+
+`Worker:ShutdownHandoffSeconds`는 Registry의 인계 요청과 디스패처의 남은 실행 정리가 공유하는 단일 시간 예산입니다. Registry가 소비한 시간(`HandoffElapsed`)을 차감한 나머지 시간만 디스패처가 기다립니다. 따라서 두 단계가 각각 전체 인계 제한 시간을 다시 소비하여 종료가 설정값의 두 배까지 늘어나는 동작을 피합니다.
+
+운영 환경에서는 작업 처리 시간, Tenant 수, DB 성능 및 재시도 부하를 관찰한 뒤 동시 실행 수와 후보 스캔 상한을 조정합니다. 동시 실행 수만 크게 높이면 DB 연결·외부 시스템 부하가 함께 증가할 수 있으므로, 작업 처리량과 저장소 용량을 함께 검증해야 합니다.
