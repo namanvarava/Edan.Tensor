@@ -63,14 +63,25 @@ public static class DataSetEndpoints
         }).WithName("GetDataSet");
 
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
-            AddDataSetSchemaRequest request, DataSetManagementService service, CancellationToken token) =>
+            AddDataSetSchemaRequest request, DataSetManagementService service, ILogger<DataSetEndpoints> logger,
+            IWebHostEnvironment environment, CancellationToken token) =>
         {
-            var result = await service.AddSchemaAsync(new DataSetId(dataSetId), tenantId,
-                request.SchemaJson, DateTimeOffset.UtcNow, token);
-            return result.IsSuccess
-                ? Results.Created($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}",
-                    new { DataSetId = dataSetId, SchemaVersion = result.Value })
-                : Results.BadRequest(new { result.Error.Code, result.Error.Description });
+            try
+            {
+                var result = await service.AddSchemaAsync(new DataSetId(dataSetId), tenantId,
+                    request.SchemaJson, DateTimeOffset.UtcNow, token);
+                return result.IsSuccess
+                    ? Results.Created($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}",
+                        new { DataSetId = dataSetId, SchemaVersion = result.Value })
+                    : Results.BadRequest(new { result.Error.Code, result.Error.Description });
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "DataSet schema registration failed for {DataSetId}", dataSetId);
+                return environment.IsDevelopment()
+                    ? Results.Problem(detail: exception.ToString())
+                    : Results.Problem(title: "DataSet schema registration failed");
+            }
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("AddDataSetSchema");
 
         tenantGroup.MapPost("/{dataSetId:guid}/activate", async (Guid tenantId, Guid dataSetId,
