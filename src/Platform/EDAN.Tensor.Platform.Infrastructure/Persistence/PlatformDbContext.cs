@@ -24,7 +24,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationAuditArchiveJob> AuthorizationAuditArchiveJobs => Set<AuthorizationAuditArchiveJob>();
     public DbSet<AuthorizationAuditArchiveAttempt> AuthorizationAuditArchiveAttempts => Set<AuthorizationAuditArchiveAttempt>();
     public DbSet<AuthorizationAuditArchiveSchedule> AuthorizationAuditArchiveSchedules => Set<AuthorizationAuditArchiveSchedule>();
-    public DbSet<WorkerTask> WorkerTasks => Set<WorkerTask>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,7 +44,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationAuditRetention(modelBuilder);
         ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
         ConfigureAuthorizationAuditArchiveSchedule(modelBuilder);
-        ConfigureWorkerTask(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
