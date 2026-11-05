@@ -76,6 +76,15 @@ public static class WorkerEndpoints
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>()
             .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        taskGroup.MapGet("/{taskId:guid}", async (Guid tenantId, Guid taskId,
+            WorkerTaskQueryService service, CancellationToken token) =>
+        {
+            var task = await service.GetAsync(tenantId, taskId, token);
+            return task is null
+                ? Results.NotFound(new { Code = "worker.task.not_found", Description = "Tenant의 작업을 찾을 수 없습니다." })
+                : Results.Ok(task);
+        }).WithName("GetWorkerTaskStatus");
+
         taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
             EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>
         {

@@ -42,6 +42,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/retry", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
@@ -434,6 +435,21 @@ public sealed class PlatformApiIntegrationTests
         using var enqueueDocument = await JsonDocument.ParseAsync(await enqueueResponse.Content.ReadAsStreamAsync());
         var enqueuedTaskId = enqueueDocument.RootElement.GetProperty("id").GetGuid();
         Assert.False(enqueueDocument.RootElement.TryGetProperty("payloadReference", out _));
+
+        using var taskStatusResponse = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks/{enqueuedTaskId}");
+        Assert.Equal(HttpStatusCode.OK, taskStatusResponse.StatusCode);
+        using var taskStatusDocument = await JsonDocument.ParseAsync(await taskStatusResponse.Content.ReadAsStreamAsync());
+        var taskStatus = taskStatusDocument.RootElement;
+        Assert.Equal(enqueuedTaskId, taskStatus.GetProperty("id").GetGuid());
+        Assert.Equal("Pending", taskStatus.GetProperty("status").GetString());
+        Assert.Equal(0, taskStatus.GetProperty("attemptCount").GetInt32());
+        Assert.False(taskStatus.TryGetProperty("payloadReference", out _));
+        Assert.False(taskStatus.TryGetProperty("checkpoint", out _));
+
+        using var crossTenantTaskStatus = await client.GetAsync(
+            $"/api/platform/tenants/{Guid.NewGuid()}/worker/tasks/{enqueuedTaskId}");
+        Assert.Equal(HttpStatusCode.NotFound, crossTenantTaskStatus.StatusCode);
 
         using var duplicateEnqueue = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/worker/tasks",
