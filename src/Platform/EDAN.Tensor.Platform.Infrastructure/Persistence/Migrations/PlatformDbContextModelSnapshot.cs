@@ -300,6 +300,7 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.Sha256).HasMaxLength(64);
             entity.Property(x => x.FailureReason).HasMaxLength(500);
             entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasAlternateKey(x => new { x.Id, x.TenantId });
             entity.HasIndex(x => new { x.TenantId, x.CreatedAtUtc });
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -313,7 +314,11 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.Property(x => x.StartedAtUtc).IsRequired();
             entity.Property(x => x.ResultCode).HasMaxLength(200);
             entity.HasIndex(x => new { x.TenantId, x.JobId, x.StartedAtUtc });
-            entity.HasOne<AuthorizationAuditArchiveJob>().WithMany().HasForeignKey(x => x.JobId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => new { x.JobId, x.TenantId });
+            entity.HasOne<AuthorizationAuditArchiveJob>().WithMany()
+                .HasForeignKey(x => new { x.JobId, x.TenantId })
+                .HasPrincipalKey(x => new { x.Id, x.TenantId })
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
