@@ -7,6 +7,8 @@
     <ProjectReference Include="../../Commercial/EDAN.Tensor.Commercial.Infrastructure/EDAN.Tensor.Commercial.Infrastructure.csproj" />
     <ProjectReference Include="../../Commercial/EDAN.Tensor.Commercial.Contracts/EDAN.Tensor.Commercial.Contracts.csproj" />
     <ProjectReference Include="../../Licensing/EDAN.Tensor.Licensing.Contracts/EDAN.Tensor.Licensing.Contracts.csproj" />
+    <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Application/EDAN.Tensor.Worker.Application.csproj" />
+    <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />

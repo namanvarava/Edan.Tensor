@@ -400,6 +400,8 @@ public sealed class PlatformApiIntegrationTests
             Path.GetTempPath(), $"edan-tensor-api-{Guid.NewGuid():N}.db");
         private readonly string _archivePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-archives-{Guid.NewGuid():N}");
+        private readonly string _workerDatabasePath = Path.Combine(
+            Path.GetTempPath(), $"edan-tensor-worker-{Guid.NewGuid():N}.db");
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -409,6 +411,7 @@ public sealed class PlatformApiIntegrationTests
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
+                    ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
@@ -431,6 +434,8 @@ public sealed class PlatformApiIntegrationTests
             base.Dispose(disposing);
             if (disposing && File.Exists(_databasePath))
                 File.Delete(_databasePath);
+            if (disposing && File.Exists(_workerDatabasePath))
+                File.Delete(_workerDatabasePath);
             if (disposing && Directory.Exists(_archivePath))
                 Directory.Delete(_archivePath, recursive: true);
         }

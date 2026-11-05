@@ -4,6 +4,9 @@ using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
+using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
@@ -33,6 +36,23 @@ if (!Path.IsPathRooted(archivePath))
 
 builder.Services.AddPlatformInfrastructure(
     options => options.UseSqlite(sqliteConnection.ConnectionString), archivePath);
+
+// Worker 작업 저장소는 Platform 메타데이터와 분리된 전용 연결을 사용합니다.
+var workerConnectionString = builder.Configuration.GetConnectionString("WorkerDatabase")
+    ?? "Data Source=edan-worker.db";
+var workerSqliteConnection = new SqliteConnectionStringBuilder(workerConnectionString);
+if (!Path.IsPathRooted(workerSqliteConnection.DataSource) && workerSqliteConnection.DataSource != ":memory:")
+{
+    workerSqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, workerSqliteConnection.DataSource);
+    var workerDirectory = Path.GetDirectoryName(workerSqliteConnection.DataSource);
+    if (!string.IsNullOrWhiteSpace(workerDirectory))
+        Directory.CreateDirectory(workerDirectory);
+}
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddWorkerInfrastructure(options =>
+    options.UseSqlite(workerSqliteConnection.ConnectionString,
+        sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
+builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
@@ -45,6 +65,8 @@ if (app.Environment.IsDevelopment()
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
     await db.Database.MigrateAsync();
+    var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+    await workerDb.Database.MigrateAsync();
 }
 
 // OpenAPI 문서는 개발 환경에서만 제공하여 운영 API 표면을 불필요하게 공개하지 않습니다.
@@ -56,6 +78,7 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapPlatformEndpoints();
+app.MapWorkerEndpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
 app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken cancellationToken) =>

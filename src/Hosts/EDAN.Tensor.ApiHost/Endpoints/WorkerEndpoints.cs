@@ -1,0 +1,74 @@
+using EDAN.Tensor.ApiHost.Security;
+using EDAN.Tensor.Worker.Application.Execution;
+
+namespace EDAN.Tensor.ApiHost.Endpoints;
+
+/// <summary>Worker DLQ 운영 기능을 기존 Platform 인증 및 Tenant 관리자 경계로 노출합니다.</summary>
+public static class WorkerEndpoints
+{
+    public static IEndpointRouteBuilder MapWorkerEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/platform/tenants/{tenantId:guid}/worker/dead-letters")
+            .WithTags("Worker Operations")
+            .RequireAuthorization("TenantMember")
+            .AddEndpointFilter<TenantRouteAuthorizationFilter>()
+            .AddEndpointFilter<TenantMembershipAuthorizationFilter>()
+            .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        group.MapGet("/", async (Guid tenantId, int page, int pageSize,
+            WorkerTaskDeadLetterService service, CancellationToken token) =>
+        {
+            try
+            {
+                var tasks = await service.GetAsync(tenantId, page, pageSize, token);
+                return Results.Ok(new
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    Items = tasks.Select(task => new
+                    {
+                        task.Id,
+                        task.TaskType,
+                        Status = task.Status.ToString(),
+                        task.AttemptCount,
+                        task.MaxAttempts,
+                        task.LastErrorCode,
+                        task.CreatedAtUtc,
+                        task.NextAttemptAtUtc
+                    })
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { Code = "worker.dead_letter.invalid_query", Description = ex.Message });
+            }
+            catch (OverflowException)
+            {
+                return Results.BadRequest(new { Code = "worker.dead_letter.invalid_page", Description = "페이지 범위가 너무 큽니다." });
+            }
+        }).WithName("GetWorkerDeadLetters");
+
+        group.MapPost("/{taskId:guid}/replay", async (Guid tenantId, Guid taskId,
+            HttpContext context, WorkerTaskDeadLetterService service, CancellationToken token) =>
+        {
+            var actor = context.User.FindFirst("sub")?.Value;
+            if (string.IsNullOrWhiteSpace(actor))
+                return Results.Unauthorized();
+
+            try
+            {
+                var replayTaskId = await service.ReplayAsync(tenantId, taskId, actor, token);
+                return replayTaskId is null
+                    ? Results.NotFound(new { Code = "worker.dead_letter.not_found", Description = "Tenant의 DLQ 작업을 찾을 수 없습니다." })
+                    : Results.Json(new { OriginalTaskId = taskId, ReplayTaskId = replayTaskId },
+                        statusCode: StatusCodes.Status201Created);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { Code = "worker.dead_letter.invalid_request", Description = ex.Message });
+            }
+        }).WithName("ReplayWorkerDeadLetter");
+
+        return endpoints;
+    }
+}
