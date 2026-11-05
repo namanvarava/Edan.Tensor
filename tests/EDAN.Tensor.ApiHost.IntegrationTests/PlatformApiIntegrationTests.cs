@@ -398,6 +398,11 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/memberships",
             new { subjectId = "dataset-admin", role = "Administrator" });
         Assert.Equal(HttpStatusCode.Created, membership.StatusCode);
+        using var memberMembership = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/memberships",
+            new { subjectId = "dataset-member", role = "Member" });
+        Assert.Equal(HttpStatusCode.Created, memberMembership.StatusCode);
+
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Remove("X-Test-Role");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "dataset-admin");
@@ -458,10 +463,6 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{Guid.NewGuid()}/datasets/{dataSetId}");
         Assert.Equal(HttpStatusCode.Forbidden, otherTenantAccess.StatusCode);
 
-        using var memberMembership = await client.PostAsJsonAsync(
-            $"/api/platform/tenants/{tenantId}/memberships",
-            new { subjectId = "dataset-member", role = "Member" });
-        Assert.Equal(HttpStatusCode.Created, memberMembership.StatusCode);
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "dataset-member");
