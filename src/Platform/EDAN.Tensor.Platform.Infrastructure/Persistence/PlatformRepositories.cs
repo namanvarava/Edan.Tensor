@@ -261,7 +261,8 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
             throw new InvalidOperationException("아카이브 예약 실행 임대가 만료되었거나 다른 작업자가 소유합니다.");
 
         var nextRunAtUtc = succeeded
-            ? archivedThroughUtc < nowUtc ? nowUtc : nowUtc.AddHours(schedule.IntervalHours)
+            ? (archivedThroughUtc.HasValue && archivedThroughUtc.Value < nowUtc
+                ? nowUtc : nowUtc.AddHours(schedule.IntervalHours))
             : nowUtc.AddMinutes(5);
         var affected = await db.AuthorizationAuditArchiveSchedules
             .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId)
