@@ -11,6 +11,11 @@ using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using EDAN.Tensor.ApiHost.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
 
@@ -663,6 +668,75 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, repeatedList.StatusCode);
         using var repeatedDocument = await JsonDocument.ParseAsync(await repeatedList.Content.ReadAsStreamAsync());
         Assert.Equal(task.Id, repeatedDocument.RootElement.GetProperty("items")[0].GetProperty("id").GetGuid());
+    }
+
+
+    [Fact]
+    public async Task QuotaThresholdEventsRecordWarningExceededAndResolvedTransitionsOnlyOnce()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"QT-{suffix}",
+            name = "Quota 전이 테스트 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var platformDb = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        var dataSetDb = scope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        var storageAdapter = scope.ServiceProvider.GetRequiredService<IDataSetStorageAdapter>();
+        var snapshotService = scope.ServiceProvider.GetRequiredService<DataSetStorageUsageSnapshotService>();
+
+        var allocation = new DataSetStorageAllocation(
+            new EDAN.Tensor.DataSet.Domain.Model.DataSetId(Guid.NewGuid()),
+            new EDAN.Tensor.DataSet.Domain.Model.DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()));
+        var storageReference = await storageAdapter.AllocateAsync(allocation);
+        await using (var content = new MemoryStream(new byte[45]))
+            await storageAdapter.WriteAsync(allocation, storageReference, content,
+                new DataSetStorageQuotaPolicy(null, null, null, null));
+
+        var policy = StorageQuotaPolicy.Create(
+            Guid.NewGuid(), new TenantId(tenantId), StorageQuotaPolicyScope.Tenant, tenantId,
+            tenantLimitBytes: 50, organizationLimitBytes: null, projectLimitBytes: null, dataSetLimitBytes: null,
+            warningThresholdPercent: 80, planCode: "Community", updatedBy: "integration-test",
+            nowUtc: DateTimeOffset.UtcNow);
+        platformDb.StorageQuotaPolicies.Add(policy);
+        await platformDb.SaveChangesAsync();
+
+        await snapshotService.CaptureDueAsync();
+        await snapshotService.CaptureDueAsync();
+        var warningOnly = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.PolicyId == policy.Id).OrderBy(x => x.Id).ToListAsync();
+        var warning = Assert.Single(warningOnly);
+        Assert.Equal("Warning", warning.EventType);
+        Assert.Equal(45, warning.UsedBytes);
+        Assert.Equal(50, warning.LimitBytes);
+        Assert.Equal(1, warning.PolicyVersion);
+
+        policy.Update(tenantLimitBytes: 40, organizationLimitBytes: null, projectLimitBytes: null,
+            dataSetLimitBytes: null, warningThresholdPercent: 80, planCode: "Community",
+            updatedBy: "integration-test", expectedVersion: policy.Version, nowUtc: DateTimeOffset.UtcNow);
+        await platformDb.SaveChangesAsync();
+        await snapshotService.CaptureDueAsync();
+
+        policy.SetEnabled(false, "integration-test", policy.Version, DateTimeOffset.UtcNow);
+        await platformDb.SaveChangesAsync();
+        await snapshotService.CaptureDueAsync();
+        await snapshotService.CaptureDueAsync();
+
+        var events = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.PolicyId == policy.Id).OrderBy(x => x.Id).ToListAsync();
+        Assert.Collection(events,
+            item => { Assert.Equal("Warning", item.EventType); Assert.Equal(1, item.PolicyVersion); },
+            item => { Assert.Equal("Exceeded", item.EventType); Assert.Equal(2, item.PolicyVersion); },
+            item => { Assert.Equal("Resolved", item.EventType); Assert.Equal(3, item.PolicyVersion); });
     }
 
     [Fact]
