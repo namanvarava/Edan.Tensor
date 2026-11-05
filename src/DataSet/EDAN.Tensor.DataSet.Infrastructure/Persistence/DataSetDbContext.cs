@@ -1,5 +1,6 @@
 using EDAN.Tensor.DataSet.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
