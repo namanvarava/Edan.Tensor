@@ -138,6 +138,30 @@ public static class PlatformEndpoints
                 catch (ArgumentException ex) { return ValidationError(ex.Message); }
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 감사 아카이브는 Tenant별로 생성하며 검증 전 원본 기록은 변경하지 않습니다.
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archives",
+            async (Guid tenantId, CreateAuthorizationAuditArchiveRequest request,
+                AuthorizationAuditArchiveService service, CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.CreateAsync(new TenantId(tenantId),
+                        request.FromUtc, request.ToUtc, token);
+                    return Results.Json(result, statusCode: StatusCodes.Status201Created);
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archives/{archiveId:guid}/verify",
+            async (Guid tenantId, Guid archiveId, VerifyAuthorizationAuditArchiveRequest request,
+                AuthorizationAuditArchiveService service, CancellationToken token) =>
+            {
+                var result = await service.VerifyAsync(archiveId, request.ExpectedSha256, token);
+                if (result.ReasonCode == "archive.not_found")
+                    return Results.NotFound(result);
+                return Results.Ok(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPut("/{tenantId:guid}/authorization-policies/{policyId:guid}",
             async (Guid tenantId, Guid policyId, UpdateAuthorizationPolicyRequest request, HttpContext context,
                 AuthorizationPolicyService service, CancellationToken token) =>
@@ -252,6 +276,8 @@ public sealed record CreateAuthorizationPolicyRequest(Guid? OrganizationId, Guid
 public sealed record UpdateAuthorizationPolicyRequest(string Effect, int Priority);
 public sealed record SetAuthorizationPolicyEnabledRequest(bool IsEnabled);
 public sealed record VerifyAuthorizationAuditIntegrityRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
+public sealed record CreateAuthorizationAuditArchiveRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc);
+public sealed record VerifyAuthorizationAuditArchiveRequest(string? ExpectedSha256);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
