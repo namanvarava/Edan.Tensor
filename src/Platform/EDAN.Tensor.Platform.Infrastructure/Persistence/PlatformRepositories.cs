@@ -252,6 +252,19 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
         return affected == 1;
     }
 
+    /// <summary>현재 임대 소유자만 만료 시각을 원자적으로 연장합니다.</summary>
+    public async Task<bool> RenewLeaseAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
+        DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default)
+    {
+        var affected = await db.AuthorizationAuditArchiveSchedules
+            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
+                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.LeaseExpiresAtUtc, leaseExpiresAtUtc)
+                .SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
+        return affected == 1;
+    }
+
     public async Task CompleteAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
         DateTimeOffset? archivedThroughUtc, bool succeeded, CancellationToken cancellationToken = default)
     {
