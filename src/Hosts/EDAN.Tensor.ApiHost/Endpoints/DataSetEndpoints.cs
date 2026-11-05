@@ -99,9 +99,12 @@ public static class DataSetEndpoints
                 ? Results.NotFound(new { Code = "dataset.not_found", Description = "Tenant 범위에서 DataSet을 찾을 수 없습니다." })
                 : Results.Ok(new
                 {
-                    Scope = "Project",
-                    usage.ScopeBytes,
-                    usage.ScopeDataSetCount,
+                    TenantBytes = usage.TenantBytes,
+                    TenantDataSetCount = usage.TenantDataSetCount,
+                    OrganizationBytes = usage.OrganizationBytes,
+                    OrganizationDataSetCount = usage.OrganizationDataSetCount,
+                    ProjectBytes = usage.ProjectBytes,
+                    ProjectDataSetCount = usage.ProjectDataSetCount,
                     usage.DataSetBytes,
                     MeasuredAtUtc = DateTimeOffset.UtcNow
                 });

@@ -81,11 +81,15 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
         await using var connection = await OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT COALESCE(SUM(length(Content)), 0),
-                   COUNT(DISTINCT DataSetId),
-                   COALESCE(SUM(CASE WHEN DataSetId = $dataSetId THEN length(Content) ELSE 0 END), 0)
-            FROM DataSetContent
-            WHERE TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId;
+            SELECT
+                COALESCE(SUM(CASE WHEN TenantId = $tenantId THEN length(Content) ELSE 0 END), 0),
+                COUNT(DISTINCT CASE WHEN TenantId = $tenantId THEN DataSetId END),
+                COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId THEN length(Content) ELSE 0 END), 0),
+                COUNT(DISTINCT CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId THEN DataSetId END),
+                COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId THEN length(Content) ELSE 0 END), 0),
+                COUNT(DISTINCT CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId THEN DataSetId END),
+                COALESCE(SUM(CASE WHEN TenantId = $tenantId AND OrganizationId = $organizationId AND ProjectId = $projectId AND DataSetId = $dataSetId THEN length(Content) ELSE 0 END), 0)
+            FROM DataSetContent;
             """;
         command.Parameters.AddWithValue("$dataSetId", allocation.DataSetId.Value.ToString("D"));
         command.Parameters.AddWithValue("$tenantId", allocation.Scope.TenantId.ToString("D"));
@@ -93,7 +97,11 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
         command.Parameters.AddWithValue("$projectId", allocation.Scope.ProjectId.ToString("D"));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
-        return new DataSetStorageUsage(reader.GetInt64(0), reader.GetInt64(1), reader.GetInt64(2));
+        return new DataSetStorageUsage(
+            reader.GetInt64(0), reader.GetInt64(1),
+            reader.GetInt64(2), reader.GetInt64(3),
+            reader.GetInt64(4), reader.GetInt64(5),
+            reader.GetInt64(6));
     }
 
     public async Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default)

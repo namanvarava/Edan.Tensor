@@ -28,4 +28,8 @@ public interface IDataSetStorageUsageReader
 }
 
 /// <summary>현재 DataSet 및 그 소유 Project 범위의 콘텐츠 사용량 스냅샷입니다.</summary>
-public sealed record DataSetStorageUsage(long ScopeBytes, long ScopeDataSetCount, long DataSetBytes);
+public sealed record DataSetStorageUsage(
+    long TenantBytes, long TenantDataSetCount,
+    long OrganizationBytes, long OrganizationDataSetCount,
+    long ProjectBytes, long ProjectDataSetCount,
+    long DataSetBytes);

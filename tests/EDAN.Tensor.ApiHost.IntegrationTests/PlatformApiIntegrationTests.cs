@@ -466,8 +466,14 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, usageResponse.StatusCode);
         using var usageDocument = await JsonDocument.ParseAsync(await usageResponse.Content.ReadAsStreamAsync());
         Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
-            usageDocument.RootElement.GetProperty("scopeBytes").GetInt64());
-        Assert.Equal(1, usageDocument.RootElement.GetProperty("scopeDataSetCount").GetInt64());
+            usageDocument.RootElement.GetProperty("tenantBytes").GetInt64());
+        Assert.Equal(1, usageDocument.RootElement.GetProperty("tenantDataSetCount").GetInt64());
+        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+            usageDocument.RootElement.GetProperty("organizationBytes").GetInt64());
+        Assert.Equal(1, usageDocument.RootElement.GetProperty("organizationDataSetCount").GetInt64());
+        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+            usageDocument.RootElement.GetProperty("projectBytes").GetInt64());
+        Assert.Equal(1, usageDocument.RootElement.GetProperty("projectDataSetCount").GetInt64());
         Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("dataSetBytes").GetInt64());
 
