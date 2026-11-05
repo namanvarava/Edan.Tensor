@@ -146,7 +146,7 @@ public sealed class WorkerTaskRepositoryTests
         var leased = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "worker-crashed", leaseId, now, now.AddMinutes(1));
         Assert.NotNull(leased);
         Assert.True(await repository.TryStartAsync(tenantId, task.Id, leaseId, leased.FencingToken, now));
-        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2)));
+        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 100));
         var recovered = await repository.GetAsync(tenantId, task.Id);
         Assert.Equal(WorkerTaskStatus.DeadLettered, recovered!.Status);
         Assert.Equal("worker.lease.expired", recovered.LastErrorCode);
