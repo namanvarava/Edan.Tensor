@@ -43,7 +43,6 @@ public sealed class WorkerTask
     public string? LastErrorCode { get; private set; }
     public long Version { get; private set; }
 
-    /// <summary>새 작업을 생성합니다.</summary>
     public static WorkerTask Create(Guid tenantId, string taskType, string idempotencyKey,
         string payloadReference, DateTimeOffset nowUtc, int maxAttempts = 5)
     {
@@ -55,7 +54,6 @@ public sealed class WorkerTask
         return task;
     }
 
-    /// <summary>대기 또는 재시도 작업의 실행 임대를 획득하고 새 Fencing Token을 발급합니다.</summary>
     public long AcquireLease(string workerId, Guid leaseId, DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc)
     {
         if (Status is not (WorkerTaskStatus.Pending or WorkerTaskStatus.RetryScheduled or WorkerTaskStatus.Checkpointed))
@@ -74,7 +72,29 @@ public sealed class WorkerTask
         return FencingToken;
     }
 
-    /// <summary>획득한 임대의 작업 실행을 시작합니다.</summary>
+    /// <summary>만료된 실행 임대를 복구하고 재시도 또는 DLQ 상태로 전이합니다.</summary>
+    public bool RecoverExpiredLease(DateTimeOffset nowUtc)
+    {
+        if (Status is not (WorkerTaskStatus.Leased or WorkerTaskStatus.Running or WorkerTaskStatus.Checkpointed)
+            || !LeaseExpiresAtUtc.HasValue || LeaseExpiresAtUtc.Value > nowUtc.ToUniversalTime())
+            return false;
+
+        LastErrorCode = "worker.lease.expired";
+        ClearLease();
+        if (AttemptCount >= MaxAttempts)
+        {
+            Status = WorkerTaskStatus.DeadLettered;
+            NextAttemptAtUtc = null;
+        }
+        else
+        {
+            Status = WorkerTaskStatus.RetryScheduled;
+            NextAttemptAtUtc = nowUtc.ToUniversalTime();
+        }
+        Version++;
+        return true;
+    }
+
     public void Start(Guid leaseId, long fencingToken, DateTimeOffset nowUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -84,7 +104,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>현재 임대 소유권으로 체크포인트를 저장합니다.</summary>
     public void SaveCheckpoint(Guid leaseId, long fencingToken, string checkpoint, DateTimeOffset nowUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -96,7 +115,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>현재 임대 소유권을 검증하고 Lease 만료 시각을 연장합니다.</summary>
     public void RenewLease(Guid leaseId, long fencingToken, DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -106,7 +124,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>작업을 완료하고 실행 소유권을 해제합니다.</summary>
     public void ReportProgress(Guid leaseId, long fencingToken, int percentage, string stage, string? message, DateTimeOffset nowUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -138,7 +155,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>재시도 가능한 실패를 예약하거나 최대 시도 횟수 초과 시 DLQ로 이동합니다.</summary>
     public void Fail(Guid leaseId, long fencingToken, string errorCode,
         DateTimeOffset nowUtc, DateTimeOffset retryAtUtc)
     {
@@ -163,7 +179,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>정상 종료 인계를 위해 체크포인트를 저장하고 작업을 대기 상태로 돌립니다.</summary>
     public void Handoff(Guid leaseId, long fencingToken, string checkpoint, DateTimeOffset nowUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -177,7 +192,6 @@ public sealed class WorkerTask
         Version++;
     }
 
-    /// <summary>현재 임대 소유권으로 작업을 취소합니다.</summary>
     public void Cancel(Guid leaseId, long fencingToken, DateTimeOffset nowUtc)
     {
         EnsureLease(leaseId, fencingToken, nowUtc);
@@ -221,7 +235,6 @@ public sealed class WorkerTask
     }
 }
 
-/// <summary>비동기 작업의 영속 상태를 구분합니다.</summary>
 public enum WorkerTaskStatus
 {
     Pending,

@@ -16,12 +16,10 @@ public sealed class WorkerTaskRepositoryTests
         var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
         await using var db = new WorkerDbContext(options);
         await db.Database.MigrateAsync();
-
         var now = DateTimeOffset.UtcNow;
         var readyTenant = Guid.NewGuid();
         var secondReadyTenant = Guid.NewGuid();
         var delayedTenant = Guid.NewGuid();
-
         db.WorkerTasks.Add(WorkerTask.Create(readyTenant, "test.ready", "ready-1", "payload://1", now));
         db.WorkerTasks.Add(WorkerTask.Create(secondReadyTenant, "test.ready", "ready-2", "payload://2", now.AddMinutes(-1)));
         var delayed = WorkerTask.Create(delayedTenant, "test.delayed", "delayed-1", "payload://3", now);
@@ -30,13 +28,66 @@ public sealed class WorkerTaskRepositoryTests
         delayed.Fail(delayed.LeaseId!.Value, delayed.FencingToken, "test.retry", now, now.AddHours(1));
         db.WorkerTasks.Add(delayed);
         await db.SaveChangesAsync();
-
         var repository = new WorkerTaskRepository(db);
         var tenants = await repository.GetReadyTenantIdsAsync(now, 10);
-
         Assert.Equal(2, tenants.Count);
         Assert.Contains(readyTenant, tenants);
         Assert.Contains(secondReadyTenant, tenants);
         Assert.DoesNotContain(delayedTenant, tenants);
+    }
+
+    [Fact]
+    public async Task ExpiredRunningLeaseIsRecoveredAndCanBeReacquiredWithNewFencingToken()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "test.recovery", "recovery-key", "payload://test", now, maxAttempts: 3);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+        var repository = new WorkerTaskRepository(db);
+        var oldLease = Guid.NewGuid();
+        var leased = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "worker-old", oldLease, now, now.AddMinutes(1));
+        Assert.NotNull(leased);
+        Assert.True(await repository.TryStartAsync(tenantId, task.Id, oldLease, leased.FencingToken, now));
+        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2)));
+        var recovered = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, recovered!.Status);
+        Assert.Equal("worker.lease.expired", recovered.LastErrorCode);
+        Assert.Null(recovered.LeaseId);
+        var newLease = Guid.NewGuid();
+        var reacquired = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "worker-new", newLease, now.AddMinutes(2), now.AddMinutes(7));
+        Assert.NotNull(reacquired);
+        Assert.Equal(2, reacquired.FencingToken);
+        Assert.False(await repository.TryCompleteAsync(tenantId, task.Id, oldLease, leased.FencingToken, now.AddMinutes(3)));
+    }
+
+    [Fact]
+    public async Task ExpiredLeaseAtMaximumAttemptsMovesDirectlyToDeadLetter()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "test.recovery", "recovery-dlq", "payload://test", now, maxAttempts: 1);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+        var repository = new WorkerTaskRepository(db);
+        var leaseId = Guid.NewGuid();
+        var leased = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "worker-crashed", leaseId, now, now.AddMinutes(1));
+        Assert.NotNull(leased);
+        Assert.True(await repository.TryStartAsync(tenantId, task.Id, leaseId, leased.FencingToken, now));
+        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2)));
+        var recovered = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.DeadLettered, recovered!.Status);
+        Assert.Equal("worker.lease.expired", recovered.LastErrorCode);
+        Assert.Null(recovered.NextAttemptAtUtc);
     }
 }
