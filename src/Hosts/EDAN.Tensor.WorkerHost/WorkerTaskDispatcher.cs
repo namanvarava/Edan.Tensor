@@ -17,7 +17,9 @@ internal sealed class WorkerTaskDispatcher(
     private TaskCompletionSource _activeDrained = CompletedSource();
     private readonly string _workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
     private Guid? _tenantAfterId;
-    private readonly ConcurrentDictionary<Guid, Guid> _tenantTaskAfterIds = new();
+    // Dispatcher access is single-threaded; an LRU list makes cursor eviction deterministic.
+    private readonly Dictionary<Guid, LinkedListNode<(Guid TenantId, Guid TaskId)>> _tenantTaskCursors = [];
+    private readonly LinkedList<(Guid TenantId, Guid TaskId)> _tenantTaskCursorLru = [];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -59,7 +61,7 @@ internal sealed class WorkerTaskDispatcher(
             if (slots <= 0) break;
             _tenantAfterId = tenantId;
             WorkerTask? task = null;
-            Guid? taskAfterId = _tenantTaskAfterIds.TryGetValue(tenantId, out var cursor) ? cursor : null;
+            Guid? taskAfterId = TryGetTenantTaskCursor(tenantId, out var cursor) ? cursor : null;
             var scanned = 0;
             var reachedEnd = false;
             while (scanned < maxCandidateScan)
@@ -95,7 +97,7 @@ internal sealed class WorkerTaskDispatcher(
             }
 
             if (reachedEnd || !taskAfterId.HasValue)
-                _tenantTaskAfterIds.TryRemove(tenantId, out _);
+                RemoveTenantTaskCursor(tenantId);
             else
                 StoreTenantTaskCursor(tenantId, taskAfterId.Value);
 
@@ -107,21 +109,43 @@ internal sealed class WorkerTaskDispatcher(
         }
     }
 
+    private bool TryGetTenantTaskCursor(Guid tenantId, out Guid taskId)
+    {
+        if (!_tenantTaskCursors.TryGetValue(tenantId, out var node))
+        {
+            taskId = default;
+            return false;
+        }
+
+        _tenantTaskCursorLru.Remove(node);
+        _tenantTaskCursorLru.AddLast(node);
+        taskId = node.Value.TaskId;
+        return true;
+    }
+
     private void StoreTenantTaskCursor(Guid tenantId, Guid taskId)
     {
-        _tenantTaskAfterIds[tenantId] = taskId;
+        if (_tenantTaskCursors.TryGetValue(tenantId, out var existing))
+            _tenantTaskCursorLru.Remove(existing);
 
-        // Removed tenants may never appear in a ready-tenant page again. Bound cursor memory
-        // and let an evicted tenant resume from the beginning on its next dispatch cycle.
+        var node = _tenantTaskCursorLru.AddLast((tenantId, taskId));
+        _tenantTaskCursors[tenantId] = node;
+
+        // Least recently used tenants lose only their in-memory scan position and resume from
+        // the beginning on a later cycle. Persisted task state and lease ownership are unchanged.
         var cursorLimit = Math.Clamp(configuration.GetValue("Worker:TenantTaskCursorLimit", 10_000), 500, 100_000);
-        if (_tenantTaskAfterIds.Count <= cursorLimit) return;
-
-        foreach (var candidateTenantId in _tenantTaskAfterIds.Keys)
+        while (_tenantTaskCursors.Count > cursorLimit)
         {
-            if (candidateTenantId == tenantId) continue;
-            _tenantTaskAfterIds.TryRemove(candidateTenantId, out _);
-            if (_tenantTaskAfterIds.Count <= cursorLimit) break;
+            var leastRecent = _tenantTaskCursorLru.First!;
+            _tenantTaskCursorLru.RemoveFirst();
+            _tenantTaskCursors.Remove(leastRecent.Value.TenantId);
         }
+    }
+
+    private void RemoveTenantTaskCursor(Guid tenantId)
+    {
+        if (!_tenantTaskCursors.Remove(tenantId, out var node)) return;
+        _tenantTaskCursorLru.Remove(node);
     }
 
     private bool TryMarkActive(string key)
