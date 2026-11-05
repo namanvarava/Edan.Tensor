@@ -51,7 +51,7 @@ public sealed class AuthorizationAuditArchiveScheduleService(
         {
             cancellationToken.ThrowIfCancellationRequested();
             var leaseId = Guid.NewGuid();
-            if (!await schedules.TryAcquireAsync(tenantId, leaseId, now, now.AddMinutes(10), cancellationToken))
+            if (!await schedules.TryAcquireAsync(tenantId, leaseId, now, now.AddMinutes(30), cancellationToken))
                 continue;
 
             var schedule = await schedules.GetAsync(tenantId, cancellationToken);
