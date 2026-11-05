@@ -208,4 +208,62 @@ public sealed class WorkerTaskTests
         Assert.Equal(WorkerTaskStatus.Running, task.Status);
         Assert.Equal(leaseId, task.LeaseId);
     }
+
+    [Fact]
+    public void ExpiredLeaseRecoveryAtExactExpirySchedulesRetryAndInvalidatesPreviousOwner()
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(1));
+        task.Start(leaseId, token, Now);
+        var version = task.Version;
+        var expiry = Now.AddMinutes(1);
+
+        Assert.True(task.RecoverExpiredLease(expiry));
+
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, task.Status);
+        Assert.Equal("worker.lease.expired", task.LastErrorCode);
+        Assert.Equal(expiry, task.NextAttemptAtUtc);
+        Assert.Null(task.LeaseId);
+        Assert.Null(task.WorkerId);
+        Assert.Null(task.LeaseExpiresAtUtc);
+        Assert.Equal(version + 1, task.Version);
+        Assert.Throws<InvalidOperationException>(() => task.Start(leaseId, token, expiry));
+    }
+
+    [Fact]
+    public void ExpiredLeaseRecoveryMovesToDeadLetterWhenAttemptLimitIsReached()
+    {
+        var task = Create(maxAttempts: 1);
+        var leaseId = Guid.NewGuid();
+        task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(1));
+
+        Assert.True(task.RecoverExpiredLease(Now.AddMinutes(2)));
+
+        Assert.Equal(WorkerTaskStatus.DeadLettered, task.Status);
+        Assert.Equal("worker.lease.expired", task.LastErrorCode);
+        Assert.Null(task.NextAttemptAtUtc);
+        Assert.Null(task.LeaseId);
+        Assert.Null(task.WorkerId);
+        Assert.Null(task.LeaseExpiresAtUtc);
+    }
+
+    [Fact]
+    public void ExpiredLeaseRecoveryBeforeExpiryDoesNotMutateTask()
+    {
+        var task = Create();
+        var leaseId = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", leaseId, Now, Now.AddMinutes(5));
+        task.Start(leaseId, token, Now);
+        var version = task.Version;
+
+        Assert.False(task.RecoverExpiredLease(Now.AddMinutes(4)));
+
+        Assert.Equal(WorkerTaskStatus.Running, task.Status);
+        Assert.Equal(leaseId, task.LeaseId);
+        Assert.Equal("worker-a", task.WorkerId);
+        Assert.Equal(Now.AddMinutes(5), task.LeaseExpiresAtUtc);
+        Assert.Equal(version, task.Version);
+    }
+
 }
