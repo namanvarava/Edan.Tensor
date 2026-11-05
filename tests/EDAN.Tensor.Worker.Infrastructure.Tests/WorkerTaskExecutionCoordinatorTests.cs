@@ -27,12 +27,33 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         var repository = new WorkerTaskRepository(db);
         var handler = new TestHandler();
         var coordinator = new WorkerTaskExecutionCoordinator(
-            repository, new TestResolver(handler), new WorkerExecutionRegistry(), TimeProvider.System);
+            repository, new TestResolver(handler), new SuccessfulLeaseRenewer(),
+            new WorkerExecutionRegistry(), TimeProvider.System);
 
         var outcome = await coordinator.ExecuteAsync(tenantId, task.Id, "worker-test", TimeSpan.FromMinutes(5));
 
         Assert.Equal(WorkerTaskExecutionOutcome.Succeeded, outcome);
         Assert.Equal(WorkerTaskStatus.Succeeded, (await repository.GetAsync(tenantId, task.Id))!.Status);
+    }
+
+    [Fact]
+    public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
+    {
+        var registry = new WorkerTaskHandlerRegistry();
+        var handler = new TestHandler();
+
+        registry.Register("test.success", handler);
+
+        Assert.Same(handler, registry.Resolve("test.success"));
+        Assert.Null(registry.Resolve("test.unknown"));
+        Assert.Throws<InvalidOperationException>(() => registry.Register("test.success", handler));
+    }
+
+    private sealed class SuccessfulLeaseRenewer : IWorkerTaskLeaseRenewer
+    {
+        public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+            DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
     }
 
     private sealed class TestResolver(IWorkerTaskHandler handler) : IWorkerTaskHandlerResolver

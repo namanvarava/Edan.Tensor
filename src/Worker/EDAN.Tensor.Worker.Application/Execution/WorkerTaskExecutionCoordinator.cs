@@ -44,10 +44,11 @@ public enum WorkerTaskExecutionOutcome
     LeaseLost
 }
 
-/// <summary>Lease, 실행 핸들러, 종료 인계를 연결하는 단일 작업 실행 조정기입니다.</summary>
+/// <summary>Lease 갱신, 실행 핸들러, 종료 인계를 연결하는 작업 실행 조정기입니다.</summary>
 public sealed class WorkerTaskExecutionCoordinator(
     IWorkerTaskRepository repository,
     IWorkerTaskHandlerResolver handlers,
+    IWorkerTaskLeaseRenewer leaseRenewer,
     WorkerExecutionRegistry executions,
     TimeProvider timeProvider)
 {
@@ -55,8 +56,8 @@ public sealed class WorkerTaskExecutionCoordinator(
         Guid tenantId, Guid taskId, string workerId, TimeSpan leaseDuration,
         CancellationToken cancellationToken = default)
     {
-        if (leaseDuration <= TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(leaseDuration));
+        if (leaseDuration < TimeSpan.FromSeconds(3))
+            throw new ArgumentOutOfRangeException(nameof(leaseDuration), "Lease 기간은 3초 이상이어야 합니다.");
 
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (task is null)
@@ -106,7 +107,30 @@ public sealed class WorkerTaskExecutionCoordinator(
             WorkerTaskExecutionResult result;
             try
             {
-                result = await execution.Completion.WaitAsync(cancellationToken);
+                var completion = execution.Completion;
+                var heartbeatInterval = TimeSpan.FromTicks(Math.Clamp(
+                    leaseDuration.Ticks / 3,
+                    TimeSpan.FromSeconds(1).Ticks,
+                    TimeSpan.FromMinutes(1).Ticks));
+
+                while (!completion.IsCompleted)
+                {
+                    var delay = Task.Delay(heartbeatInterval, timeProvider, cancellationToken);
+                    if (await Task.WhenAny(completion, delay) == completion)
+                        break;
+
+                    await delay;
+                    now = timeProvider.GetUtcNow();
+                    var renewed = await leaseRenewer.RenewAsync(
+                        tenantId, taskId, leaseId, fencingToken, now, now.Add(leaseDuration), cancellationToken);
+                    if (!renewed)
+                    {
+                        await execution.RequestCheckpointAndStopAsync(CancellationToken.None);
+                        return WorkerTaskExecutionOutcome.LeaseLost;
+                    }
+                }
+
+                result = await completion.WaitAsync(cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

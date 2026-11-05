@@ -1,4 +1,5 @@
 using EDAN.Tensor.Worker.Application.Abstractions;
+using EDAN.Tensor.Worker.Infrastructure.Execution;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public static class WorkerInfrastructureExtensions
         ArgumentNullException.ThrowIfNull(configureDatabase);
         services.AddDbContext<WorkerDbContext>(configureDatabase);
         services.AddScoped<IWorkerTaskRepository, WorkerTaskRepository>();
+        services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
         return services;
     }
 }

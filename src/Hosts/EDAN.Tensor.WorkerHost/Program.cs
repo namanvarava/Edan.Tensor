@@ -1,3 +1,4 @@
+using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
@@ -9,7 +10,12 @@ var workerConnectionString = builder.Configuration.GetConnectionString("Worker")
 builder.Services.AddWorkerInfrastructure(options =>
     options.UseSqlite(workerConnectionString,
         sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
+builder.Services.AddSingleton<WorkerTaskHandlerRegistry>();
+builder.Services.AddSingleton<IWorkerTaskHandlerResolver>(sp =>
+    sp.GetRequiredService<WorkerTaskHandlerRegistry>());
+builder.Services.AddScoped<WorkerTaskExecutionCoordinator>();
 builder.Services.AddHostedService<FoundationWorker>();
 
 var app = builder.Build();
