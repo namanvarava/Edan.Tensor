@@ -56,9 +56,17 @@ public static class WorkerEndpoints
             if (string.IsNullOrWhiteSpace(actor))
                 return Results.Unauthorized();
 
+            var replayRequestHeader = context.Request.Headers["Replay-Request-Id"].ToString();
+            if (!Guid.TryParse(replayRequestHeader, out var replayRequestId) || replayRequestId == Guid.Empty)
+                return Results.BadRequest(new
+                {
+                    Code = "worker.dead_letter.replay_request_id_required",
+                    Description = "재처리 요청의 멱등성을 위해 유효한 Replay-Request-Id GUID 헤더가 필요합니다."
+                });
+
             try
             {
-                var replayTaskId = await service.ReplayAsync(tenantId, taskId, actor, token);
+                var replayTaskId = await service.ReplayAsync(tenantId, taskId, replayRequestId, actor, token);
                 return replayTaskId is null
                     ? Results.NotFound(new { Code = "worker.dead_letter.not_found", Description = "Tenant의 DLQ 작업을 찾을 수 없습니다." })
                     : Results.Json(new { OriginalTaskId = taskId, ReplayTaskId = replayTaskId },
