@@ -1,12 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
 
 namespace EDAN.Tensor.Platform.Application.UseCases;
 
 /// <summary>권한 감사 기록의 기간별 무결성 요약과 외부 보관용 체크섬을 생성합니다.</summary>
-public sealed class AuthorizationAuditIntegrityService(AuthorizationAuditQueryService query)
+public sealed class AuthorizationAuditIntegrityService(IAuthorizationAuditRepository audits)
 {
     private const int PageSize = 100;
     private const int MaximumRecords = 100_000;
@@ -17,20 +18,10 @@ public sealed class AuthorizationAuditIntegrityService(AuthorizationAuditQuerySe
         DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default)
     {
         ValidateRange(fromUtc, toUtc);
-        var records = new List<IntegrityRecord>();
-        var firstPage = await query.GetPageAsync(tenantId, null, null, null,
-            fromUtc, toUtc, 1, PageSize, cancellationToken);
-        if (firstPage.TotalCount > MaximumRecords)
+        var entries = await audits.GetForIntegrityAsync(tenantId, fromUtc, toUtc, cancellationToken);
+        if (entries.Count > MaximumRecords)
             throw new ArgumentException("한 번의 무결성 검증은 최대 100,000건까지 지원합니다.");
-
-        records.AddRange(firstPage.Items.Select(IntegrityRecord.From));
-        var pageCount = (int)Math.Ceiling(firstPage.TotalCount / (double)PageSize);
-        for (var page = 2; page <= pageCount; page++)
-        {
-            var result = await query.GetPageAsync(tenantId, null, null, null,
-                fromUtc, toUtc, page, PageSize, cancellationToken);
-            records.AddRange(result.Items.Select(IntegrityRecord.From));
-        }
+        var records = entries.Select(IntegrityRecord.From).ToArray();
 
         var canonicalJson = JsonSerializer.Serialize(new
         {
