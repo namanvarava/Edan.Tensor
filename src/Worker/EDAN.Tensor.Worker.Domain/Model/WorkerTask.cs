@@ -114,6 +114,8 @@ public sealed class WorkerTask
             throw new InvalidOperationException("실행 중인 작업만 진행률을 보고할 수 있습니다.");
         if (percentage is < 0 or > 100)
             throw new ArgumentOutOfRangeException(nameof(percentage), "진행률은 0~100이어야 합니다.");
+        if (percentage < ProgressPercent)
+            throw new ArgumentOutOfRangeException(nameof(percentage), "진행률은 이전 값보다 작을 수 없습니다.");
         ProgressStage = ValidateText(stage, 120, nameof(stage));
         if (message is not null && message.Length > 500)
             throw new ArgumentException("진행 메시지는 500자를 초과할 수 없습니다.", nameof(message));

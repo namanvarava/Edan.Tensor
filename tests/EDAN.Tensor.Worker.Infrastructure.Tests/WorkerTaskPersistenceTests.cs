@@ -98,8 +98,14 @@ public sealed class WorkerTaskPersistenceTests
             tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(2), now.AddMinutes(10)));
         Assert.False(await repository.TrySaveCheckpointAsync(
             Guid.NewGuid(), task.Id, leaseId, leased.FencingToken, "cross-tenant", now.AddMinutes(3)));
+        Assert.True(await repository.TryReportProgressAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, 65, "parsing", "레코드 검증 중",
+            now.AddMinutes(2).AddSeconds(30)));
+        Assert.False(await repository.TryReportProgressAsync(
+            Guid.NewGuid(), task.Id, leaseId, leased.FencingToken, 90, "wrong-tenant", null,
+            now.AddMinutes(2).AddSeconds(40)));
         Assert.True(await repository.TryCompleteAsync(
-            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(3)));
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(3), "result://dataset/validated"));
 
         var completed = await repository.GetAsync(tenantId, task.Id);
         Assert.Equal(WorkerTaskStatus.Succeeded, completed!.Status);
