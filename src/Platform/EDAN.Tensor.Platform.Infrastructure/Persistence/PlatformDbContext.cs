@@ -326,6 +326,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var job = modelBuilder.Entity<AuthorizationAuditArchiveJob>();
         job.ToTable("platform_authorization_audit_archive_jobs");
         job.HasKey(x => x.Id);
+        job.Property(x => x.Id).IsRequired();
+        job.Property(x => x.ArchiveId);
+        job.Property(x => x.RecordCount).IsRequired();
+        job.Property(x => x.SizeBytes);
+        job.Property(x => x.CompletedAtUtc);
+        job.Property(x => x.AttemptCount).IsRequired();
         job.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         job.Property(x => x.FromUtc).IsRequired();
         job.Property(x => x.ToUtc).IsRequired();
@@ -342,6 +348,11 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         var attempt = modelBuilder.Entity<AuthorizationAuditArchiveAttempt>();
         attempt.ToTable("platform_authorization_audit_archive_attempts");
         attempt.HasKey(x => x.Id);
+        attempt.Property(x => x.Id).IsRequired();
+        attempt.Property(x => x.JobId).IsRequired();
+        attempt.Property(x => x.AttemptNumber).IsRequired();
+        attempt.Property(x => x.FinishedAtUtc);
+        attempt.Property(x => x.IsSuccessful);
         attempt.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         attempt.Property(x => x.Operation).HasMaxLength(32).IsRequired();
         attempt.Property(x => x.StartedAtUtc).IsRequired();
