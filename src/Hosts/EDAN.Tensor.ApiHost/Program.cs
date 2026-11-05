@@ -93,7 +93,19 @@ var dataSetQuotaPolicy = new DataSetStorageQuotaPolicy(
     builder.Configuration.GetValue<long?>("DataSetContent:Quota:ProjectLimitBytes"),
     builder.Configuration.GetValue<long?>("DataSetContent:Quota:DataSetLimitBytes"),
     builder.Configuration.GetValue<int?>("DataSetContent:Quota:WarningThresholdPercent") ?? 80);
-builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy);
+var quotaAssignments = builder.Configuration.GetSection("DataSetContent:Quota:Assignments")
+    .GetChildren()
+    .Select(section => new DataSetStorageQuotaPolicyAssignment(
+        Enum.Parse<DataSetStorageQuotaScope>(section["Scope"] ?? throw new InvalidOperationException("Quota assignment Scope is required."), ignoreCase: true),
+        Guid.Parse(section["TargetId"] ?? throw new InvalidOperationException("Quota assignment TargetId is required.")),
+        new DataSetStorageQuotaPolicy(
+            section.GetValue<long?>("TenantLimitBytes"),
+            section.GetValue<long?>("OrganizationLimitBytes"),
+            section.GetValue<long?>("ProjectLimitBytes"),
+            section.GetValue<long?>("DataSetLimitBytes"),
+            section.GetValue<int?>("WarningThresholdPercent") ?? dataSetQuotaPolicy.WarningThresholdPercent)))
+    .ToArray();
+builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy, quotaAssignments);
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();

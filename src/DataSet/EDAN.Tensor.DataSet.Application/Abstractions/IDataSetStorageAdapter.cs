@@ -51,3 +51,22 @@ public sealed class DataSetStorageQuotaExceededException(string scope, long limi
     public long LimitBytes { get; } = limitBytes;
     public long ProjectedBytes { get; } = projectedBytes;
 }
+
+/// <summary>계층형 DataSet 저장 용량 정책의 적용 범위입니다.</summary>
+public enum DataSetStorageQuotaScope { Tenant, Organization, Project, DataSet }
+
+/// <summary>특정 Tenant·Organization·Project·DataSet에 적용할 정책 할당입니다.</summary>
+public sealed record DataSetStorageQuotaPolicyAssignment(
+    DataSetStorageQuotaScope Scope, Guid TargetId, DataSetStorageQuotaPolicy Policy)
+{
+    public void Validate()
+    {
+        if (TargetId == Guid.Empty) throw new ArgumentException("Quota 정책 대상 ID는 비어 있을 수 없습니다.", nameof(TargetId));
+        ArgumentNullException.ThrowIfNull(Policy);
+        if (Policy.TenantLimitBytes is < 0 || Policy.OrganizationLimitBytes is < 0
+            || Policy.ProjectLimitBytes is < 0 || Policy.DataSetLimitBytes is < 0)
+            throw new ArgumentOutOfRangeException(nameof(Policy), "Quota limits cannot be negative.");
+        if (Policy.WarningThresholdPercent is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(Policy), "Warning threshold must be between 1 and 100.");
+    }
+}
