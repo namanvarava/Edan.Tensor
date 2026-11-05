@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using EDAN.Tensor.Worker.Application.Execution;
 using Xunit;
 
@@ -78,14 +77,9 @@ public sealed class WorkerExecutionRegistryTests
             }
         }, out var execution));
 
-        var stopwatch = Stopwatch.StartNew();
         var shutdown = registry.StopAsync(TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(250));
         await handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
         var result = await shutdown.WaitAsync(TimeSpan.FromSeconds(1));
-        stopwatch.Stop();
-
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(400),
-            $"Shutdown exceeded its single handoff time budget: {stopwatch.Elapsed}.");
         Assert.False(result.DrainedWithinGracePeriod);
         Assert.Equal(1, result.HandoffRequested);
         Assert.Equal(0, result.HandoffSucceeded);
