@@ -12,9 +12,8 @@ builder.Services.AddWorkerInfrastructure(options =>
         sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
-builder.Services.AddSingleton<WorkerTaskHandlerRegistry>();
-builder.Services.AddSingleton<IWorkerTaskHandlerResolver>(sp =>
-    sp.GetRequiredService<WorkerTaskHandlerRegistry>());
+// 업무별 Handler는 배포 구성에서 AddWorkerTaskHandler<THandler>(taskType)로 등록합니다.
+builder.Services.AddWorkerTaskHandlerRegistry();
 builder.Services.AddScoped<WorkerTaskExecutionCoordinator>();
 builder.Services.AddHostedService<WorkerTaskDispatcher>();
 

@@ -1,4 +1,6 @@
 using EDAN.Tensor.Worker.Application.Abstractions;
+using EDAN.Tensor.Worker.Application.Execution;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using EDAN.Tensor.Worker.Infrastructure.Execution;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,5 +22,29 @@ public static class WorkerInfrastructureExtensions
         services.AddScoped<IWorkerTaskDeadLetterRepository>(sp => sp.GetRequiredService<WorkerTaskRepository>());
         services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
         return services;
+    }
+
+    /// <summary>등록된 Handler 구성으로 작업 유형 레지스트리와 Resolver를 구성합니다.</summary>
+    public static IServiceCollection AddWorkerTaskHandlerRegistry(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<WorkerTaskHandlerRegistry>(sp =>
+            new WorkerTaskHandlerRegistry(sp.GetServices<WorkerTaskHandlerRegistration>()));
+        services.TryAddSingleton<IWorkerTaskHandlerResolver>(sp =>
+            sp.GetRequiredService<WorkerTaskHandlerRegistry>());
+        return services;
+    }
+
+    /// <summary>작업 유형별 Singleton Handler를 등록합니다. 실제 업무 Handler는 WorkerHost 조합 지점에서 추가합니다.</summary>
+    public static IServiceCollection AddWorkerTaskHandler<THandler>(
+        this IServiceCollection services, string taskType)
+        where THandler : class, IWorkerTaskHandler
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrWhiteSpace(taskType);
+        services.AddSingleton<THandler>();
+        services.AddSingleton(sp => new WorkerTaskHandlerRegistration(
+            taskType.Trim(), sp.GetRequiredService<THandler>()));
+        return services.AddWorkerTaskHandlerRegistry();
     }
 }
