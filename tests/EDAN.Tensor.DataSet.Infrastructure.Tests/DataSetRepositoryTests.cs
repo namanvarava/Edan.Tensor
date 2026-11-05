@@ -2,6 +2,9 @@ using EDAN.Tensor.DataSet.Domain.Model;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Xunit;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
@@ -20,6 +23,13 @@ public sealed class DataSetRepositoryTests
 
         await using (var db = new DataSetDbContext(options))
         {
+            var migrationsAssembly = db.GetService<IMigrationsAssembly>();
+            var differ = db.GetService<IMigrationsModelDiffer>();
+            var currentModel = db.GetService<IDesignTimeModel>().Model;
+            var snapshotModel = migrationsAssembly.ModelSnapshot!.Model;
+            var differences = differ.GetDifferences(snapshotModel.GetRelationalModel(), currentModel.GetRelationalModel());
+            Assert.True(differences.Count == 0,
+                "DataSet Migration Snapshot 차이: " + string.Join(", ", differences.Select(x => x.GetType().Name)));
             await db.Database.MigrateAsync();
             var aggregate = DataSetAggregate.Create(id,
                 new DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()),
