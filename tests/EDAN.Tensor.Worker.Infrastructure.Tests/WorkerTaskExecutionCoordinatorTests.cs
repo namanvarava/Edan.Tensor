@@ -193,6 +193,37 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorStopsExecutionWhenLeaseRenewalThrows()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.lease-renewal-error", "lease-renewal-error-key",
+            "payload://test", DateTimeOffset.UtcNow, maxAttempts: 3);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        var execution = new PendingExecution();
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new FixedResolver("test.lease-renewal-error", new PendingExecutionHandler(execution)),
+            new ThrowingLeaseRenewer(), new WorkerExecutionRegistry(), TimeProvider.System);
+
+        var outcome = await coordinator.ExecuteAsync(
+            tenantId, task.Id, "worker-test", TimeSpan.FromSeconds(3));
+
+        Assert.Equal(WorkerTaskExecutionOutcome.LeaseLost, outcome);
+        Assert.Equal(1, execution.CheckpointRequests);
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.Running, persisted!.Status);
+        Assert.NotNull(persisted.LeaseId);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -235,6 +266,13 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
             DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
             Task.FromResult(false);
+    }
+
+    private sealed class ThrowingLeaseRenewer : IWorkerTaskLeaseRenewer
+    {
+        public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+            DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated lease renewal storage failure.");
     }
 
     private sealed class ExecutionCancellationResolver(CancellationTokenSource cancellation)

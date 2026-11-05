@@ -152,8 +152,22 @@ public sealed class WorkerTaskExecutionCoordinator(
 
                     await delay;
                     now = timeProvider.GetUtcNow();
-                    var renewed = await leaseRenewer.RenewAsync(
-                        tenantId, taskId, leaseId, fencingToken, now, now.Add(leaseDuration), cancellationToken);
+                    bool renewed;
+                    try
+                    {
+                        renewed = await leaseRenewer.RenewAsync(
+                            tenantId, taskId, leaseId, fencingToken, now, now.Add(leaseDuration), cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        // 갱신 결과를 확인할 수 없으면 Lease 소유권을 보장할 수 없으므로 보수적으로 실행을 중단합니다.
+                        renewed = false;
+                    }
+
                     if (!renewed)
                     {
                         await execution.RequestCheckpointAndStopAsync(CancellationToken.None);
