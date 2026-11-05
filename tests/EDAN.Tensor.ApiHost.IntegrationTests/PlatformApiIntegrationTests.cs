@@ -449,9 +449,14 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(0, taskStatus.GetProperty("progressPercent").GetInt32());
         Assert.False(taskStatus.GetProperty("hasResult").GetBoolean());
 
+        using var missingTaskStatus = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, missingTaskStatus.StatusCode);
+
+        // 다른 Tenant는 현재 Tenant 선택 및 멤버십 경계에서 차단됩니다.
         using var crossTenantTaskStatus = await client.GetAsync(
             $"/api/platform/tenants/{Guid.NewGuid()}/worker/tasks/{enqueuedTaskId}");
-        Assert.Equal(HttpStatusCode.NotFound, crossTenantTaskStatus.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, crossTenantTaskStatus.StatusCode);
 
         using var duplicateEnqueue = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/worker/tasks",
