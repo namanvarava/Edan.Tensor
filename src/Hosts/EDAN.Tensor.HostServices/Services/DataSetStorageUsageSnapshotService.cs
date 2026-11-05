@@ -42,16 +42,29 @@ public sealed class DataSetStorageUsageSnapshotService(
     {
         var now = timeProvider.GetUtcNow();
         var period = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero);
-        var dataSets = await dataSetDb.DataSets.AsNoTracking()
+        // WorkerTask 경로에서는 단일 Tenant만 조회해 다른 Tenant의 메타데이터를 메모리에 적재하지 않습니다.
+        // 운영/관리용 전체 수집(CaptureDueAsync)은 기존처럼 전체 범위를 처리합니다.
+        var dataSetQuery = dataSetDb.DataSets.AsNoTracking();
+        var policyQuery = platformDb.StorageQuotaPolicies.AsNoTracking();
+        var activeEventQuery = dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.EventType == "Warning" || x.EventType == "Exceeded");
+
+        if (onlyTenantId.HasValue)
+        {
+            var tenantId = onlyTenantId.Value;
+            dataSetQuery = dataSetQuery.Where(x => x.TenantId == tenantId);
+            policyQuery = policyQuery.Where(x => x.TenantId.Value == tenantId);
+            activeEventQuery = activeEventQuery.Where(x => x.TenantId == tenantId);
+        }
+
+        var dataSets = await dataSetQuery
             .OrderBy(x => x.TenantId).ThenBy(x => x.OrganizationId).ThenBy(x => x.ProjectId)
             .ToListAsync(cancellationToken);
-        var policies = await platformDb.StorageQuotaPolicies.AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var policies = await policyQuery.ToListAsync(cancellationToken);
 
         // 데이터가 아직 없는 Tenant도 활성 정책이 있으면 평가 대상에 포함합니다.
         // 삭제된 정책도 마지막 활성 이벤트가 남아 있으면 해제 전이를 기록할 수 있도록 이력을 평가 대상에 포함합니다.
-        var eventTenantIds = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
-            .Where(x => x.EventType == "Warning" || x.EventType == "Exceeded")
+        var eventTenantIds = await activeEventQuery
             .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
         var activePolicyIds = policies.Select(x => x.Id).ToHashSet();
         var tenantIds = dataSets.Select(x => x.TenantId)
