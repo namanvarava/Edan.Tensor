@@ -256,9 +256,13 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
     public async Task<bool> RenewLeaseAsync(TenantId tenantId, Guid leaseId, DateTimeOffset nowUtc,
         DateTimeOffset leaseExpiresAtUtc, CancellationToken cancellationToken = default)
     {
+        var schedule = await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.LeaseId == leaseId, cancellationToken);
+        if (schedule?.LeaseExpiresAtUtc is not DateTimeOffset currentExpiry || currentExpiry <= nowUtc)
+            return false;
+
         var affected = await db.AuthorizationAuditArchiveSchedules
-            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
-                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc)
+            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId && x.Version == schedule.Version)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.LeaseExpiresAtUtc, leaseExpiresAtUtc)
                 .SetProperty(x => x.Version, x => x.Version + 1), cancellationToken);
@@ -269,9 +273,8 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
         DateTimeOffset? archivedThroughUtc, bool succeeded, CancellationToken cancellationToken = default)
     {
         var schedule = await db.AuthorizationAuditArchiveSchedules.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
-                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc, cancellationToken);
-        if (schedule is null)
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.LeaseId == leaseId, cancellationToken);
+        if (schedule?.LeaseExpiresAtUtc is not DateTimeOffset currentExpiry || currentExpiry <= nowUtc)
             throw new InvalidOperationException("아카이브 예약 실행 임대가 만료되었거나 다른 작업자가 소유합니다.");
 
         var nextRunAtUtc = succeeded
@@ -279,8 +282,7 @@ public sealed class AuthorizationAuditArchiveScheduleRepository(PlatformDbContex
                 ? nowUtc : nowUtc.AddHours(schedule.IntervalHours))
             : nowUtc.AddMinutes(5);
         var affected = await db.AuthorizationAuditArchiveSchedules
-            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId &&
-                x.LeaseExpiresAtUtc.HasValue && x.LeaseExpiresAtUtc.Value > nowUtc)
+            .Where(x => x.TenantId == tenantId && x.LeaseId == leaseId && x.Version == schedule.Version)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.LastRunAtUtc, succeeded ? archivedThroughUtc : schedule.LastRunAtUtc)
                 .SetProperty(x => x.NextRunAtUtc, nextRunAtUtc)
