@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
         var adapter = new SqliteDataSetStorageAdapter(connectionString, maxContentBytes);
         services.AddSingleton<IDataSetStorageAdapter>(adapter);
         services.AddSingleton<IDataSetStorageUsageReader>(adapter);
+        services.AddSingleton<IDataSetTenantStorageUsageReader>(adapter);
         services.AddSingleton<IDataSetStorageQuotaPolicyProvider>(new HierarchicalDataSetStorageQuotaPolicyProvider(quotaPolicy ?? new DataSetStorageQuotaPolicy(null, null, null, null), quotaAssignments));
         services.AddSingleton<IDataSetStorageAdapterResolver, DataSetStorageAdapterResolver>();
         return services;

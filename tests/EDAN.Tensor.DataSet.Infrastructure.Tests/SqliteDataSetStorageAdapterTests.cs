@@ -62,6 +62,39 @@ public sealed class SqliteDataSetStorageAdapterTests
     }
 
     [Fact]
+    public async Task TenantUsageIncludesOnlyTheRequestedTenant()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "edan-content-tenant-usage-" + Guid.NewGuid().ToString("N") + ".db");
+        try
+        {
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var allocation = Allocation();
+            var reference = await adapter.AllocateAsync(allocation);
+            await using (var content = new MemoryStream("tenant-data"u8.ToArray()))
+                await adapter.WriteAsync(allocation, reference, content, Unlimited());
+
+            var otherTenant = Guid.NewGuid();
+            var otherAllocation = new DataSetStorageAllocation(new DataSetId(Guid.NewGuid()),
+                new DataSetScope(otherTenant, Guid.NewGuid(), Guid.NewGuid()));
+            var otherReference = await adapter.AllocateAsync(otherAllocation);
+            await using (var otherContent = new MemoryStream("other"u8.ToArray()))
+                await adapter.WriteAsync(otherAllocation, otherReference, otherContent, Unlimited());
+
+            var usage = await adapter.GetTenantUsageAsync(allocation.Scope.TenantId);
+            Assert.Equal(11, usage.TenantBytes);
+            Assert.Equal(1, usage.TenantDataSetCount);
+            var emptyUsage = await adapter.GetTenantUsageAsync(Guid.NewGuid());
+            Assert.Equal(0, emptyUsage.TenantBytes);
+            Assert.Equal(0, emptyUsage.TenantDataSetCount);
+            await Assert.ThrowsAsync<ArgumentException>(() => adapter.GetTenantUsageAsync(Guid.Empty));
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ContentCannotBeReadOrWrittenAcrossTenantScope()
     {
         var path = Path.Combine(Path.GetTempPath(), "edan-content-" + Guid.NewGuid().ToString("N") + ".db");

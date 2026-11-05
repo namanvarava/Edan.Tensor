@@ -156,6 +156,24 @@ public static class DataSetEndpoints
                     : Results.Conflict(new { result.Error.Code, result.Error.Description });
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("ActivateDataSet");
 
+        var tenantUsageGroup = endpoints.MapGroup("/api/platform/tenants/{tenantId:guid}")
+            .WithTags("DataSet")
+            .RequireAuthorization("TenantMember")
+            .AddEndpointFilter<TenantRouteAuthorizationFilter>()
+            .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+
+        tenantUsageGroup.MapGet("/storage-usage", async (Guid tenantId,
+            IDataSetTenantStorageUsageReader usageReader, CancellationToken token) =>
+        {
+            var usage = await usageReader.GetTenantUsageAsync(tenantId, token);
+            return Results.Ok(new
+            {
+                usage.TenantBytes,
+                usage.TenantDataSetCount,
+                MeasuredAtUtc = DateTimeOffset.UtcNow
+            });
+        }).WithName("GetTenantStorageUsage");
+
         return endpoints;
     }
 

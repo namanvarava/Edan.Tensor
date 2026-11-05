@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace EDAN.Tensor.DataSet.Infrastructure.Storage;
 
 /// <summary>DataSet 콘텐츠를 전용 SQLite DB에 저장하며 메타데이터 DB와 물리적으로 분리합니다.</summary>
-public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataSetStorageUsageReader
+public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataSetStorageUsageReader, IDataSetTenantStorageUsageReader
 {
     private readonly string connectionString;
     private readonly long maxContentBytes;
@@ -137,6 +137,24 @@ public sealed class SqliteDataSetStorageAdapter : IDataSetStorageAdapter, IDataS
             reader.GetInt64(2), reader.GetInt64(3),
             reader.GetInt64(4), reader.GetInt64(5),
             reader.GetInt64(6));
+    }
+
+    public async Task<DataSetTenantStorageUsage> GetTenantUsageAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT
+                COALESCE(SUM(length(Content)), 0),
+                COUNT(DISTINCT DataSetId)
+            FROM DataSetContent
+            WHERE TenantId = $tenantId;
+            """;
+        command.Parameters.AddWithValue("$tenantId", tenantId.ToString("D"));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await reader.ReadAsync(cancellationToken);
+        return new DataSetTenantStorageUsage(reader.GetInt64(0), reader.GetInt64(1));
     }
 
     public async Task ReleaseAsync(DataSetStorageAllocation allocation, StorageReference reference, CancellationToken cancellationToken = default)

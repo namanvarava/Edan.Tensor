@@ -27,6 +27,15 @@ public interface IDataSetStorageUsageReader
     Task<DataSetStorageUsage> GetUsageAsync(DataSetStorageAllocation allocation, CancellationToken cancellationToken = default);
 }
 
+/// <summary>Tenant 전체의 실제 콘텐츠 저장량입니다. 메타데이터가 아닌 콘텐츠 DB 기준입니다.</summary>
+public sealed record DataSetTenantStorageUsage(long TenantBytes, long TenantDataSetCount);
+
+/// <summary>Tenant 전체 저장량 조회 계약입니다. Tenant ID 이외의 소유 범위는 입력받지 않습니다.</summary>
+public interface IDataSetTenantStorageUsageReader
+{
+    Task<DataSetTenantStorageUsage> GetTenantUsageAsync(Guid tenantId, CancellationToken cancellationToken = default);
+}
+
 /// <summary>현재 DataSet 및 그 소유 Project 범위의 콘텐츠 사용량 스냅샷입니다.</summary>
 public sealed record DataSetStorageUsage(
     long TenantBytes, long TenantDataSetCount,
