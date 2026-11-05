@@ -27,6 +27,30 @@ public sealed class WorkerTaskTests
                 "payload://archive/1", Now));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void InvalidLeaseAcquisitionDoesNotMutateTask(int invalidInput)
+    {
+        var task = Create();
+        var version = task.Version;
+        Action acquire = invalidInput switch
+        {
+            0 => () => task.AcquireLease(" ", Guid.NewGuid(), Now, Now.AddMinutes(10)),
+            1 => () => task.AcquireLease("worker-a", Guid.Empty, Now, Now.AddMinutes(10)),
+            _ => () => task.AcquireLease("worker-a", Guid.NewGuid(), Now, Now)
+        };
+
+        Assert.ThrowsAny<ArgumentException>(acquire);
+
+        Assert.Equal(WorkerTaskStatus.Pending, task.Status);
+        Assert.Equal(0, task.AttemptCount);
+        Assert.Equal(0, task.FencingToken);
+        Assert.Null(task.LeaseId);
+        Assert.Equal(version, task.Version);
+    }
+
     [Fact]
     public void LeaseAndStartRequireMatchingOwnership()
     {
