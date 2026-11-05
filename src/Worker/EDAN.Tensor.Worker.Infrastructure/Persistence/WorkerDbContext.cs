@@ -74,8 +74,8 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.Property<long>("ReadyAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds").HasColumnType("INTEGER");
         entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
-        entity.HasIndex(x => new { x.TenantId, x.Status, EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") });
-        entity.HasIndex(x => new { x.Status, EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds") });
+        entity.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds");
+        entity.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds");
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
 
         var replay = modelBuilder.Entity<WorkerTaskReplayRecord>();
