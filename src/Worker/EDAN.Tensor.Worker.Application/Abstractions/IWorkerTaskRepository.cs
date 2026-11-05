@@ -5,8 +5,8 @@ namespace EDAN.Tensor.Worker.Application.Abstractions;
 public interface IWorkerTaskRepository
 {
     Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, int skip = 0);
+    Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, int skip = 0);
     Task<int> RecoverExpiredLeasesAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default);
     Task<WorkerTask?> TryAcquireLeaseAsync(Guid tenantId, Guid taskId, string workerId, Guid leaseId, DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default);
     Task<bool> TryStartAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);

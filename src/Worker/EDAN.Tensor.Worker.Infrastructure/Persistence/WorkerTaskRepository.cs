@@ -9,9 +9,10 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     public Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default) =>
         db.WorkerTasks.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
 
-    public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, int skip = 0)
     {
         if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
+        if (skip < 0) throw new ArgumentOutOfRangeException(nameof(skip));
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         return await db.WorkerTasks.AsNoTracking()
             .Where(x => x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled)
@@ -24,20 +25,23 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             })
             .OrderBy(x => x.ReadyAtMilliseconds)
             .ThenBy(x => x.TenantId)
+            .Skip(skip)
             .Take(take)
             .Select(x => x.TenantId)
             .ToArrayAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, int skip = 0)
     {
         if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
+        if (skip < 0) throw new ArgumentOutOfRangeException(nameof(skip));
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         return await db.WorkerTasks.AsNoTracking()
             .Where(x => x.TenantId == tenantId && (x.Status == WorkerTaskStatus.Pending || x.Status == WorkerTaskStatus.RetryScheduled))
             .Where(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds") <= nowMilliseconds)
             .OrderBy(x => EF.Property<long>(x, "ReadyAtUtcUnixMilliseconds"))
             .ThenBy(x => x.Id)
+            .Skip(skip)
             .Take(take)
             .ToArrayAsync(cancellationToken);
     }

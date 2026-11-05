@@ -299,4 +299,38 @@ public sealed class WorkerTaskRepositoryTests
         Assert.Empty(await repository.GetReadyAsync(tenantId, now.AddMinutes(2), 10));
     }
 
+
+    [Fact]
+    public async Task ReadyQueriesSupportStablePaginationAcrossTenantsAndWithinTenant()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var now = DateTimeOffset.UtcNow;
+        var tenants = Enumerable.Range(0, 3).Select(_ => Guid.NewGuid()).OrderBy(x => x).ToArray();
+        var tenantTasks = new Dictionary<Guid, WorkerTask[]>();
+        foreach (var tenantId in tenants)
+        {
+            tenantTasks[tenantId] = Enumerable.Range(0, 3)
+                .Select(index => WorkerTask.Create(tenantId, "test.ready", $"task-{index}", $"payload://{index}", now))
+                .ToArray();
+            db.WorkerTasks.AddRange(tenantTasks[tenantId]);
+        }
+        await db.SaveChangesAsync();
+        var repository = new WorkerTaskRepository(db);
+
+        var firstTenantPage = await repository.GetReadyTenantIdsAsync(now, 2);
+        var secondTenantPage = await repository.GetReadyTenantIdsAsync(now, 2, skip: 2);
+        Assert.Equal(tenants.Take(2), firstTenantPage);
+        Assert.Equal(tenants.Skip(2), secondTenantPage);
+
+        var firstTaskPage = await repository.GetReadyAsync(tenants[0], now, 2);
+        var secondTaskPage = await repository.GetReadyAsync(tenants[0], now, 2, skip: 2);
+        var expectedTaskOrder = tenantTasks[tenants[0]].OrderBy(x => x.Id).Select(x => x.IdempotencyKey).ToArray();
+        Assert.Equal(expectedTaskOrder.Take(2), firstTaskPage.Select(x => x.IdempotencyKey));
+        Assert.Equal(expectedTaskOrder.Skip(2), secondTaskPage.Select(x => x.IdempotencyKey));
+    }
+
 }

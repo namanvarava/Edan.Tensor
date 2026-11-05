@@ -16,6 +16,8 @@ internal sealed class WorkerTaskDispatcher(
     private TaskCompletionSource _activeDrained = CompletedSource();
     private readonly string _workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
     private int _tenantCursor;
+    private int _tenantPageSkip;
+    private readonly ConcurrentDictionary<Guid, int> _tenantTaskOffsets = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -42,22 +44,39 @@ internal sealed class WorkerTaskDispatcher(
         var recoveryBatchSize = Math.Clamp(configuration.GetValue("Worker:LeaseRecoveryBatchSize", 100), 1, 500);
         var recovered = await repository.RecoverExpiredLeasesAsync(now, recoveryBatchSize, cancellationToken);
         if (recovered > 0) logger.LogWarning("만료된 Worker Lease {Count}건을 복구했습니다.", recovered);
-        var tenantIds = await repository.GetReadyTenantIdsAsync(now, 500, cancellationToken);
+        const int tenantPageSize = 500;
+        var tenantIds = await repository.GetReadyTenantIdsAsync(now, tenantPageSize, cancellationToken, _tenantPageSkip);
+        if (tenantIds.Count == 0 && _tenantPageSkip > 0)
+        {
+            _tenantPageSkip = 0;
+            tenantIds = await repository.GetReadyTenantIdsAsync(now, tenantPageSize, cancellationToken);
+        }
         if (tenantIds.Count == 0) return;
+        _tenantPageSkip = tenantIds.Count < tenantPageSize ? 0 : _tenantPageSkip + tenantIds.Count;
         var start = (int)(((uint)Interlocked.Increment(ref _tenantCursor) - 1) % (uint)tenantIds.Count);
+        var candidateBatchSize = Math.Clamp(configuration.GetValue("Worker:TenantCandidateBatchSize", 16), 1, 100);
+        var maxCandidateScan = Math.Clamp(configuration.GetValue("Worker:TenantCandidateScanLimit", 500), candidateBatchSize, 5000);
         for (var offset = 0; offset < tenantIds.Count && slots > 0; offset++)
         {
             var tenantId = tenantIds[(start + offset) % tenantIds.Count];
-            // 등록되지 않은 TaskType이 테넌트 큐 선두에 있어도 뒤의 실행 가능 작업을 막지 않도록 제한된 후보를 확인합니다.
-            var candidateBatchSize = Math.Clamp(configuration.GetValue("Worker:TenantCandidateBatchSize", 16), 1, 100);
-            var tasks = await repository.GetReadyAsync(tenantId, now, candidateBatchSize, cancellationToken);
-            var task = tasks.FirstOrDefault(x => handlers.Resolve(x.TaskType) is not null);
-            if (task is null)
+            WorkerTask? task = null;
+            var taskSkip = _tenantTaskOffsets.GetOrAdd(tenantId, 0);
+            var scanned = 0;
+            var reachedEnd = false;
+            for (var pageSkip = 0; pageSkip < maxCandidateScan; pageSkip += candidateBatchSize)
             {
-                if (tasks.Count > 0)
-                    logger.LogDebug("등록된 핸들러가 있는 작업이 후보 범위에 없습니다. TenantId={TenantId}, CandidateCount={CandidateCount}", tenantId, tasks.Count);
-                continue;
+                var tasks = await repository.GetReadyAsync(tenantId, now, candidateBatchSize, cancellationToken, taskSkip + pageSkip);
+                scanned += tasks.Count;
+                task = tasks.FirstOrDefault(x => handlers.Resolve(x.TaskType) is not null);
+                if (task is not null) break;
+                if (tasks.Count < candidateBatchSize)
+                {
+                    reachedEnd = true;
+                    break;
+                }
             }
+            _tenantTaskOffsets[tenantId] = reachedEnd ? 0 : taskSkip + Math.Max(scanned, candidateBatchSize);
+            if (task is null) continue;
             var key = $"{tenantId:N}:{task.Id:N}";
             if (!TryMarkActive(key)) continue;
             slots--;
