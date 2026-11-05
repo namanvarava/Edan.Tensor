@@ -335,6 +335,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         job.Property(x => x.Sha256).HasMaxLength(64);
         job.Property(x => x.FailureReason).HasMaxLength(500);
         job.Property(x => x.Version).IsConcurrencyToken();
+        job.HasAlternateKey(x => new { x.Id, x.TenantId });
         job.HasIndex(x => new { x.TenantId, x.CreatedAtUtc });
         job.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
 
@@ -346,8 +347,11 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         attempt.Property(x => x.StartedAtUtc).IsRequired();
         attempt.Property(x => x.ResultCode).HasMaxLength(200);
         attempt.HasIndex(x => new { x.TenantId, x.JobId, x.StartedAtUtc });
+        attempt.HasIndex(x => new { x.JobId, x.TenantId });
         attempt.HasOne<AuthorizationAuditArchiveJob>().WithMany()
-            .HasForeignKey(x => x.JobId).OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(x => new { x.JobId, x.TenantId })
+            .HasPrincipalKey(x => new { x.Id, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
         attempt.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
