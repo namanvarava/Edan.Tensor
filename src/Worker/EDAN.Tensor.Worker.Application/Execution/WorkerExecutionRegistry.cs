@@ -64,9 +64,10 @@ public sealed class WorkerExecutionRegistry
             try { await _drained.Task.WaitAsync(remainingHandoffTime, cancellationToken); }
             catch (TimeoutException) { }
         }
+        var handoffElapsed = Stopwatch.GetElapsedTime(handoffStartedAt);
         int remaining;
         lock (_sync) remaining = _active.Count;
-        return new WorkerShutdownResult(false, outcomes.Length, outcomes.Count(x => x), remaining);
+        return new WorkerShutdownResult(false, outcomes.Length, outcomes.Count(x => x), remaining, handoffElapsed);
     }
 
     internal void Exit(long id)
@@ -126,4 +127,8 @@ public sealed class WorkerExecutionLease : IDisposable
 }
 
 public sealed record WorkerShutdownResult(
-    bool DrainedWithinGracePeriod, int HandoffRequested, int HandoffSucceeded, int StillRunning);
+    bool DrainedWithinGracePeriod,
+    int HandoffRequested,
+    int HandoffSucceeded,
+    int StillRunning,
+    TimeSpan HandoffElapsed = default);
