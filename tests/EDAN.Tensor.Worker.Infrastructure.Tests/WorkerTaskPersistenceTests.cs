@@ -31,6 +31,7 @@ public sealed class WorkerTaskPersistenceTests
 
         repository.Add(WorkerTask.Create(tenantA, "archive.generate", "same-key", "payload://duplicate", now));
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
 
         repository.Add(WorkerTask.Create(tenantB, "archive.generate", "same-key", "payload://archive/b", now));
         await db.SaveChangesAsync();
