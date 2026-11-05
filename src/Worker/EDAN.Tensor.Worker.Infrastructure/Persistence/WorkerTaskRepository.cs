@@ -43,13 +43,17 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     }
 
     /// <summary>만료된 Lease를 재시도 대기 또는 DLQ로 전이하여 Worker 비정상 종료 후 작업을 복구합니다.</summary>
-    public async Task<int> RecoverExpiredLeasesAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    public async Task<int> RecoverExpiredLeasesAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default)
     {
+        if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
         var nowMilliseconds = nowUtc.ToUnixTimeMilliseconds();
         var candidates = await db.WorkerTasks
             .Where(x => x.Status == WorkerTaskStatus.Leased || x.Status == WorkerTaskStatus.Running || x.Status == WorkerTaskStatus.Checkpointed)
             .Where(x => EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds").HasValue
                 && EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds") <= nowMilliseconds)
+            .OrderBy(x => EF.Property<long?>(x, "LeaseExpiresAtUtcUnixMilliseconds"))
+            .ThenBy(x => x.Id)
+            .Take(take)
             .ToListAsync(cancellationToken);
         var recovered = 0;
         foreach (var task in candidates)

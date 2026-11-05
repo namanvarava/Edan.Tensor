@@ -39,7 +39,8 @@ internal sealed class WorkerTaskDispatcher(
         using var scope = scopeFactory.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IWorkerTaskRepository>();
         var now = timeProvider.GetUtcNow();
-        var recovered = await repository.RecoverExpiredLeasesAsync(now, cancellationToken);
+        var recoveryBatchSize = Math.Clamp(configuration.GetValue("Worker:LeaseRecoveryBatchSize", 100), 1, 500);
+        var recovered = await repository.RecoverExpiredLeasesAsync(now, recoveryBatchSize, cancellationToken);
         if (recovered > 0) logger.LogWarning("만료된 Worker Lease {Count}건을 복구했습니다.", recovered);
         var tenantIds = await repository.GetReadyTenantIdsAsync(now, 500, cancellationToken);
         if (tenantIds.Count == 0) return;

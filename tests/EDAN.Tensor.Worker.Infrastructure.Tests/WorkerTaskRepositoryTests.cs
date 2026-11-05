@@ -116,7 +116,7 @@ public sealed class WorkerTaskRepositoryTests
         var leased = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "worker-old", oldLease, now, now.AddMinutes(1));
         Assert.NotNull(leased);
         Assert.True(await repository.TryStartAsync(tenantId, task.Id, oldLease, leased.FencingToken, now));
-        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2)));
+        Assert.Equal(1, await repository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 100));
         var recovered = await repository.GetAsync(tenantId, task.Id);
         Assert.Equal(WorkerTaskStatus.RetryScheduled, recovered!.Status);
         Assert.Equal("worker.lease.expired", recovered.LastErrorCode);
@@ -152,4 +152,40 @@ public sealed class WorkerTaskRepositoryTests
         Assert.Equal("worker.lease.expired", recovered.LastErrorCode);
         Assert.Null(recovered.NextAttemptAtUtc);
     }
+
+    [Fact]
+    public async Task ExpiredLeaseRecoveryProcessesOnlyTheOldestRequestedBatch()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var tasks = new[]
+        {
+            WorkerTask.Create(tenantId, "test.recovery", "expired-1", "payload://1", now),
+            WorkerTask.Create(tenantId, "test.recovery", "expired-2", "payload://2", now),
+            WorkerTask.Create(tenantId, "test.recovery", "expired-3", "payload://3", now)
+        };
+        for (var index = 0; index < tasks.Length; index++)
+        {
+            var leaseId = Guid.NewGuid();
+            var expiry = now.AddMinutes(index + 1);
+            tasks[index].AcquireLease("worker", leaseId, now, expiry);
+            tasks[index].Start(leaseId, tasks[index].FencingToken, now);
+        }
+        db.WorkerTasks.AddRange(tasks);
+        await db.SaveChangesAsync();
+
+        var repository = new WorkerTaskRepository(db);
+        var recovered = await repository.RecoverExpiredLeasesAsync(now.AddMinutes(5), 2);
+
+        Assert.Equal(2, recovered);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, (await repository.GetAsync(tenantId, tasks[0].Id))!.Status);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, (await repository.GetAsync(tenantId, tasks[1].Id))!.Status);
+        Assert.Equal(WorkerTaskStatus.Running, (await repository.GetAsync(tenantId, tasks[2].Id))!.Status);
+    }
+
 }
