@@ -47,4 +47,10 @@ public sealed class AddWorkerTasks : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder) =>
         migrationBuilder.DropTable("worker_tasks");
+
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+        WorkerDbContext.ConfigureModel(modelBuilder);
+    }
 }
