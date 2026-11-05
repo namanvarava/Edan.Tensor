@@ -189,6 +189,50 @@ public sealed class WorkerTaskRepositoryTests
     }
 
     [Fact]
+    public async Task StaleExecutionContextCannotCompleteTaskAfterAnotherContextRecoversExpiredLease()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var executionDb = new WorkerDbContext(options);
+        await executionDb.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var task = WorkerTask.Create(tenantId, "test.stale-lease", "stale-after-recovery",
+            "payload://stale", now, maxAttempts: 3);
+        executionDb.WorkerTasks.Add(task);
+        await executionDb.SaveChangesAsync();
+
+        var executionRepository = new WorkerTaskRepository(executionDb);
+        var leaseId = Guid.NewGuid();
+        var leased = await executionRepository.TryAcquireLeaseAsync(
+            tenantId, task.Id, "worker-a", leaseId, now, now.AddMinutes(1));
+        Assert.NotNull(leased);
+        Assert.True(await executionRepository.TryStartAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now));
+
+        // Keep the execution context's entity tracked while another context expires its lease.
+        var tracked = await executionRepository.GetAsync(tenantId, task.Id);
+        Assert.NotNull(tracked);
+        await using (var recoveryDb = new WorkerDbContext(options))
+        {
+            var recoveryRepository = new WorkerTaskRepository(recoveryDb);
+            Assert.Equal(1, await recoveryRepository.RecoverExpiredLeasesAsync(now.AddMinutes(2), 10));
+        }
+
+        Assert.False(await executionRepository.TryCompleteAsync(
+            tenantId, task.Id, leaseId, leased.FencingToken, now.AddMinutes(3)));
+
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, tracked!.Status);
+        Assert.Null(tracked.LeaseId);
+        var persisted = await executionDb.WorkerTasks.AsNoTracking()
+            .SingleAsync(x => x.TenantId == tenantId && x.Id == task.Id);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted.Status);
+        Assert.Null(persisted.LeaseId);
+    }
+
+    [Fact]
     public async Task LeaseRenewalFromAnotherContextDoesNotPreventCompletionInOriginalContext()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
