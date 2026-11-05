@@ -25,8 +25,14 @@ public sealed class DataSetStorageUsageSnapshotService(
             .ToListAsync(cancellationToken);
 
         // 데이터가 아직 없는 Tenant도 활성 정책이 있으면 평가 대상에 포함합니다.
+        // 삭제된 정책도 마지막 활성 이벤트가 남아 있으면 해제 전이를 기록할 수 있도록 이력을 평가 대상에 포함합니다.
+        var eventTenantIds = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.EventType == "Warning" || x.EventType == "Exceeded")
+            .Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
+        var activePolicyIds = policies.Select(x => x.Id).ToHashSet();
         var tenantIds = dataSets.Select(x => x.TenantId)
             .Concat(policies.Select(x => x.TenantId.Value))
+            .Concat(eventTenantIds)
             .Distinct().OrderBy(x => x).ToArray();
 
         foreach (var tenantId in tenantIds)
@@ -110,10 +116,43 @@ public sealed class DataSetStorageUsageSnapshotService(
 
                 await EvaluatePolicyAsync(policy, usedBytes, limitBytes, now, cancellationToken);
             }
+
+            await ResolveDeletedPoliciesAsync(tenantId, activePolicyIds, now, cancellationToken);
         }
 
         await dataSetDb.SaveChangesAsync(cancellationToken);
         return tenantIds.Length;
+    }
+
+    /// <summary>삭제된 정책의 마지막 Warning/Exceeded 상태를 한 번만 해제합니다.</summary>
+    private async Task ResolveDeletedPoliciesAsync(
+        Guid tenantId, IReadOnlySet<Guid> activePolicyIds, DateTimeOffset now, CancellationToken token)
+    {
+        var latestEvents = await dataSetDb.QuotaThresholdEvents.AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .OrderByDescending(x => x.Id)
+            .ToListAsync(token);
+
+        foreach (var latest in latestEvents.GroupBy(x => x.PolicyId).Select(x => x.First()))
+        {
+            if (activePolicyIds.Contains(latest.PolicyId)
+                || latest.EventType is not ("Warning" or "Exceeded"))
+                continue;
+
+            dataSetDb.QuotaThresholdEvents.Add(new DataSetQuotaThresholdEvent
+            {
+                TenantId = latest.TenantId,
+                PolicyId = latest.PolicyId,
+                Scope = latest.Scope,
+                TargetId = latest.TargetId,
+                EventType = "Resolved",
+                UsedBytes = 0,
+                LimitBytes = latest.LimitBytes,
+                UtilizationPercent = 0,
+                PolicyVersion = latest.PolicyVersion,
+                OccurredAtUtc = now
+            });
+        }
     }
 
     /// <summary>Tenant·Organization·Project·DataSet 범위별 실제 사용량으로 상태 전이를 멱등 기록합니다.</summary>
