@@ -38,3 +38,29 @@ dotnet run --project src/Hosts/EDAN.Tensor.ApiHost
 - 개발 환경 Migration 적용은 개발 편의 설정입니다. 운영 환경에서는 배포 파이프라인에서 Migration을 별도 승인·적용해야 합니다.
 - 운영 환경에 배포하기 전 EF Core Migration과 백업·복구 정책을 확정해야 합니다.
 - DataSet용 DuckDB·Parquet 저장소는 Platform 메타데이터 SQLite와 별도 수명주기로 관리합니다.
+
+## API Host와 Worker Host의 공유 데이터베이스 구성
+
+DataSet 저장량 스냅샷과 Quota 임계치 이벤트의 주기적 수집은 전용 Worker Host가 5분 간격으로 실행합니다. API Host는 저장량 및 이벤트 이력 조회 API만 제공합니다.
+
+두 Host는 반드시 동일한 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 DB를 사용해야 합니다. Worker Host는 잘못된 별도 DB 파일을 조용히 생성하지 않도록 아래 연결 문자열을 명시적으로 요구합니다. 두 프로세스의 상대 경로 기준 디렉터리가 다르므로 절대 경로 사용을 권장합니다.
+
+PowerShell 예시(두 Host 실행 터미널에 동일하게 설정):
+
+```powershell
+$env:ConnectionStrings__PlatformDatabase = "Data Source=D:\EDAN\Data\edan-platform.db"
+$env:ConnectionStrings__WorkerDatabase = "Data Source=D:\EDAN\Data\edan-worker.db"
+$env:ConnectionStrings__DataSetDatabase = "Data Source=D:\EDAN\Data\edan-dataset.db;Cache=Shared"
+$env:ConnectionStrings__DataSetContentDatabase = "Data Source=D:\EDAN\Data\edan-dataset-content.db;Cache=Shared"
+```
+
+API Host와 Worker Host를 각각 실행합니다.
+
+```powershell
+dotnet run --project src/Hosts/EDAN.Tensor.ApiHost
+dotnet run --project src/Hosts/EDAN.Tensor.WorkerHost
+```
+
+개발 환경 Migration 자동 적용을 사용하는 경우 두 Host가 동시에 Migration을 실행하지 않도록 순차적으로 시작합니다. 운영 환경에서는 두 Host 모두 자동 Migration을 비활성화하고 배포 파이프라인에서 각 데이터베이스 Migration을 승인·적용합니다.
+
+Worker Host의 `/health`는 Worker 프로세스 상태를 확인합니다. 실제 주기 작업 결과는 API의 Tenant 저장량 이력 및 Quota 이벤트 조회 API로 확인합니다.
