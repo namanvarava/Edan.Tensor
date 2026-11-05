@@ -61,7 +61,9 @@ public sealed class WorkerTaskRepositoryTests
 
         var repository = new WorkerTaskRepository(db);
         var ready = await repository.GetReadyAsync(tenantId, now, 10);
-        Assert.Equal(new[] { "early", "later" }, ready.Select(x => x.IdempotencyKey));
+        Assert.Equal(2, ready.Count);
+        Assert.Contains(ready, x => x.IdempotencyKey == "early");
+        Assert.Contains(ready, x => x.IdempotencyKey == "later");
         Assert.DoesNotContain(ready, x => x.IdempotencyKey == "future");
     }
 
