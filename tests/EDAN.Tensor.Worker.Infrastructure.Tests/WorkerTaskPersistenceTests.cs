@@ -70,6 +70,47 @@ public sealed class WorkerTaskPersistenceTests
             tenantB, task.Id, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5)));
     }
 
+
+    [Fact]
+    public async Task CompetingWorkersCannotAcquireTheSameTaskFromStaleSnapshots()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        Guid taskId;
+
+        await using (var setup = new WorkerDbContext(options))
+        {
+            await setup.Database.MigrateAsync();
+            var task = WorkerTask.Create(tenantId, "archive.generate", "competing-lease-key", "payload://archive", now);
+            setup.WorkerTasks.Add(task);
+            await setup.SaveChangesAsync();
+            taskId = task.Id;
+        }
+
+        await using var workerAContext = new WorkerDbContext(options);
+        await using var workerBContext = new WorkerDbContext(options);
+        var workerARepository = new WorkerTaskRepository(workerAContext);
+        var workerBRepository = new WorkerTaskRepository(workerBContext);
+
+        // 두 Worker가 모두 Pending 상태를 읽은 뒤 A가 먼저 Lease를 획득하는 경쟁 상황을 재현합니다.
+        Assert.NotNull(await workerBRepository.GetAsync(tenantId, taskId));
+        var workerALease = await workerARepository.TryAcquireLeaseAsync(
+            tenantId, taskId, "worker-a", Guid.NewGuid(), now, now.AddMinutes(5));
+        Assert.NotNull(workerALease);
+
+        var workerBLease = await workerBRepository.TryAcquireLeaseAsync(
+            tenantId, taskId, "worker-b", Guid.NewGuid(), now, now.AddMinutes(5));
+
+        Assert.Null(workerBLease);
+        var persisted = await workerARepository.GetAsync(tenantId, taskId);
+        Assert.Equal("worker-a", persisted!.WorkerId);
+        Assert.Equal(1, persisted.FencingToken);
+        Assert.Equal(WorkerTaskStatus.Leased, persisted.Status);
+    }
+
     [Fact]
     public async Task CheckpointRenewalAndCompletionRequireCurrentLease()
     {
