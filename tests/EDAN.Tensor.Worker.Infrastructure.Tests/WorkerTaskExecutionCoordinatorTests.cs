@@ -130,6 +130,38 @@ public sealed class WorkerTaskExecutionCoordinatorTests
     }
 
     [Fact]
+    public async Task CoordinatorReleasesLeaseWhenExecutionIsCancelled()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenantId = Guid.NewGuid();
+        var task = WorkerTask.Create(tenantId, "test.execution-cancelled", "execution-cancelled-key",
+            "payload://test", DateTimeOffset.UtcNow, maxAttempts: 3);
+        db.WorkerTasks.Add(task);
+        await db.SaveChangesAsync();
+
+        using var cancellation = new CancellationTokenSource();
+        var repository = new WorkerTaskRepository(db);
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            repository, new ExecutionCancellationResolver(cancellation), new SuccessfulLeaseRenewer(),
+            new WorkerExecutionRegistry(), TimeProvider.System);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            coordinator.ExecuteAsync(tenantId, task.Id, "worker-test",
+                TimeSpan.FromMinutes(5), cancellation.Token));
+
+        var persisted = await repository.GetAsync(tenantId, task.Id);
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted!.Status);
+        Assert.Equal("worker.execution.cancelled", persisted.LastErrorCode);
+        Assert.Null(persisted.LeaseId);
+        Assert.Null(persisted.LeaseExpiresAtUtc);
+    }
+
+    [Fact]
     public void HandlerRegistryResolvesRegisteredTypeAndRejectsDuplicates()
     {
         var registry = new WorkerTaskHandlerRegistry();
@@ -140,6 +172,34 @@ public sealed class WorkerTaskExecutionCoordinatorTests
         Assert.Same(handler, registry.Resolve("test.success"));
         Assert.Null(registry.Resolve("test.unknown"));
         Assert.Throws<InvalidOperationException>(() => registry.Register("test.success", handler));
+    }
+
+    private sealed class ExecutionCancellationResolver(CancellationTokenSource cancellation)
+        : IWorkerTaskHandlerResolver
+    {
+        public IWorkerTaskHandler? Resolve(string taskType) =>
+            taskType == "test.execution-cancelled"
+                ? new ExecutionCancellationHandler(cancellation)
+                : null;
+    }
+
+    private sealed class ExecutionCancellationHandler(CancellationTokenSource cancellation)
+        : IWorkerTaskHandler
+    {
+        public Task<IWorkerTaskExecution> StartAsync(WorkerTask task, CancellationToken cancellationToken)
+        {
+            cancellation.Cancel();
+            return Task.FromResult<IWorkerTaskExecution>(new CancelledExecution(cancellation.Token));
+        }
+    }
+
+    private sealed class CancelledExecution(CancellationToken cancellationToken) : IWorkerTaskExecution
+    {
+        public Task<WorkerTaskExecutionResult> Completion =>
+            Task.FromCanceled<WorkerTaskExecutionResult>(cancellationToken);
+        public Task<string?> RequestCheckpointAndStopAsync(CancellationToken token) =>
+            Task.FromResult<string?>(null);
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class StartupCancellationResolver(CancellationTokenSource cancellation)

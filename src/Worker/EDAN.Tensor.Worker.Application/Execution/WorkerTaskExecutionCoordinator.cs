@@ -165,6 +165,11 @@ public sealed class WorkerTaskExecutionCoordinator(
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                // 실행 중 취소되어도 Lease를 만료까지 보유하지 않고 재시도 상태로 정리합니다.
+                now = timeProvider.GetUtcNow();
+                await repository.TryFailAsync(
+                    tenantId, taskId, leaseId, fencingToken, "worker.execution.cancelled",
+                    now, now.AddMinutes(1), CancellationToken.None);
                 throw;
             }
             catch
