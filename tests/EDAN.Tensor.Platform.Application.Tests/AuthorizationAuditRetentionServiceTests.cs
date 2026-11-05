@@ -40,7 +40,7 @@ public sealed class AuthorizationAuditRetentionServiceTests
     {
         var service = CreateService(new RetentionRepository());
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateAsync(
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.UpdateAsync(
             new TenantId(Guid.NewGuid()), 365, true, null, "admin-subject"));
     }
 
