@@ -1,13 +1,14 @@
 using EDAN.Tensor.DataSet.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
 
 /// <summary>DataSet 메타데이터와 스키마 이력을 전용 데이터베이스 경계에 영속화합니다.</summary>
 public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options) : DbContext(options)
 {
-    public DbSet<DataSet> DataSets => Set<DataSet>();
+    public DbSet<DataSetAggregate> DataSets => Set<DataSetAggregate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,7 +20,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
         var idConverter = new ValueConverter<DataSetId, Guid>(id => id.Value, value => new DataSetId(value));
-        var entity = modelBuilder.Entity<DataSet>();
+        var entity = modelBuilder.Entity<DataSetAggregate>();
         entity.ToTable("datasets");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(idConverter).ValueGeneratedNever();
@@ -34,6 +35,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
             scope.Property(x => x.TenantId).HasColumnName("TenantId").IsRequired();
             scope.Property(x => x.OrganizationId).HasColumnName("OrganizationId").IsRequired();
             scope.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
+            scope.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId });
         });
         entity.Navigation(x => x.Scope).IsRequired();
 
@@ -53,7 +55,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
             revisions.Property(x => x.CreatedAtUtc).IsRequired();
             revisions.HasKey("DataSetId", nameof(DataSetSchemaRevision.Version));
         });
-        entity.HasIndex("Scope_TenantId", "Scope_OrganizationId", "Scope_ProjectId");
+        entity.Navigation(x => x.SchemaRevisions).UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
     }
 }

@@ -35,7 +35,7 @@ public sealed class DataSetRepositoryTests
             var loaded = await repository.GetAsync(id, tenantId);
             Assert.NotNull(loaded);
             Assert.Equal("Sales", loaded.Name);
-            Assert.Equal(1, loaded.SchemaRevisions.Count);
+            Assert.Single(loaded.SchemaRevisions);
             Assert.Equal("{\"type\":\"object\"}", loaded.SchemaRevisions[0].SchemaJson);
             Assert.Null(await repository.GetAsync(id, Guid.NewGuid()));
         }
@@ -59,8 +59,9 @@ public sealed class DataSetRepositoryTests
             .UseSqlite("Data Source=:memory:").Options;
         await using var db = new DataSetDbContext(options);
         var entity = db.Model.FindEntityType(typeof(DataSetAggregate))!;
-        Assert.Contains(entity.GetIndexes(), index =>
+        var scope = entity.FindNavigation(nameof(DataSetAggregate.Scope))!.TargetEntityType;
+        Assert.Contains(scope.GetIndexes(), index =>
             index.Properties.Select(property => property.Name).SequenceEqual(
-                new[] { "Scope_TenantId", "Scope_OrganizationId", "Scope_ProjectId" }));
+                new[] { nameof(DataSetScope.TenantId), nameof(DataSetScope.OrganizationId), nameof(DataSetScope.ProjectId) }));
     }
 }
