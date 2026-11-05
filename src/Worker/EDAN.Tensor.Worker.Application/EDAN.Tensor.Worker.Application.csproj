@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><AssemblyName>EDAN.Tensor.Worker.Application</AssemblyName><RootNamespace>EDAN.Tensor.Worker.Application</RootNamespace></PropertyGroup><ItemGroup><ProjectReference Include="../EDAN.Tensor.Worker.Domain/EDAN.Tensor.Worker.Domain.csproj" /></ItemGroup></Project>
