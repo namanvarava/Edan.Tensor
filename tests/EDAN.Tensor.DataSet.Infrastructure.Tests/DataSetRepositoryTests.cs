@@ -29,8 +29,10 @@ public sealed class DataSetRepositoryTests
             var snapshotModel = migrationsAssembly.ModelSnapshot!.Model;
             var initializedSnapshot = db.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
             var differences = differ.GetDifferences(initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
-            Assert.True(differences.Count == 0,
-                "DataSet Migration Snapshot 차이: " + string.Join("; ", differences.Select(x => x.GetType().Name)));
+            var details = differences.Select(operation => operation is AlterColumnOperation alter
+                ? $"{alter.Table}.{alter.Name}: old(type={alter.OldColumn.ColumnType ?? "<null>"}, nullable={alter.OldColumn.IsNullable}, max={alter.OldColumn.MaxLength?.ToString() ?? "<null>"}); new(type={alter.ColumnType ?? "<null>"}, nullable={alter.IsNullable}, max={alter.MaxLength?.ToString() ?? "<null>"})"
+                : operation.GetType().Name);
+            Assert.True(differences.Count == 0, "DataSet Migration Snapshot 차이: " + string.Join("; ", details));
             await db.Database.MigrateAsync();
             var aggregate = DataSetAggregate.Create(id,
                 new DataSetScope(tenantId, Guid.NewGuid(), Guid.NewGuid()),
