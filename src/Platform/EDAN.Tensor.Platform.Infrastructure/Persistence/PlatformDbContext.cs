@@ -24,6 +24,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationAuditArchiveJob> AuthorizationAuditArchiveJobs => Set<AuthorizationAuditArchiveJob>();
     public DbSet<AuthorizationAuditArchiveAttempt> AuthorizationAuditArchiveAttempts => Set<AuthorizationAuditArchiveAttempt>();
     public DbSet<AuthorizationAuditArchiveSchedule> AuthorizationAuditArchiveSchedules => Set<AuthorizationAuditArchiveSchedule>();
+    public DbSet<WorkerTask> WorkerTasks => Set<WorkerTask>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,6 +45,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationAuditRetention(modelBuilder);
         ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
         ConfigureAuthorizationAuditArchiveSchedule(modelBuilder);
+        ConfigureWorkerTask(modelBuilder);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)
@@ -386,6 +388,29 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Version).IsConcurrencyToken();
         entity.HasIndex(x => x.TenantId).IsUnique();
         entity.HasIndex(x => new { x.IsEnabled, x.NextRunAtUtc });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    /// <summary>Worker 작업을 Tenant 경계와 멱등성·상태 조회 인덱스로 저장합니다.</summary>
+    private static void ConfigureWorkerTask(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<WorkerTask>();
+        entity.ToTable("platform_worker_tasks");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.TenantId)
+            .HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value))
+            .IsRequired();
+        entity.Property(x => x.TaskType).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.PayloadReference).HasMaxLength(500).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.WorkerId).HasMaxLength(200);
+        entity.Property(x => x.Checkpoint).HasMaxLength(4000);
+        entity.Property(x => x.LastErrorCode).HasMaxLength(200);
+        entity.Property(x => x.Version).IsConcurrencyToken();
+        entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+        entity.HasIndex(x => new { x.TenantId, x.Status, x.NextAttemptAtUtc });
+        entity.HasIndex(x => new { x.TenantId, x.LeaseId });
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
