@@ -8,26 +8,20 @@ public sealed class DataSet : AggregateRoot<DataSetId>
 {
     private readonly List<DataSetSchemaRevision> _schemaRevisions = [];
 
-    private DataSet(
-        DataSetId id,
-        DataSetScope scope,
-        string name,
-        StorageReference storageReference,
-        string storageAdapter)
+    // EF Core는 소유 객체(Navigation)를 생성자 인자로 바인딩할 수 없으므로 스칼라 속성만 받습니다.
+    private DataSet(DataSetId id, string name, string storageAdapter)
         : base(id)
     {
-        Scope = scope;
         Name = ValidateName(name);
-        StorageReference = storageReference;
         StorageAdapter = ValidateAdapter(storageAdapter);
         Status = DataSetStatus.Draft;
         CreatedAtUtc = DateTimeOffset.UtcNow;
         Version = 1;
     }
 
-    public DataSetScope Scope { get; }
+    public DataSetScope Scope { get; private set; } = null!;
     public string Name { get; private set; }
-    public StorageReference StorageReference { get; private set; }
+    public StorageReference StorageReference { get; private set; } = null!;
     public string StorageAdapter { get; }
     public DataSetStatus Status { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
@@ -46,7 +40,12 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         ArgumentNullException.ThrowIfNull(id);
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(storageReference);
-        return new DataSet(id, scope, name, storageReference, storageAdapter);
+        var dataSet = new DataSet(id, name, storageAdapter)
+        {
+            Scope = scope,
+            StorageReference = storageReference
+        };
+        return dataSet;
     }
 
     /// <summary>JSON Schema 문서를 불변 버전으로 추가합니다.</summary>
