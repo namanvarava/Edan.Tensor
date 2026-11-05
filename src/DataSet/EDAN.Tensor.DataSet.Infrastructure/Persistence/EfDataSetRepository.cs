@@ -15,6 +15,14 @@ public sealed class EfDataSetRepository(DataSetDbContext dbContext) : IDataSetRe
 
     public void Add(DataSetAggregate dataSet) => dbContext.DataSets.Add(dataSet);
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Owned collection의 복합 키(DataSetId + Version)가 이미 설정되어 있으면
+        // EF가 새 revision을 Modified로 추론하므로, 불변 revision의 새 항목만 Added로 확정합니다.
+        foreach (var revision in dbContext.ChangeTracker.Entries<DataSetSchemaRevision>()
+                     .Where(entry => entry.State == EntityState.Modified))
+            revision.State = EntityState.Added;
+
+        return dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
