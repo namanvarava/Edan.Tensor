@@ -63,7 +63,7 @@ public static class DataSetEndpoints
         }).WithName("GetDataSet");
 
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
-            AddDataSetSchemaRequest request, DataSetManagementService service, ILogger logger,
+            AddDataSetSchemaRequest request, DataSetManagementService service, ILoggerFactory loggerFactory,
             IWebHostEnvironment environment, CancellationToken token) =>
         {
             try
@@ -77,7 +77,7 @@ public static class DataSetEndpoints
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "DataSet schema registration failed for {DataSetId}", dataSetId);
+                loggerFactory.CreateLogger("DataSetEndpoints").LogError(exception, "DataSet schema registration failed for {DataSetId}", dataSetId);
                 return environment.IsDevelopment()
                     ? Results.Problem(detail: exception.ToString())
                     : Results.Problem(title: "DataSet schema registration failed");
