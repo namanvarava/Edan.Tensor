@@ -87,10 +87,14 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         replay.Property(x => x.TenantId).IsRequired();
         replay.Property(x => x.OriginalTaskId).IsRequired();
         replay.Property(x => x.ReplayTaskId).IsRequired();
+        replay.Property(x => x.ReplayRequestId).IsRequired();
         replay.Property(x => x.RequestedBy).HasMaxLength(200).IsRequired();
         replay.Property(x => x.CreatedAtUtc).IsRequired();
         replay.HasIndex(x => new { x.TenantId, x.OriginalTaskId, x.CreatedAtUtc });
         replay.HasIndex(x => new { x.TenantId, x.ReplayTaskId }).IsUnique();
+        replay.HasIndex(x => new { x.TenantId, x.OriginalTaskId, x.ReplayRequestId })
+            .IsUnique()
+            .HasFilter("\"ReplayRequestId\" <> '00000000-0000-0000-0000-000000000000'");
 
         var taskType = modelBuilder.Entity<WorkerTaskTypeCatalogEntry>();
         taskType.ToTable("worker_task_types");
