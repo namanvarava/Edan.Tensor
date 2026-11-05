@@ -16,9 +16,8 @@ internal sealed class WorkerTaskDispatcher(
     private readonly object _activeSync = new();
     private TaskCompletionSource _activeDrained = CompletedSource();
     private readonly string _workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
-    private int _tenantCursor;
-    private int _tenantPageSkip;
-    private readonly ConcurrentDictionary<Guid, int> _tenantTaskOffsets = new();
+    private Guid? _tenantAfterId;
+    private readonly ConcurrentDictionary<Guid, Guid> _tenantTaskAfterIds = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -46,37 +45,60 @@ internal sealed class WorkerTaskDispatcher(
         var recovered = await repository.RecoverExpiredLeasesAsync(now, recoveryBatchSize, cancellationToken);
         if (recovered > 0) logger.LogWarning("만료된 Worker Lease {Count}건을 복구했습니다.", recovered);
         const int tenantPageSize = 500;
-        var tenantIds = await repository.GetReadyTenantIdsAsync(now, tenantPageSize, cancellationToken, _tenantPageSkip);
-        if (tenantIds.Count == 0 && _tenantPageSkip > 0)
+        var tenantIds = await repository.GetReadyTenantIdsAsync(now, tenantPageSize, cancellationToken, _tenantAfterId);
+        if (tenantIds.Count == 0 && _tenantAfterId.HasValue)
         {
-            _tenantPageSkip = 0;
+            _tenantAfterId = null;
             tenantIds = await repository.GetReadyTenantIdsAsync(now, tenantPageSize, cancellationToken);
         }
         if (tenantIds.Count == 0) return;
-        _tenantPageSkip = tenantIds.Count < tenantPageSize ? 0 : _tenantPageSkip + tenantIds.Count;
-        var start = (int)(((uint)Interlocked.Increment(ref _tenantCursor) - 1) % (uint)tenantIds.Count);
         var candidateBatchSize = Math.Clamp(configuration.GetValue("Worker:TenantCandidateBatchSize", 16), 1, 100);
         var maxCandidateScan = Math.Clamp(configuration.GetValue("Worker:TenantCandidateScanLimit", 500), candidateBatchSize, 5000);
-        for (var offset = 0; offset < tenantIds.Count && slots > 0; offset++)
+        foreach (var tenantId in tenantIds)
         {
-            var tenantId = tenantIds[(start + offset) % tenantIds.Count];
+            if (slots <= 0) break;
+            _tenantAfterId = tenantId;
             WorkerTask? task = null;
-            var taskSkip = _tenantTaskOffsets.GetOrAdd(tenantId, 0);
+            Guid? taskAfterId = _tenantTaskAfterIds.TryGetValue(tenantId, out var cursor) ? cursor : null;
             var scanned = 0;
             var reachedEnd = false;
-            for (var pageSkip = 0; pageSkip < maxCandidateScan; pageSkip += candidateBatchSize)
+            while (scanned < maxCandidateScan)
             {
-                var tasks = await repository.GetReadyAsync(tenantId, now, candidateBatchSize, cancellationToken, taskSkip + pageSkip);
-                scanned += tasks.Count;
-                task = tasks.FirstOrDefault(x => handlers.Resolve(x.TaskType) is not null);
-                if (task is not null) break;
-                if (tasks.Count < candidateBatchSize)
+                var take = Math.Min(candidateBatchSize, maxCandidateScan - scanned);
+                var tasks = await repository.GetReadyAsync(tenantId, now, take, cancellationToken, taskAfterId);
+                if (tasks.Count == 0)
                 {
+                    if (taskAfterId.HasValue)
+                    {
+                        taskAfterId = null;
+                        continue;
+                    }
                     reachedEnd = true;
                     break;
                 }
+
+                foreach (var candidate in tasks)
+                {
+                    scanned++;
+                    taskAfterId = candidate.Id;
+                    if (handlers.Resolve(candidate.TaskType) is null) continue;
+                    task = candidate;
+                    break;
+                }
+                if (task is not null) break;
+                if (tasks.Count < take)
+                {
+                    reachedEnd = true;
+                    taskAfterId = null;
+                    break;
+                }
             }
-            _tenantTaskOffsets[tenantId] = reachedEnd ? 0 : taskSkip + Math.Max(scanned, candidateBatchSize);
+
+            if (reachedEnd || !taskAfterId.HasValue)
+                _tenantTaskAfterIds.TryRemove(tenantId, out _);
+            else
+                _tenantTaskAfterIds[tenantId] = taskAfterId.Value;
+
             if (task is null) continue;
             var key = $"{tenantId:N}:{task.Id:N}";
             if (!TryMarkActive(key)) continue;
