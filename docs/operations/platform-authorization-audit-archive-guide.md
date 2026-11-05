@@ -97,3 +97,28 @@
 - 각 생성·재시도·검증 실행은 시작 시각, 완료 시각, 성공 여부, 결과 코드로 기록합니다. 실행 이력은 Tenant ID와 작업 ID의 복합 외래 키로 격리됩니다.
 - 예약 실행은 아직 제공하지 않으며 Tenant 관리자가 API로 작업을 시작합니다.
 - 원본 감사 기록은 이 작업에서 삭제되지 않습니다.
+
+## Tenant별 예약 실행 설정
+
+예약 정책 조회:
+
+`GET /api/platform/tenants/{tenantId}/authorization-audit/archive-schedule`
+
+예약 정책 변경:
+
+`PUT /api/platform/tenants/{tenantId}/authorization-audit/archive-schedule`
+
+```json
+{
+  "intervalHours": 24,
+  "isEnabled": true
+}
+```
+
+- 실행 주기는 1~744시간(최대 31일)입니다.
+- 비활성화하면 신규 예약 실행을 시작하지 않습니다.
+- API Host 작업자는 1분마다 실행 시각이 지난 예약을 확인합니다.
+- 성공한 작업은 설정 주기 후 다시 실행하고, 실패한 작업은 5분 후 다시 시도합니다.
+- 각 예약 실행은 기존 아카이브 작업 및 시도 이력으로 추적합니다.
+- DB 실행 임대는 30분이며, 작업이 이보다 오래 걸리면 임대 갱신 기능이 필요합니다.
+- 예약 기능은 원본 감사 데이터를 삭제하지 않습니다.
