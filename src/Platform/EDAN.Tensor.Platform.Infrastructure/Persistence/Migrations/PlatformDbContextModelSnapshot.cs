@@ -254,6 +254,36 @@ public sealed class PlatformDbContextModelSnapshot : ModelSnapshot
             entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<AuthorizationAuditRetentionPolicy>(entity =>
+        {
+            entity.ToTable("platform_authorization_audit_retention");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.RetentionDays).IsRequired();
+            entity.Property(x => x.IsLegalHold).IsRequired();
+            entity.Property(x => x.LegalHoldReason).HasMaxLength(500);
+            entity.Property(x => x.UpdatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.UpdatedAtUtc).IsRequired();
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => x.TenantId).IsUnique();
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AuthorizationAuditRetentionChange>(entity =>
+        {
+            entity.ToTable("platform_authorization_audit_retention_changes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+            entity.Property(x => x.PolicyId).IsRequired();
+            entity.Property(x => x.ActorSubjectId).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ChangeType).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.BeforeJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.AfterJson).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.OccurredAtUtc).IsRequired();
+            entity.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        });
+
     }
 
     private static ValueConverter<TId, Guid> IdConverter<TId>(Func<Guid, TId> create, Func<TId, Guid> value) =>
