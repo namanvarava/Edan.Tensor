@@ -45,7 +45,7 @@ public sealed class AuthorizationAuditArchiveService(
     }
 
     /// <summary>아카이브 내부 체크섬과 선택적 외부 기준 체크섬을 비교합니다.</summary>
-    public async Task<AuthorizationAuditArchiveVerification> VerifyAsync(Guid archiveId,
+    public async Task<AuthorizationAuditArchiveVerification> VerifyAsync(TenantId tenantId, Guid archiveId,
         string? expectedSha256 = null, CancellationToken cancellationToken = default)
     {
         if (archiveId == Guid.Empty)
@@ -63,6 +63,9 @@ public sealed class AuthorizationAuditArchiveService(
             var document = JsonSerializer.Deserialize<ArchiveDocument>(bytes, JsonOptions);
             if (document is null || document.ArchiveId != archiveId || document.Payload.SchemaVersion != 1)
                 return new AuthorizationAuditArchiveVerification(archiveId, false, "archive.invalid_format", null);
+
+            if (document.Payload.TenantId != tenantId.Value)
+                return new AuthorizationAuditArchiveVerification(archiveId, false, "archive.tenant_mismatch", null);
 
             var payloadBytes = JsonSerializer.SerializeToUtf8Bytes(document.Payload, JsonOptions);
             var actual = SHA256.HashData(payloadBytes);
