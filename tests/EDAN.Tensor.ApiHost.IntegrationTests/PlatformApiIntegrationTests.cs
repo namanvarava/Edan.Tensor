@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.Worker.Domain.Model;
@@ -910,13 +911,17 @@ public sealed class PlatformApiIntegrationTests
         private readonly string _dataSetContentDatabasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-dataset-content-{Guid.NewGuid():N}.db");
 
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        // Minimal-hosting Program reads database configuration before Build().
+        // Supply each factory's settings before the entrypoint executes.
+        protected override IHost CreateHost(IHostBuilder builder)
         {
-            builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, configuration) =>
-            {
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
+            builder.ConfigureHostConfiguration(configuration =>
+                configuration.AddInMemoryCollection(CreateTestSettings()));
+            return base.CreateHost(builder);
+        }
+
+        private Dictionary<string, string?> CreateTestSettings() => new()
+        {
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
                     ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared",
                     ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared",
@@ -931,8 +936,13 @@ public sealed class PlatformApiIntegrationTests
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
                     ["Authentication:Audience"] = "edan-tensor-api",
                     ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long"
-                });
-            });
+        };
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("Development");
+            builder.ConfigureAppConfiguration((_, configuration) =>
+                configuration.AddInMemoryCollection(CreateTestSettings()));
             builder.ConfigureTestServices(services =>
             {
                 services.AddSingleton<IDataSetStorageQuotaPolicyProvider>(new IntegrationQuotaPolicyProvider());
