@@ -51,6 +51,12 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - 병합 후 main의 [Actions Run #652](https://github.com/namanvarava/Edan.Tensor/actions/runs/42218105754)은 위 커밋을 대상으로 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 성공했다. 작업 ID는 `127893093152`, Runner 버전은 `2.338.2`이며 Restore·Release Build·Release Test·정리 단계가 모두 성공했다.
 - Run #652 로그는 Build 경고 0개·오류 0개와 테스트 193개 통과·실패 0개·건너뜀 0개를 기록한다. 이 실행은 현재 main의 소스 검증 기준이며, 이후 문서 전용 변경에서도 구현 소스는 변경하지 않는다.
 
+## PR #19 한글 문서화 변경 후 최신 main CI 검증
+
+- PR #19 [공개 API 주석과 저장소 문서를 한글화합니다](https://github.com/namanvarava/Edan.Tensor/pull/19)는 SharedKernel 공개 API XML 설명, 모듈 표식 설명 및 SQLite·의존성 문서를 현재 구현과 한글 문서화 규칙에 맞춰 수정하고 `b763555ddd2d0c8fcdcde46bd3cbb39b88d65611`로 squash merge되었다.
+- 병합 후 main의 [Actions Run #656](https://github.com/namanvarava/Edan.Tensor/actions/runs/42220435470)은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 성공했다. 작업 ID는 `127900829188`, Runner 버전은 `2.338.2`이며 Restore·Release Build·Release Test·정리 단계가 모두 성공했다.
+- Run #656 로그는 Build 경고 0개·오류 0개와 테스트 193개 통과·실패 0개·건너뜀 0개를 기록한다. 병합 후 로컬 exact Restore·Release Build·Release Test도 종료 코드 0으로 다시 실행했다.
+
 ## PR #8·#9 및 최종 main 경계 재검증
 
 - PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 해당 커밋의 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
