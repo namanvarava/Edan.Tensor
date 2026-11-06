@@ -233,4 +233,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PR #28 [Worker 종료 테스트의 시간 경계를 안정화합니다](https://github.com/namanvarava/Edan.Tensor/pull/28)는 자체 호스팅 Check를 통과한 뒤 `fef93883e45bf281123ef720eab006f2bc295624`로 squash merge되었다. 병합 후 로컬 exact Restore·Release Build·Release Test는 모두 종료 코드 0이며 전체 테스트는 194개 통과·실패 0개·건너뜀 0개였다.
 - 병합 후 [Actions Run #674](https://github.com/namanvarava/Edan.Tensor/actions/runs/42233142705)은 `fef93883e45bf281123ef720eab006f2bc295624`에서 `EDAN-TENSOR-WIN`으로 성공했다. Build는 경고 0개·오류 0개였고 전체 테스트 194개가 통과했다. Run #672의 유일한 테스트 실패는 이 수정으로 해결되었으며, 실패를 무시하거나 테스트 실행을 생략하지 않았다.
 
+## 최종 main Host Smoke 재검증
+
+- 문서 PR #29 병합 후 최종 main 커밋 `e04d15d952d1b95d3e94c61dc96aaf4da0602e3b`에서 ApiHost와 WorkerHost를 Windows 로컬 PC의 실제 프로세스로 다시 기동했다. 각 Host는 임시 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 SQLite DB와 임시 아카이브 경로를 사용했으며 검증 후 모두 제거했다.
+- ApiHost는 `/health`, `/health/database`, `/`, `/openapi/v1.json`에서 HTTP 200을 반환했고, `/health/database`는 `Connected`·`Green`을 반환했다. 인증 없는 `/api/platform/tenants/mine`은 HTTP 401을 반환하여 보호 API 경계를 유지했다.
+- WorkerHost는 `/health`에서 HTTP 200과 `Healthy`를 반환했다. 두 프로세스 모두 표준 오류 출력이 없었고 임시 경로 정리를 확인했다.
+- 이 검증은 외부 Identity Provider·JWKS·키 회전과 외부 전달 수신 시스템의 응답 유실 E2E를 포함하지 않는다. 해당 항목은 승인된 운영 계약과 외부 실행 환경이 제공될 때 별도로 검증한다.
+
 
