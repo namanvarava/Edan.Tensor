@@ -33,6 +33,18 @@ public sealed class DataSetManagementServiceTests
     }
 
     [Fact]
+    public async Task CreationRejectsMissingAdapterWithoutAllocatingStorage()
+    {
+        var store = new Store();
+        var result = await Service(store).CreateAsync(Scope(), "매출", null!);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("dataset.validation", result.Error.Code);
+        Assert.Empty(store.DataSets);
+        Assert.Equal(0, store.Allocations);
+    }
+
+    [Fact]
     public async Task MetadataFailureReleasesAllocatedStorage()
     {
         var store = new Store { FailSave = true };

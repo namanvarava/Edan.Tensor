@@ -25,6 +25,7 @@ public sealed class DataSetManagementService(
             if (!await scopeValidator.IsValidAsync(scope, cancellationToken))
                 return Failure<DataSetId>("dataset.scope_invalid", "Tenant·Organization·Project 소유 관계가 유효하지 않습니다.");
 
+            ArgumentException.ThrowIfNullOrWhiteSpace(adapterId);
             var adapterKey = adapterId.Trim().ToLowerInvariant();
             var adapter = adapters.Resolve(adapterKey);
             if (adapter is null)

@@ -460,6 +460,14 @@ public sealed class PlatformApiIntegrationTests
             new { organizationId = Guid.NewGuid(), projectId, name = "잘못된 소유 범위" });
         Assert.Equal(HttpStatusCode.BadRequest, invalidScope.StatusCode);
 
+        using var invalidAdapter = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId, projectId, name = "잘못된 저장소 어댑터", storageAdapter = (string?)null });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidAdapter.StatusCode);
+        using var invalidAdapterDocument = await JsonDocument.ParseAsync(
+            await invalidAdapter.Content.ReadAsStreamAsync());
+        Assert.Equal("dataset.validation", invalidAdapterDocument.RootElement.GetProperty("code").GetString());
+
         using var create = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/datasets",
             new { organizationId, projectId, name = "고객 원천 데이터", storageAdapter = "sqlite" });
