@@ -13,7 +13,7 @@ public static class PlatformAuthenticationExtensions
         var issuer = configuration["Authentication:Issuer"];
         var audience = configuration["Authentication:Audience"];
         var signingKey = configuration["Authentication:SigningKey"];
-        // 필수 설정이 누락되면 서명 키가 없어 JWT 검증이 실패하므로 보호 API는 계속 닫힌 상태를 유지합니다.
+        // 필수 설정이 누락되어도 모든 JWT 검증 조건을 유지하여 보호 API가 계속 닫힌 상태를 유지합니다.
         var key = !string.IsNullOrWhiteSpace(signingKey) && Encoding.UTF8.GetByteCount(signingKey) >= 32
             ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
             : null;
@@ -26,9 +26,9 @@ public static class PlatformAuthenticationExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
+                    ValidateIssuer = true,
                     ValidIssuer = issuer,
-                    ValidateAudience = !string.IsNullOrWhiteSpace(audience),
+                    ValidateAudience = true,
                     ValidAudience = audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
@@ -50,3 +50,4 @@ public static class PlatformAuthenticationExtensions
         return services;
     }
 }
+

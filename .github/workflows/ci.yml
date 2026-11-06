@@ -8,16 +8,13 @@ permissions:
   contents: read
 jobs:
   build-and-test:
-    runs-on: ${{ github.event_name == 'push' && fromJSON('["self-hosted","Windows","X64"]') || 'ubuntu-latest' }}
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'namanvarava')
+    runs-on: [self-hosted, Windows, X64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
           clean: false
-      - uses: actions/setup-dotnet@v4
-        if: github.event_name == 'pull_request'
-        with:
-          dotnet-version: 10.0.x
       - name: Runner environment
         run: dotnet --info
       - name: Restore
@@ -26,3 +23,4 @@ jobs:
         run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
       - name: Test
         run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results.trx"
+
