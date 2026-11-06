@@ -198,4 +198,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 전 대상 경계 테스트는 5회 연속 통과했고 Worker Infrastructure 전체 60개도 통과했다. 병합 직전 로컬 exact Restore, Release Build(경고 0개·오류 0개), Release Test(193개 통과·실패 0개·건너뜀 0개)도 완료했다.
 - 병합 후 [Actions Run #660](https://github.com/namanvarava/Edan.Tensor/actions/runs/42223986236)은 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner(버전 2.338.2)에서 Restore, Build, Test 및 정리를 모두 성공시켰다. Build는 경고 0개·오류 0개였고, 테스트는 SharedKernel 11, Platform 27/30/12, DataSet 6/8/8, Worker 21/60, API 통합 10으로 총 193개를 실패 0개·건너뜀 0개로 통과했다.
 
+## 실제 Host 경계 Smoke 검증
+
+- 최종 main 커밋 `177ffe4caa202e13a694025c666cbe26a01a7514`에서 Windows 로컬 PC의 실제 프로세스로 ApiHost를 Development 환경에서 기동했다. 임시 경로의 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 SQLite DB를 사용했으며 저장소나 기본 `App_Data`에는 검증 데이터를 남기지 않았다.
+- ApiHost는 네 개 DB의 Migration을 적용한 뒤 `/health`에 HTTP 200과 `Healthy`, `/health/database`에 HTTP 200과 `Connected`·`Green`, `/`에 HTTP 200을 반환했다. 개발 환경 OpenAPI `/openapi/v1.json`도 HTTP 200을 반환했고, 보호된 `/api/platform/tenants/mine`은 토큰 없이 HTTP 401을 반환하여 인증 경계를 확인했다.
+- 같은 방식으로 WorkerHost를 별도 실제 프로세스로 기동했다. 전용 Platform·Worker·DataSet 메타데이터·콘텐츠 DB의 Migration과 Handler catalog 동기화를 수행한 뒤 `/health`에 HTTP 200과 `Healthy`를 반환했다.
+- 이 Smoke 검증은 실제 외부 Identity Provider, JWKS·키 회전, 외부 전달 수신 시스템의 응답 유실 종단 간 시험을 포함하지 않는다. 해당 검증은 외부 시스템과 승인된 운영 계약이 제공될 때 재개한다.
+
 
