@@ -25,7 +25,7 @@ public sealed class WorkerTaskDispatcherShutdownTests
             new Dictionary<string, string?>
             {
                 ["Worker:ShutdownGraceSeconds"] = "1",
-                ["Worker:ShutdownHandoffSeconds"] = "2"
+                ["Worker:ShutdownHandoffSeconds"] = "4"
             }).Build();
         using var dispatcher = new WorkerTaskDispatcher(
             NullLogger<WorkerTaskDispatcher>.Instance, null!, registry, null!, configuration, TimeProvider.System);
@@ -36,9 +36,10 @@ public sealed class WorkerTaskDispatcherShutdownTests
         try
         {
             shutdown = dispatcher.StopAsync(CancellationToken.None);
-            // 종료 조정기는 유예 1초와 인계 2초를 사용합니다. 1.5초의 여유는 CI 스케줄링 지연을 허용합니다.
-            // 잘못된 구현이 인계 예산을 다시 사용하면 총 5초가 필요하므로 이 제한을 넘습니다.
-            await shutdown.WaitAsync(TimeSpan.FromMilliseconds(4500));
+            // 종료 조정기는 유예 1초와 인계 4초를 사용하므로 정상 경로는 5초 안에 끝납니다.
+            // 잘못된 구현이 인계 예산을 다시 사용하면 약 9초가 필요하므로 8초 제한을 넘습니다.
+            // 정상 경로의 제한 시간을 넉넉히 두어 자체 호스팅 Runner의 스케줄링 지연이 테스트를 오판하지 않게 합니다.
+            await shutdown.WaitAsync(TimeSpan.FromSeconds(8));
             Assert.False(registry.TryEnter(_ => Task.FromResult(true), out _));
         }
         finally

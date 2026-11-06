@@ -16,6 +16,14 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - 현재 열린 Issue와 Pull Request는 각각 0개이며, `.github`에는 `schedule`, `workflow_dispatch`, `cron` 예약 실행 트리거가 없다. Runner Windows 서비스는 `Running`, `Automatic` 상태를 유지한다.
 - GitHub Billing의 Actions 예산은 `$20.00 / $20.00`, 100% 사용, `Usage blocked` 상태로 남아 있다. PR #12에 이 외부 제약과 예산 증액·해제 없이 재개할 조건을 기록했으며, 예산 설정은 변경하지 않았다.
 
+## Run #644 실패 원인과 종료 테스트 회귀 수정
+
+- PR #13 병합 후 [Actions Run #644](https://github.com/namanvarava/Edan.Tensor/actions/runs/42206188178)는 커밋 `fab14a34009b453df7949a7cf974c7812b9a4fe3`에서 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`으로 실행되었다. Restore와 Release Build는 성공했으며 Build 경고 0개·오류 0개였지만, Test 단계에서 1개가 실패하여 전체 Run은 `failure`로 종료되었다.
+- 실패 대상은 `WorkerTaskDispatcherShutdownTests.DispatcherDoesNotSpendHandoffBudgetAgainAfterRegistryTimesOut`이며, `WorkerTaskDispatcherShutdownTests.cs` 41번째 줄의 `WaitAsync(TimeSpan.FromMilliseconds(4500))`에서 `System.TimeoutException`이 발생했다. Worker Infrastructure 테스트는 59개 통과·1개 실패였고, 나머지 테스트 프로젝트는 모두 통과했다.
+- 코드와 로그를 대조한 결과 제품 종료 예산 계산이나 Runner 연결 실패가 아니라, 정상 종료 약 3초와 잘못된 이중 대기 약 5초를 구분하던 4.5초 절대 시간 경계가 자체 호스팅 Runner의 동시 테스트 스케줄링 지연에 민감한 테스트 결함으로 확인되었다. 단순히 제한 시간만 늘리면 이중 대기 회귀를 놓칠 수 있으므로 적용하지 않았다.
+- 최소 수정으로 테스트의 인계 예산을 2초에서 4초로 늘리고 제한 시간을 4.5초에서 8초로 조정했다. 정상 경로는 약 5초 안에 완료되고 이중 대기 경로는 약 9초가 필요하므로 두 동작의 판별 간격을 유지하면서 Runner 지연 여유를 확보한다. 테스트는 제품 동작을 우회하거나 실패를 무시하지 않는다.
+- 수정 후 대상 테스트 반복 실행 4회가 모두 통과했고, Worker Infrastructure 전체 60개 테스트와 솔루션 전체 Release 검증도 통과했다. 로컬 exact Restore·Build·Test는 각각 종료 코드 0이며 전체 테스트는 193개 통과·실패 0개·건너뜀 0개였다. 수정 PR의 최신 자체 호스팅 CI가 성공할 때까지 최신 `main`의 최종 완료 판정은 보류한다.
+
 ## PR #8·#9 및 최종 main 경계 재검증
 
 - PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 해당 커밋의 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
