@@ -1,6 +1,6 @@
 namespace EDAN.Tensor.SharedKernel.Results;
 
-/// <summary>Outcome of an operation where expected failures are represented as data.</summary>
+/// <summary>Result는 예상 가능한 실패를 오류 데이터로 표현하는 작업 결과입니다.</summary>
 public class Result
 {
     protected Result(bool isSuccess, Error error)
@@ -16,7 +16,7 @@ public class Result
     public static Result Failure(Error error) { ArgumentNullException.ThrowIfNull(error); return new(false, error); }
 }
 
-/// <summary>Outcome of an operation that may return a value.</summary>
+/// <summary>Result{TValue}는 성공 시 값을 반환할 수 있는 작업 결과입니다.</summary>
 public sealed class Result<TValue> : Result
 {
     private readonly TValue? _value;

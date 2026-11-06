@@ -1,7 +1,7 @@
 using EDAN.Tensor.SharedKernel.Events;
 namespace EDAN.Tensor.SharedKernel.Primitives;
 
-/// <summary>Aggregate root that collects domain events until they are dispatched.</summary>
+/// <summary>Aggregate Root는 발행 전까지 도메인 이벤트를 수집합니다.</summary>
 public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];

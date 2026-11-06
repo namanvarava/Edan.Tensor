@@ -1,4 +1,4 @@
 namespace EDAN_Tensor_Licensing_Contracts;
 
-/// <summary>Identifies this assembly for module registration and architecture tests.</summary>
+/// <summary>이 타입은 모듈 등록과 아키텍처 테스트에서 라이선싱 계약 어셈블리를 식별합니다.</summary>
 public sealed class AssemblyMarker { }

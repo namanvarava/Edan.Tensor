@@ -1,6 +1,6 @@
 namespace EDAN.Tensor.SharedKernel.Primitives;
 
-/// <summary>Domain entity with identity-based equality.</summary>
+/// <summary>Entity는 식별자를 기준으로 동일성을 비교하는 도메인 객체입니다.</summary>
 public abstract class Entity<TId> : IEquatable<Entity<TId>> where TId : notnull
 {
     protected Entity(TId id) { ArgumentNullException.ThrowIfNull(id); Id = id; }

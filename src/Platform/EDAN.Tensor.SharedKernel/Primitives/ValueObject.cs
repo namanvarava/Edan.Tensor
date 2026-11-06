@@ -1,6 +1,6 @@
 namespace EDAN.Tensor.SharedKernel.Primitives;
 
-/// <summary>Value-based equality for immutable domain values.</summary>
+/// <summary>ValueObject는 불변 도메인 값의 구성 요소를 기준으로 동일성을 비교합니다.</summary>
 public abstract class ValueObject : IEquatable<ValueObject>
 {
     protected abstract IEnumerable<object?> GetEqualityComponents();
