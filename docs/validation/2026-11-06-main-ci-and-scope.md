@@ -248,4 +248,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 같은 최종 SHA의 Windows 로컬 PC에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 로컬 테스트도 194개 통과·실패 0개·건너뜀 0개였다.
 - 이 기록은 현재 구현된 Platform·DataSet·Worker·Host 경계와 회귀 검증의 완료 증거다. README에 명시된 실제 Identity Provider·키 회전·외부 전달 응답 유실 E2E, DataSet Validation 승인 계약·Validation Handler·DuckDB·Parquet, Commercial·Licensing 업무 흐름, WPF 클라이언트는 승인된 계약 또는 독립 실행 환경이 없으므로 제품 전체 개발 완료로 판정하지 않는다. 해당 계약과 실행 환경이 제공되면 각 범위의 수용 기준과 실제 경계 시험을 추가하여 재개한다.
 
+## 보안 의존성과 인수인계 자료 재검증
+
+- 최종 main에서 `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 실행했다. NuGet 공개 피드와 현재 구성된 패키지 소스를 기준으로 모든 솔루션 프로젝트에 알려진 취약 패키지가 없었고 종료 코드는 0이었다.
+- 인수인계 PDF는 2페이지·A4·비암호화 문서로 다시 확인했고, 두 페이지를 PNG로 렌더링하여 제목·섹션·Worker 설계·Run #605 예산 차단 기록의 배치와 가독성을 검토했다. Poppler가 `Symbol` 및 `ArialUnicode` 표시 글꼴 경고를 출력했지만 페이지의 잘림·겹침·검은 사각형은 확인되지 않았다. PDF 원본은 변경하지 않았다.
+- Actions 예산 제한, 외부 Identity Provider·키 회전·외부 전달 수신 시스템, 승인 전 DataSet Validation·Commercial·Licensing·WPF 범위는 이 검증으로 해결되지 않으며 기존 재개 조건을 유지한다.
+
 
