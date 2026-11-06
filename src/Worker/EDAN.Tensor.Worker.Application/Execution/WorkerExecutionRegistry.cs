@@ -2,6 +2,10 @@ using System.Diagnostics;
 
 namespace EDAN.Tensor.Worker.Application.Execution;
 
+/// <summary>
+/// Registry는 실행 임대를 추적하고 신규 실행 차단, 정상 완료 대기 및 제한된 시간의 인계를 조정합니다.
+/// 호스트는 작업 실행 전에 TryEnter를 호출하고 실행이 종료되면 반환된 임대를 반드시 해제해야 합니다.
+/// </summary>
 public sealed class WorkerExecutionRegistry
 {
     private readonly object _sync = new();
@@ -10,6 +14,11 @@ public sealed class WorkerExecutionRegistry
     private long _nextId;
     private bool _accepting = true;
 
+    /// <summary>
+    /// Registry는 종료가 시작되지 않은 경우 실행 임대와 인계 콜백을 등록합니다.
+    /// 콜백 구현자는 전달된 취소 토큰을 준수하고 체크포인트와 Lease 변경을 영속화한 경우에만 true를 반환해야 합니다.
+    /// 호출자는 반환값이 false이면 새 작업을 시작하지 않아야 하며, 등록된 임대는 실행 종료 시 Dispose해야 합니다.
+    /// </summary>
     public bool TryEnter(Func<CancellationToken, Task<bool>> requestHandoff, out WorkerExecutionLease? lease)
     {
         ArgumentNullException.ThrowIfNull(requestHandoff);
@@ -25,6 +34,13 @@ public sealed class WorkerExecutionRegistry
         }
     }
 
+    /// <summary>
+    /// Registry는 신규 등록을 차단하고 gracePeriod 동안 정상 완료를 기다린 뒤 handoffTimeout을 공유하여 인계를 요청합니다.
+    /// 콜백 호출은 별도 작업에서 실행되므로 콜백이 동기적으로 대기해도 종료 호출의 대기 시간은 제한됩니다.
+    /// 시간 초과는 콜백의 강제 중단이나 Lease 해제를 의미하지 않으며, 인계 실패 작업은 영속 Lease 만료 복구에 맡겨야 합니다.
+    /// 호출자는 HandoffElapsed를 차감한 나머지 예산만 후속 정리에 사용해야 합니다.
+    /// 호출자가 cancellationToken을 취소하면 유예 또는 후속 정리 대기에서 OperationCanceledException이 전달될 수 있습니다.
+    /// </summary>
     public async Task<WorkerShutdownResult> StopAsync(
         TimeSpan gracePeriod, TimeSpan handoffTimeout, CancellationToken cancellationToken = default)
     {

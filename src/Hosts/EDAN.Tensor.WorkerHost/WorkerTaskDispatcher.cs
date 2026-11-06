@@ -17,7 +17,7 @@ internal sealed class WorkerTaskDispatcher(
     private TaskCompletionSource _activeDrained = CompletedSource();
     private readonly string _workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
     private Guid? _tenantAfterId;
-    // Dispatcher access is single-threaded; an LRU list makes cursor eviction deterministic.
+    // Dispatcher는 단일 루프에서 커서에 접근하며 LRU 목록으로 퇴출 순서를 일관되게 유지합니다.
     private readonly Dictionary<Guid, LinkedListNode<(Guid TenantId, Guid TaskId)>> _tenantTaskCursors = [];
     private readonly LinkedList<(Guid TenantId, Guid TaskId)> _tenantTaskCursorLru = [];
 
@@ -131,8 +131,8 @@ internal sealed class WorkerTaskDispatcher(
         var node = _tenantTaskCursorLru.AddLast((tenantId, taskId));
         _tenantTaskCursors[tenantId] = node;
 
-        // Least recently used tenants lose only their in-memory scan position and resume from
-        // the beginning on a later cycle. Persisted task state and lease ownership are unchanged.
+        // Dispatcher는 가장 오래 접근하지 않은 Tenant의 메모리 순회 위치를 제거하고 다음 조회를 처음부터 시작합니다.
+        // 커서 퇴출은 영속 작업 상태와 Lease 소유권을 변경하지 않습니다.
         var cursorLimit = Math.Clamp(configuration.GetValue("Worker:TenantTaskCursorLimit", 10_000), 500, 100_000);
         while (_tenantTaskCursors.Count > cursorLimit)
         {
