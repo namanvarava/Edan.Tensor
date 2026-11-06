@@ -2,7 +2,7 @@
 
 ## 판정
 
-CI 실패 복구 완료. 프로젝트 전체 완료는 미선언.
+CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증을 완료했다. 프로젝트 전체 완료는 미선언이다.
 기능 문서의 후속 과제는 승인된 상세 완료 계약과 구분하며, 테스트 통과만으로 운영 적합성을 승인하지 않는다.
 
 ## 공식 검증 증거
@@ -33,8 +33,8 @@ Pooling=False로 호스트 종료 후 Windows 파일 삭제 시 연결 풀 잠�
 | --- | --- | --- |
 | Platform | Tenant·Organization·Project·소속·Policy·감사·아카이브 | 실제 Identity Provider, 키 회전, 외부 계정 연결 등 운영 보안 계약과 검증 |
 | DataSet | 독립 DbContext·Migration, 불투명 저장 참조, SQLite 콘텐츠 어댑터, 계층형 quota | 검증 프로필·규칙 버전·상세 결과 저장 계약, 검증 Handler, DuckDB·Parquet 어댑터 |
-| Worker | 전용 DB, 영속 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리 | 실제 프로세스 강제 종료 및 외부 전달 응답 유실의 종단 간 시험 증거 |
-| 종료·순회 | Registry/Dispatcher 단일 handoff 예산, Tenant cursor LRU 상한 | Dispatcher LRU 직접 회귀 테스트는 본 후속 커밋에 추가; 종료 경로 직접 회귀 테스트는 잔여 |
+| Worker | 전용 DB, 영속 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리 | 별도 저장소 검증 프로세스의 강제 종료 복구는 검증 완료; 실제 WorkerHost와 외부 전달 응답 유실의 종단 간 시험은 잔여 |
+| 종료·순회 | Registry/Dispatcher 단일 handoff 예산, Tenant cursor LRU 상한 | Dispatcher LRU 및 Registry/Dispatcher 종료 단일 예산의 직접 회귀 검증 완료 |
 | Commercial / Licensing | 분리된 Contracts·Domain·Application·Infrastructure 기반 프로젝트 | 업무 규칙·라이선스·결제 상세 요구사항과 수용 기준 |
 | 클라이언트 | 현재 소스 트리에 WPF 클라이언트 없음 | 화면·업무 흐름 및 완료 범위 확정 |
 
@@ -55,8 +55,8 @@ WorkerDbContext는 PlatformDbContext와 분리되어 있다.
 
 ## 잔여 우선순위와 재개 지점
 
-1. 아키텍처 테스트 추가 커밋 `1c4d19c5cc0b13137554428b29420250b4c08476`의 [Run #613](https://github.com/namanvarava/Edan.Tensor/actions/runs/42168208608)은 성공했다. LRU 테스트 후속 커밋의 CI 결과를 확인한다.
-2. Dispatcher LRU 상한·퇴출·재접근·삭제 검증을 추가했다. Registry/Dispatcher 단일 종료 예산의 직접 회귀 검증은 잔여다.
+1. 아키텍처·LRU·종료 예산·프로세스 장애 경계 테스트는 아래 후속 검증 증거에서 확인한다.
+2. Dispatcher LRU 상한·퇴출·재접근·삭제와 Registry/Dispatcher 단일 종료 예산의 직접 회귀 검증은 완료했다.
 3. DataSet 검증 프로필·지원 포맷·오류/경고·결과 보존 계약 확정 후 Validation Handler 구현.
 4. 실제 프로세스 장애 복구·외부 호출 중복 전달 시험 환경과 증거 수립.
 5. Identity Provider·Commercial·Licensing·WPF·분석 어댑터의 승인된 기능 범위와 수용 기준 확정.
@@ -71,8 +71,18 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 이 수정은 인계 콜백이 Task를 반환하기 전에 동기 대기하는 경우에도 Registry의 종료 대기를 제한한다. 시간 초과가 콜백 자체를 강제 종료하거나 영속 Lease를 해제하지는 않는다.
 - `313bb961b777e72ae3efdcfbc113801f6668a41e`의 [Actions Run #616](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170176288)는 191개 테스트를 통과했다.
 - Dispatcher의 실제 StopAsync 경로가 Registry에서 사용한 인계 예산을 다시 기다리지 않는 직접 회귀 검증을 포함한다.
-- 현재 후속 변경은 별도 프로세스가 Lease와 체크포인트를 저장한 뒤 강제 종료되는 시험을 추가한다. 해당 시험은 새로운 DbContext에서 복구, Fencing Token 증가, 오래된 쓰기 거부, Tenant 격리를 확인한다. 실행 증거는 이 변경의 후속 Actions로 확인해야 한다.
+- 별도 프로세스가 Lease와 체크포인트를 저장한 뒤 강제 종료되는 시험은 새로운 DbContext에서 복구, Fencing Token 증가, 오래된 쓰기 거부, Tenant 격리를 확인한다.
 - 프로세스 시험은 실제 운영 WorkerHost 전체와 외부 전달 수신 시스템을 실행하는 종단 간 시험을 대체하지 않는다.
 - 기존 인수인계 문서는 CI 복구·운영 경계 문서이며 전체 제품의 상세 기능 계약은 포함하지 않는다.
 - Commercial/Licensing은 실제 소스에서도 AssemblyMarker 기반 상태다. 결제 정책·라이선스 권리·WPF 업무 화면의 완료 기준을 추정하여 완료 처리할 수 없다.
 - DataSet의 미정 계약을 [검증 v1 상세 계약 제안](../architecture/dataset-validation-v1-proposal.md)에 정리했다. 이 문서는 구현 완료나 승인 기록이 아니다.
+
+## 프로세스 장애 시험의 공식 결과
+
+- [Run #617](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170456891)은 검증 프로그램의 빌드 구성 불일치로 실패했다. 나머지 191개 테스트는 통과했으나 전체 실행은 실패로 판정했다.
+- 실제 Build 로그는 검증 프로그램을 Debug에 출력했고 Release 테스트의 복사 대상에는 파일이 없었다.
+- 수정 커밋 `5af866f0fdbbcb2c92008464636433da243bc6bf`은 검증 프로젝트를 솔루션에 등록하고 Debug/Release 매핑과 검증 프로그램 누락 시 Build 실패 조건을 추가했다.
+- [Run #618](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170720120)은 Restore / Build / Test를 통과했다. 총 192개 통과, 실패 0, 건너뜀 0이다.
+- Build 로그는 검증 프로그램의 Release 출력을 확인했다. Worker Infrastructure의 60개 테스트에는 실제 자식 프로세스 강제 종료 및 재조회 복구 시험이 포함된다.
+- Lease 만료 시험은 저장된 만료 시각 이후를 저장소의 입력 시각으로 전달한다. 실제 프로세스 강제 종료는 수행하지만 벽시계로 Lease 만료를 기다리는 운영 부하 시험은 아니다.
+- 현재 변경은 README와 구조·검증 문서를 갱신한다. 해당 문서 변경 이후 최신 main의 CI는 후속 Actions에서 별도로 확인한다.
