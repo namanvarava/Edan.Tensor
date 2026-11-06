@@ -68,9 +68,14 @@ public sealed class WorkerExecutionRegistry
         {
             try
             {
-                // 종료 조정기는 콜백 호출을 별도 작업으로 실행하여 동기 대기와 비동기 대기를 모두 제한합니다.
+                // 종료 조정기는 동기적으로 대기하는 외부 API가 ThreadPool의 취소 처리를 막지 않도록 전용 스레드에서 콜백을 시작합니다.
                 // 콜백 구현자는 취소 토큰을 준수해야 하며, 제한 시간 초과는 콜백 자체의 강제 중단을 보장하지 않습니다.
-                return await Task.Run(() => execution.RequestHandoffAsync(timeout.Token), timeout.Token)
+                return await Task.Factory.StartNew(
+                        () => execution.RequestHandoffAsync(timeout.Token),
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default)
+                    .Unwrap()
                     .WaitAsync(timeout.Token);
             }
             catch (OperationCanceledException) when (timeout.IsCancellationRequested) { return false; }
