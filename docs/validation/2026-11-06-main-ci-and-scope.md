@@ -5,13 +5,14 @@
 CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증을 완료했다. 프로젝트 전체 완료는 미선언이다.
 기능 문서의 후속 과제는 승인된 상세 완료 계약과 구분하며, 테스트 통과만으로 운영 적합성을 승인하지 않는다.
 
-## 현재 main 최종 확인
+## main 최종 검증 기록
 
-- 현재 `main`은 커밋 `4a20a71844d2663b7be338907979dae1aee59446`이며, README에 Release 검증 명령과 인증 경계를 반영한 상태다.
+- PR #5 병합 직후 검증 대상 `main`은 커밋 `4a20a71844d2663b7be338907979dae1aee59446`이며, README에 Release 검증 명령과 인증 경계를 반영한 상태였다.
 - [Actions Run #628](https://github.com/namanvarava/Edan.Tensor/actions/runs/42179454874)은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 모두 성공시켰다.
 - Run #628은 총 193개 테스트를 실패 0개·건너뜀 0개로 통과했으며, TRX 덮어쓰기·xUnit2031·NU1900 경고도 확인되지 않았다.
-- 현재 열린 Issue와 Pull Request는 0개이며, 최근 필수 변경 PR #5는 `4a20a71844d2663b7be338907979dae1aee59446`으로 squash merge되었다.
-- 이 절의 판정은 원격 Actions 실행 증거에 근거한다. 로컬 exact restore/test 실패와 로컬 GitHub 인증·동기화 차단은 아래 인수인계 절에 별도로 기록한다.
+- 당시 열린 Issue와 Pull Request는 0개였으며, 필수 변경 PR #5는 `4a20a71844d2663b7be338907979dae1aee59446`으로 squash merge되었다.
+- 문서 정리 PR #6은 `734ca9a94edb610e383b7656bb291e89b3b370b6`으로 squash merge되었고, 병합 후 [Actions Run #630](https://github.com/namanvarava/Edan.Tensor/actions/runs/42180471013)도 동일한 Release 검증을 성공시켰다. Run #630은 총 193개 테스트를 실패 0개·건너뜀 0개로 통과했다.
+- 이 절의 판정은 각 커밋에 연결된 원격 Actions 실행 증거에 근거한다. 로컬 exact restore/test 실패와 로컬 GitHub 인증·동기화 차단은 아래 인수인계 절에 별도로 기록한다.
 
 ## 공식 검증 증거
 
