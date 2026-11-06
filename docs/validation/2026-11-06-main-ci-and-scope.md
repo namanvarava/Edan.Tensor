@@ -85,4 +85,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - [Run #618](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170720120)은 Restore / Build / Test를 통과했다. 총 192개 통과, 실패 0, 건너뜀 0이다.
 - Build 로그는 검증 프로그램의 Release 출력을 확인했다. Worker Infrastructure의 60개 테스트에는 실제 자식 프로세스 강제 종료 및 재조회 복구 시험이 포함된다.
 - Lease 만료 시험은 저장된 만료 시각 이후를 저장소의 입력 시각으로 전달한다. 실제 프로세스 강제 종료는 수행하지만 벽시계로 Lease 만료를 기다리는 운영 부하 시험은 아니다.
-- 현재 변경은 README와 구조·검증 문서를 갱신한다. 해당 문서 변경 이후 최신 main의 CI는 후속 Actions에서 별도로 확인한다.
+- 현재 변경은 README와 구조·검증 문서를 갱신했으며, 최신 main 커밋에서도 전체 CI가 성공했는지 후속 Actions로 확인해야 한다.
+- 최신 main 커밋 `15ea31b1465bbb26e90eca9355ad1295aae59e30`에 대한 [Actions Run #619](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170991678)은 2026년 11월 6일에 push 이벤트로 실행되었고, Restore, Release Build 및 Release Test 단계가 모두 성공했다. 해당 실행은 총 192개 테스트를 실패 0개와 건너뜀 0개로 통과시켰으며, `build-and-test` 작업의 최종 결과도 `success`였다.
+- 최신 원격 Git 상태를 확인한 결과 `refs/heads/main`만 존재하며 해당 ref는 위 커밋을 가리킨다. 열린 Pull Request도 0개이므로 별도 브랜치와 Pull Request를 만들지 않고 원격 main에 승인된 구현과 검증 기록을 유지했다.
+- 현재 완료로 판정할 수 있는 범위는 Platform의 Tenant·Organization·Project·소속·Policy·감사·아카이브, DataSet의 Tenant 소유 메타데이터·스키마 revision·SQLite 콘텐츠 저장·계층형 저장량 정책, Worker의 전용 DB·Lease/Fencing·체크포인트·재시도·DLQ·재처리·종료 인계·Tenant 커서 LRU 및 이에 대한 자동 검증이다. 이 범위의 구현과 수용 근거는 소스, 테스트 및 위 Actions 실행 결과로 확인한다.
+- DataSet 검증 프로필·규칙 버전·상세 결과 저장 계약과 Validation Handler는 상세 계약이 승인되지 않았기 때문에 구현 완료 항목으로 확정하지 않는다. 지원 포맷, 최초 규칙, 오류·경고 및 결과 보존 정책을 승인하고 자동 검증 기준을 확정하면 해당 제안 문서를 구현 요구사항으로 전환하여 재개한다.
+- 실제 Identity Provider·키 회전·외부 계정 연결, 실제 운영 WorkerHost와 외부 전달 수신 시스템의 응답 유실 종단 간 시험, Commercial·Licensing의 업무 규칙·결제 정책·라이선스 권리, WPF 클라이언트 및 분석용 DuckDB·Parquet 어댑터는 승인된 상세 범위와 수용 기준 또는 실행 환경이 없으므로 완료하지 않았다. 각 항목은 담당 요구사항과 수용 기준, 필요한 외부 시스템 또는 실행 환경이 확정되는 즉시 해당 경계의 테스트를 추가하여 재개한다.
