@@ -5,6 +5,17 @@
 CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증을 완료했다. 프로젝트 전체 완료는 미선언이다.
 기능 문서의 후속 과제는 승인된 상세 완료 계약과 구분하며, 테스트 통과만으로 운영 적합성을 승인하지 않는다.
 
+## PR #12 병합 후 최종 main 재검증
+
+- PR #12 [Actions 예산 차단 상태를 검증 문서에 기록합니다](https://github.com/namanvarava/Edan.Tensor/pull/12)는 승인된 Checks를 확인한 뒤 squash merge되었고, 병합 커밋은 `100c36fd629763329451646fba97c36dafed38f3`이다.
+- 병합 후 원격 `main`의 [Actions Run #642](https://github.com/namanvarava/Edan.Tensor/actions/runs/42204928497)는 커밋 `100c36fd629763329451646fba97c36dafed38f3`에서 실행되어 `success`로 종료되었다. `build-and-test` 작업 ID는 `127849060237`이며, Restore·Build·Test·정리 단계를 모두 성공시켰다.
+- Run #642는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행되었다. 로그에는 Runner 버전 `2.338.2`, 이름 `EDAN-TENSOR-WIN`, exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test가 기록되어 있다. Build는 경고 0개·오류 0개였고, 테스트는 193개 성공·실패 0개·건너뜀 0개였다.
+- 병합 후 로컬 `main`과 `origin/main`은 모두 `100c36fd629763329451646fba97c36dafed38f3`을 가리켰고, 작업 디렉터리는 clean 상태였다. `git diff --check`도 종료 코드 0으로 완료했다.
+- 병합 후 로컬 PC에서 exact `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. 세 명령 모두 종료 코드 0이며, 테스트는 193개 통과·실패 0개·건너뜀 0개였다.
+- 로컬 Restore와 Build에는 NuGet 감사 피드 조회 경로의 `NU1900` 경고가 각각 18개 출력되었지만 오류는 0개였다. 원격 Run #642에서는 동일한 Restore·Build가 경고 0개로 완료되었으므로 저장소 설정으로 로컬 경고를 숨기지 않았다.
+- 현재 열린 Issue와 Pull Request는 각각 0개이며, `.github`에는 `schedule`, `workflow_dispatch`, `cron` 예약 실행 트리거가 없다. Runner Windows 서비스는 `Running`, `Automatic` 상태를 유지한다.
+- GitHub Billing의 Actions 예산은 `$20.00 / $20.00`, 100% 사용, `Usage blocked` 상태로 남아 있다. PR #12에 이 외부 제약과 예산 증액·해제 없이 재개할 조건을 기록했으며, 예산 설정은 변경하지 않았다.
+
 ## PR #8·#9 및 최종 main 경계 재검증
 
 - PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 해당 커밋의 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
