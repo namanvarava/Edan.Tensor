@@ -38,6 +38,13 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - 최신 main 동기화 후 로컬 exact `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 테스트는 193개 통과·실패 0개·건너뜀 0개였다. 로컬 Restore와 Build에는 NuGet 취약성 피드 조회 실패에 따른 `NU1900` 경고 18개가 남았고, 경고를 숨기지 않았다.
 - 최신 확인에서 열린 Issue와 Pull Request는 각각 0개이고, 작업 디렉터리는 clean 상태이며 `git diff --check`도 종료 코드 0이다. 이 기록은 자동 실행을 추가하지 않았으며, 현재 완료된 구현 범위와 승인되지 않은 잔여 제품 범위를 구분한다.
 
+## PR #16 병합 후 main 소스 검증
+
+- PR #16은 위 검증 문서를 갱신한 문서 전용 변경이며 `d09cc12d850a9b90e8528e71c6c74d844a290426`으로 squash merge되었다. 소스 구현은 `661b5ef83e152b1adefd908d57d080acb230d46c`와 동일하다.
+- 병합 후 main의 [Actions Run #650](https://github.com/namanvarava/Edan.Tensor/actions/runs/42217248717)은 `d09cc12d850a9b90e8528e71c6c74d844a290426`을 대상으로 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 성공했다. 작업 ID는 `127890223583`, Runner 버전은 `2.338.2`이며 Restore·Release Build·Release Test·정리 단계가 모두 성공했다.
+- Run #650 로그는 Build 경고 0개·오류 0개와 테스트 193개 통과·실패 0개·건너뜀 0개를 기록한다. 병합 후 로컬에서도 exact Restore·Release Build·Release Test를 모두 종료 코드 0으로 재실행했다.
+- 이 문서 이후의 문서 전용 변경은 소스 동작을 바꾸지 않으며, 변경별 PR Check와 병합 후 main CI 결과를 별도로 확인한다.
+
 ## PR #8·#9 및 최종 main 경계 재검증
 
 - PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 해당 커밋의 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
