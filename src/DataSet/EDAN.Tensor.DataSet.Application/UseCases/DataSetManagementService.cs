@@ -18,6 +18,7 @@ public sealed class DataSetManagementService(
         DataSetScope scope,
         string name,
         string adapterId,
+        string contentFormat = "json-array",
         CancellationToken cancellationToken = default)
     {
         try
@@ -35,7 +36,7 @@ public sealed class DataSetManagementService(
             var reference = await adapter.AllocateAsync(new DataSetStorageAllocation(id, scope), cancellationToken);
             try
             {
-                var dataSet = DataSetAggregate.Create(id, scope, name, reference, adapter.AdapterId);
+                var dataSet = DataSetAggregate.Create(id, scope, name, reference, adapter.AdapterId, contentFormat);
                 repository.Add(dataSet);
                 await repository.SaveChangesAsync(cancellationToken);
                 return Result<DataSetId>.Success(id);

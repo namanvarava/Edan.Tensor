@@ -183,12 +183,14 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 - `Authentication__Issuer`: 신뢰하는 인증 발급자
 - `Authentication__Audience`: EDAN Tensor API 대상 식별자
 - `Authentication__SigningKey`: UTF-8 기준 32바이트 이상의 비밀 서명 키
+- `Authentication__MetadataAddress`: 개발·자동 검증용 OpenID Connect 메타데이터 주소입니다. 운영에서는 HTTPS 주소를 사용합니다.
+- `Authentication__RequireHttpsMetadata`: 로컬 HTTP IdP를 사용할 때만 `false`로 지정합니다. 기본값은 `true`입니다.
 
-설정이 없거나 유효하지 않으면 JWT 검증이 성공하지 않으므로 보호 API에 접근할 수 없습니다. 상태 확인 경로는 유지됩니다. 운영 환경에서는 전용 비밀 저장소와 키 교체 절차를 사용해야 합니다.
+`MetadataAddress`를 지정하면 JWKS 기반 비대칭 서명을 사용하며 `Issuer`와 `Audience` 검증은 계속 적용됩니다. 설정이 없거나 유효하지 않으면 JWT 검증이 성공하지 않으므로 보호 API에 접근할 수 없습니다. 상태 확인 경로는 유지됩니다. 운영 환경에서는 전용 비밀 저장소와 키 교체 절차를 사용해야 합니다.
 
 ## 현재 보안 경계와 후속 작업
 
-현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인을 제공합니다. Tenant 내부의 Member와 Administrator 역할은 아직 기본 API 접근에서 동일하게 취급합니다. 사용자 초대 수락과 외부 계정 연결, 조직·프로젝트별 세부 권한, 토큰 발급·갱신·폐기, 키 회전 및 JWKS 기반 비대칭 키 검증은 후속 단계에서 구현해야 합니다.
+현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인, 로컬 JWKS 키 조회·회전 검증을 제공합니다. Tenant 내부의 Member와 Administrator 역할은 아직 기본 API 접근에서 동일하게 취급합니다. 사용자 초대 수락과 외부 계정 연결, 토큰 발급·갱신·폐기 및 실제 비운영 외부 IdP 경계 검증은 별도 운영 계약이 필요합니다.
 
 완전한 운영 보안 검증 전까지 API의 외부 공개를 제한해야 합니다. 운영 환경에서는 배포 작업에서 승인된 EF Core Migration을 별도로 적용해야 합니다.
 

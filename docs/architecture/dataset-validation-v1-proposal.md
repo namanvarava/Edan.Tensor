@@ -1,14 +1,14 @@
-# DataSet 검증 v1 상세 계약 제안
+# DataSet 검증 v1 상세 계약
 
 ## 문서 상태
 
-이 문서는 기존 DataSet Validation Handler 요구사항의 미정 계약을 구체화한 검토안이다.
-현재 구현 완료 또는 사용자 승인 기록으로 취급하지 않는다.
-개발자는 아래 계약을 확정한 뒤 프로필·결과 저장소, 어댑터 검증기 및 Worker Handler를 구현해야 한다.
+이 문서는 기존 DataSet Validation Handler 요구사항의 승인된 v1 계약이다.
+사용자는 2026-11-07에 이 문서의 범위와 아래 수용 기준을 승인했다.
+구현은 이 계약을 기준으로 하며, DuckDB·Parquet·Commercial·Licensing·WPF는 이번 릴리스에 포함하지 않는다.
 
-## 제안하는 최초 지원 범위
+## 승인된 최초 지원 범위
 
-| 항목 | 제안 |
+| 항목 | 승인된 계약 |
 | --- | --- |
 | 콘텐츠 포맷 | UTF-8 CSV와 JSON 객체 배열을 지원한다. 콘텐츠 저장 엔진과 파일 포맷은 별도 식별자로 관리한다. |
 | 저장 엔진 | 기존 SQLite 콘텐츠 어댑터를 사용한다. DuckDB·Parquet 지원은 별도의 실제 어댑터와 포맷 계약을 구현한다. |
@@ -34,13 +34,28 @@
 6. Worker의 ResultReference에는 결과 참조만 기록한다.
 7. 검증 대상의 Error는 정상 실행의 Invalid 결과이며, 저장소 장애는 재시도 정책에 따라 처리한다.
 
-## 확정해야 할 선택
+## 승인된 선택
 
-사용자는 지원 포맷, 최초 규칙, 상세 결과 보존 정책이 위 제안과 일치하는지 결정해야 한다.
-기존 Schema JSON 문서에 필드 정의 형식이 확정되어 있지 않으므로 임의의 JSON 객체를 검증 스키마로 해석하지 않는다.
+사용자는 위 지원 포맷, 최초 규칙, 상세 결과 보존 정책을 승인했다.
+Validation Profile은 별도의 명시적인 `fields`와 `duplicateSets` 배열을 포함해야 하며, 임의의 JSON 객체를 검증 스키마로 해석하지 않는다.
+Profile 문서의 필드 정의 형식은 구현에서 다음과 같이 고정한다.
 
-Commercial·Licensing·WPF는 이 계약에 포함되지 않는다.
-해당 영역은 업무 흐름, 권리·만료·오프라인 정책, 결제 공급자 및 화면 수용 기준을 별도로 명시해야 한다.
+```json
+{
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "severity": "Error" },
+    { "name": "amount", "type": "decimal", "min": 0, "max": 1000000, "severity": "Error" }
+  ],
+  "duplicateSets": [
+    { "fields": ["id"], "severity": "Error", "code": "duplicate.id" }
+  ],
+  "limits": { "maxRecords": 100000, "maxFieldLength": 4096, "maxDetailItems": 1000 }
+}
+```
+
+`type`은 `string`, `integer`, `decimal`, `boolean` 중 하나이며, `severity`는 `Error` 또는 `Warning`이다. 문자열 필드는 `minLength`·`maxLength`를 선택적으로 사용하고, 수치 필드는 `min`·`max`를 선택적으로 사용한다. 모든 필드는 최상위 필드명만 지정하며 중첩 경로와 실행 코드는 허용하지 않는다.
+
+Commercial·Licensing·WPF는 이번 릴리스 계약에 포함되지 않는다. 해당 영역은 다음 릴리스에서 업무 흐름, 권리·만료·오프라인 정책, 결제 공급자 및 화면 수용 기준을 별도로 승인한 뒤 진행한다.
 
 ## 구현 완료를 판단할 증거
 

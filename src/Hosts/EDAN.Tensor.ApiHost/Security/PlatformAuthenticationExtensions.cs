@@ -13,6 +13,8 @@ public static class PlatformAuthenticationExtensions
         var issuer = configuration["Authentication:Issuer"];
         var audience = configuration["Authentication:Audience"];
         var signingKey = configuration["Authentication:SigningKey"];
+        var metadataAddress = configuration["Authentication:MetadataAddress"];
+        var requireHttpsMetadata = configuration.GetValue("Authentication:RequireHttpsMetadata", true);
         // 필수 설정이 누락되어도 모든 JWT 검증 조건을 유지하여 보호 API가 계속 닫힌 상태를 유지합니다.
         var key = !string.IsNullOrWhiteSpace(signingKey) && Encoding.UTF8.GetByteCount(signingKey) >= 32
             ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
@@ -23,6 +25,12 @@ public static class PlatformAuthenticationExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                if (!string.IsNullOrWhiteSpace(metadataAddress))
+                {
+                    options.MetadataAddress = metadataAddress;
+                    options.RequireHttpsMetadata = requireHttpsMetadata;
+                    options.RefreshOnIssuerKeyNotFound = true;
+                }
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

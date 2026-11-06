@@ -10,6 +10,7 @@ public static class DataSetApplicationExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddScoped<DataSetManagementService>();
+        services.AddScoped<DataSetValidationService>();
         return services;
     }
 }

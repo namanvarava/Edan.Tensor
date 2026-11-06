@@ -11,8 +11,11 @@ Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청
 - 서명 키는 환경 설정 또는 비밀 저장소에서 주입하며 저장소에 포함하지 않습니다.
 - 외부 Identity Provider가 사용자 인증과 토큰 발급을 담당합니다.
 - API Host는 토큰 발급자가 아니며 수신 토큰의 신뢰성을 검증합니다.
+- 개발·자동 검증에서는 `Authentication:MetadataAddress`로 로컬 OpenID Connect 메타데이터와 JWKS 서버를 지정할 수 있습니다.
+- 메타데이터 주소를 사용하면 `JwtBearer`가 JWKS를 조회하고 `RefreshOnIssuerKeyNotFound`로 알 수 없는 `kid`의 키를 다시 조회합니다. 키 회전은 새 키와 기존 키가 겹치는 안전한 전환 구간에서 검증합니다.
+- `Authentication:RequireHttpsMetadata=false`는 로컬 HTTP 테스트 서버에서만 허용하며, 운영에서는 HTTPS 메타데이터 주소와 비밀 저장소를 사용합니다.
 
-필수 설정은 `Authentication:Issuer`, `Authentication:Audience`, `Authentication:SigningKey`입니다. 서명 키는 UTF-8 기준 32바이트 이상이어야 합니다. 설정이 없거나 유효하지 않으면 JWT 검증은 성공할 수 없으며 보호 API는 닫힌 상태를 유지합니다. 상태 확인 경로는 계속 사용할 수 있습니다.
+대칭 서명 구성의 필수 설정은 `Authentication:Issuer`, `Authentication:Audience`, `Authentication:SigningKey`입니다. 서명 키는 UTF-8 기준 32바이트 이상이어야 합니다. JWKS 구성에서는 `Authentication:MetadataAddress`를 사용하고 발급자와 대상을 계속 설정합니다. 설정이 없거나 유효하지 않으면 JWT 검증은 성공할 수 없으며 보호 API는 닫힌 상태를 유지합니다. 상태 확인 경로는 계속 사용할 수 있습니다.
 
 ## 표준 클레임
 
@@ -56,7 +59,7 @@ Tenant 생성, 최초 활성화, 구성원 소속 부여는 `platform_admin` 역
 
 ## 테스트 기준
 
-통합 테스트는 외부 인증 서버 대신 테스트 전용 인증 핸들러를 사용합니다. 테스트 전용 헤더는 테스트 호스트에서만 처리하며 실제 API Host에는 등록하지 않습니다.
+통합 테스트는 테스트 전용 인증 핸들러와 로컬 TCP IdP/JWKS 서버를 구분하여 사용합니다. 테스트 전용 헤더는 테스트 호스트에서만 처리하며 실제 API Host에는 등록하지 않습니다. 로컬 JWKS 경계 테스트는 정상 토큰, 잘못된 Issuer/Audience, 만료, 서명 실패, 알 수 없는 `kid`, 새 키와 기존 키의 겹침 회전을 확인합니다.
 
 - 익명 Tenant 생성 요청은 401
 - 관리자 역할이 없는 Tenant 생성 요청은 403
@@ -69,13 +72,8 @@ Tenant 생성, 최초 활성화, 구성원 소속 부여는 `platform_admin` 역
 
 Platform API는 Tenant·Organization·Project 계층의 접근 정책을 평가합니다. 정책은 외부 주체, Action, ResourceType, Allow·Deny 효과와 우선순위를 가집니다. Tenant 정책은 하위 범위에 상속되고 Organization 정책은 해당 프로젝트에 상속됩니다. 명시적 Deny는 Allow 및 역할 권한보다 우선하며, 활성 Tenant 소속은 정책 Allow로 우회할 수 없습니다. 평가 결과는 platform_authorization_audit 테이블에 기록합니다. 상세 설계는 [Policy 기반 권한 평가 및 감사 설계](platform-authorization-policy.md)를 참고하십시오.
 
-## 후속 보안 과제
+## 외부 운영 검증 조건
 
-1. 사용자 초대 수락과 이메일 기반 외부 계정 연결
-2. 사용자·조직·프로젝트별 세부 권한 및 정책 평가
-3. Tenant 역할별 차등 권한과 권한 변경 감사
-4. Identity Provider 실제 연동 및 토큰 발급·갱신·폐기
-5. 비대칭 서명 및 JWKS 키 조회·회전
-6. 보안 감사 로그, 속도 제한, 비밀 키 운영 정책
+이번 릴리스의 자동 검증은 저장소에 비밀을 남기지 않는 로컬 IdP/JWKS 서버로 완료합니다. 최종 운영 경계는 사용자가 제공하는 비운영 외부 IdP 테스트 테넌트에서 같은 여섯 가지 토큰 조건을 실행해야 합니다. 실행에는 발급자 메타데이터 주소, 기대 Issuer/Audience, 테스트 주체의 Tenant 소속 및 키 회전 권한이 필요합니다.
 
-현재 구현은 기본 인증·인가 경계입니다. 위 과제가 완료되고 실제 Identity Provider와 운영 키 관리가 검증되기 전에는 운영 보안 적합성을 최종 승인하지 않습니다.
+현재 구현은 기본 인증·인가 경계와 로컬 JWKS 검증을 제공합니다. 외부 테스트 테넌트가 제공되기 전에는 그 운영 경계를 완료했다고 선언하지 않습니다.
