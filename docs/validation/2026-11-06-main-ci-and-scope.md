@@ -30,6 +30,14 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - 병합 후 최종 [Actions Run #646](https://github.com/namanvarava/Edan.Tensor/actions/runs/42207723631)은 push 이벤트로 동일한 `main` 커밋에서 실행되어 `success`로 종료되었다. `build-and-test` 작업은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행되었고, Runner 버전은 `2.338.2`였다. Restore·Build·Test·정리 단계가 모두 성공했으며 Build는 경고 0개·오류 0개, 테스트는 193개 통과·실패 0개·건너뜀 0개였다.
 - 병합 후 로컬 `main`과 `origin/main`은 모두 `81abf63e602ed02335d446221c22757d1ab1c4ae`를 가리켰다. 작업 디렉터리는 clean 상태이고 `git diff --check`도 종료 코드 0으로 완료했다. 로컬 PC에서 병합 후 exact Restore·Release Build·Release Test를 다시 실행했으며 세 명령 모두 종료 코드 0, 테스트 193개 통과·실패 0개·건너뜀 0개였다.
 
+## PR #15 문서 정리 후 최신 main 검증
+
+- PR #15 [최종 main CI 시점을 검증 문서에 반영합니다](https://github.com/namanvarava/Edan.Tensor/pull/15)는 최신 CI 증거와 테스트 안내를 반영하여 `661b5ef83e152b1adefd908d57d080acb230d46c`로 squash merge되었다.
+- PR #15의 [Actions Run #647](https://github.com/namanvarava/Edan.Tensor/actions/runs/42208473679)은 Pull Request 검증으로, 병합 후 main의 [Actions Run #648](https://github.com/namanvarava/Edan.Tensor/actions/runs/42208644723)은 push 검증으로 실행되었다. 두 실행 모두 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 Restore·Release Build·Release Test와 정리 단계를 성공시켰다.
+- Run #648의 작업 ID는 `127861512047`이며 Runner 버전은 `2.338.2`이다. 로그는 커밋 `661b5ef83e152b1adefd908d57d080acb230d46c`를 checkout하고 Build 경고 0개·오류 0개, 테스트 193개 통과·실패 0개·건너뜀 0개를 기록한다.
+- 최신 main 동기화 후 로컬 exact `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 테스트는 193개 통과·실패 0개·건너뜀 0개였다. 로컬 Restore와 Build에는 NuGet 취약성 피드 조회 실패에 따른 `NU1900` 경고 18개가 남았고, 경고를 숨기지 않았다.
+- 최신 확인에서 열린 Issue와 Pull Request는 각각 0개이고, 작업 디렉터리는 clean 상태이며 `git diff --check`도 종료 코드 0이다. 이 기록은 자동 실행을 추가하지 않았으며, 현재 완료된 구현 범위와 승인되지 않은 잔여 제품 범위를 구분한다.
+
 ## PR #8·#9 및 최종 main 경계 재검증
 
 - PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 해당 커밋의 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
