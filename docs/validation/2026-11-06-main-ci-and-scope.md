@@ -206,4 +206,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 이 Smoke 검증은 실제 외부 Identity Provider, JWKS·키 회전, 외부 전달 수신 시스템의 응답 유실 종단 간 시험을 포함하지 않는다. 해당 검증은 외부 시스템과 승인된 운영 계약이 제공될 때 재개한다.
 - PR #23 병합 커밋 `f2176620e70e8af54858f6fc82526948a81aa98a`에 대한 [Actions Run #664](https://github.com/namanvarava/Edan.Tensor/actions/runs/42226473641)도 `EDAN-TENSOR-WIN`에서 Restore·Build·Test·정리를 모두 성공시켰다. Build는 경고 0개·오류 0개였고 전체 테스트 193개가 실패 0개·건너뜀 0개로 통과했다.
 
+## PR #24 병합 후 최신 main 재검증
+
+- PR #24 [Host smoke 검증의 기준 커밋과 Run 증거를 명확히 합니다](https://github.com/namanvarava/Edan.Tensor/pull/24)는 자체 호스팅 Runner Check를 통과한 뒤 `5f92420fd3a6f28d049d3c7407053026f23961b7`로 squash merge되었다.
+- 병합 후 원격 `main`과 로컬 `main`, `origin/main`은 모두 `5f92420fd3a6f28d049d3c7407053026f23961b7`을 가리킨다. 작업 디렉터리는 clean 상태이며 `git diff --check`도 종료 코드 0으로 완료했다.
+- 병합 후 [Actions Run #666](https://github.com/namanvarava/Edan.Tensor/actions/runs/42227367592)은 해당 SHA에서 `success`로 종료되었다. `build-and-test` 작업은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행되었고, Restore·Release Build·Release Test와 정리 단계를 모두 성공시켰다. Build는 경고 0개·오류 0개였고, 테스트는 SharedKernel 11, Platform Domain 27 / Application 30 / Infrastructure 12, DataSet Domain 6 / Application 8 / Infrastructure 8, Worker Domain 21 / Infrastructure 60, API 통합 10으로 총 193개를 통과했으며 실패 0개·건너뜀 0개였다.
+- 같은 SHA에서 Windows 로컬 PC로 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 다시 실행했다. 세 명령은 모두 종료 코드 0이며, 로컬 테스트도 193개 통과·실패 0개·건너뜀 0개였다.
+- 현재 Runner API는 `EDAN-TENSOR-WIN`을 `online`·`idle` 및 `self-hosted`, `Windows`, `X64` 레이블로 보고한다. Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`도 `Running`·`Auto` 상태다. 워크플로에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
+- 현재 열린 Issue와 Pull Request는 각각 0개다. `main` 보호 규칙 REST 조회는 비공개 저장소 요금제 제한으로 HTTP 403을 반환하므로 독립적인 규칙 JSON 검증은 수행할 수 없었다. 이 제한을 우회하지 않았으며, PR #24의 Check는 `pass`, 병합 상태는 `MERGED`로 확인했다.
+
 
