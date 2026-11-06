@@ -27,5 +27,7 @@
     <Copy SourceFiles="@(WorkerProcessProbeFiles)"
           DestinationFiles="@(WorkerProcessProbeFiles->'$(OutDir)ProcessProbe/%(RecursiveDir)%(Filename)%(Extension)')"
           SkipUnchangedFiles="true" />
+    <Error Condition="!Exists('$(OutDir)ProcessProbe/EDAN.Tensor.Worker.ProcessProbe.dll')"
+           Text="빌드는 현재 구성의 Worker 프로세스 검증 프로그램을 준비해야 합니다." />
   </Target>
 </Project>
