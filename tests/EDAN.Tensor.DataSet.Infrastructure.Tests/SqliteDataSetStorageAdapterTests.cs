@@ -13,7 +13,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path + ";Pooling=False");
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             await using var source = new MemoryStream("tensor-payload"u8.ToArray());
@@ -67,7 +67,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-tenant-usage-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path + ";Pooling=False");
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             await using (var content = new MemoryStream("tenant-data"u8.ToArray()))
@@ -100,7 +100,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path + ";Pooling=False");
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             var otherTenant = new DataSetStorageAllocation(allocation.DataSetId,
@@ -121,7 +121,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-quota-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path + ";Pooling=False");
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             var policy = new DataSetStorageQuotaPolicy(10, 10, 10, 10);
@@ -150,7 +150,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-hierarchical-usage-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path + ";Pooling=False");
             var tenantId = Guid.NewGuid();
             var organizationId = Guid.NewGuid();
             var firstProjectId = Guid.NewGuid();
