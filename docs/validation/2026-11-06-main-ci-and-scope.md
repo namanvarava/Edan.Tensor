@@ -34,7 +34,7 @@ Pooling=False로 호스트 종료 후 Windows 파일 삭제 시 연결 풀 잠�
 | Platform | Tenant·Organization·Project·소속·Policy·감사·아카이브 | 실제 Identity Provider, 키 회전, 외부 계정 연결 등 운영 보안 계약과 검증 |
 | DataSet | 독립 DbContext·Migration, 불투명 저장 참조, SQLite 콘텐츠 어댑터, 계층형 quota | 검증 프로필·규칙 버전·상세 결과 저장 계약, 검증 Handler, DuckDB·Parquet 어댑터 |
 | Worker | 전용 DB, 영속 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리 | 실제 프로세스 강제 종료 및 외부 전달 응답 유실의 종단 간 시험 증거 |
-| 종료·순회 | Registry/Dispatcher 단일 handoff 예산, Tenant cursor LRU 상한 | Dispatcher 자체 LRU 및 종료 경로의 직접 회귀 테스트 보강 |
+| 종료·순회 | Registry/Dispatcher 단일 handoff 예산, Tenant cursor LRU 상한 | Dispatcher LRU 직접 회귀 테스트는 본 후속 커밋에 추가; 종료 경로 직접 회귀 테스트는 잔여 |
 | Commercial / Licensing | 분리된 Contracts·Domain·Application·Infrastructure 기반 프로젝트 | 업무 규칙·라이선스·결제 상세 요구사항과 수용 기준 |
 | 클라이언트 | 현재 소스 트리에 WPF 클라이언트 없음 | 화면·업무 흐름 및 완료 범위 확정 |
 
@@ -55,8 +55,8 @@ WorkerDbContext는 PlatformDbContext와 분리되어 있다.
 
 ## 잔여 우선순위와 재개 지점
 
-1. 추가한 아키텍처 테스트의 main CI 결과 확인.
-2. Dispatcher LRU 상한·퇴출·재접근 및 단일 종료 예산 직접 회귀 검증.
+1. 아키텍처 테스트 추가 커밋 `1c4d19c5cc0b13137554428b29420250b4c08476`의 [Run #613](https://github.com/namanvarava/Edan.Tensor/actions/runs/42168208608)은 성공했다. LRU 테스트 후속 커밋의 CI 결과를 확인한다.
+2. Dispatcher LRU 상한·퇴출·재접근·삭제 검증을 추가했다. Registry/Dispatcher 단일 종료 예산의 직접 회귀 검증은 잔여다.
 3. DataSet 검증 프로필·지원 포맷·오류/경고·결과 보존 계약 확정 후 Validation Handler 구현.
 4. 실제 프로세스 장애 복구·외부 호출 중복 전달 시험 환경과 증거 수립.
 5. Identity Provider·Commercial·Licensing·WPF·분석 어댑터의 승인된 기능 범위와 수용 기준 확정.

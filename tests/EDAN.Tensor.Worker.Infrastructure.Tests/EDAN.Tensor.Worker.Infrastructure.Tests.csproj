@@ -9,4 +9,11 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup><ProjectReference Include="../../src/Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" /></ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="../../src/Hosts/EDAN.Tensor.WorkerHost/WorkerTaskDispatcher.cs" Link="Host/WorkerTaskDispatcher.cs" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
 </Project>
