@@ -189,4 +189,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 이전 로컬 exact restore/test 실패와 testhost 연결 시간초과는 원격 미동기화·로컬 환경이 정리되기 전의 과거 결과다. 현재 결과는 위 로컬 main 동기화 후 검증 절에 기록했다.
 - PDF에 기록된 Billing 화면은 읽기 전용으로 재확인했으며, Actions 예산 차단을 해제하거나 과금을 발생시키는 설정은 변경하지 않았다. 외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
 
+## Worker 동기 인계 콜백 시간 제한 수정 및 최신 main 검증
+
+- 병합 전 main 커밋 `a5769c606d60465fb99aac7cf2d64920871b7a6f`의 [Actions Run #658](https://github.com/namanvarava/Edan.Tensor/actions/runs/42221242379)은 Restore와 Build를 성공했지만 `ShutdownReturnsWhenHandoffCallbackBlocksBeforeReturningTask`에서 실패했다. `HandoffElapsed`가 2.406초로 측정되어 테스트의 2초 경계를 넘었으며, Worker Infrastructure는 59개 통과·1개 실패했다.
+- 근본 원인은 동기적으로 대기하는 외부 인계 콜백을 `Task.Run`으로 ThreadPool에 배치하여 취소 타이머와 종료 continuation 처리가 함께 지연될 수 있었던 점이다. 테스트 상한을 늘리지 않고, 커밋 `b66bc94aae1d8a4716b67f57fe2e1f3a8f31435f`에서 인계 콜백 시작을 `TaskCreationOptions.LongRunning` 전용 스레드로 변경했다.
+- 이 변경은 콜백 자체를 강제 중단하거나 실행 Lease를 해제하지 않는다. `WaitAsync`와 취소 토큰으로 종료 조정기의 반환 시간을 제한하고, 콜백이 뒤늦게 끝나도 기존 Lease 복구 경계를 유지한다.
+- PR #21(https://github.com/namanvarava/Edan.Tensor/pull/21)은 자체 호스팅 Runner Check를 통과한 뒤 `6b0113fc14c0f3f9f41937bfb24ebaf18fa2e15c`로 squash merge되었다.
+- 병합 전 대상 경계 테스트는 5회 연속 통과했고 Worker Infrastructure 전체 60개도 통과했다. 병합 직전 로컬 exact Restore, Release Build(경고 0개·오류 0개), Release Test(193개 통과·실패 0개·건너뜀 0개)도 완료했다.
+- 병합 후 [Actions Run #660](https://github.com/namanvarava/Edan.Tensor/actions/runs/42223986236)은 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner(버전 2.338.2)에서 Restore, Build, Test 및 정리를 모두 성공시켰다. Build는 경고 0개·오류 0개였고, 테스트는 SharedKernel 11, Platform 27/30/12, DataSet 6/8/8, Worker 21/60, API 통합 10으로 총 193개를 실패 0개·건너뜀 0개로 통과했다.
+
 
