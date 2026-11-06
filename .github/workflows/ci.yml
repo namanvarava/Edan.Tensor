@@ -22,5 +22,6 @@ jobs:
       - name: Build
         run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
       - name: Test
-        run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-${{ github.run_id }}.trx"
+
 
