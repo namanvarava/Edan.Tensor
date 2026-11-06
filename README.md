@@ -9,7 +9,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith로 개발 중인 데�
 
 | 영역 | 현재 구현 | 남은 주요 조건 |
 | --- | --- | --- |
-| Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, API 인증 경계 | 실제 Identity Provider와 키 회전 등 운영 보안 검증 |
+| Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, 설정 누락 시에도 닫힌 JWT API 인증 경계 | 실제 Identity Provider와 키 회전 등 운영 보안 검증 |
 | DataSet | Tenant 소유 메타데이터, 스키마 revision, 전용 DbContext·Migration, SQLite 콘텐츠 어댑터, 계층형 저장량 정책 | 검증 프로필·규칙·결과 계약과 Validation Handler, DuckDB·Parquet 어댑터 |
 | Worker | 전용 DB, 작업 유형 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, 종료 인계, Tenant 커서 LRU | 실제 운영 Host 및 외부 전달 응답 유실의 종단 간 장애 시험 |
 | Commercial / Licensing | 독립된 Contracts·Domain·Application·Infrastructure 프로젝트 | 업무 흐름, 권리·만료·결제 정책과 수용 기준 |
@@ -35,11 +35,11 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith로 개발 중인 데�
 
 ```powershell
 dotnet restore EDAN.Tensor.sln
-dotnet build EDAN.Tensor.sln --no-restore
-dotnet test EDAN.Tensor.sln --no-build
+dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 ```
 
-로컬 실행은 개발자 점검용입니다. 공식 CI 판정은 해당 main 커밋의 [GitHub Actions](https://github.com/namanvarava/Edan.Tensor/actions) 결과를 사용합니다.
+로컬 실행은 개발자 점검용입니다. 공식 CI는 동일한 Release 명령을 Windows 자체 호스팅 Runner에서 실행하며, 해당 main 커밋의 [GitHub Actions](https://github.com/namanvarava/Edan.Tensor/actions) 결과를 사용합니다.
 프로세스 장애 시험은 빌드가 준비한 별도 검증 프로그램을 시작하고 강제 종료하므로 .NET 실행 파일을 찾을 수 있어야 합니다.
 
 ## 호스트와 개발 가이드
@@ -51,3 +51,5 @@ dotnet test EDAN.Tensor.sln --no-build
 
 [로컬 DB 설정](docs/operations/platform-database-local-setup.md), [API 사용 가이드](docs/operations/platform-api-guide.md),
 [Worker 수명주기](docs/architecture/worker-task-lifecycle.md), [의존성 규칙](docs/architecture/dependency-rules.md)을 함께 확인하세요.
+
+
