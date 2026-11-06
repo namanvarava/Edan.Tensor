@@ -9,13 +9,13 @@
 - Platform Application: 30개
 - Platform Infrastructure: 12개
 - DataSet Domain: 6개
-- DataSet Application: 8개
-- DataSet Infrastructure: 8개
+- DataSet Application: 14개
+- DataSet Infrastructure: 9개
 - Worker Domain: 21개
-- Worker Infrastructure: 60개
-- API 통합: 10개
+- Worker Infrastructure: 66개
+- API 통합: 14개
 
-2026-11-06 현재 소스 검증 기준 `main` 커밋 `6b0113fc14c0f3f9f41937bfb24ebaf18fa2e15c`에서 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했다. 같은 결과는 [Actions Run #660](https://github.com/namanvarava/Edan.Tensor/actions/runs/42223986236)에서 확인할 수 있다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
+2026-11-07 최신 `main` 커밋 `72cf580b1368e3273246a46e80f7801b7c5e14cb`에서 총 210개 테스트가 실패 0개·건너뜀 0개로 통과했다. 같은 결과는 [Actions Run #686](https://github.com/namanvarava/Edan.Tensor/actions/runs/42266713040)에서 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`으로 확인할 수 있다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
 
 ```powershell
 dotnet restore EDAN.Tensor.sln

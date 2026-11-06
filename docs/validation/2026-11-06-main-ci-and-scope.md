@@ -260,8 +260,19 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - DataSet Validation Handler와 API는 불투명 실행 참조를 사용한다. 실행은 DataSet·Schema·프로필 revision을 고정하고 진행 위치·상세 상한을 저장하며, 결과에 원문 셀 값·연결 문자열·물리 경로를 기록하지 않는다. DuckDB·Parquet, Commercial·Licensing 업무 흐름·결제·권리·만료, WPF 클라이언트는 이번 릴리스에서 제외한다.
 - 외부 인증 자동 검증은 저장소에 비밀을 기록하지 않는 로컬 IdP/JWKS TCP 서버로 정상 토큰, 잘못된 Issuer/Audience, 만료 토큰, 서명 실패, 알 수 없는 `kid`, 기존 키와 새 키의 겹침 회전을 확인했다. 최종 비운영 외부 IdP 테스트 테넌트는 아직 제공되지 않아 실제 외부 경계 검증은 미실행이다.
 - 외부 전달은 실제 Windows loopback TCP 수신기에서 첫 응답 유실 후 동일 Idempotency Key 재시도를 확인했다. 같은 Worker 인프라 테스트 묶음에서 HTTP 5xx, timeout, 응답 본문 미보관, Tenant 격리를 확인했고, API 통합 테스트에서 opaque Worker 참조와 멱등 생성 경계를 확인했다.
-- 최신 변경 기준 로컬 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 208개 통과·실패 0개·건너뜀 0개였다.
+- PR #33 병합 시점의 최신 변경 기준 로컬 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 208개 통과·실패 0개·건너뜀 0개였다.
 - 최신 Release 산출물의 실제 Windows Host Smoke에서 ApiHost `/health`, `/health/database`, `/`, `/openapi/v1.json`은 HTTP 200, 보호 API는 HTTP 401을 반환했고 WorkerHost `/health`는 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 비어 있었고 프로세스와 임시 DB 디렉터리를 정리했다.
 - 위 내용은 이전 절의 “승인되지 않은 DataSet Validation” 기록을 현재 승인 시점부터 대체한다. 외부 IdP 테스트 테넌트의 Issuer·Audience·Metadata 주소·테스트 주체 소속·키 회전 권한이 제공되면 같은 토큰 경계를 실제 외부 환경에서 재실행한다.
+
+## 2026-11-07 인수인계 PDF 및 PR #34 병합 후 최종 재검증
+
+- 인수인계 PDF의 기준 main SHA `c187103cee76ad58e28633a259aeebc5e7dab75c`와 현재 main SHA `72cf580b1368e3273246a46e80f7801b7c5e14cb`를 대조했다. PDF의 Worker 종료 인계·Tenant 작업 커서 LRU·전용 Worker DbContext·DataSet 저장소 분리·Platform 의존성 경계 요구를 현재 코드와 테스트에서 재확인했다.
+- PDF가 기록한 과거 Actions Run #605(`42124026661`)는 `runner_id=0`, 실행 단계 없음으로 종료된 예산 차단 이력이었다. 현재는 예산 설정을 변경하지 않았고, 최신 Run #686이 실제 Runner에서 성공하여 동일 차단은 재현되지 않았다. Billing REST 조회는 현재 계정에서 HTTP 404를 반환했으며, 예산 증액·사용 중지 옵션 변경은 수행하지 않았다.
+- PR #34 [Worker Tenant 커서 상한 계약의 회귀 검증을 보강합니다](https://github.com/namanvarava/Edan.Tensor/pull/34)는 자체 호스팅 PR Run #685를 통과한 뒤 `72cf580b1368e3273246a46e80f7801b7c5e14cb`로 squash merge되었다. 새 테스트는 설정 기본값 10,000, 최소값 500, 최대값 100,000, LRU 퇴출 및 stale entry 제거를 직접 검증한다.
+- 병합 후 로컬 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. 세 명령은 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 210개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #686](https://github.com/namanvarava/Edan.Tensor/actions/runs/42266713040)은 `EDAN-TENSOR-WIN`(Runner 2.338.2, runner_id=22)에서 Restore·Release Build·Release Test·정리를 모두 성공시켰다. Build 경고 0개·오류 0개, 테스트는 SharedKernel 11, Platform Domain 27 / Application 30 / Infrastructure 12, DataSet Domain 6 / Application 14 / Infrastructure 9, Worker Domain 21 / Infrastructure 66, API 통합 14로 총 210개 통과·실패 0개·건너뜀 0개였다.
+- 병합된 최신 Release 산출물의 실제 Windows Host Smoke에서 ApiHost `/health`, `/health/database`, `/`, `/openapi/v1.json`은 HTTP 200, 보호 API는 HTTP 401을 반환했고 WorkerHost `/health`는 HTTP 200을 반환했다. API 데이터베이스는 `Connected/Green`이었고 두 프로세스의 표준 오류는 비어 있었으며 임시 프로세스·SQLite 디렉터리를 정리했다.
+- 최종 상태는 로컬 main·origin/main·GitHub main이 모두 `72cf580b1368e3273246a46e80f7801b7c5e14cb`이고 작업 디렉터리가 clean이며 열린 PR·Issue가 없다. Runner는 온라인·Idle이고 Windows 서비스는 `Running/Auto` 상태다.
+- 외부 비운영 IdP 테스트 테넌트의 실제 경계 검증만 환경 제공 전까지 남아 있다. Metadata/JWKS 주소, Issuer, Audience, Tenant 소속 테스트 주체, 키 회전 권한이 제공되면 정상 토큰·잘못된 Issuer/Audience·만료·서명 실패·알 수 없는 `kid`·키 회전을 외부 환경에서 재실행한다.
 
 
