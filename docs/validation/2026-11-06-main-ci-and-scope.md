@@ -254,4 +254,14 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 인수인계 PDF는 2페이지·A4·비암호화 문서로 다시 확인했고, 두 페이지를 PNG로 렌더링하여 제목·섹션·Worker 설계·Run #605 예산 차단 기록의 배치와 가독성을 검토했다. Poppler가 `Symbol` 및 `ArialUnicode` 표시 글꼴 경고를 출력했지만 페이지의 잘림·겹침·검은 사각형은 확인되지 않았다. PDF 원본은 변경하지 않았다.
 - Actions 예산 제한, 외부 Identity Provider·키 회전·외부 전달 수신 시스템, 승인 전 DataSet Validation·Commercial·Licensing·WPF 범위는 이 검증으로 해결되지 않으며 기존 재개 조건을 유지한다.
 
+## 2026-11-07 승인 범위 구현 및 로컬 경계 검증
+
+- 사용자가 `dataset-validation-v1-proposal.md`를 승인된 계약으로 확정했다. 이번 릴리스의 DataSet 검증은 UTF-8 CSV와 JSON 객체 배열, 필수값·문자열·정수·소수·불리언 형식, 수치 범위·중복 검사, 최상위 필드, Tenant별 불변 프로필 ID·revision, 결과 자동 삭제 금지와 관리자 명시적 삭제, SQLite 어댑터만 포함한다.
+- DataSet Validation Handler와 API는 불투명 실행 참조를 사용한다. 실행은 DataSet·Schema·프로필 revision을 고정하고 진행 위치·상세 상한을 저장하며, 결과에 원문 셀 값·연결 문자열·물리 경로를 기록하지 않는다. DuckDB·Parquet, Commercial·Licensing 업무 흐름·결제·권리·만료, WPF 클라이언트는 이번 릴리스에서 제외한다.
+- 외부 인증 자동 검증은 저장소에 비밀을 기록하지 않는 로컬 IdP/JWKS TCP 서버로 정상 토큰, 잘못된 Issuer/Audience, 만료 토큰, 서명 실패, 알 수 없는 `kid`, 기존 키와 새 키의 겹침 회전을 확인했다. 최종 비운영 외부 IdP 테스트 테넌트는 아직 제공되지 않아 실제 외부 경계 검증은 미실행이다.
+- 외부 전달은 실제 Windows loopback TCP 수신기에서 첫 응답 유실 후 동일 Idempotency Key 재시도를 확인했다. 같은 Worker 인프라 테스트 묶음에서 HTTP 5xx, timeout, 응답 본문 미보관, Tenant 격리를 확인했고, API 통합 테스트에서 opaque Worker 참조와 멱등 생성 경계를 확인했다.
+- 최신 변경 기준 로컬 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 208개 통과·실패 0개·건너뜀 0개였다.
+- 최신 Release 산출물의 실제 Windows Host Smoke에서 ApiHost `/health`, `/health/database`, `/`, `/openapi/v1.json`은 HTTP 200, 보호 API는 HTTP 401을 반환했고 WorkerHost `/health`는 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 비어 있었고 프로세스와 임시 DB 디렉터리를 정리했다.
+- 위 내용은 이전 절의 “승인되지 않은 DataSet Validation” 기록을 현재 승인 시점부터 대체한다. 외부 IdP 테스트 테넌트의 Issuer·Audience·Metadata 주소·테스트 주체 소속·키 회전 권한이 제공되면 같은 토큰 경계를 실제 외부 환경에서 재실행한다.
+
 

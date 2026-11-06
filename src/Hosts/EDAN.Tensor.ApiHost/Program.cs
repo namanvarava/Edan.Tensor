@@ -6,6 +6,7 @@ using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.Worker.Application.ExternalDelivery;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure;
@@ -114,6 +115,18 @@ builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
+var deliveryHosts = builder.Configuration.GetSection("ExternalDelivery:AllowedHosts")
+    .GetChildren().Select(section => section.Value).OfType<string>()
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+var deliveryTimeoutSeconds = Math.Clamp(
+    builder.Configuration.GetValue<int?>("ExternalDelivery:TimeoutSeconds") ?? 30, 1, 300);
+builder.Services.AddSingleton(new ExternalDeliveryOptions(deliveryHosts,
+    builder.Configuration.GetValue("ExternalDelivery:AllowLoopback", false),
+    TimeSpan.FromSeconds(deliveryTimeoutSeconds)));
+builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client) =>
+{
+    client.Timeout = serviceProvider.GetRequiredService<ExternalDeliveryOptions>().Timeout;
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
@@ -143,6 +156,8 @@ app.MapHealthChecks("/health");
 app.MapPlatformEndpoints();
 app.MapWorkerEndpoints();
 app.MapDataSetEndpoints();
+app.MapDataSetValidationEndpoints();
+app.MapExternalDeliveryEndpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
 app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken cancellationToken) =>

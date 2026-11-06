@@ -1,5 +1,7 @@
 using EDAN.Tensor.DataSet.Domain.Model;
+using EDAN.Tensor.DataSet.Application.Validation;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using EDAN.Tensor.DataSet.Infrastructure.Validation;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -76,5 +78,38 @@ public sealed class DataSetRepositoryTests
         Assert.Contains(entity.GetIndexes(), index =>
             index.Properties.Select(property => property.GetColumnName()).SequenceEqual(
                 new[] { "TenantId", "OrganizationId", "ProjectId" }));
+    }
+
+    [Fact]
+    public async Task ValidationRepository_IsTenantScopedAndDeletesOnlyExplicitly()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<DataSetDbContext>().UseSqlite(connection).Options;
+        var tenantA = Guid.NewGuid();
+        var tenantB = Guid.NewGuid();
+        var profileJson = "{\"fields\":[{\"name\":\"id\",\"type\":\"integer\"}]}";
+
+        await using var db = new DataSetDbContext(options);
+        await db.Database.MigrateAsync();
+        var repository = new EfDataSetValidationRepository(db);
+        var profile = await repository.CreateProfileAsync(tenantA, "기본", profileJson, DateTimeOffset.UtcNow);
+
+        Assert.NotNull(await repository.GetProfileAsync(tenantA, profile.Id, 1));
+        Assert.Null(await repository.GetProfileAsync(tenantB, profile.Id, 1));
+
+        var execution = await repository.CreateExecutionAsync(tenantA, Guid.NewGuid(), 1, 1,
+            profile.Id, 1, DateTimeOffset.UtcNow);
+        Assert.True(await repository.TryStartAsync(tenantA, execution.Id));
+        Assert.True(await repository.RecordRowAsync(tenantA, execution.Id, 1,
+            [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "형식이 올바르지 않습니다.")],
+            [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "형식이 올바르지 않습니다.")],
+            [], 1, 1, false));
+        await repository.CompleteAsync(tenantA, execution.Id, DataSetValidationStatus.Invalid, 1, false, "{\"field.id.type\":1}");
+
+        Assert.Null(await repository.GetExecutionAsync(tenantB, execution.Id));
+        Assert.Single(await repository.GetDetailsAsync(tenantA, execution.Id, 0, 10));
+        Assert.True(await repository.DeleteExecutionAsync(tenantA, execution.Id));
+        Assert.Null(await repository.GetExecutionAsync(tenantA, execution.Id));
     }
 }

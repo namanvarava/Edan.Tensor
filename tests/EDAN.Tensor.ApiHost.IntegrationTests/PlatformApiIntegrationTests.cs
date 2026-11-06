@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
+using EDAN.Tensor.DataSet.Application.Validation;
 using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Domain.Model;
@@ -562,6 +564,165 @@ public sealed class PlatformApiIntegrationTests
     }
 
     [Fact]
+    public async Task DataSetValidationApiCreatesProfileAndIdempotentWorkerExecution()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"DV-{suffix}", name = "DataSet 검증 Tenant"
+        });
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships",
+                new { subjectId = "validation-admin", role = "Administrator" })).StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+        workerDb.WorkerTaskTypes.Add(new WorkerTaskTypeCatalogEntry(
+            DataSetValidationTaskContract.TaskType, "DataSet 검증 v1", DateTimeOffset.UtcNow));
+        await workerDb.SaveChangesAsync();
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "validation-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        var organizationId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+
+        // 플랫폼 소유 범위는 테스트 데이터베이스에 직접 구성하여 검증 API 경계만 확인합니다.
+        var platformDb = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        var organization = Organization.Create(new OrganizationId(organizationId), new TenantId(tenantId), new OrganizationCode($"ORG-{suffix}"), "검증 조직");
+        platformDb.Organizations.Add(organization);
+        var project = Project.Create(new ProjectId(projectId), new TenantId(tenantId), organization.Id, new ProjectCode($"PRJ-{suffix}"), "검증 프로젝트");
+        platformDb.Projects.Add(project);
+        await platformDb.SaveChangesAsync();
+
+        using var dataSetResponse = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId, projectId, name = "검증 원천", contentFormat = "csv" });
+        Assert.Equal(HttpStatusCode.Created, dataSetResponse.StatusCode);
+        using var dataSetJson = await JsonDocument.ParseAsync(await dataSetResponse.Content.ReadAsStreamAsync());
+        var dataSetId = dataSetJson.RootElement.GetProperty("id").GetGuid();
+
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas",
+            new { schemaJson = "{\"type\":\"object\"}" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", null)).StatusCode);
+        using var content = new StringContent("id,name\n1,alpha\n1,beta\n", Encoding.UTF8, "text/csv");
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", content)).StatusCode);
+
+        using var profileResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validation-profiles",
+            new { name = "기본 검증", definitionJson = "{\"fields\":[{\"name\":\"id\",\"type\":\"integer\",\"required\":true}],\"duplicateSets\":[{\"fields\":[\"id\"]}]}" });
+        Assert.Equal(HttpStatusCode.Created, profileResponse.StatusCode);
+        using var profileJson = await JsonDocument.ParseAsync(await profileResponse.Content.ReadAsStreamAsync());
+        var profileId = profileJson.RootElement.GetProperty("id").GetGuid();
+
+        using var execute = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
+        {
+            Content = JsonContent.Create(new { expectedDataSetVersion = 3, schemaVersion = 1, profileId, profileRevision = 1 })
+        };
+        execute.Headers.Add("Idempotency-Key", "validation-integration-1");
+        using var executionResponse = await client.SendAsync(execute);
+        Assert.Equal(HttpStatusCode.Accepted, executionResponse.StatusCode);
+        using var executionJson = await JsonDocument.ParseAsync(await executionResponse.Content.ReadAsStreamAsync());
+        var executionId = executionJson.RootElement.GetProperty("execution").GetProperty("id").GetGuid();
+
+        using var duplicate = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
+        {
+            Content = JsonContent.Create(new { expectedDataSetVersion = 3, schemaVersion = 1, profileId, profileRevision = 1 })
+        };
+        duplicate.Headers.Add("Idempotency-Key", "validation-integration-1");
+        using var duplicateResponse = await client.SendAsync(duplicate);
+        Assert.Equal(HttpStatusCode.Conflict, duplicateResponse.StatusCode);
+
+        using var status = await client.GetAsync($"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
+        Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+        using var statusJson = await JsonDocument.ParseAsync(await status.Content.ReadAsStreamAsync());
+        Assert.Equal("Queued", statusJson.RootElement.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task ExternalDeliveryApiUsesOpaqueReferenceAndIdempotencyBoundary()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"ED-{suffix}", name = "외부 전달 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships",
+                new { subjectId = "delivery-admin", role = "Administrator" })).StatusCode);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+        workerDb.WorkerTaskTypes.Add(new WorkerTaskTypeCatalogEntry(
+            EDAN.Tensor.Worker.Application.ExternalDelivery.ExternalDeliveryTaskContract.TaskType,
+            "외부 전달 v1", DateTimeOffset.UtcNow));
+        await workerDb.SaveChangesAsync();
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "delivery-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/worker/deliveries")
+        {
+            Content = JsonContent.Create(new
+            {
+                targetUri = "http://127.0.0.1:4567/receiver",
+                payload = new { secret = "must-not-be-returned" },
+                maxAttempts = 3
+            })
+        };
+        request.Headers.Add("Idempotency-Key", "delivery-api-1");
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var responseText = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("must-not-be-returned", responseText, StringComparison.Ordinal);
+        using var document = JsonDocument.Parse(responseText);
+        var deliveryId = document.RootElement.GetProperty("delivery").GetProperty("id").GetGuid();
+
+        using var duplicate = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/worker/deliveries")
+        {
+            Content = JsonContent.Create(new
+            {
+                targetUri = "http://127.0.0.1:4567/receiver",
+                payload = new { secret = "must-not-be-returned" },
+                maxAttempts = 3
+            })
+        };
+        duplicate.Headers.Add("Idempotency-Key", "delivery-api-1");
+        using var duplicateResponse = await client.SendAsync(duplicate);
+        Assert.Equal(HttpStatusCode.Accepted, duplicateResponse.StatusCode);
+        using var duplicateDocument = JsonDocument.Parse(await duplicateResponse.Content.ReadAsStringAsync());
+        Assert.Equal(deliveryId, duplicateDocument.RootElement.GetProperty("delivery").GetProperty("id").GetGuid());
+
+        using var status = await client.GetAsync($"/api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}");
+        Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+    }
+
+    [Fact]
     public async Task WorkerDeadLetterOperationsRequireTenantAdministratorAndPreserveOriginalTask()
     {
         using var factory = new ApiHostFactory();
@@ -964,7 +1125,8 @@ public sealed class PlatformApiIntegrationTests
                     ["AuthorizationAuditArchive:RootPath"] = _archivePath,
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
                     ["Authentication:Audience"] = "edan-tensor-api",
-                    ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long"
+                    ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long",
+                    ["ExternalDelivery:AllowLoopback"] = "true"
                 });
             });
             return base.CreateHost(builder);

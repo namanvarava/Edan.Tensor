@@ -24,13 +24,13 @@ public static class DataSetEndpoints
             try
             {
                 var scope = new DataSetScope(tenantId, request.OrganizationId, request.ProjectId);
-                var result = await service.CreateAsync(scope, request.Name, request.StorageAdapter, token);
+                var result = await service.CreateAsync(scope, request.Name, request.StorageAdapter, request.ContentFormat, token);
                 if (!result.IsSuccess)
                     return Results.BadRequest(new { result.Error.Code, result.Error.Description });
 
                 var id = result.Value.Value;
                 return Results.Created($"/api/platform/tenants/{tenantId}/datasets/{id}",
-                    new { Id = id, TenantId = tenantId, request.OrganizationId, request.ProjectId, request.Name, request.StorageAdapter, Status = "Draft" });
+                    new { Id = id, TenantId = tenantId, request.OrganizationId, request.ProjectId, request.Name, request.StorageAdapter, request.ContentFormat, Status = "Draft" });
             }
             catch (ArgumentException ex)
             {
@@ -52,6 +52,7 @@ public static class DataSetEndpoints
                     ProjectId = dataSet.ProjectId,
                     dataSet.Name,
                     dataSet.StorageAdapter,
+                    dataSet.ContentFormat,
                     Status = dataSet.Status.ToString(),
                     dataSet.Version,
                     dataSet.CreatedAtUtc,
@@ -200,6 +201,6 @@ public static class DataSetEndpoints
         return endpoints;
     }
 
-    public sealed record CreateDataSetRequest(Guid OrganizationId, Guid ProjectId, string Name, string StorageAdapter = "sqlite");
+    public sealed record CreateDataSetRequest(Guid OrganizationId, Guid ProjectId, string Name, string StorageAdapter = "sqlite", string ContentFormat = "json-array");
     public sealed record AddDataSetSchemaRequest(string SchemaJson);
 }

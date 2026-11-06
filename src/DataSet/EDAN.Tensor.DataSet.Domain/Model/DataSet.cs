@@ -10,11 +10,12 @@ public sealed class DataSet : AggregateRoot<DataSetId>
     private readonly List<DataSetSchemaRevision> _schemaRevisions = [];
 
     // EF Core는 소유 객체(Navigation)를 생성자 인자로 바인딩할 수 없으므로 스칼라 속성만 받습니다.
-    private DataSet(DataSetId id, string name, string storageAdapter)
+    private DataSet(DataSetId id, string name, string storageAdapter, string contentFormat)
         : base(id)
     {
         Name = ValidateName(name);
         StorageAdapter = ValidateAdapter(storageAdapter);
+        ContentFormat = ValidateContentFormat(contentFormat);
         Status = DataSetStatus.Draft;
         CreatedAtUtc = DateTimeOffset.UtcNow;
         Version = 1;
@@ -29,6 +30,7 @@ public sealed class DataSet : AggregateRoot<DataSetId>
     public string Name { get; private set; }
     public StorageReference StorageReference { get; private set; } = null!;
     public string StorageAdapter { get; }
+    public string ContentFormat { get; }
     public DataSetStatus Status { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
     public int Version { get; private set; }
@@ -42,11 +44,21 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         string name,
         StorageReference storageReference,
         string storageAdapter)
+        => Create(id, scope, name, storageReference, storageAdapter, "json-array");
+
+    /// <summary>저장소 어댑터와 콘텐츠 형식을 포함한 DataSet 초안을 생성합니다.</summary>
+    public static DataSet Create(
+        DataSetId id,
+        DataSetScope scope,
+        string name,
+        StorageReference storageReference,
+        string storageAdapter,
+        string contentFormat)
     {
         ArgumentNullException.ThrowIfNull(id);
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(storageReference);
-        var dataSet = new DataSet(id, name, storageAdapter)
+        var dataSet = new DataSet(id, name, storageAdapter, contentFormat)
         {
             TenantId = scope.TenantId,
             OrganizationId = scope.OrganizationId,
@@ -125,6 +137,15 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         var value = adapter.Trim().ToLowerInvariant();
         if (value.Length > 64 || value.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_')))
             throw new ArgumentException("저장소 어댑터 식별자 형식이 올바르지 않습니다.", nameof(adapter));
+        return value;
+    }
+
+    private static string ValidateContentFormat(string contentFormat)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentFormat);
+        var value = contentFormat.Trim().ToLowerInvariant();
+        if (value is not ("csv" or "json-array"))
+            throw new ArgumentException("콘텐츠 형식은 csv 또는 json-array여야 합니다.", nameof(contentFormat));
         return value;
     }
 }

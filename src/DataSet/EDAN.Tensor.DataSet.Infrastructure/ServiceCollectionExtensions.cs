@@ -2,6 +2,7 @@ using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure.Storage;
 using EDAN.Tensor.DataSet.Application.UseCases;
+using EDAN.Tensor.DataSet.Infrastructure.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,7 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(configureDbContext);
         services.AddDbContext<DataSetDbContext>(configureDbContext);
         services.AddScoped<IDataSetRepository, EfDataSetRepository>();
+        services.AddScoped<IDataSetValidationRepository, EfDataSetValidationRepository>();
         return services;
     }
 

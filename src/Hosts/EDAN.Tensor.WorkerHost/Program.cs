@@ -1,4 +1,8 @@
 using EDAN.Tensor.DataSet.Infrastructure;
+using EDAN.Tensor.DataSet.Application.DependencyInjection;
+using EDAN.Tensor.DataSet.Application.Abstractions;
+using EDAN.Tensor.DataSet.Application.Validation;
+using EDAN.Tensor.Worker.Application.ExternalDelivery;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.HostServices.Services;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
@@ -9,6 +13,7 @@ using EDAN.Tensor.WorkerHost.Handlers;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.WorkerHost.BackgroundServices;
+using EDAN.Tensor.WorkerHost.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +37,8 @@ var dataSetSqlite = ResolveSqliteConnection(dataSetConnectionString, builder.Env
 builder.Services.AddDataSetInfrastructure(options =>
     options.UseSqlite(dataSetSqlite,
         sqlite => sqlite.MigrationsAssembly(typeof(DataSetDbContext).Assembly.FullName)));
+builder.Services.AddDataSetApplication();
+builder.Services.AddScoped<IDataSetScopeValidator, WorkerDataSetScopeValidator>();
 
 var contentConnectionString = builder.Configuration.GetConnectionString("DataSetContentDatabase")
     ?? throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 DataSetContentDatabase 연결 문자열이 필요합니다.");
@@ -50,7 +57,21 @@ builder.Services.AddWorkerInfrastructure(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
+var deliveryHosts = builder.Configuration.GetSection("ExternalDelivery:AllowedHosts")
+    .GetChildren().Select(section => section.Value).OfType<string>()
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+var deliveryTimeoutSeconds = Math.Clamp(
+    builder.Configuration.GetValue<int?>("ExternalDelivery:TimeoutSeconds") ?? 30, 1, 300);
+builder.Services.AddSingleton(new ExternalDeliveryOptions(deliveryHosts,
+    builder.Configuration.GetValue("ExternalDelivery:AllowLoopback", false),
+    TimeSpan.FromSeconds(deliveryTimeoutSeconds)));
+builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client) =>
+{
+    client.Timeout = serviceProvider.GetRequiredService<ExternalDeliveryOptions>().Timeout;
+});
 builder.Services.AddWorkerTaskHandler<DataSetStorageUsageSnapshotTaskHandler>(DataSetStorageUsageSnapshotWorker.TaskType);
+builder.Services.AddWorkerTaskHandler<DataSetValidationTaskHandler>(DataSetValidationTaskContract.TaskType);
+builder.Services.AddWorkerTaskHandler<ExternalDeliveryTaskHandler>(ExternalDeliveryTaskContract.TaskType);
 builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
 // 업무별 Handler는 배포 구성에서 AddWorkerTaskHandler<THandler>(taskType)로 등록합니다.

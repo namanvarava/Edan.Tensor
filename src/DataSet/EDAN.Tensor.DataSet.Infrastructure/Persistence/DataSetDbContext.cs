@@ -2,6 +2,7 @@ using EDAN.Tensor.DataSet.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
+using EDAN.Tensor.DataSet.Infrastructure.Validation;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
 
@@ -11,6 +12,11 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
     public DbSet<DataSetAggregate> DataSets => Set<DataSetAggregate>();
     public DbSet<DataSetStorageUsageSnapshot> StorageUsageSnapshots => Set<DataSetStorageUsageSnapshot>();
     public DbSet<DataSetQuotaThresholdEvent> QuotaThresholdEvents => Set<DataSetQuotaThresholdEvent>();
+    public DbSet<DataSetValidationProfile> ValidationProfiles => Set<DataSetValidationProfile>();
+    public DbSet<DataSetValidationProfileRevision> ValidationProfileRevisions => Set<DataSetValidationProfileRevision>();
+    public DbSet<DataSetValidationExecution> ValidationExecutions => Set<DataSetValidationExecution>();
+    public DbSet<DataSetValidationDetail> ValidationDetails => Set<DataSetValidationDetail>();
+    public DbSet<DataSetValidationSeenKey> ValidationSeenKeys => Set<DataSetValidationSeenKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +35,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.Property(x => x.Id).HasConversion(idConverter).ValueGeneratedNever();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.StorageAdapter).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.ContentFormat).HasMaxLength(24).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(24).IsRequired();
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.Property(x => x.Version).IsConcurrencyToken().IsRequired();
@@ -79,5 +86,73 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         quotaEvent.Property(x => x.OccurredAtUtc).IsRequired();
         quotaEvent.HasIndex(x => new { x.TenantId, x.PolicyId, x.OccurredAtUtc });
         quotaEvent.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
+
+        var profile = modelBuilder.Entity<DataSetValidationProfile>();
+        profile.ToTable("dataset_validation_profiles");
+        profile.HasKey(x => x.Id);
+        profile.Property(x => x.TenantId).IsRequired();
+        profile.Property(x => x.Name).HasMaxLength(160).IsRequired();
+        profile.Property(x => x.CreatedAtUtc).IsRequired();
+        profile.HasIndex(x => new { x.TenantId, x.Name }).IsUnique();
+
+        var profileRevision = modelBuilder.Entity<DataSetValidationProfileRevision>();
+        profileRevision.ToTable("dataset_validation_profile_revisions");
+        profileRevision.HasKey(x => new { x.ProfileId, x.Revision });
+        profileRevision.Property(x => x.ProfileId).IsRequired();
+        profileRevision.Property(x => x.TenantId).IsRequired();
+        profileRevision.Property(x => x.Revision).IsRequired();
+        profileRevision.Property(x => x.DefinitionJson).HasMaxLength(1_048_576).IsRequired();
+        profileRevision.Property(x => x.CreatedAtUtc).IsRequired();
+        profileRevision.HasIndex(x => new { x.TenantId, x.ProfileId, x.Revision });
+
+        var execution = modelBuilder.Entity<DataSetValidationExecution>();
+        execution.ToTable("dataset_validation_executions");
+        execution.HasKey(x => x.Id);
+        execution.Property(x => x.TenantId).IsRequired();
+        execution.Property(x => x.DataSetId).IsRequired();
+        execution.Property(x => x.ExpectedDataSetVersion).IsRequired();
+        execution.Property(x => x.SchemaVersion).IsRequired();
+        execution.Property(x => x.ProfileId).IsRequired();
+        execution.Property(x => x.ProfileRevision).IsRequired();
+        execution.Property(x => x.Status).HasMaxLength(24).IsRequired();
+        execution.Property(x => x.DetailReference).HasMaxLength(128).IsRequired();
+        execution.Property(x => x.ProcessedRecords).IsRequired();
+        execution.Property(x => x.TotalRecords).IsRequired();
+        execution.Property(x => x.ErrorCount).IsRequired();
+        execution.Property(x => x.WarningCount).IsRequired();
+        execution.Property(x => x.DetailItemCount).IsRequired();
+        execution.Property(x => x.DetailTruncated).IsRequired();
+        execution.Property(x => x.RuleCountsJson).HasMaxLength(1_048_576).IsRequired();
+        execution.Property(x => x.FailureCode).HasMaxLength(200);
+        execution.Property(x => x.FailureMessage).HasMaxLength(500);
+        execution.Property(x => x.CreatedAtUtc).IsRequired();
+        execution.Property(x => x.CompletedAtUtc);
+        execution.Property(x => x.Version).IsConcurrencyToken().IsRequired();
+        execution.HasIndex(x => new { x.TenantId, x.DataSetId, x.CreatedAtUtc });
+        execution.HasIndex(x => new { x.TenantId, x.DetailReference }).IsUnique();
+
+        var detail = modelBuilder.Entity<DataSetValidationDetail>();
+        detail.ToTable("dataset_validation_details");
+        detail.HasKey(x => x.Id);
+        detail.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
+        detail.Property(x => x.ExecutionId).IsRequired();
+        detail.Property(x => x.TenantId).IsRequired();
+        detail.Property(x => x.DetailReference).HasMaxLength(128).IsRequired();
+        detail.Property(x => x.RowNumber).IsRequired();
+        detail.Property(x => x.FieldName).HasMaxLength(128);
+        detail.Property(x => x.Code).HasMaxLength(200).IsRequired();
+        detail.Property(x => x.Severity).HasMaxLength(16).IsRequired();
+        detail.Property(x => x.Message).HasMaxLength(500).IsRequired();
+        detail.HasIndex(x => new { x.TenantId, x.ExecutionId, x.RowNumber });
+        detail.HasIndex(x => new { x.ExecutionId, x.RowNumber, x.Code, x.FieldName }).IsUnique();
+
+        var seenKey = modelBuilder.Entity<DataSetValidationSeenKey>();
+        seenKey.ToTable("dataset_validation_seen_keys");
+        seenKey.HasKey(x => x.Id);
+        seenKey.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
+        seenKey.Property(x => x.ExecutionId).IsRequired();
+        seenKey.Property(x => x.RuleCode).HasMaxLength(200).IsRequired();
+        seenKey.Property(x => x.KeyHash).HasMaxLength(64).IsRequired();
+        seenKey.HasIndex(x => new { x.ExecutionId, x.RuleCode, x.KeyHash }).IsUnique();
     }
 }

@@ -9,6 +9,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     public DbSet<WorkerTask> WorkerTasks => Set<WorkerTask>();
     public DbSet<WorkerTaskReplayRecord> WorkerTaskReplayRecords => Set<WorkerTaskReplayRecord>();
     public DbSet<WorkerTaskTypeCatalogEntry> WorkerTaskTypes => Set<WorkerTaskTypeCatalogEntry>();
+    public DbSet<ExternalDelivery> ExternalDeliveries => Set<ExternalDelivery>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,5 +106,23 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         taskType.Property(x => x.IsEnabled).IsRequired();
         taskType.Property(x => x.UpdatedAtUtc).IsRequired();
         taskType.Property(x => x.Version).IsConcurrencyToken();
+
+        var delivery = modelBuilder.Entity<ExternalDelivery>();
+        delivery.ToTable("external_deliveries");
+        delivery.HasKey(x => x.Id);
+        delivery.Property(x => x.Id).ValueGeneratedNever();
+        delivery.Property(x => x.TenantId).IsRequired();
+        delivery.Property(x => x.TargetUri).HasMaxLength(2_048).IsRequired();
+        delivery.Property(x => x.Payload).HasMaxLength(1_048_576).IsRequired();
+        delivery.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+        delivery.Property(x => x.Status).HasConversion<string>().HasMaxLength(24).IsRequired();
+        delivery.Property(x => x.AttemptCount).IsRequired();
+        delivery.Property(x => x.MaxAttempts).IsRequired();
+        delivery.Property(x => x.LastErrorCode).HasMaxLength(200);
+        delivery.Property(x => x.CreatedAtUtc).IsRequired();
+        delivery.Property(x => x.CompletedAtUtc);
+        delivery.Property(x => x.Version).IsConcurrencyToken().IsRequired();
+        delivery.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+        delivery.HasIndex(x => new { x.TenantId, x.Status, x.CreatedAtUtc });
     }
 }

@@ -78,7 +78,8 @@ public sealed class WorkerExecutionRegistryTests
         }, out var execution));
 
         var shutdown = registry.StopAsync(TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(250));
-        await handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        // 자체 호스팅 Runner의 동시 실행 지연과 제품의 250밀리초 인계 예산을 분리하여 관찰합니다.
+        await handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var result = await shutdown.WaitAsync(TimeSpan.FromSeconds(1));
         Assert.False(result.DrainedWithinGracePeriod);
         Assert.Equal(1, result.HandoffRequested);

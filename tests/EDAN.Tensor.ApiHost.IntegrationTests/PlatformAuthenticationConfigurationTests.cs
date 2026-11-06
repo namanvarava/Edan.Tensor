@@ -33,4 +33,32 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.Null(options.TokenValidationParameters.ValidAudience);
         Assert.True(options.TokenValidationParameters.ValidateIssuerSigningKey);
     }
+
+    /// <summary>로컬 테스트 IdP의 OIDC 메타데이터 주소를 사용하되 운영 HTTPS 요구 기본값을 보존합니다.</summary>
+    [Fact]
+    public void LocalMetadataAddressEnablesJwksDiscoveryWithoutDisablingValidation()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Issuer"] = "http://127.0.0.1:5001",
+                ["Authentication:Audience"] = "edan-tensor-api",
+                ["Authentication:MetadataAddress"] = "http://127.0.0.1:5001/.well-known/openid-configuration",
+                ["Authentication:RequireHttpsMetadata"] = "false"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddPlatformSecurity(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme);
+
+        Assert.Equal("http://127.0.0.1:5001/.well-known/openid-configuration", options.MetadataAddress);
+        Assert.False(options.RequireHttpsMetadata);
+        Assert.True(options.RefreshOnIssuerKeyNotFound);
+        Assert.True(options.TokenValidationParameters.ValidateIssuer);
+        Assert.True(options.TokenValidationParameters.ValidateAudience);
+        Assert.True(options.TokenValidationParameters.ValidateIssuerSigningKey);
+    }
 }
