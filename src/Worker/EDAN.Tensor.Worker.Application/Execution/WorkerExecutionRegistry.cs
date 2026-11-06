@@ -52,8 +52,10 @@ public sealed class WorkerExecutionRegistry
         {
             try
             {
-                // 콜백이 CancellationToken을 무시해도 종료 조정기가 인계 제한 시간을 넘기지 않도록 대기 자체를 제한합니다.
-                return await execution.RequestHandoffAsync(timeout.Token).WaitAsync(timeout.Token);
+                // 종료 조정기는 콜백 호출을 별도 작업으로 실행하여 동기 대기와 비동기 대기를 모두 제한합니다.
+                // 콜백 구현자는 취소 토큰을 준수해야 하며, 제한 시간 초과는 콜백 자체의 강제 중단을 보장하지 않습니다.
+                return await Task.Run(() => execution.RequestHandoffAsync(timeout.Token), timeout.Token)
+                    .WaitAsync(timeout.Token);
             }
             catch (OperationCanceledException) when (timeout.IsCancellationRequested) { return false; }
             catch { return false; }

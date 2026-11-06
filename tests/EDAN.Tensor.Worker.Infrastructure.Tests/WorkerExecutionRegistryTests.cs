@@ -91,6 +91,55 @@ public sealed class WorkerExecutionRegistryTests
         execution!.Dispose();
     }
 
+    /// <summary>
+    /// 테스트는 인계 콜백이 Task를 반환하기 전에 동기 대기하더라도 종료 조정기가 인계 시간 예산을 지키는지 검증합니다.
+    /// 테스트는 종료 결과를 확인한 뒤 콜백을 해제하여 실행 스레드와 실행 임대가 남지 않도록 정리합니다.
+    /// </summary>
+    [Fact]
+    public async Task ShutdownReturnsWhenHandoffCallbackBlocksBeforeReturningTask()
+    {
+        var registry = new WorkerExecutionRegistry();
+        using var release = new ManualResetEventSlim();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Assert.True(registry.TryEnter(_ =>
+        {
+            started.TrySetResult();
+            try
+            {
+                // 콜백은 취소 토큰을 무시하는 외부 동기 API의 정지 상태를 재현합니다.
+                release.Wait();
+                return Task.FromResult(true);
+            }
+            finally
+            {
+                finished.TrySetResult();
+            }
+        }, out var execution));
+
+        Task<WorkerShutdownResult>? shutdown = null;
+        try
+        {
+            // 테스트는 호출자 스레드의 정지까지 재현하므로 종료 호출 자체도 별도 작업에서 시작합니다.
+            shutdown = Task.Run(() => registry.StopAsync(TimeSpan.Zero, TimeSpan.FromMilliseconds(250)));
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await shutdown.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.False(result.DrainedWithinGracePeriod);
+            Assert.Equal(1, result.HandoffRequested);
+            Assert.Equal(0, result.HandoffSucceeded);
+            Assert.Equal(1, result.StillRunning);
+            Assert.InRange(result.HandoffElapsed, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            release.Set();
+            if (shutdown is not null)
+                await shutdown.WaitAsync(TimeSpan.FromSeconds(5));
+            await finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            execution!.Dispose();
+        }
+    }
+
     [Fact]
     public async Task HandoffRequestAfterExecutionLeaseIsDisposedIsIgnored()
     {
