@@ -15,7 +15,7 @@
 - Worker Infrastructure: 60개
 - API 통합: 10개
 
-2026-11-06 현재 `main` 커밋 `100c36fd629763329451646fba97c36dafed38f3`에서 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했다. 같은 결과는 [Actions Run #642](https://github.com/namanvarava/Edan.Tensor/actions/runs/42204928497)에서 확인할 수 있다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
+2026-11-06 현재 `main` 커밋 `81abf63e602ed02335d446221c22757d1ab1c4ae`에서 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했다. 같은 결과는 [Actions Run #646](https://github.com/namanvarava/Edan.Tensor/actions/runs/42207723631)에서 확인할 수 있다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
 
 ```powershell
 dotnet restore EDAN.Tensor.sln
