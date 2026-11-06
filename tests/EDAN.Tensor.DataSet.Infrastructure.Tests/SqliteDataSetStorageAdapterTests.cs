@@ -2,6 +2,7 @@ using EDAN.Tensor.DataSet.Domain.Model;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Infrastructure.Storage;
 using Xunit;
+using Microsoft.Data.Sqlite;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Tests;
 
@@ -13,7 +14,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = CreateTemporaryAdapter(path);
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             await using var source = new MemoryStream("tensor-payload"u8.ToArray());
@@ -67,7 +68,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-tenant-usage-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = CreateTemporaryAdapter(path);
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             await using (var content = new MemoryStream("tenant-data"u8.ToArray()))
@@ -100,7 +101,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = CreateTemporaryAdapter(path);
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             var otherTenant = new DataSetStorageAllocation(allocation.DataSetId,
@@ -121,7 +122,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-quota-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = CreateTemporaryAdapter(path);
             var allocation = Allocation();
             var reference = await adapter.AllocateAsync(allocation);
             var policy = new DataSetStorageQuotaPolicy(10, 10, 10, 10);
@@ -150,7 +151,7 @@ public sealed class SqliteDataSetStorageAdapterTests
         var path = Path.Combine(Path.GetTempPath(), "edan-content-hierarchical-usage-" + Guid.NewGuid().ToString("N") + ".db");
         try
         {
-            var adapter = new SqliteDataSetStorageAdapter("Data Source=" + path);
+            var adapter = CreateTemporaryAdapter(path);
             var tenantId = Guid.NewGuid();
             var organizationId = Guid.NewGuid();
             var firstProjectId = Guid.NewGuid();
@@ -192,6 +193,18 @@ public sealed class SqliteDataSetStorageAdapterTests
         {
             if (File.Exists(path)) File.Delete(path);
         }
+    }
+
+    // Each test owns a temporary database file and deletes it after use.
+    // Disable pooling so disposed SQLite connections do not retain the file handle on Windows.
+    private static SqliteDataSetStorageAdapter CreateTemporaryAdapter(string path)
+    {
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            Pooling = false
+        }.ToString();
+        return new SqliteDataSetStorageAdapter(connectionString);
     }
 
     private static DataSetStorageQuotaPolicy Unlimited() => new(null, null, null, null);
