@@ -91,3 +91,17 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 현재 완료로 판정할 수 있는 범위는 Platform의 Tenant·Organization·Project·소속·Policy·감사·아카이브, DataSet의 Tenant 소유 메타데이터·스키마 revision·SQLite 콘텐츠 저장·계층형 저장량 정책, Worker의 전용 DB·Lease/Fencing·체크포인트·재시도·DLQ·재처리·종료 인계·Tenant 커서 LRU 및 이에 대한 자동 검증이다. 이 범위의 구현과 수용 근거는 소스, 테스트 및 위 Actions 실행 결과로 확인한다.
 - DataSet 검증 프로필·규칙 버전·상세 결과 저장 계약과 Validation Handler는 상세 계약이 승인되지 않았기 때문에 구현 완료 항목으로 확정하지 않는다. 지원 포맷, 최초 규칙, 오류·경고 및 결과 보존 정책을 승인하고 자동 검증 기준을 확정하면 해당 제안 문서를 구현 요구사항으로 전환하여 재개한다.
 - 실제 Identity Provider·키 회전·외부 계정 연결, 실제 운영 WorkerHost와 외부 전달 수신 시스템의 응답 유실 종단 간 시험, Commercial·Licensing의 업무 규칙·결제 정책·라이선스 권리, WPF 클라이언트 및 분석용 DuckDB·Parquet 어댑터는 승인된 상세 범위와 수용 기준 또는 실행 환경이 없으므로 완료하지 않았다. 각 항목은 담당 요구사항과 수용 기준, 필요한 외부 시스템 또는 실행 환경이 확정되는 즉시 해당 경계의 테스트를 추가하여 재개한다.
+
+## 인수인계 PDF 대조 및 최종 원격 검증
+
+- `Edan.Tensor_Continuation_Handoff_2026-11-06.pdf`를 2쪽 전체 렌더링으로 검토했다. PDF의 기준 SHA `c187103cee76ad58e28633a259aeebc5e7dab75c`는 현재 main의 기준이 아니며, 이후 커밋과 PR이 반영되었다.
+- PDF의 Actions Run #605(`42124026661`)는 Job 시작 전에 Actions 예산 정책으로 차단되었고 Runner와 Step이 생성되지 않은 과거 인프라 장애였다. 이 실행을 재시도하지 않았다. 현재 Run #621, #622, #623, #624는 실제 Job과 Step을 생성했고 `EDAN-TENSOR-WIN` Windows X64 자체 호스팅 Runner에서 실행되었다.
+- 현재 Runner 실행 증거는 Actions Runner `2.338.2`, 이름 `EDAN-TENSOR-WIN`, 라벨 `self-hosted`, `Windows`, `X64`이다. 로컬 Windows 서비스 관리자 조회는 권한 부족으로 확인하지 못했지만, 현재 Job이 해당 Runner에서 성공한 사실로 연결·작업 수신·실행 상태를 확인했다. Billing 화면과 예산 설정은 변경하지 않았으며, 별도 Billing 권한 없이 설정값 자체는 검증하지 않았다.
+- PDF의 Worker 설계 기준은 현재 소스와 자동 검증에 반영되어 있다. `WorkerExecutionRegistry`와 `WorkerTaskDispatcher`는 하나의 종료 인계 예산을 공유하고, Tenant 작업 커서는 Dispatcher 단일 루프의 LRU로 관리하며 기본 10,000, 허용 범위 500–100,000을 사용한다. 관련 직접 회귀 테스트와 실제 프로세스 복구 테스트가 Worker Infrastructure 테스트에 포함된다.
+- WorkerHost는 전용 `WorkerDbContext`를 등록하고, DataSet 메타데이터·콘텐츠 저장소를 별도 DbContext와 연결로 등록한다. Platform 계층의 프로젝트 참조와 DataSet 경계도 기존 ArchitectureDependencyTests 및 API 통합 테스트로 확인했다.
+- PR #2는 JWT Issuer/Audience 누락 시 검증이 꺼지는 보안 결함, Worker xUnit2031 경고 및 외부 PR의 GitHub-hosted Runner 사용을 수정하고 `af39e318547195d32acbef4c78843da5d4a97a8c`로 squash merge했다. PR #3은 `clean:false` 작업 디렉터리에서 고정 TRX 파일이 충돌하는 경고를 실행 ID별 파일명으로 수정하고 `9de3e2b3a5d5930fbbb780adf24f969f5cee73e0`으로 squash merge했다.
+- 최종 main Run #624(`42177862848`)는 Restore, Release Build, Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, 최종 로그에서 TRX 덮어쓰기·xUnit2031·NU1900 경고가 확인되지 않았다.
+- 로컬 Windows에서는 exact `dotnet restore EDAN.Tensor.sln`과 exact `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`가 각각 종료 코드 1로 실패했다. Restore는 로컬 SDK workload resolver 및 네트워크 취약성 피드 환경 제약으로, Test는 testhost 연결 시간초과로 재현했다. 수정 후 로컬 Release Build는 오류 0으로 성공했으며, 전체 Release 수용 판정은 위 자체 호스팅 Runner 실행을 기준으로 한다.
+- PDF에 기록된 Billing 화면 확인, 로컬 GitHub CLI 토큰 재인증, Windows 서비스 관리자 권한 및 승인되지 않은 제품 요구사항은 변경하지 않았다. Billing 예산 확인·로컬 Git 동기화·외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
+
+
