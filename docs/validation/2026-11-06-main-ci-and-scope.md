@@ -5,6 +5,15 @@
 CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증을 완료했다. 프로젝트 전체 완료는 미선언이다.
 기능 문서의 후속 과제는 승인된 상세 완료 계약과 구분하며, 테스트 통과만으로 운영 적합성을 승인하지 않는다.
 
+## 최신 main 및 실제 Host 경계 재검증
+
+- PR #8 `로컬 main Release 검증 결과를 기록합니다`는 `039545bfacf9082cdcfd25d56067272945b12765`로 squash merge되었고, 최신 로컬 `main`과 `origin/main`은 같은 SHA를 가리키며 작업 디렉터리는 clean 상태다. 열린 Issue와 Pull Request는 각각 0개다.
+- 최신 [Actions Run #634](https://github.com/namanvarava/Edan.Tensor/actions/runs/42182959588)는 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 exact `dotnet restore EDAN.Tensor.sln`, Release Build 및 Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, Build 경고와 오류는 0개였다.
+- 로컬에서 exact Restore와 Release Build는 종료 코드 0이지만 NuGet 감사 피드 조회 경로에서 `NU1900`이 반복된다. NuGet HTTP 캐시를 비워도 동일했으며, `NuGetAudit=false`를 진단용으로 지정하면 경고 없이 완료되므로 저장소 설정으로 경고를 숨기지 않았다. 원격 Actions의 동일한 Restore와 Build는 경고 0개다.
+- 실제 WorkerHost를 임시 SQLite 3개와 Development Migration 설정으로 기동하여 `/health`가 HTTP 200을 반환하는 것을 확인했다. Platform·DataSet·Worker DB가 생성되었고 표준 오류 출력은 없었으며, 검증 후 프로세스를 종료했다.
+- 실제 ApiHost도 임시 SQLite 3개로 기동하여 `/health`가 HTTP 200, `/health/database`가 `200 Connected/Green`을 반환하는 것을 확인했다. 인증 없는 Tenant 생성 요청은 HTTP 401을 반환하여 보호 API가 닫힌 상태임을 확인했다.
+- 위 실행은 실제 수신 시스템을 포함한 외부 전달 응답 유실 종단 간 시험을 대체하지 않는다. 외부 Identity Provider·키 회전·Commercial/Licensing 업무 계약·WPF·DataSet Validation·DuckDB/Parquet 범위는 승인된 상세 계약과 실행 환경이 없어 완료로 판정하지 않는다.
+
 ## main 최종 검증 기록
 
 - PR #5 병합 직후 검증 대상 `main`은 커밋 `4a20a71844d2663b7be338907979dae1aee59446`이며, README에 Release 검증 명령과 인증 경계를 반영한 상태였다.
