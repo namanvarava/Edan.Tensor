@@ -22,7 +22,13 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - 실패 대상은 `WorkerTaskDispatcherShutdownTests.DispatcherDoesNotSpendHandoffBudgetAgainAfterRegistryTimesOut`이며, `WorkerTaskDispatcherShutdownTests.cs` 41번째 줄의 `WaitAsync(TimeSpan.FromMilliseconds(4500))`에서 `System.TimeoutException`이 발생했다. Worker Infrastructure 테스트는 59개 통과·1개 실패였고, 나머지 테스트 프로젝트는 모두 통과했다.
 - 코드와 로그를 대조한 결과 제품 종료 예산 계산이나 Runner 연결 실패가 아니라, 정상 종료 약 3초와 잘못된 이중 대기 약 5초를 구분하던 4.5초 절대 시간 경계가 자체 호스팅 Runner의 동시 테스트 스케줄링 지연에 민감한 테스트 결함으로 확인되었다. 단순히 제한 시간만 늘리면 이중 대기 회귀를 놓칠 수 있으므로 적용하지 않았다.
 - 최소 수정으로 테스트의 인계 예산을 2초에서 4초로 늘리고 제한 시간을 4.5초에서 8초로 조정했다. 정상 경로는 약 5초 안에 완료되고 이중 대기 경로는 약 9초가 필요하므로 두 동작의 판별 간격을 유지하면서 Runner 지연 여유를 확보한다. 테스트는 제품 동작을 우회하거나 실패를 무시하지 않는다.
-- 수정 후 대상 테스트 반복 실행 4회가 모두 통과했고, Worker Infrastructure 전체 60개 테스트와 솔루션 전체 Release 검증도 통과했다. 로컬 exact Restore·Build·Test는 각각 종료 코드 0이며 전체 테스트는 193개 통과·실패 0개·건너뜀 0개였다. 수정 PR의 최신 자체 호스팅 CI가 성공할 때까지 최신 `main`의 최종 완료 판정은 보류한다.
+- 수정 후 대상 테스트 반복 실행 4회가 모두 통과했고, Worker Infrastructure 전체 60개 테스트와 솔루션 전체 Release 검증도 통과했다. 로컬 exact Restore·Build·Test는 각각 종료 코드 0이며 전체 테스트는 193개 통과·실패 0개·건너뜀 0개였다. 수정 PR #14의 후속 자체 호스팅 CI는 아래 최종 main 검증에서 성공 여부를 확인한다.
+
+## PR #14 수정 후 최종 main 검증
+
+- PR #14 [Worker 종료 테스트의 Runner 시간 경계를 보강합니다](https://github.com/namanvarava/Edan.Tensor/pull/14)는 [Actions Run #645](https://github.com/namanvarava/Edan.Tensor/actions/runs/42207467868)에서 수정된 종료 테스트를 포함한 Restore·Release Build·Release Test를 모두 성공시킨 뒤 squash merge되었다. 병합 커밋은 `81abf63e602ed02335d446221c22757d1ab1c4ae`이다.
+- 병합 후 최종 [Actions Run #646](https://github.com/namanvarava/Edan.Tensor/actions/runs/42207723631)은 push 이벤트로 동일한 `main` 커밋에서 실행되어 `success`로 종료되었다. `build-and-test` 작업은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행되었고, Runner 버전은 `2.338.2`였다. Restore·Build·Test·정리 단계가 모두 성공했으며 Build는 경고 0개·오류 0개, 테스트는 193개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 로컬 `main`과 `origin/main`은 모두 `81abf63e602ed02335d446221c22757d1ab1c4ae`를 가리켰다. 작업 디렉터리는 clean 상태이고 `git diff --check`도 종료 코드 0으로 완료했다. 로컬 PC에서 병합 후 exact Restore·Release Build·Release Test를 다시 실행했으며 세 명령 모두 종료 코드 0, 테스트 193개 통과·실패 0개·건너뜀 0개였다.
 
 ## PR #8·#9 및 최종 main 경계 재검증
 
