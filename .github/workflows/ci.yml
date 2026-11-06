@@ -8,16 +8,24 @@ permissions:
   contents: read
 jobs:
   build-and-test:
-    runs-on: ${{ github.event_name == 'push' && fromJSON('["self-hosted","Windows","X64"]') || 'ubuntu-latest' }}
+    # PR code may run on the persistent self-hosted machine only when
+    # authored by the repository owner from a branch in this repository.
+    # All other PR jobs are skipped; do not use pull_request_target here.
+    if: >-
+      ${{
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login == 'namanvarava'
+        )
+      }}
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           clean: false
-      - uses: actions/setup-dotnet@v4
-        if: github.event_name == 'pull_request'
-        with:
-          dotnet-version: 10.0.x
       - name: Runner environment
         run: dotnet --info
       - name: Restore
