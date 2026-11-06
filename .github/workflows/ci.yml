@@ -8,12 +8,17 @@ permissions:
   contents: read
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'push' && fromJSON('["self-hosted","Windows","X64"]') || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - name: Runner environment
+        run: dotnet --info
       - name: Restore
         run: dotnet restore EDAN.Tensor.sln
       - name: Build
