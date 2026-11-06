@@ -12,7 +12,17 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - Run #628은 총 193개 테스트를 실패 0개·건너뜀 0개로 통과했으며, TRX 덮어쓰기·xUnit2031·NU1900 경고도 확인되지 않았다.
 - 당시 열린 Issue와 Pull Request는 0개였으며, 필수 변경 PR #5는 `4a20a71844d2663b7be338907979dae1aee59446`으로 squash merge되었다.
 - 문서 정리 PR #6은 `734ca9a94edb610e383b7656bb291e89b3b370b6`으로 squash merge되었고, 병합 후 [Actions Run #630](https://github.com/namanvarava/Edan.Tensor/actions/runs/42180471013)도 동일한 Release 검증을 성공시켰다. Run #630은 총 193개 테스트를 실패 0개·건너뜀 0개로 통과했다.
-- 이 절의 판정은 각 커밋에 연결된 원격 Actions 실행 증거에 근거한다. 로컬 exact restore/test 실패와 로컬 GitHub 인증·동기화 차단은 아래 인수인계 절에 별도로 기록한다.
+- 이 절의 판정은 각 커밋에 연결된 원격 Actions 실행 증거에 근거한다. 과거 로컬 exact restore/test 실패와 GitHub CLI 인증 차단은 인수인계 이력으로 남기며, 현재 로컬 Git fetch·동기화 결과는 아래 절에 별도로 기록한다.
+
+## 로컬 main 동기화 후 Release 검증
+
+- 로컬 `main`을 원격 `origin/main`으로 동기화한 뒤 `HEAD`와 `origin/main`은 모두 `058b0346d57626f3e53875d04267ff84ec3a56ec`을 가리키며 작업 디렉터리는 clean 상태가 되었다.
+- 로컬에서 exact `dotnet restore EDAN.Tensor.sln`은 종료 코드 0, exact `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 종료 코드 0, exact `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 종료 코드 0으로 완료했다.
+- 로컬 Restore와 Build에는 NuGet 취약성 피드 조회 실패를 나타내는 `NU1900` 경고가 각각 19건 출력되었지만 패키지 복원·컴파일·테스트 자체는 실패하지 않았다. `https://api.nuget.org/v3/index.json`과 취약성 엔드포인트의 기본 HTTPS 조회는 200을 반환했으므로 저장소 설정으로 경고를 숨기지 않고 로컬 NuGet 감사 클라이언트의 원인을 환경 제약으로 기록한다.
+- 로컬 Test는 SharedKernel 11, Platform Domain 27 / Application 30 / Infrastructure 12,
+  DataSet Domain 6 / Application 8 / Infrastructure 8,
+  Worker Domain 21 / Infrastructure 60, API 통합 10으로 총 193개를 실패 0개·건너뜀 0개로 통과시켰다.
+- 위 로컬 결과와 별개로 최종 원격 [Actions Run #632](https://github.com/namanvarava/Edan.Tensor/actions/runs/42181072828)은 동일한 Release 검증을 Windows 자체 호스팅 Runner에서 경고 0개로 성공시켰다.
 
 ## 공식 검증 증거
 
@@ -110,7 +120,7 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - WorkerHost는 전용 `WorkerDbContext`를 등록하고, DataSet 메타데이터·콘텐츠 저장소를 별도 DbContext와 연결로 등록한다. Platform 계층의 프로젝트 참조와 DataSet 경계도 기존 ArchitectureDependencyTests 및 API 통합 테스트로 확인했다.
 - PR #2는 JWT Issuer/Audience 누락 시 검증이 꺼지는 보안 결함, Worker xUnit2031 경고 및 외부 PR의 GitHub-hosted Runner 사용을 수정하고 `af39e318547195d32acbef4c78843da5d4a97a8c`로 squash merge했다. PR #3은 `clean:false` 작업 디렉터리에서 고정 TRX 파일이 충돌하는 경고를 실행 ID별 파일명으로 수정하고 `9de3e2b3a5d5930fbbb780adf24f969f5cee73e0`으로 squash merge했다.
 - 최종 main Run #624(`42177862848`)는 Restore, Release Build, Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, 최종 로그에서 TRX 덮어쓰기·xUnit2031·NU1900 경고가 확인되지 않았다.
-- 로컬 Windows에서는 exact `dotnet restore EDAN.Tensor.sln`과 exact `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`가 각각 종료 코드 1로 실패했다. Restore는 로컬 SDK workload resolver 및 네트워크 취약성 피드 환경 제약으로, Test는 testhost 연결 시간초과로 재현했다. 수정 후 로컬 Release Build는 오류 0으로 성공했으며, 전체 Release 수용 판정은 위 자체 호스팅 Runner 실행을 기준으로 한다.
-- PDF에 기록된 Billing 화면 확인, 로컬 GitHub CLI 토큰 재인증, Windows 서비스 관리자 권한 및 승인되지 않은 제품 요구사항은 변경하지 않았다. Billing 예산 확인·로컬 Git 동기화·외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
+- 이전 로컬 exact restore/test 실패와 testhost 연결 시간초과는 원격 미동기화·로컬 환경이 정리되기 전의 과거 결과다. 현재 결과는 위 로컬 main 동기화 후 검증 절에 기록했다.
+- PDF에 기록된 Billing 화면 확인, Windows 서비스 관리자 권한 및 승인되지 않은 제품 요구사항은 변경하지 않았다. Billing 예산 확인·외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
 
 
