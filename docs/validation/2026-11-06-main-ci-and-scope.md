@@ -240,4 +240,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - WorkerHost는 `/health`에서 HTTP 200과 `Healthy`를 반환했다. 두 프로세스 모두 표준 오류 출력이 없었고 임시 경로 정리를 확인했다.
 - 이 검증은 외부 Identity Provider·JWKS·키 회전과 외부 전달 수신 시스템의 응답 유실 E2E를 포함하지 않는다. 해당 항목은 승인된 운영 계약과 외부 실행 환경이 제공될 때 별도로 검증한다.
 
+## 최종 main CI 및 개발 범위 판정
+
+- Host Smoke 문서 PR #30을 squash merge한 최종 main 커밋은 `1816fc07a3eb5dbc695a453ee1aefdb1446a729a`이다. 병합 후 [Actions Run #678](https://github.com/namanvarava/Edan.Tensor/actions/runs/42234816562)은 이 SHA에서 `success`로 종료되었다.
+- Run #678의 `build-and-test` 작업은 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`(Runner `2.338.2`)에서 실행되었다. Restore·Release Build·Release Test·정리 단계가 모두 성공했고, Build는 경고 0개·오류 0개였다.
+- Run #678의 테스트 결과는 SharedKernel 11, Platform Domain 27 / Application 30 / Infrastructure 12, DataSet Domain 6 / Application 9 / Infrastructure 8, Worker Domain 21 / Infrastructure 60, API 통합 10으로 총 194개 통과·실패 0개·건너뜀 0개였다.
+- 같은 최종 SHA의 Windows 로컬 PC에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 로컬 테스트도 194개 통과·실패 0개·건너뜀 0개였다.
+- 이 기록은 현재 구현된 Platform·DataSet·Worker·Host 경계와 회귀 검증의 완료 증거다. README에 명시된 실제 Identity Provider·키 회전·외부 전달 응답 유실 E2E, DataSet Validation 승인 계약·Validation Handler·DuckDB·Parquet, Commercial·Licensing 업무 흐름, WPF 클라이언트는 승인된 계약 또는 독립 실행 환경이 없으므로 제품 전체 개발 완료로 판정하지 않는다. 해당 계약과 실행 환경이 제공되면 각 범위의 수용 기준과 실제 경계 시험을 추가하여 재개한다.
+
 
