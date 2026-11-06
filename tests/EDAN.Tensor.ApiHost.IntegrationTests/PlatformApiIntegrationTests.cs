@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.Worker.Domain.Model;
@@ -22,6 +23,32 @@ namespace EDAN.Tensor.ApiHost.IntegrationTests;
 /// <summary>API Host의 OpenAPI, 다중 Tenant 소속 및 데이터 기반 권한 경계를 검증합니다.</summary>
 public sealed class PlatformApiIntegrationTests
 {
+    [Fact]
+    public void FactoriesUseSeparateDatabasesBeforeServiceRegistration()
+    {
+        using var first = new ApiHostFactory();
+        using var second = new ApiHostFactory();
+        using var firstClient = first.CreateClient();
+        using var secondClient = second.CreateClient();
+        using var firstScope = first.Services.CreateScope();
+        using var secondScope = second.Services.CreateScope();
+
+        var firstPaths = DatabasePaths(firstScope.ServiceProvider);
+        var secondPaths = DatabasePaths(secondScope.ServiceProvider);
+        Assert.Equal(3, firstPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Empty(firstPaths.Intersect(secondPaths, StringComparer.OrdinalIgnoreCase));
+        Assert.All(firstPaths.Concat(secondPaths), path =>
+            Assert.Equal(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar),
+                Path.GetDirectoryName(Path.GetFullPath(path))));
+
+        static string[] DatabasePaths(IServiceProvider services) =>
+        [
+            services.GetRequiredService<PlatformDbContext>().Database.GetDbConnection().DataSource,
+            services.GetRequiredService<WorkerDbContext>().Database.GetDbConnection().DataSource,
+            services.GetRequiredService<DataSetDbContext>().Database.GetDbConnection().DataSource
+        ];
+    }
+
     [Fact]
     public async Task OpenApiDocumentContainsPlatformProvisioningRoutes()
     {
@@ -910,17 +937,16 @@ public sealed class PlatformApiIntegrationTests
         private readonly string _dataSetContentDatabasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-dataset-content-{Guid.NewGuid():N}.db");
 
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        protected override IHost CreateHost(IHostBuilder builder)
         {
-            builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, configuration) =>
+            builder.ConfigureHostConfiguration(configuration =>
             {
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared",
-                    ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared",
-                    ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared",
-                    ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared",
+                    ["ConnectionStrings:PlatformDatabase"] = $"Data Source={_databasePath};Cache=Shared;Pooling=False",
+                    ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared;Pooling=False",
+                    ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared;Pooling=False",
+                    ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared;Pooling=False",
                     ["DataSetContent:MaxUploadBytes"] = "1024",
                     ["DataSetContent:Quota:TenantLimitBytes"] = "50",
                     ["DataSetContent:Quota:OrganizationLimitBytes"] = "100",
@@ -933,6 +959,12 @@ public sealed class PlatformApiIntegrationTests
                     ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long"
                 });
             });
+            return base.CreateHost(builder);
+        }
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("Development");
             builder.ConfigureTestServices(services =>
             {
                 services.AddSingleton<IDataSetStorageQuotaPolicyProvider>(new IntegrationQuotaPolicyProvider());
