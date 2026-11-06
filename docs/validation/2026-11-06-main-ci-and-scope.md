@@ -65,11 +65,14 @@ WorkerDbContext는 PlatformDbContext와 분리되어 있다.
 README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포함한다.
 본 문서의 구현 현황은 지정 SHA 기준이며 미래 작업의 승인을 새로 부여하지 않는다.
 
-## 2026-11-06 Worker 종료 계약 추가 검증
+## 2026-11-06 Worker 종료 및 프로세스 장애 검증 진행
 
-- 수정 커밋 `0059f7a7369d145efaaa71069bedfb8902e40855`의 [Actions Run #615](https://github.com/namanvarava/Edan.Tensor/actions/runs/42169916191)는 Restore / Build / Test를 통과했다.
-- 총 190개 테스트가 통과했으며 실패와 건너뜀은 0개다.
-- 인계 콜백이 Task를 반환하기 전에 동기 대기하면 기존 WaitAsync가 호출되지 않는 종료 제한의 빈틈을 수정했다.
-- Registry는 콜백 호출을 별도 작업에서 시작하고 제한된 시간만 기다린다. 취소를 무시하는 콜백 자체를 강제 종료하지는 않는다.
-- 이 문서와 함께 Dispatcher의 실제 종료 경로가 Registry와 동일한 인계 예산을 공유하는 회귀 테스트를 추가한다. 이 추가 테스트의 실행 증거는 해당 커밋의 후속 Actions로 확인해야 한다.
-- 기존 인수인계 문서는 CI 복구·운영 경계 문서이며 전체 제품의 상세 기능 계약은 포함하지 않는다. Commercial/Licensing은 실제 소스에서도 AssemblyMarker 기반 상태이며, 결제 정책·라이선스 권리·WPF 업무 화면의 완료 기준을 추정하여 완료 처리할 수 없다.
+- `0059f7a7369d145efaaa71069bedfb8902e40855`의 [Actions Run #615](https://github.com/namanvarava/Edan.Tensor/actions/runs/42169916191)는 190개 테스트를 통과했다.
+- 이 수정은 인계 콜백이 Task를 반환하기 전에 동기 대기하는 경우에도 Registry의 종료 대기를 제한한다. 시간 초과가 콜백 자체를 강제 종료하거나 영속 Lease를 해제하지는 않는다.
+- `313bb961b777e72ae3efdcfbc113801f6668a41e`의 [Actions Run #616](https://github.com/namanvarava/Edan.Tensor/actions/runs/42170176288)는 191개 테스트를 통과했다.
+- Dispatcher의 실제 StopAsync 경로가 Registry에서 사용한 인계 예산을 다시 기다리지 않는 직접 회귀 검증을 포함한다.
+- 현재 후속 변경은 별도 프로세스가 Lease와 체크포인트를 저장한 뒤 강제 종료되는 시험을 추가한다. 해당 시험은 새로운 DbContext에서 복구, Fencing Token 증가, 오래된 쓰기 거부, Tenant 격리를 확인한다. 실행 증거는 이 변경의 후속 Actions로 확인해야 한다.
+- 프로세스 시험은 실제 운영 WorkerHost 전체와 외부 전달 수신 시스템을 실행하는 종단 간 시험을 대체하지 않는다.
+- 기존 인수인계 문서는 CI 복구·운영 경계 문서이며 전체 제품의 상세 기능 계약은 포함하지 않는다.
+- Commercial/Licensing은 실제 소스에서도 AssemblyMarker 기반 상태다. 결제 정책·라이선스 권리·WPF 업무 화면의 완료 기준을 추정하여 완료 처리할 수 없다.
+- DataSet의 미정 계약을 [검증 v1 상세 계약 제안](../architecture/dataset-validation-v1-proposal.md)에 정리했다. 이 문서는 구현 완료나 승인 기록이 아니다.

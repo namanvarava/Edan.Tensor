@@ -16,4 +16,16 @@
     <Using Include="Microsoft.Extensions.Logging" />
     <Using Include="Microsoft.Extensions.Configuration" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../EDAN.Tensor.Worker.ProcessProbe/EDAN.Tensor.Worker.ProcessProbe.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <!-- 빌드는 자식 프로세스의 실행 파일과 종속 파일을 함께 복사하여 CI에서 별도 빌드 명령 없이 시험할 수 있도록 합니다. -->
+  <Target Name="CopyWorkerProcessProbe" AfterTargets="Build">
+    <ItemGroup>
+      <WorkerProcessProbeFiles Include="../EDAN.Tensor.Worker.ProcessProbe/bin/$(Configuration)/$(TargetFramework)/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerProcessProbeFiles)"
+          DestinationFiles="@(WorkerProcessProbeFiles->'$(OutDir)ProcessProbe/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>
