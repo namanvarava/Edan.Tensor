@@ -266,8 +266,8 @@ public sealed class WorkerTaskRepositoryFailureTests
                 tenantId, originalId, Guid.NewGuid(), "operator:test", now.AddMinutes(3)));
 
             Assert.Equal(EntityState.Added, failingDb.Entry(unrelated).State);
-            Assert.Single(failingDb.ChangeTracker.Entries()
-                .Where(entry => entry.State == EntityState.Added && entry.Entity is WorkerTask));
+            Assert.Single(failingDb.ChangeTracker.Entries(),
+                entry => entry.State == EntityState.Added && entry.Entity is WorkerTask);
             Assert.DoesNotContain(failingDb.ChangeTracker.Entries(), entry =>
                 entry.State == EntityState.Added && entry.Entity is WorkerTaskReplayRecord);
         }
@@ -672,3 +672,4 @@ public sealed class WorkerTaskRepositoryFailureTests
         }
     }
 }
+
