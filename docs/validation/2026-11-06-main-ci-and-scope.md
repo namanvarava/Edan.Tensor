@@ -11,6 +11,8 @@ CI 실패 복구와 Worker 종료·프로세스 장애 경계의 회귀 검증�
 - PR #9 `실제 Host 경계 검증 증거를 기록합니다`는 `236c6be2db6640e2bbece34578a8863617a6b730`으로 squash merge되었다. 병합 후 최신 로컬 `main`과 `origin/main`은 같은 SHA를 가리키며 작업 디렉터리는 clean 상태이고, 열린 Issue와 Pull Request는 각각 0개다.
 - 병합 후 [Actions Run #636](https://github.com/namanvarava/Edan.Tensor/actions/runs/42201020746)은 `236c6be2db6640e2bbece34578a8863617a6b730`을 대상으로 동일한 Restore·Release Build·Release Test를 성공시켰다. Runner `EDAN-TENSOR-WIN`에서 Build는 경고 0개·오류 0개, 테스트는 193개 성공·실패 0개·건너뜀 0개였다.
 - PR #10 `최종 main CI 시점을 검증 문서에 반영합니다`는 `965159b5ddc83907ed253671a7d0818930f73633`으로 squash merge되었다. 병합 후 [Actions Run #638](https://github.com/namanvarava/Edan.Tensor/actions/runs/42202248251)은 `EDAN-TENSOR-WIN`에서 Restore·Release Build·Release Test를 성공시켰고, Build는 경고 0개·오류 0개, 테스트는 193개 성공·실패 0개·건너뜀 0개였다.
+- PR #11 `Runner 서비스 상태와 최종 CI 증거를 기록합니다`는 `e8ee1ac12f46d7f5afb0f8d166cc2e3b802dfb48`으로 squash merge되었다. 병합 후 [Actions Run #640](https://github.com/namanvarava/Edan.Tensor/actions/runs/42203632340)은 `EDAN-TENSOR-WIN`에서 Restore·Release Build·Release Test를 성공시켰고, Build는 경고 0개·오류 0개, 테스트는 193개 성공·실패 0개·건너뜀 0개였다.
+- GitHub Billing의 Budgets and alerts 화면에서 `namanvarava` 계정 Actions 예산은 `$20.00 / $20.00`, 100% 사용, `Usage blocked`로 확인되었다. 예산 증액·해제·정지 설정은 변경하지 않았으며, 이 상태는 향후 Actions 실행을 차단할 수 있는 외부 재개 조건으로 남긴다.
 - Windows 서비스 조회에서 `GitHub Actions Runner (namanvarava-Edan.Tensor.EDAN-TENSOR-WIN)`은 `Running`, `StartType=Automatic`으로 확인되었다. Actions 로그의 Runner 이름과 서비스 상태가 일치하며, 작업 수신·실행 및 자동 시작 설정을 모두 확인했다.
 - 로컬에서 exact Restore와 Release Build는 종료 코드 0이지만 NuGet 감사 피드 조회 경로에서 `NU1900`이 반복된다. NuGet HTTP 캐시를 비워도 동일했으며, `NuGetAudit=false`를 진단용으로 지정하면 경고 없이 완료되므로 저장소 설정으로 경고를 숨기지 않았다. 원격 Actions의 동일한 Restore와 Build는 경고 0개다.
 - 실제 WorkerHost를 임시 SQLite 3개와 Development Migration 설정으로 기동하여 `/health`가 HTTP 200을 반환하는 것을 확인했다. Platform·DataSet·Worker DB가 생성되었고 표준 오류 출력은 없었으며, 검증 후 프로세스를 종료했다.
@@ -127,12 +129,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 
 - `Edan.Tensor_Continuation_Handoff_2026-11-06.pdf`를 2쪽 전체 렌더링으로 검토했다. PDF의 기준 SHA `c187103cee76ad58e28633a259aeebc5e7dab75c`는 현재 main의 기준이 아니며, 이후 커밋과 PR이 반영되었다.
 - PDF의 Actions Run #605(`42124026661`)는 Job 시작 전에 Actions 예산 정책으로 차단되었고 Runner와 Step이 생성되지 않은 과거 인프라 장애였다. 이 실행을 재시도하지 않았다. 현재 Run #621, #622, #623, #624는 실제 Job과 Step을 생성했고 `EDAN-TENSOR-WIN` Windows X64 자체 호스팅 Runner에서 실행되었다.
-- 현재 Runner 실행 증거는 Actions Runner `2.338.2`, 이름 `EDAN-TENSOR-WIN`, 라벨 `self-hosted`, `Windows`, `X64`이다. 이전 제한된 조회에서 서비스 상태를 읽지 못했으나, 이후 읽기 전용 Windows 서비스 조회에서 해당 Runner가 `Running`·`Automatic`으로 확인되었다. Billing 화면과 예산 설정은 변경하지 않았으며, 별도 Billing 권한 없이 설정값 자체는 검증하지 않았다.
+- 현재 Runner 실행 증거는 Actions Runner `2.338.2`, 이름 `EDAN-TENSOR-WIN`, 라벨 `self-hosted`, `Windows`, `X64`이다. 이전 제한된 조회에서 서비스 상태를 읽지 못했으나, 이후 읽기 전용 Windows 서비스 조회에서 해당 Runner가 `Running`·`Automatic`으로 확인되었다. Billing 화면도 읽기 전용으로 확인했으며, Actions 예산 `$20.00 / $20.00` 및 `Usage blocked` 상태를 확인했지만 설정은 변경하지 않았다.
 - PDF의 Worker 설계 기준은 현재 소스와 자동 검증에 반영되어 있다. `WorkerExecutionRegistry`와 `WorkerTaskDispatcher`는 하나의 종료 인계 예산을 공유하고, Tenant 작업 커서는 Dispatcher 단일 루프의 LRU로 관리하며 기본 10,000, 허용 범위 500–100,000을 사용한다. 관련 직접 회귀 테스트와 실제 프로세스 복구 테스트가 Worker Infrastructure 테스트에 포함된다.
 - WorkerHost는 전용 `WorkerDbContext`를 등록하고, DataSet 메타데이터·콘텐츠 저장소를 별도 DbContext와 연결로 등록한다. Platform 계층의 프로젝트 참조와 DataSet 경계도 기존 ArchitectureDependencyTests 및 API 통합 테스트로 확인했다.
 - PR #2는 JWT Issuer/Audience 누락 시 검증이 꺼지는 보안 결함, Worker xUnit2031 경고 및 외부 PR의 GitHub-hosted Runner 사용을 수정하고 `af39e318547195d32acbef4c78843da5d4a97a8c`로 squash merge했다. PR #3은 `clean:false` 작업 디렉터리에서 고정 TRX 파일이 충돌하는 경고를 실행 ID별 파일명으로 수정하고 `9de3e2b3a5d5930fbbb780adf24f969f5cee73e0`으로 squash merge했다.
 - 최종 main Run #624(`42177862848`)는 Restore, Release Build, Release Test를 모두 성공시켰다. 총 193개 테스트가 실패 0개·건너뜀 0개로 통과했고, 최종 로그에서 TRX 덮어쓰기·xUnit2031·NU1900 경고가 확인되지 않았다.
 - 이전 로컬 exact restore/test 실패와 testhost 연결 시간초과는 원격 미동기화·로컬 환경이 정리되기 전의 과거 결과다. 현재 결과는 위 로컬 main 동기화 후 검증 절에 기록했다.
-- PDF에 기록된 Billing 화면 확인, Windows 서비스 관리자 권한 및 승인되지 않은 제품 요구사항은 변경하지 않았다. Billing 예산 확인·외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
+- PDF에 기록된 Billing 화면은 읽기 전용으로 재확인했으며, Actions 예산 차단을 해제하거나 과금을 발생시키는 설정은 변경하지 않았다. 외부 IdP, 실제 외부 전달 수신 시스템, Commercial/Licensing 업무 계약, WPF, DataSet Validation 및 DuckDB/Parquet의 재개 조건은 해당 권한·승인·실행 환경이 제공될 때 처리한다.
 
 
