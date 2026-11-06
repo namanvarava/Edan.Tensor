@@ -53,10 +53,34 @@ public sealed class WorkerTaskDispatcherCursorTests
         Assert.Equal(500, LruCount(dispatcher));
     }
 
-    private static WorkerTaskDispatcher CreateDispatcher(int limit)
+    /// <summary>테스트는 설정이 없을 때 Tenant 작업 커서가 기본 상한 10,000을 사용하는지 검증합니다.</summary>
+    [Fact]
+    public void MissingLimitUsesTenThousandDefault()
     {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
-            new Dictionary<string, string?> { ["Worker:TenantTaskCursorLimit"] = limit.ToString() }).Build();
+        using var dispatcher = CreateDispatcher(null);
+        for (var i = 0; i < 10_001; i++) Store(dispatcher, Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.Equal(10_000, CursorCount(dispatcher));
+        Assert.Equal(10_000, LruCount(dispatcher));
+    }
+
+    /// <summary>테스트는 설정된 Tenant 작업 커서 상한이 최대값 100,000으로 제한되는지 검증합니다.</summary>
+    [Fact]
+    public void ConfiguredLimitAboveMaximumIsClampedToOneHundredThousand()
+    {
+        using var dispatcher = CreateDispatcher(100_001);
+        for (var i = 0; i < 100_001; i++) Store(dispatcher, Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.Equal(100_000, CursorCount(dispatcher));
+        Assert.Equal(100_000, LruCount(dispatcher));
+    }
+
+    private static WorkerTaskDispatcher CreateDispatcher(int? limit)
+    {
+        var values = new Dictionary<string, string?>();
+        if (limit.HasValue)
+            values["Worker:TenantTaskCursorLimit"] = limit.Value.ToString();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
         // 커서 연산은 DB나 Handler를 사용하지 않습니다.
         return new WorkerTaskDispatcher(NullLogger<WorkerTaskDispatcher>.Instance,
             null!, new WorkerExecutionRegistry(), null!, configuration, TimeProvider.System);
