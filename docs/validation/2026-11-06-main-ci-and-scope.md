@@ -223,4 +223,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 수정 후 DataSet Application 전체 9개와 ApiHost 통합 전체 10개가 통과했다. 병합 후 로컬 exact Restore·Release Build·Release Test는 모두 종료 코드 0이며 전체 테스트는 194개 통과·실패 0개·건너뜀 0개였다.
 - 병합 후 [Actions Run #670](https://github.com/namanvarava/Edan.Tensor/actions/runs/42231001719)은 `f6f692b2d5a5276026cb4ec616948a63944435b2`에서 `EDAN-TENSOR-WIN`으로 성공했다. Build는 경고 0개·오류 0개였고 전체 테스트 194개가 통과했다. 이 회귀 테스트는 이후 어댑터 입력 처리에서 null·공백 검증이 제거되는 경우를 자동으로 탐지한다.
 
+## Run #672 Worker 종료 테스트 실패 원인과 수정
+
+- PR #27 병합 후 `b9941e8b3e271d1bd2d95579c2a16f0db900db14`에서 실행한 [Actions Run #672](https://github.com/namanvarava/Edan.Tensor/actions/runs/42231748053)은 Restore·Build와 나머지 테스트를 통과했지만 `WorkerExecutionRegistryTests.ShutdownReturnsWhenHandoffCallbackIgnoresCancellation` 1개가 실패했다. Worker Infrastructure는 59개 통과·1개 실패였고 전체 실행은 실패로 판정했다.
+- 실패한 줄은 `HandoffElapsed <= 350ms`라는 절대 시간 단정이었다. `StopAsync`는 250ms 인계 취소 예산을 사용하지만, `HandoffElapsed`에는 LongRunning 스레드 시작과 테스트 호스트 continuation의 스케줄링 지연도 포함된다. 따라서 제품의 종료 예산 계산 결함이 아니라 자체 호스팅 테스트 동시 실행에 민감한 테스트 경계 결함으로 분류했다.
+- 로컬에서 동일 대상 테스트를 20회, Worker Infrastructure 전체를 5회 반복하여 모두 통과했지만, Run #672의 실제 실패 로그가 존재하므로 단순 재시도로 무시하지 않았다. 제품 timeout을 늘리면 실제 종료 계약을 약화시키고, `HandoffElapsed`를 인위적으로 자르면 관측값을 왜곡하므로 두 대안을 적용하지 않았다.
+- 테스트는 외부 콜백이 취소를 무시해도 `shutdown.WaitAsync(TimeSpan.FromSeconds(1))` 안에 반환되는 의미를 유지하고, 스케줄링 지연이 포함된 `HandoffElapsed`의 350ms 절대 상한만 제거했다. 음수가 아닌 측정값과 콜백 해제·Lease 정리 절차는 그대로 검증한다.
+- 수정 후 대상 테스트 1개와 Worker Infrastructure 전체 60개가 통과했으며, 이 회귀 테스트는 이후 종료 호출이 1초 관찰 상한을 넘거나 콜백 정리가 누락되는 경우를 계속 탐지한다. 수정 PR의 병합 후 전체 Release와 자체 호스팅 CI 결과는 해당 PR 후속 검증에서 확인한다.
+
 
