@@ -215,4 +215,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 현재 Runner API는 `EDAN-TENSOR-WIN`을 `online`·`idle` 및 `self-hosted`, `Windows`, `X64` 레이블로 보고한다. Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`도 `Running`·`Auto` 상태다. 워크플로에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
 - 현재 열린 Issue와 Pull Request는 각각 0개다. `main` 보호 규칙 REST 조회는 비공개 저장소 요금제 제한으로 HTTP 403을 반환하므로 독립적인 규칙 JSON 검증은 수행할 수 없었다. 이 제한을 우회하지 않았으며, PR #24의 Check는 `pass`, 병합 상태는 `MERGED`로 확인했다.
 
+## DataSet null 어댑터 입력 결함 수정 및 재검증
+
+- `0f5eb3a70629620cb32f0f9786c560618a65cb7f` 기준에서 `storageAdapter: null` 입력을 전달하는 회귀 테스트를 추가하여 `DataSetManagementService.CreateAsync`의 `adapterId.Trim()`에서 `NullReferenceException`이 발생하는 것을 재현했다. 이 오류는 잘못된 요청을 HTTP 500으로 전파할 수 있고, 어댑터 입력 검증 전에 중단되는 문제였다.
+- Application 서비스 경계에서 어댑터 식별자를 `ArgumentException.ThrowIfNullOrWhiteSpace`로 먼저 검증했다. API 계층만 수정하는 대안은 다른 Application 호출자를 보호하지 못하므로 적용하지 않았으며, 기존 `dataset.validation` 오류 계약과 저장소 할당 순서를 유지했다.
+- PR #26 [DataSet null 어댑터 입력을 안전하게 거부합니다](https://github.com/namanvarava/Edan.Tensor/pull/26)는 자체 호스팅 Check를 통과한 뒤 `f6f692b2d5a5276026cb4ec616948a63944435b2`로 squash merge되었다. 단위 회귀 테스트는 잘못된 입력에서 실패 결과를 반환하고 저장소 할당을 0회로 유지하며, ApiHost 통합 테스트는 HTTP 400과 `dataset.validation` 코드를 확인한다.
+- 수정 후 DataSet Application 전체 9개와 ApiHost 통합 전체 10개가 통과했다. 병합 후 로컬 exact Restore·Release Build·Release Test는 모두 종료 코드 0이며 전체 테스트는 194개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #670](https://github.com/namanvarava/Edan.Tensor/actions/runs/42231001719)은 `f6f692b2d5a5276026cb4ec616948a63944435b2`에서 `EDAN-TENSOR-WIN`으로 성공했다. Build는 경고 0개·오류 0개였고 전체 테스트 194개가 통과했다. 이 회귀 테스트는 이후 어댑터 입력 처리에서 null·공백 검증이 제거되는 경우를 자동으로 탐지한다.
+
 
