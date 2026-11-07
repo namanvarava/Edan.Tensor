@@ -410,11 +410,21 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 | Host / API | ApiHost·WorkerHost·HostServices 조합과 Health·OpenAPI·보호 API를 제공한다. | Release 빌드, 실제 Windows ApiHost Smoke, API 통합 테스트 | 완료 |
 | 클라이언트 | WPF 화면과 업무 흐름은 이번 릴리스에서 제외했다. | README와 승인 범위 기록 | 완료(제외 범위 준수) |
 | 보안 / 운영 | External 모드는 Issuer·Audience·Lifetime·서명·JWKS·HTTPS를 검증하고, Bypass는 Development에서만 외부 JWT 검증을 생략한다. | 로컬 JWKS 7개 경계 테스트, Bypass·HTTPS 회귀 테스트, 비밀 미저장 감사 | 완료 |
-| CI / 문서 / 의존성 | Windows 자체 호스팅 Runner, Release 전체 테스트, 취약성 감사, 사용 가이드와 검증 기록을 유지한다. | Run #729, 215개 테스트, NuGet 취약성 감사 종료 코드 0, 현재 문서 | 완료 |
-| 인수인계 PDF | PDF 기준 SHA `c187103cee76ad58e28633a259aeebc5e7dab75c` 이후의 변경을 현재 main과 대조했다. Worker Handoff·Tenant Cursor LRU·전용 DB·DataSet 저장소 분리·계층 규칙을 구현과 테스트에서 재확인했다. | PDF 검토 기록, ArchitectureDependencyTests, Worker 테스트, 현재 SHA `6bfd738f47fc4e8ca28bc474dd000a820c4c5f44` | 완료 |
+| CI / 문서 / 의존성 | Windows 자체 호스팅 Runner, Release 전체 테스트, 취약성 감사, 사용 가이드와 검증 기록을 유지한다. | Run #731, 215개 테스트, NuGet 취약성 감사 종료 코드 0, 현재 문서 | 완료 |
+| 인수인계 PDF | PDF 기준 SHA `c187103cee76ad58e28633a259aeebc5e7dab75c` 이후의 변경을 현재 main과 대조했다. Worker Handoff·Tenant Task Cursor LRU·전용 DB·DataSet 저장소 분리·계층 규칙을 구현과 테스트에서 재확인했다. | PDF 검토 기록, ArchitectureDependencyTests, Worker 테스트, 현재 SHA `400b3beca3f887f4409af9cbfea137b724d48033` | 완료 |
 | 실제 비운영 외부 IdP | Metadata/JWKS 주소, 기대 Issuer/Audience, `edan-nonprod` 사용자·opaque `sub`, 겹치는 키 회전 권한이 제공되지 않아 실제 외부 환경은 시험하지 못했다. | README 외부 조건, 로컬 JWKS 대체 검증, GitHub/로컬 상태 | 환경 미검증 |
 | GitHub main 보호 규칙 | `branches/main`은 `protected=false`로 조회되지만 상세 보호 API는 비공개 저장소 요금제 제한으로 HTTP 403이다. 설정 변경이나 우회는 하지 않았다. | GitHub API 응답 기록 | 환경 미검증 |
 
 이 감사 결과에 따라 외부 IdP와 보호 규칙 상세 조회만 최종 외부 조건으로 남기며, 해당 조건이 없다는 이유로 Development Bypass·로컬 테스트·자체 호스팅 CI를 중지하지 않는다. 실제 외부 IdP 정보가 제공되면 정상 토큰, 잘못된 Issuer/Audience, 만료, 서명 실패, 알 수 없는 `kid`, 기존·신규 키 겹침 회전을 같은 테스트 계약으로 재실행한다.
+
+## 2026-11-07 최신 main 최종 재검증
+
+- 현재 로컬 `main`, `origin/main`, GitHub `main`은 `400b3beca3f887f4409af9cbfea137b724d48033`으로 동기화되어 있고 작업 디렉터리는 clean 상태다. PR #56은 이 SHA로 Squash Merge되었으며 열린 Issue와 Pull Request는 각각 0개다.
+- 실제 Windows 권한에서 다음 명령을 원문 그대로 순서대로 실행했다. `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`가 모두 종료 코드 0으로 완료되었다. Build는 경고 0개·오류 0개였고 전체 테스트는 215개 통과·실패 0개·건너뜀 0개였다.
+- 제한된 실행 컨텍스트에서 같은 Test 명령을 실행했을 때 VSTest가 테스트 코드 실행 전에 `testhost` 연결 시간 초과로 종료되었다. 진단 로그에는 SDK 확장 로딩 중 `Microsoft.Bcl.AsyncInterfaces` 누락 경고와 로컬 Testhost 연결 실패가 기록되었다. 관리자 권한의 실제 Windows 실행에서 SharedKernel 11개와 전체 215개가 정상 통과했으므로 제품 코드·테스트 계약의 결함이 아니라 현재 실행 권한/SDK 테스트 호스트 환경 문제로 분류했다. 테스트 생략이나 실패 무시는 적용하지 않았다.
+- Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`은 `RUNNING`이며 시작 유형은 `AUTO_START (DELAYED)`다. 최신 [Actions Run #731](https://github.com/namanvarava/Edan.Tensor/actions/runs/42370455298)은 Job `128397324749`를 `EDAN-TENSOR-WIN` Runner 22와 `self-hosted`, `Windows`, `X64` 레이블에서 실행했고 Restore·Build·Test·정리 단계가 모두 성공했다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive --format json`은 종료 코드 0으로 완료되었고 취약성 항목을 반환하지 않았다. Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
+- `branches/main`은 `protected=false`로 조회되며 상세 보호 규칙 API는 비공개 저장소 요금제 제한으로 HTTP 403(`Upgrade to GitHub Pro or make this repository public`)을 반환한다. 설정 변경·과금 변경·보호 정책 우회는 하지 않았다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 이 조건은 Development 작업을 중지시키지 않으며 Bypass·로컬 IdP/JWKS·자체 호스팅 CI를 계속 사용한다. 다만 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다.
 
 
