@@ -13,7 +13,9 @@
 - DataSet Infrastructure: 10개
 - Worker Domain: 21개
 - Worker Infrastructure: 66개
-- API 통합: 21개
+- API 통합: 22개
+
+Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인과 `edan-nonprod` 테스트 식별자를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
 최신 제품 코드 기준은 `main` SHA `9c3f2f4d6e9df1f247792af9c3332b78080948cf`이다. Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행한 [Actions Run #768](https://github.com/namanvarava/Edan.Tensor/actions/runs/42415314493)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 218개 통과·실패 0개·건너뜀 0개였다. 이 문단은 아래의 역사적 실행 기록과 문서 전용 후속 커밋을 구분하는 현재 제품 코드 검증 기준이다.
 

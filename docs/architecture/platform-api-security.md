@@ -16,7 +16,7 @@ Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청
 - `Authentication:RequireHttpsMetadata=false`는 로컬 HTTP 테스트 서버에서만 허용하며, 운영에서는 HTTPS 메타데이터 주소와 비밀 저장소를 사용합니다.
 - `Authentication:Mode=Bypass`는 Development 환경에서만 외부 JWT 검증을 생략하는 개인 개발 모드입니다. 토큰이 없는 모든 요청도 고정된 개발 주체로 인증하지만 Tenant 소속과 조직·프로젝트 권한 검사는 수행하며, 운영 환경에서는 시작 단계에서 거부합니다.
 - `Authentication:Mode=External`은 Metadata·Issuer·Audience·JWKS 검증을 사용합니다. MetadataAddress와 Issuer는 도메인 또는 개인 개발망의 IP 주소를 포함할 수 있으며, HTTP 주소는 Development에서만 허용합니다.
-- Development Bypass가 활성화되면 `DevelopmentData:SeedBypassTenant=true` 설정에 따라 `EDAN-LOCAL` Tenant와 Bypass `sub`의 소속을 시작 시 멱등적으로 준비합니다. 이미 같은 Tenant 또는 소속 레코드가 있으면 역할·상태를 덮어쓰지 않으며, 이 초기화는 외부 IdP 설정이나 운영 데이터의 대체 수단이 아닙니다.
+- Development Bypass가 활성화되면 `DevelopmentData:SeedBypassTenant=true` 설정에 따라 `EDAN-NONPROD` Tenant와 Bypass `sub`의 소속을 시작 시 멱등적으로 준비합니다. 이미 같은 Tenant 또는 소속 레코드가 있으면 역할·상태를 덮어쓰지 않으며, 이 초기화는 외부 IdP 설정이나 운영 데이터의 대체 수단이 아닙니다.
 
 ## 비운영 외부 IdP 권장 구성
 
@@ -37,7 +37,7 @@ Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청
 
 개인 개발에서 외부 IdP를 아직 준비하지 못하면 `src/Hosts/EDAN.Tensor.ApiHost/appsettings.Development.json`의 Bypass 설정을 사용한다. Bypass는 외부 로그인 서버를 대체하는 임시 개발 경계이며 서비스 배포 설정으로 복사하지 않는다. 외부 IdP 연결 시에는 `Authentication:Mode=External`로 바꾸고 실제 Metadata 주소, Issuer, Audience와 HTTPS 정책을 주입한다.
 
-기본 Development 설정은 `EDAN-LOCAL`, `Edan Local Development`, `local-development-subject`, `platform_admin`을 사용한다. 이 값은 외부 IdP의 Issuer·Audience·JWKS·키가 아니며 저장소에 비밀을 기록하지 않는다. 다른 로컬 Tenant가 필요하면 `DevelopmentData:TenantCode`, `DevelopmentData:TenantName`, `Authentication:BypassSubject`를 Development 전용 구성으로 바꾼다.
+기본 Development Bypass 설정은 `EDAN-NONPROD`, `Edan Non-Production Development`, `edan-nonprod-test-subject`, `platform_admin`을 사용한다. 고정 시뮬레이션 프로필은 `https://auth-test.example.com`을 Issuer로, `https://auth-test.example.com/.well-known/openid-configuration`을 Metadata 주소로, `https://auth-test.example.com/jwks`를 JWKS 주소로, `edan-tensor-api`를 Audience로 사용한다. 이 값은 RFC 예약 도메인과 개발 식별자이며 실제 외부 IdP의 Issuer·Audience·JWKS·키 회전 권한을 증명하지 않는다. 다른 로컬 Tenant가 필요하면 `DevelopmentData:TenantCode`, `DevelopmentData:TenantName`, `Authentication:BypassSubject`를 Development 전용 구성으로 바꿀 수 있지만 실제 외부 IdP 검증으로 기록하지 않는다.
 
 외부 경계 검증은 정상 토큰, 잘못된 Issuer, 잘못된 Audience, 만료 토큰, 서명 실패, 알 수 없는 `kid`, 기존 키와 새 키가 겹치는 키 회전을 모두 확인한다. 테스트 사용자는 IdP의 안정적인 `sub` 값을 확인한 뒤 `POST /api/platform/tenants/{tenantId}/memberships`로 Tenant의 Member 또는 Administrator 역할에 연결한다.
 
