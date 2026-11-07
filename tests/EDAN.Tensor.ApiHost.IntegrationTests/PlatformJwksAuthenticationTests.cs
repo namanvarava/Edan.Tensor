@@ -213,6 +213,7 @@ public sealed class PlatformJwksAuthenticationTests
                 ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataset};Pooling=False",
                 ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_content};Pooling=False",
                 ["Database:ApplyMigrationsInDevelopment"] = "true",
+                ["Authentication:Mode"] = "External",
                 ["Authentication:Issuer"] = issuer,
                 ["Authentication:Audience"] = "edan-tensor-api",
                 ["Authentication:MetadataAddress"] = metadataAddress,

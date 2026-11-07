@@ -38,7 +38,8 @@ builder.Services.AddPlatformApplication();
 builder.Services.AddDataSetApplication();
 builder.Services.AddScoped<IDataSetScopeValidator, PlatformDataSetScopeValidator>();
 builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
-builder.Services.AddPlatformSecurity(builder.Configuration);
+// 개발 환경은 명시된 Bypass를 사용할 수 있고, 그 밖의 환경은 외부 IdP 설정을 사용합니다.
+builder.Services.AddPlatformSecurity(builder.Configuration, builder.Environment);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
     ?? "App_Data/AuthorizationAuditArchives";
 if (!Path.IsPathRooted(archivePath))

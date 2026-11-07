@@ -292,4 +292,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 [Actions Run #696](https://github.com/namanvarava/Edan.Tensor/actions/runs/42327146981)은 `EDAN-TENSOR-WIN`에서 exact Restore·Release Build·Release Test를 성공시켰다. 로그는 Build 경고 0개·오류 0개와 전체 211개 통과·실패 0개·건너뜀 0개를 기록한다.
 - PR #39 병합 시점의 main 기준 SHA는 `50872843d77704458f23c4d873defea22bd0e73e`이며, 외부 비운영 `Edan.Identity` Metadata/JWKS 경계 검증만 실제 주소·테스트 Tenant·키 회전 권한 제공 전까지 남아 있다. 토큰·비밀키·비밀번호는 저장소와 검증 기록에 기록하지 않는다.
 
+## 2026-11-07 개발 Bypass 및 External 인증 모드 구성
+
+- 개인 개발에서 도메인이나 외부 IdP가 없어도 `src/Hosts/EDAN.Tensor.ApiHost/appsettings.Development.json`의 `Authentication:Mode=Bypass`로 실행할 수 있도록 구성했다. Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 유지하며, Development가 아닌 환경에서는 시작 단계에서 거부한다.
+- `Authentication:Mode=External`은 MetadataAddress, Issuer, Audience, JWKS 및 HTTPS 정책을 적용한다. MetadataAddress와 Issuer는 실제 도메인 또는 개발망 IP 주소를 환경 변수로 받을 수 있으며, HTTP Metadata는 Development에서만 허용한다.
+- 새 인증 설정 테스트 4개를 포함한 로컬 Release 전체 테스트는 213개 통과·실패 0개·건너뜀 0개였고 Build 경고 0개·오류 0개였다. 실제 Windows ApiHost Smoke는 Development Bypass에서 health 200·보호 API 200, External과 IP Metadata 설정에서는 health 200·토큰 없는 보호 API 401을 반환했으며 두 실행의 stderr는 0자였다.
+- 외부 비운영 IdP 자체 검증은 실제 Metadata/JWKS 주소, 기대 Issuer/Audience, 테스트 Tenant·사용자·opaque `sub`, 키 회전 권한이 제공된 뒤 재실행한다. 토큰과 비밀정보는 저장소·문서·로그에 기록하지 않는다.
+
 
