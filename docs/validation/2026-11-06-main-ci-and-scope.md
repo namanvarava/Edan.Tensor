@@ -296,7 +296,14 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 
 - 개인 개발에서 도메인이나 외부 IdP가 없어도 `src/Hosts/EDAN.Tensor.ApiHost/appsettings.Development.json`의 `Authentication:Mode=Bypass`로 실행할 수 있도록 구성했다. Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 유지하며, Development가 아닌 환경에서는 시작 단계에서 거부한다.
 - `Authentication:Mode=External`은 MetadataAddress, Issuer, Audience, JWKS 및 HTTPS 정책을 적용한다. MetadataAddress와 Issuer는 실제 도메인 또는 개발망 IP 주소를 환경 변수로 받을 수 있으며, HTTP Metadata는 Development에서만 허용한다.
-- 새 인증 설정 테스트 4개를 포함한 로컬 Release 전체 테스트는 213개 통과·실패 0개·건너뜀 0개였고 Build 경고 0개·오류 0개였다. 실제 Windows ApiHost Smoke는 Development Bypass에서 health 200·보호 API 200, External과 IP Metadata 설정에서는 health 200·토큰 없는 보호 API 401을 반환했으며 두 실행의 stderr는 0자였다.
+- 새 인증 설정 테스트 5개를 포함한 로컬 Release 전체 테스트는 214개 통과·실패 0개·건너뜀 0개였고 Build 경고 0개·오류 0개였다. 실제 Windows ApiHost Smoke는 Development Bypass에서 health 200·보호 API 200, External과 IP Metadata 설정에서는 health 200·토큰 없는 보호 API 401을 반환했으며 두 실행의 stderr는 0자였다. Bypass 회귀 테스트는 구성된 안정적인 `sub`와 `platform_admin` 역할이 실제 인증 Claim으로 발급되는지도 확인한다.
 - 외부 비운영 IdP 자체 검증은 실제 Metadata/JWKS 주소, 기대 Issuer/Audience, 테스트 Tenant·사용자·opaque `sub`, 키 회전 권한이 제공된 뒤 재실행한다. 토큰과 비밀정보는 저장소·문서·로그에 기록하지 않는다.
+
+## 2026-11-07 PR #43 Worker 종료 경계 테스트 실패와 수정
+
+- PR #43의 첫 CI인 Actions Run #703(`42340222653`)은 `EDAN-TENSOR-WIN` Runner 22에서 Restore와 Release Build를 성공시켰지만 Test 단계에서 `WorkerExecutionRegistryTests.ShutdownReturnsWhenHandoffCallbackIgnoresCancellation`가 `handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(5))`에서 `TimeoutException`을 반환했다. 새 Bypass Claim 테스트가 아니라 기존 Worker 종료 테스트의 실패였으며, 나머지 테스트는 통과했다.
+- 실패 로그와 소스를 대조한 결과, 해당 테스트는 다른 Worker 인프라 테스트와 병렬 실행될 때 10밀리초 grace 타이머와 250밀리초 취소 타이머의 ThreadPool continuation 스케줄링에 의존했다. 제품의 종료 예산 계산 오류나 외부 환경 장애로 분류하지 않았다.
+- 제품의 250밀리초 인계 예산을 늘리거나 테스트 대기 상한을 무조건 늘리는 대안은 종료 계약을 약화하거나 관측을 흐리므로 적용하지 않았다. 테스트는 grace 대기 없이 인계를 시작하고, 시간 경계 테스트 컬렉션을 다른 Worker 인프라 테스트와 병렬 실행하지 않도록 격리했다. 이 변경은 제품 코드와 CI Workflow를 바꾸지 않으며, 취소 무시 콜백·실행 Lease 정리·인계 실패 결과 검증은 그대로 유지한다.
+- 수정 후 대상 테스트를 20회 연속 실행하여 모두 통과했고, 로컬 Windows에서 Release 전체 테스트 214개가 실패 0개·건너뜀 0개로 통과했다. PR #43의 실패 원인은 기록했으며, 수정 커밋의 PR Check에서 동일 Runner의 Restore·Build·Test를 다시 확인한다.
 
 

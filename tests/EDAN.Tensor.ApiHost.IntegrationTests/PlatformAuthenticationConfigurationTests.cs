@@ -1,11 +1,13 @@
 using EDAN.Tensor.ApiHost.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
 using Xunit;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
@@ -88,6 +90,33 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.Equal("DevelopmentBypass", authentication.DefaultAuthenticateScheme);
         Assert.Equal("DevelopmentBypass", authentication.DefaultChallengeScheme);
         Assert.Equal("EDAN.Tensor.ApiHost.Security.DevelopmentBypassAuthenticationHandler", scheme?.HandlerType.FullName);
+    }
+
+    /// <summary>개발 Bypass는 구성된 안정적인 주체와 역할을 인증 Claim으로 발급합니다.</summary>
+    [Fact]
+    public async Task DevelopmentBypassEmitsConfiguredSubjectAndRoleClaims()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Mode"] = "Bypass",
+                ["Authentication:BypassSubject"] = "local-subject-for-test",
+                ["Authentication:BypassRole"] = "platform_admin"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddLogging();
+        services.AddSingleton<UrlEncoder>(UrlEncoder.Default);
+        services.AddPlatformSecurity(configuration, new TestHostEnvironment(Environments.Development));
+
+        using var provider = services.BuildServiceProvider();
+        var context = new DefaultHttpContext { RequestServices = provider };
+        var result = await context.AuthenticateAsync("DevelopmentBypass");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("local-subject-for-test", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
     }
 
     /// <summary>운영 환경은 개발 Bypass 인증을 등록하지 않습니다.</summary>
