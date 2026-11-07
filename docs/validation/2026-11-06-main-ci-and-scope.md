@@ -478,4 +478,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 인수인계 PDF 원본은 현재 작업 디렉터리와 확인 가능한 첨부 폴더에 존재하지 않아 이 세션에서 다시 렌더링할 수 없었다. 기존 검증 문서에 기록된 PDF 대조 결과는 역사적 기록으로 보존하며, 원본이 다시 제공되기 전까지 이번 감사에서는 PDF 원본 재검토를 미검증으로 분류한다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 이 조건은 Development Bypass와 로컬 검증을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
 
+## 2026-11-08 최신 main Release Host Smoke 재검증
+
+- 병합된 최신 main의 Release ApiHost를 임시 SQLite 네 개와 Development Bypass 설정으로 하나의 Windows 검증 프로세스에서 기동했다. 동일 프로세스에서 `/health`는 HTTP 200, `/health/database`는 HTTP 200과 `Connected`·`Green`, `/api/platform/tenants/mine`은 HTTP 200과 Administrator Tenant 1개 및 `tenantId`를 반환했다.
+- 첫 번째 Smoke 하네스는 Tenant API 응답에 존재하지 않는 `code` 필드를 기대해 실패했다. 로그에서 모든 HTTP 상태와 Administrator 응답은 정상임을 확인했고, 제품 오류가 아니라 검증 하네스의 응답 계약 불일치로 분류했다. 하네스를 실제 API 계약인 `tenantId`·`role` 검증으로 최소 수정한 뒤 동일 조건에서 재실행하여 성공했다.
+- 검증 후 ApiHost 프로세스와 임시 SQLite·아카이브 디렉터리를 종료·삭제했다. 이 검증은 외부 IdP를 대체하지 않으며 Development Bypass와 로컬 Tenant 초기화 경계만 확인한다.
+
 
