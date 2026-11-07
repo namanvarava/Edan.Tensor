@@ -86,6 +86,7 @@ public sealed record DataSetValidationExecutionSnapshot(
     int SchemaVersion,
     Guid ProfileId,
     int ProfileRevision,
+    long FencingToken,
     DataSetValidationStatus Status,
     string DetailReference,
     int ProcessedRecords,

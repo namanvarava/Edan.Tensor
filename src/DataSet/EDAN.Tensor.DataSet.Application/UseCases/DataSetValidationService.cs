@@ -92,9 +92,14 @@ public sealed class DataSetValidationService(
     }
 
     /// <summary>Worker가 실행 참조를 처리하고 진행 상태를 영속화합니다.</summary>
+    /// <param name="fencingToken">현재 Worker Lease가 발급한 양수 Fencing Token을 지정합니다.</param>
     public async Task<DataSetValidationRunOutcome> RunAsync(
-        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default)
+        Guid tenantId, Guid executionId, long fencingToken,
+        CancellationToken cancellationToken = default)
     {
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken), "Fencing Token은 양수여야 합니다.");
+
         var execution = await validations.GetExecutionAsync(tenantId, executionId, cancellationToken)
             ?? throw new KeyNotFoundException("Tenant 범위에서 검증 실행을 찾을 수 없습니다.");
         if (execution.Status is DataSetValidationStatus.Valid or DataSetValidationStatus.Invalid
@@ -103,6 +108,13 @@ public sealed class DataSetValidationService(
 
         try
         {
+            if (!await validations.TryStartAsync(tenantId, executionId, fencingToken, cancellationToken))
+                return execution.Status is DataSetValidationStatus.Valid
+                    or DataSetValidationStatus.Invalid
+                    or DataSetValidationStatus.Failed
+                    ? DataSetValidationRunOutcome.AlreadyCompleted
+                    : DataSetValidationRunOutcome.QueuedForRetry;
+
             var dataSet = await dataSets.GetAsync(new DataSetId(execution.DataSetId), tenantId, cancellationToken);
             var profileSnapshot = await validations.GetProfileAsync(tenantId, execution.ProfileId,
                 execution.ProfileRevision, cancellationToken);
@@ -111,22 +123,19 @@ public sealed class DataSetValidationService(
                 || dataSet.Status != DataSetStatus.Active
                 || !dataSet.SchemaRevisions.Any(x => x.Version == execution.SchemaVersion))
             {
-                await validations.FailAsync(tenantId, executionId, "dataset.validation.input_changed",
+                var failed = await validations.FailAsync(tenantId, executionId, fencingToken, "dataset.validation.input_changed",
                     "검증 예약 이후 DataSet, 스키마 또는 프로필 revision이 더 이상 일치하지 않습니다.", CancellationToken.None);
-                return DataSetValidationRunOutcome.Completed;
+                return failed ? DataSetValidationRunOutcome.Completed : DataSetValidationRunOutcome.QueuedForRetry;
             }
 
             var profile = DataSetValidationProfileParser.Parse(profileSnapshot.DefinitionJson);
-            if (!await validations.TryStartAsync(tenantId, executionId, cancellationToken))
-                return DataSetValidationRunOutcome.AlreadyCompleted;
-
             await using var content = await dataSetManagement.OpenContentReadAsync(
                 new DataSetId(execution.DataSetId), tenantId, cancellationToken);
             if (content is null)
             {
-                await validations.FailAsync(tenantId, executionId, "dataset.validation.content_not_found",
+                var failed = await validations.FailAsync(tenantId, executionId, fencingToken, "dataset.validation.content_not_found",
                     "검증할 DataSet 콘텐츠를 찾을 수 없습니다.", CancellationToken.None);
-                return DataSetValidationRunOutcome.Completed;
+                return failed ? DataSetValidationRunOutcome.Completed : DataSetValidationRunOutcome.QueuedForRetry;
             }
 
             var records = await DataSetValidationContentReader.ReadAsync(content, dataSet.ContentFormat,
@@ -143,32 +152,33 @@ public sealed class DataSetValidationService(
                 var details = result.Findings.Take(remaining).ToArray();
                 detailCount += details.Length;
                 detailTruncated |= details.Length < result.Findings.Count;
-                if (!await validations.RecordRowAsync(tenantId, executionId, row.RowNumber,
+                if (!await validations.RecordRowAsync(tenantId, executionId, fencingToken, row.RowNumber,
                     result.Findings, details, result.DuplicateObservations, index + 1, records.Count,
                     detailTruncated, cancellationToken))
-                    return DataSetValidationRunOutcome.AlreadyCompleted;
+                    return DataSetValidationRunOutcome.QueuedForRetry;
             }
 
             var final = await validations.GetExecutionAsync(tenantId, executionId, cancellationToken)
                 ?? throw new KeyNotFoundException("검증 실행이 사라졌습니다.");
-            await validations.CompleteAsync(tenantId, executionId,
+            var completed = await validations.CompleteAsync(tenantId, executionId, fencingToken,
                 final.ErrorCount == 0 ? DataSetValidationStatus.Valid : DataSetValidationStatus.Invalid,
                 records.Count, detailTruncated, final.RuleCountsJson, cancellationToken);
-            return DataSetValidationRunOutcome.Completed;
+            return completed ? DataSetValidationRunOutcome.Completed : DataSetValidationRunOutcome.QueuedForRetry;
         }
         catch (DataSetValidationInputException exception)
         {
-            await validations.FailAsync(tenantId, executionId, exception.Code, exception.Message, CancellationToken.None);
-            return DataSetValidationRunOutcome.Completed;
+            var failed = await validations.FailAsync(tenantId, executionId, fencingToken,
+                exception.Code, exception.Message, CancellationToken.None);
+            return failed ? DataSetValidationRunOutcome.Completed : DataSetValidationRunOutcome.QueuedForRetry;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await validations.MarkQueuedAsync(tenantId, executionId, CancellationToken.None);
+            await validations.MarkQueuedAsync(tenantId, executionId, fencingToken, CancellationToken.None);
             return DataSetValidationRunOutcome.QueuedForRetry;
         }
         catch
         {
-            await validations.MarkQueuedAsync(tenantId, executionId, CancellationToken.None);
+            await validations.MarkQueuedAsync(tenantId, executionId, fencingToken, CancellationToken.None);
             throw;
         }
     }

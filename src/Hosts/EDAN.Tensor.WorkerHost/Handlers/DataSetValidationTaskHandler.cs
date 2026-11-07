@@ -18,7 +18,7 @@ public sealed class DataSetValidationTaskHandler(IServiceScopeFactory scopeFacto
         var scope = scopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<DataSetValidationService>();
         var cancellation = new CancellationTokenSource();
-        var run = service.RunAsync(task.TenantId, executionId, cancellation.Token);
+        var run = service.RunAsync(task.TenantId, executionId, task.FencingToken, cancellation.Token);
         return Task.FromResult<IWorkerTaskExecution>(
             new DataSetValidationExecution(scope, cancellation, run, executionId));
     }
