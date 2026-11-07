@@ -462,4 +462,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `DevelopmentBypassDataSeederTests`는 실제 Bypass Handler와 임시 SQLite를 사용하여 `/api/platform/tenants/mine`의 Administrator 소속, Tenant 수 1개, 동일 주체의 관리자 소속 1개를 확인한다. 테스트 실행 전 Release 대상 프로젝트 빌드는 `--maxcpucount:1`에서 경고 0개·오류 0개로 통과했다.
 - 이 세션의 로컬 VSTest는 기존 `PlatformAuthenticationConfigurationTests` 필터에서도 90초 동안 testhost 연결을 수립하지 못해 결과를 반환하지 않았다. 따라서 로컬 테스트 통과로 기록하지 않으며, 자체 호스팅 CI에서 대상 테스트와 전체 Release 테스트를 재검증해야 한다. 동일 환경의 직접 Host 기동 로그에서는 Seeder의 Tenant·소속 INSERT까지 확인했지만, 60초 준비 대기 안에 HTTP Health 응답을 확보하지 못해 Host Smoke 성공으로 기록하지 않는다.
 
+## 2026-11-08 PR #63 자체 호스팅 CI 검증
+
+- PR #63의 head `23c42166889412e034fcf8dd7dda7a8b1efdb7a8`에서 [Actions Run #744](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399072656)의 Job `128482729704`가 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner에서 실행되었다. Restore, Release Build, Test와 정리 단계가 모두 성공했다.
+- CI 로그는 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했고, Build 경고 0개·오류 0개와 전체 218개 통과·실패 0개·건너뜀 0개를 기록했다. API 통합 테스트는 21개이며 `DevelopmentBypassDataSeederTests`도 통과했다.
+- 로컬 직접 Host 기동에서는 EF Migration과 Seeder의 `EDAN-LOCAL`·`local-development-subject` INSERT 및 `Now listening` 로그까지 확인했다. 그러나 현재 실행 컨텍스트에서는 별도 프로세스의 `127.0.0.1` 포트가 다른 명령 세션에서 연결되지 않아 `/health`·`/health/database`·`/api/platform/tenants/mine` HTTP Smoke를 성공으로 기록하지 않았다. 프로세스는 중단하고 임시 SQLite·로그 디렉터리를 삭제했다.
+- PR #63은 CI 성공 후 검토·병합 전 상태이며, 실제 비운영 외부 IdP 경계 검증은 외부 Metadata/JWKS·Issuer/Audience·Tenant·사용자·키 회전 권한이 제공될 때 별도로 수행한다.
+
 
