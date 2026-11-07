@@ -523,4 +523,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 [Actions Run #758](https://github.com/namanvarava/Edan.Tensor/actions/runs/42408588379)의 Job `128511577071`은 head SHA `2fdc01593b3bce832031a530c803e8f23a9163cf`에서 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner와 `self-hosted`, `Windows`, `X64` 레이블로 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했다.
 - PR #69의 검증 기록은 코드 동작을 변경하지 않았으며, 문서 변경 후 최신 main의 Release 검증과 self-hosted CI 성공을 다시 확인했다.
 
+## 2026-11-08 PR #70 병합 후 최종 main 재검증
+
+- PR #70은 `6e15595a255a130df66252faf354c7fca3507ef7`로 Squash Merge되었고 병합된 원격 head 브랜치는 삭제했다. 현재 로컬 `main`과 `origin/main`은 같은 SHA를 가리키며 작업 디렉터리는 clean 상태다.
+- 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 Build는 경고 0개·오류 0개, 전체 Test는 218개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #760](https://github.com/namanvarava/Edan.Tensor/actions/runs/42409045585)의 Job `128512963914`는 head SHA `6e15595a255a130df66252faf354c7fca3507ef7`에서 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner와 `self-hosted`, `Windows`, `X64` 레이블로 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했다.
+- 최종 확인에서 원격 브랜치는 `main`만 남았고 열린 Pull Request와 Issue는 각각 0개였다. `main` 보호 규칙 상세 API의 HTTP 403과 실제 비운영 외부 IdP 미검증 상태는 변경하지 않고 환경 조건으로 기록했다.
+
 
