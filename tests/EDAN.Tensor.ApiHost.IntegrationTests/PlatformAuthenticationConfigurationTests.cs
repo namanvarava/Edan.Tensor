@@ -67,6 +67,28 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.True(options.TokenValidationParameters.ValidateIssuerSigningKey);
     }
 
+    /// <summary>Production 외부 인증은 안전하지 않은 HTTP Metadata 설정을 거부합니다.</summary>
+    [Fact]
+    public void ExternalInsecureMetadataIsRejectedOutsideDevelopment()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Mode"] = "External",
+                ["Authentication:Issuer"] = "http://identity.test.edan.tensor",
+                ["Authentication:Audience"] = "edan-tensor-api",
+                ["Authentication:MetadataAddress"] = "http://identity.test.edan.tensor/.well-known/openid-configuration",
+                ["Authentication:RequireHttpsMetadata"] = "false"
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddPlatformSecurity(configuration, new TestHostEnvironment(Environments.Production)));
+
+        Assert.Contains("HTTPS", exception.Message, StringComparison.Ordinal);
+    }
+
     /// <summary>개발 Bypass 모드는 외부 JWT 대신 전용 인증 Handler를 선택합니다.</summary>
     [Fact]
     public async Task DevelopmentBypassSelectsDedicatedAuthenticationScheme()
