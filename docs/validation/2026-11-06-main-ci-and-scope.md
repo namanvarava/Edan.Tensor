@@ -340,4 +340,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 현재 열린 Issue와 PR은 각각 0개이며, Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다. `branches/main` 조회는 `protected=false`를 반환하지만 별도 main 보호 규칙 API는 HTTP 403으로 세부 규칙을 읽을 수 없다. 이 환경적 제한은 변경하거나 우회하지 않았다.
 - 개발 Bypass는 외부 IdP가 없는 Development 환경에서만 허용되고, External 모드는 Issuer·Audience·Metadata·JWKS·만료·서명 검증을 유지한다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 해당 외부 환경과 권한이 제공될 때까지 미완료로 유지한다.
 
+## 2026-11-07 최신 main Host Smoke 실행 경로 재검증
+
+- 최신 Release 산출물을 저장소 루트에서 DLL로 직접 실행한 첫 Smoke에서 `/health`는 HTTP 200이었지만 보호 API는 HTTP 401이었다. 표준 오류는 0자였고, 출력 디렉터리와 소스의 `appsettings.Development.json`에는 `Authentication:Mode=Bypass`가 동일하게 존재했다.
+- 로그와 실행 코드를 대조한 결과, 저장소 루트를 작업 디렉터리로 사용하여 ASP.NET Core Content Root가 호스트 출력 디렉터리가 되지 않았고, `appsettings.Development.json`을 구성 공급자로 읽지 못한 것이 원인이었다. 제품 인증 코드나 Bypass 정책의 결함으로 분류하지 않았다.
+- 구성 파일을 복사하거나 External 검증을 끄는 대안은 실행 환경과 제품 경계를 흐리므로 적용하지 않았다. Smoke 프로세스의 작업 디렉터리를 `src/Hosts/EDAN.Tensor.ApiHost/bin/Release/net10.0`으로 지정하는 최소 실행 수정만 적용했다.
+- 교정 후 실제 Windows 프로세스에서 `/health`, `/health/database`, `/`, `/openapi/v1.json`, Bypass 보호 API가 모두 HTTP 200을 반환했고 데이터베이스 상태는 `Connected`·`Green`, 표준 오류는 0자였다. 임시 프로세스·SQLite·아카이브 디렉터리는 검증 후 제거했다.
+- 재발 방지를 위해 이후 Host Smoke는 DLL이 있는 호스트 출력 디렉터리를 작업 위치로 사용하고, `appsettings.Development.json` 로드 여부를 Bypass 보호 API 상태와 함께 확인한다. 최신 main Release 전체 테스트는 214개 통과·실패 0개·건너뜀 0개로 유지되었다.
+
 
