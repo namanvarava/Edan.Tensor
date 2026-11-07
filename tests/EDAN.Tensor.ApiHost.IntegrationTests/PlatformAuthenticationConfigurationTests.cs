@@ -114,6 +114,32 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.Equal("EDAN.Tensor.ApiHost.Security.DevelopmentBypassAuthenticationHandler", scheme?.HandlerType.FullName);
     }
 
+    /// <summary>개발 Bypass가 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다.</summary>
+    [Fact]
+    public void DevelopmentBypassRegistersFixedNonProductionIdentityProfile()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Mode"] = "Bypass"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddPlatformSecurity(configuration, new TestHostEnvironment(Environments.Development));
+
+        using var provider = services.BuildServiceProvider();
+        var profile = provider.GetRequiredService<DevelopmentBypassExternalIdentityProfile>();
+
+        Assert.Equal("https://auth-test.example.com/.well-known/openid-configuration", profile.MetadataAddress);
+        Assert.Equal("https://auth-test.example.com/jwks", profile.JwksAddress);
+        Assert.Equal("https://auth-test.example.com", profile.Issuer);
+        Assert.Equal("edan-tensor-api", profile.Audience);
+        Assert.Equal("edan-nonprod", profile.TestTenant);
+        Assert.Equal("edan-nonprod-test-user", profile.TestUser);
+        Assert.Equal("edan-nonprod-test-subject", profile.StableSubject);
+        Assert.Equal("nonprod-idp-test-key-rotation", profile.KeyRotationPermission);
+    }
+
     /// <summary>개발 Bypass는 구성된 안정적인 주체와 역할을 인증 Claim으로 발급합니다.</summary>
     [Fact]
     public async Task DevelopmentBypassEmitsConfiguredSubjectAndRoleClaims()
@@ -164,7 +190,7 @@ public sealed class PlatformAuthenticationConfigurationTests
 
         Assert.True(result.Succeeded);
         Assert.True(result.Principal?.Identity?.IsAuthenticated);
-        Assert.Equal("local-development-subject", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("edan-nonprod-test-subject", result.Principal?.FindFirst("sub")?.Value);
         Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
     }
 
@@ -194,7 +220,7 @@ public sealed class PlatformAuthenticationConfigurationTests
 
         Assert.True(result.Succeeded);
         Assert.True(result.Principal?.Identity?.IsAuthenticated);
-        Assert.Equal("local-development-subject", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("edan-nonprod-test-subject", result.Principal?.FindFirst("sub")?.Value);
         Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
     }
 

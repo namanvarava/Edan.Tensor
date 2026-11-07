@@ -11,12 +11,12 @@ using Xunit;
 
 namespace EDAN.Tensor.ApiHost.IntegrationTests;
 
-/// <summary>Development Bypass의 로컬 Tenant 초기화와 중복 방지를 검증합니다.</summary>
+/// <summary>Development Bypass의 고정 비운영 Tenant 초기화와 중복 방지를 검증합니다.</summary>
 public sealed class DevelopmentBypassDataSeederTests
 {
-    /// <summary>Development Bypass는 로컬 Tenant와 관리자 소속을 준비하고 중복을 만들지 않습니다.</summary>
+    /// <summary>Development Bypass는 고정 비운영 Tenant와 관리자 소속을 준비하고 중복을 만들지 않습니다.</summary>
     [Fact]
-    public async Task SeedsLocalTenantAndMembershipWithoutDuplicates()
+    public async Task SeedsFixedNonProductionTenantAndMembershipWithoutDuplicates()
     {
         var root = Path.Combine(Path.GetTempPath(), $"edan-tensor-bypass-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
@@ -33,9 +33,9 @@ public sealed class DevelopmentBypassDataSeederTests
 
             await using var scope = factory.Services.CreateAsyncScope();
             var database = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-            Assert.Equal(1, await database.Tenants.CountAsync(x => x.Code == new TenantCode("EDAN-LOCAL")));
+            Assert.Equal(1, await database.Tenants.CountAsync(x => x.Code == new TenantCode("EDAN-NONPROD")));
             Assert.Equal(1, await database.TenantMemberships.CountAsync(x =>
-                x.SubjectId == "local-development-subject" && x.Role == TenantRole.Administrator));
+                x.SubjectId == "edan-nonprod-test-subject" && x.Role == TenantRole.Administrator));
         }
         finally
         {
@@ -44,7 +44,7 @@ public sealed class DevelopmentBypassDataSeederTests
         }
     }
 
-    /// <summary>실제 Development Bypass와 임시 SQLite 데이터베이스만 사용하는 테스트 Host를 생성합니다.</summary>
+    /// <summary>실제 Development Bypass 기본 설정과 임시 SQLite 데이터베이스만 사용하는 테스트 Host를 생성합니다.</summary>
     private sealed class BypassApiHostFactory(string root) : WebApplicationFactory<Program>
     {
         protected override IHost CreateHost(IHostBuilder builder)
@@ -59,12 +59,7 @@ public sealed class DevelopmentBypassDataSeederTests
                     ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={Path.Combine(root, "dataset-content.db")};Cache=Shared;Pooling=False",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
-                    ["Authentication:Mode"] = "Bypass",
-                    ["Authentication:BypassSubject"] = "local-development-subject",
-                    ["Authentication:BypassRole"] = "platform_admin",
-                    ["DevelopmentData:SeedBypassTenant"] = "true",
-                    ["DevelopmentData:TenantCode"] = "EDAN-LOCAL",
-                    ["DevelopmentData:TenantName"] = "Edan Local Development"
+                    ["Authentication:Mode"] = "Bypass"
                 });
             });
             return base.CreateHost(builder);

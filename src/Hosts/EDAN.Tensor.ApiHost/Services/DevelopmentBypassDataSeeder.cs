@@ -1,3 +1,4 @@
+using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +8,8 @@ namespace EDAN.Tensor.ApiHost.Services;
 /// <summary>Development Bypass가 사용할 로컬 Tenant와 소속을 멱등적으로 준비합니다.</summary>
 internal static class DevelopmentBypassDataSeeder
 {
-    private const string DefaultTenantCode = "EDAN-LOCAL";
-    private const string DefaultTenantName = "Edan Local Development";
+    private const string DefaultTenantCode = "EDAN-NONPROD";
+    private const string DefaultTenantName = "Edan Non-Production Development";
 
     /// <summary>Development Bypass가 활성화된 경우에만 로컬 Tenant와 관리자 소속을 준비합니다.</summary>
     /// <param name="services">플랫폼 데이터베이스와 로깅 서비스를 제공하는 서비스 공급자입니다.</param>
@@ -36,6 +37,10 @@ internal static class DevelopmentBypassDataSeeder
         var database = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("DevelopmentBypassDataSeeder");
+        var profile = DevelopmentBypassExternalIdentityProfile.Fixed;
+        logger.LogWarning(
+            "Development Bypass가 실제 외부 IdP 대신 고정 시뮬레이션 프로필을 사용합니다. TestTenant={TestTenant}, TestUser={TestUser}, StableSubject={StableSubject}, KeyRotationPermission={KeyRotationPermission}",
+            profile.TestTenant, profile.TestUser, profile.StableSubject, profile.KeyRotationPermission);
 
         var tenant = await database.Tenants
             .SingleOrDefaultAsync(item => item.Code == tenantCode, cancellationToken);

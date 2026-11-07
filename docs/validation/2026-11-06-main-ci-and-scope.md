@@ -564,4 +564,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - Run #766의 실패 원인이었던 Worker 종료 테스트는 수정 후 PR Check Run #767과 병합 후 Run #768에서 모두 통과했다. 수정은 테스트 시간 경계와 한국어 주석만 변경했으며 제품 종료 예산·공개 API·데이터·인증 계약은 변경하지 않았다.
 - 현재 열린 Issue와 Pull Request는 0건이며, 제품 코드 기준 외부 IdP 미검증 조건과 GitHub main 보호 규칙 상세 API의 HTTP 403은 환경 차단 사유로 계속 기록한다. 문서 전용 후속 커밋의 SHA가 제품 코드 검증 SHA와 달라질 수 있으므로 두 기준을 보고에서 구분한다.
 
+## 2026-11-08 승인된 Development Bypass 고정 프로필 적용
+
+- 사용자의 명시적 승인에 따라 Development `Authentication:Mode=Bypass`가 고정된 비운영 IdP 시뮬레이션 프로필을 사용하도록 적용했다. 프로필은 Metadata `https://auth-test.example.com/.well-known/openid-configuration`, JWKS `https://auth-test.example.com/jwks`, Issuer `https://auth-test.example.com`, Audience `edan-tensor-api`, 테스트 Tenant `edan-nonprod`, 테스트 사용자 `edan-nonprod-test-user`, 안정적인 `sub` `edan-nonprod-test-subject`, 키 회전 시나리오 식별자 `nonprod-idp-test-key-rotation`을 사용한다.
+- `example.com`은 RFC 예약 도메인이므로 프로필은 실제 외부 IdP에 연결하거나 Metadata·JWKS·서명을 검증하지 않는다. Bypass 첫 인증 요청과 Tenant Seeder는 고정 프로필 사용 사실을 경고 로그로 기록하며, Tenant 소속·조직 범위·관리자 권한 검사는 유지한다. External 모드와 비개발 환경의 HTTPS·Issuer·Audience·JWKS 검증 및 Bypass 차단은 변경하지 않았다.
+- 기본 Development 설정의 Tenant와 안정적인 `sub`를 `EDAN-NONPROD`·`edan-nonprod-test-subject`로 맞췄고, 고정 프로필의 모든 필드를 직접 검증하는 회귀 테스트를 추가했다. 제한된 실행 컨텍스트에서는 Windows Service Control Manager 권한 부족으로 출력 없이 빌드가 실패했지만, 실제 Windows 권한에서 원인을 재현한 뒤 참조 오류 1건을 수정하고 대상 빌드 경고 0개·오류 0개, 인증·Seeder 대상 테스트 10개 통과를 확인했다.
+- 변경 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 219개 통과·실패 0개·건너뜀 0개였다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`도 취약 패키지 없음으로 종료했다.
+- 이 변경은 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·Tenant·사용자·키 회전 권한 검증을 완료한 것으로 표시하지 않는다. 실제 외부 환경이 제공되면 External 모드에서 실제 토큰·키 회전 경계를 별도로 재실행한다.
+
 
