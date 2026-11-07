@@ -314,4 +314,14 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합된 PR #43과 기존 PR #42를 포함해 열린 Pull Request와 Issue는 각각 0개다. Runner는 `online`·`busy=false`이고 Windows 서비스는 `Running`·`Auto`이며, Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
 - 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·Tenant 테스트 주체·키 회전 권한이 없는 상태이므로 외부 경계 검증은 완료로 표시하지 않는다. GitHub 비공개 저장소의 main 보호 규칙 REST 조회는 요금제 제한 HTTP 403으로 계속 독립 확인할 수 없다.
 
+## 2026-11-07 개발 Bypass 재검증 및 최신 main CI 확인
+
+- 현재 로컬 `main`, `origin/main`과 GitHub `main`의 기준 커밋은 `b06fa8bfca3f88aa77a2fb34ed963a1a394df7d1`이며 작업 디렉터리는 clean 상태다. 이번 UI 관련 요청은 Edan.Tensor 저장소에 반영하지 않았다.
+- 개인 개발 설정은 `src/Hosts/EDAN.Tensor.ApiHost/appsettings.Development.json`의 `Authentication:Mode=Bypass`를 사용한다. Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사를 유지하며, `Development`가 아닌 환경에서는 등록 단계에서 거부된다.
+- Windows 로컬에서 Release 기준 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 214개 통과·실패 0개·건너뜀 0개였다. 인증 설정 통합 테스트는 17개 모두 통과했다.
+- Release ApiHost를 실제 Windows 프로세스로 임시 SQLite 4개와 `Development` 환경에서 기동했다. `/health`, `/health/database`, `/`, `/openapi/v1.json`은 모두 HTTP 200을 반환했고, Bypass 인증이 적용된 `/api/platform/tenants/mine`도 HTTP 200을 반환했다. `/health/database`는 `Connected`·`Green`이었고 stderr는 0자였으며, 검증 후 임시 프로세스·데이터베이스·아카이브 디렉터리를 제거했다.
+- 최신 main 커밋의 [Actions Run #707](https://github.com/namanvarava/Edan.Tensor/actions/runs/42341723020)은 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)에서 실행되어 Restore·Build·Test 단계를 모두 성공시켰다. 이 실행의 head SHA는 `b06fa8bfca3f88aa77a2fb34ed963a1a394df7d1`이다. Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
+- 현재 GitHub 조회에서 열린 Issue와 PR은 각각 0개다. `branches/main` 응답은 `protected=false`를 반환하지만, 별도 main 보호 규칙 API는 HTTP 403으로 규칙 세부 JSON을 독립 조회할 수 없다. 이 제한은 변경하지 않았고 보호 정책을 우회하지 않았다.
+- 실제 비운영 외부 IdP의 Metadata/JWKS 주소, 기대 Issuer·Audience, `edan-nonprod` Tenant·테스트 사용자·안정적인 `sub`, 키 회전 권한은 아직 제공되지 않았다. 따라서 이번 Bypass 검증은 개인 개발 실행을 가능하게 한 증거이며, 정상 토큰·잘못된 Issuer/Audience·만료·서명 실패·알 수 없는 `kid`·외부 키 회전의 실제 IdP 경계 검증 완료를 의미하지 않는다.
+
 
