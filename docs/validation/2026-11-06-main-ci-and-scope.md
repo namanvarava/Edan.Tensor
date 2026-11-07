@@ -530,4 +530,22 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 [Actions Run #760](https://github.com/namanvarava/Edan.Tensor/actions/runs/42409045585)의 Job `128512963914`는 head SHA `6e15595a255a130df66252faf354c7fca3507ef7`에서 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner와 `self-hosted`, `Windows`, `X64` 레이블로 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했다.
 - 최종 확인에서 원격 브랜치는 `main`만 남았고 열린 Pull Request와 Issue는 각각 0개였다. `main` 보호 규칙 상세 API의 HTTP 403과 실제 비운영 외부 IdP 미검증 상태는 변경하지 않고 환경 조건으로 기록했다.
 
+## 2026-11-08 현재 main Release 재검증 및 테스트 기준 정정
+
+- 검증 시작 시 로컬 `main`, `origin/main`, GitHub `main`은 `5518c68da0a4fbf14e8f8cce480e75c847b24b30`을 가리켰고 작업 디렉터리는 clean 상태였다. `tests/README.md`가 이전 커밋 `38539a85d32732cfc4111261576fc36fa1a2d052`를 현재 기준으로 기록하고 있어 최신 main SHA와 [Actions Run #764](https://github.com/namanvarava/Edan.Tensor/actions/runs/42412691901)로 정정했다.
+- 제한된 실행 컨텍스트에서 최초 `dotnet restore EDAN.Tensor.sln`은 출력 없이 종료 코드 1로 실패했다. 같은 컨텍스트의 `dotnet --info`에서 .NET SDK가 Windows Service Control Manager를 열지 못하고 액세스 거부를 반환한 로그를 확인했으며, 제품 코드·패키지 복원 오류로 추측하지 않았다. 실제 Windows 권한에서 같은 Restore를 다시 실행하여 복원할 모든 프로젝트가 최신 상태임을 확인했다.
+- 실제 Windows 권한에서 다음 명령을 순서대로 실행했다.
+
+  ```powershell
+  dotnet restore EDAN.Tensor.sln
+  dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+  dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
+  ```
+
+  Restore는 종료 코드 0으로 완료했고, Build는 경고 0개·오류 0개, Test는 218개 통과·실패 0개·건너뜀 0개였다. 인증·개발 Bypass·로컬 Tenant Seeder 경계를 별도 필터로 실행한 10개 테스트도 실패 0개·건너뜀 0개로 통과했다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 종료 코드 0으로 완료했고 모든 프로젝트에서 취약한 패키지가 없었다. `git diff --check`도 통과했다.
+- 최신 [Actions Run #764](https://github.com/namanvarava/Edan.Tensor/actions/runs/42412691901)의 Job `128524035532`는 `EDAN-TENSOR-WIN` 자체 호스팅 Runner에서 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했고, head SHA는 `5518c68da0a4fbf14e8f8cce480e75c847b24b30`이다. 워크플로에는 `schedule`·`cron`·`workflow_dispatch`가 없고, `pull_request_target`도 사용하지 않는다.
+- 이 변경은 검증 문서와 테스트 안내의 기준만 정정하며 제품 소스·공개 API·데이터 스키마·인증 우회 동작을 변경하지 않는다. Development `Authentication:Mode=Bypass`는 로컬·격리된 Development 환경과 명시적인 설정에서만 사용하고, 비개발 환경에서는 차단하는 기존 계약을 유지한다.
+- 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·테스트 Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 따라서 로컬 JWKS와 Development Bypass는 검증했지만 실제 외부 IdP 경계는 환경 미검증으로 남긴다. 재개 조건은 해당 비운영 IdP와 테스트 권한을 제공받아 External 모드의 실제 Tenant·키 회전 경계를 실행하는 것이다.
+
 

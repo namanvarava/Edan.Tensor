@@ -15,7 +15,7 @@
 - Worker Infrastructure: 66개
 - API 통합: 21개
 
-최신 기준은 `main` SHA `38539a85d32732cfc4111261576fc36fa1a2d052`이다. Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행한 [Actions Run #762](https://github.com/namanvarava/Edan.Tensor/actions/runs/42409767353)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 218개 통과·실패 0개·건너뜀 0개였다. 이 문단은 아래의 역사적 실행 기록과 구분되는 현재 검증 기준이다.
+최신 기준은 `main` SHA `5518c68da0a4fbf14e8f8cce480e75c847b24b30`이다. Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행한 [Actions Run #764](https://github.com/namanvarava/Edan.Tensor/actions/runs/42412691901)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 218개 통과·실패 0개·건너뜀 0개였다. 이 문단은 아래의 역사적 실행 기록과 구분되는 현재 검증 기준이다.
 
 이번 Bypass 외부 설정 무시와 로컬 Tenant 초기화 회귀를 포함한 검증 기준에서 자체 호스팅 Windows Release 전체 테스트는 총 218개가 실패 0개·건너뜀 0개로 통과했다. 이 실행에는 개발 Bypass 선택, 외부 IdP 설정 없는 토큰 없는 요청의 인증 성공, 잘못된 외부 IdP 설정을 Bypass에서 무시하는 동작, 고정 Claim 발급, 비개발 환경 Bypass 차단, 로컬 Tenant·관리자 소속의 중복 방지 및 외부 인증 경계 회귀 테스트가 포함된다. PR #63 검증은 [Actions Run #744](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399072656)에서 확인했고, 병합 후 최신 `main`은 [Actions Run #746](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399622276)의 `EDAN-TENSOR-WIN` Runner에서 Restore·Build·Test를 다시 성공시켰다.
 
