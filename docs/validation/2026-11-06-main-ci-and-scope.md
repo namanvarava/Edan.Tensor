@@ -290,6 +290,6 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PR #39 [테스트 증거의 기준 커밋을 명확히 기록합니다](https://github.com/namanvarava/Edan.Tensor/pull/39)는 `50872843d77704458f23c4d873defea22bd0e73e`로 squash merge되었다. `tests/README.md`는 DataSet Fencing Token 테스트의 코드 기준 커밋 `2e2a49efdac38417037b7072c1220af17eeb8afb`와 최신 main 커밋을 구분하도록 정정했다.
 - 병합 후 실제 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 211개 통과·실패 0개·건너뜀 0개였다.
 - 병합 후 [Actions Run #696](https://github.com/namanvarava/Edan.Tensor/actions/runs/42327146981)은 `EDAN-TENSOR-WIN`에서 exact Restore·Release Build·Release Test를 성공시켰다. 로그는 Build 경고 0개·오류 0개와 전체 211개 통과·실패 0개·건너뜀 0개를 기록한다.
-- 현재 main 기준 SHA는 `50872843d77704458f23c4d873defea22bd0e73e`이며, 외부 비운영 `Edan.Identity` Metadata/JWKS 경계 검증만 실제 주소·테스트 Tenant·키 회전 권한 제공 전까지 남아 있다. 토큰·비밀키·비밀번호는 저장소와 검증 기록에 기록하지 않는다.
+- PR #39 병합 시점의 main 기준 SHA는 `50872843d77704458f23c4d873defea22bd0e73e`이며, 외부 비운영 `Edan.Identity` Metadata/JWKS 경계 검증만 실제 주소·테스트 Tenant·키 회전 권한 제공 전까지 남아 있다. 토큰·비밀키·비밀번호는 저장소와 검증 기록에 기록하지 않는다.
 
 
