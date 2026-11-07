@@ -548,4 +548,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 이 변경은 검증 문서와 테스트 안내의 기준만 정정하며 제품 소스·공개 API·데이터 스키마·인증 우회 동작을 변경하지 않는다. Development `Authentication:Mode=Bypass`는 로컬·격리된 Development 환경과 명시적인 설정에서만 사용하고, 비개발 환경에서는 차단하는 기존 계약을 유지한다.
 - 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·테스트 Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 따라서 로컬 JWKS와 Development Bypass는 검증했지만 실제 외부 IdP 경계는 환경 미검증으로 남긴다. 재개 조건은 해당 비운영 IdP와 테스트 권한을 제공받아 External 모드의 실제 Tenant·키 회전 경계를 실행하는 것이다.
 
+## 2026-11-08 PR #73 병합 후 CI 실패 분석과 Worker 종료 테스트 복구
+
+- PR #73은 `b7cd3b11cbc82b223c0214b5d38b5916d4971e05`로 Squash Merge되었다. 병합 직후 [Actions Run #766](https://github.com/namanvarava/Edan.Tensor/actions/runs/42414340542)의 Job `128529061348`은 `EDAN-TENSOR-WIN`에서 Checkout·Restore·Build까지 성공했지만 Test 단계에서 실패했다.
+- 실패는 `WorkerTaskDispatcherShutdownTests.DispatcherDoesNotSpendHandoffBudgetAgainAfterRegistryTimesOut` 한 건이며, `WorkerTaskDispatcherShutdownTests.cs` 42번째 줄의 `WaitAsync(TimeSpan.FromSeconds(8))`에서 `System.TimeoutException`이 발생했다. Worker Infrastructure는 65개 통과·1개 실패였고, 다른 테스트 프로젝트는 모두 통과했다. 로그에는 Runner 연결·Restore·Build 오류가 없고 고아 프로세스 정리만 수행되었다.
+- 코드와 로그를 대조한 결과 제품 종료 예산 계산을 변경해야 하는 증거는 없었다. 이 테스트는 유예 1초와 인계 4초를 사용하여 정상 경로 약 5초와 잘못된 이중 인계 대기 약 9초를 8초 상한으로 구분한다. 자체 호스팅 Runner의 병렬 스케줄링 지연이 정상 경로 상한에 가까워지면서 시간 기반 경계가 오판할 수 있는 결함으로 분류했다. 근거 없이 Run #766을 재실행하지 않았고, 상한만 늘려 이중 대기 회귀를 놓치는 대안도 적용하지 않았다.
+- 최소 안전 수정으로 제품 코드는 그대로 두고 해당 테스트의 인계 예산을 4초에서 8초로, 판정 상한을 8초에서 15초로 조정했다. 정상 경로는 약 9초로 완료되며, Dispatcher가 인계 예산을 다시 소비하는 잘못된 경로는 약 17초가 필요하므로 회귀 판정 간격을 유지한다. 한국어 주석은 실제 시간 계약과 Runner 지연 허용 조건을 설명하도록 갱신했다.
+- 수정 후 대상 테스트 3회가 각각 통과했고, Worker Infrastructure 전체 66개 및 솔루션 전체 Release Test 218개가 실패 0개·건너뜀 0개로 통과했다. Release Build는 경고 0개·오류 0개였고 Restore도 성공했다. 수정 PR의 자체 호스팅 Check와 병합 후 main push Check가 성공하는지 추가 확인한다.
+
 
