@@ -494,4 +494,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PDF의 “예산 해제 전 코드 변경 중단” 지시는 당시 인수인계 절차였고, 현재 전체 개발 목표의 “CI 장애와 무관하게 가능한 개발을 계속한다”는 정책으로 대체되었다. 실제 CI가 정상화된 현재는 로컬 Release 검증과 self-hosted CI 증거를 함께 유지한다.
 - PDF가 요구한 Billing 화면 확인은 읽기 전용으로만 수행한다. 예산 증액, 사용 중지 옵션 변경, GitHub-hosted Runner 전환은 수행하지 않는다. 실제 비운영 외부 IdP 경계는 Metadata/JWKS·Issuer·Audience·테스트 Tenant·opaque `sub`·키 회전 권한이 제공되기 전까지 환경 미검증으로 유지한다.
 
+## 2026-11-08 PR #66 병합 후 최신 main 재검증
+
+- PR #66은 `edb36d15efbfd8ebb20f550e0fa6199e0e1dbc10`으로 Squash Merge되었고, 로컬 `main`과 `origin/main`은 해당 SHA로 동기화되었다. 병합 후 열린 PR과 Issue는 각각 0개이며 작업 디렉터리는 clean 상태다.
+- 병합 후 Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 다시 실행했다. Restore는 성공했고, Build는 경고 0개·오류 0개, Test는 218개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #752](https://github.com/namanvarava/Edan.Tensor/actions/runs/42402487854)의 Job `128493082479`는 `EDAN-TENSOR-WIN` self-hosted Windows X64 Runner에서 실행되었다. Restore·Release Build·Release Test·정리 단계가 모두 성공했고, CI 로그의 테스트 합계도 218개 통과·실패 0개·건너뜀 0개로 확인했다.
+- PR #66의 필수 `build-and-test` Check도 동일 Runner에서 성공한 뒤 병합했다. 문서 변경은 현재 main에 반영되었으며 코드·설정 동작은 변경하지 않았다.
+
 
