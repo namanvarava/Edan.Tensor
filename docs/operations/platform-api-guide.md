@@ -188,6 +188,19 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 
 `MetadataAddress`를 지정하면 JWKS 기반 비대칭 서명을 사용하며 `Issuer`와 `Audience` 검증은 계속 적용됩니다. 설정이 없거나 유효하지 않으면 JWT 검증이 성공하지 않으므로 보호 API에 접근할 수 없습니다. 상태 확인 경로는 유지됩니다. 운영 환경에서는 전용 비밀 저장소와 키 교체 절차를 사용해야 합니다.
 
+### 비운영 외부 IdP 권장 설정
+
+유지보수자는 외부 인증 경계를 시험할 때 운영 IdP 대신 API와 분리된 `Edan.Identity` 비운영 서비스를 사용해야 합니다. 실제 소유 도메인이 `example.com`인 경우 권장 환경 변수는 다음과 같습니다.
+
+```text
+Authentication__MetadataAddress=https://auth-test.example.com/.well-known/openid-configuration
+Authentication__Issuer=https://auth-test.example.com
+Authentication__Audience=edan-tensor-api
+Authentication__RequireHttpsMetadata=true
+```
+
+`example.com`은 설명용 값이므로 실제 소유 도메인으로 바꿉니다. JWKS 주소는 Metadata 응답의 `jwks_uri`를 사용하며, RS256 비대칭 키와 기존 키·새 키의 겹침 회전을 유지합니다. 테스트 Tenant는 `edan-nonprod`처럼 운영과 분리하고, 테스트 사용자의 이메일이 아니라 안정적인 `sub` 값을 Tenant Member 또는 Administrator 멤버십에 등록합니다. 개인키, 클라이언트 비밀값, 비밀번호와 액세스 토큰은 환경 변수 또는 비밀 저장소로만 주입하고 저장소·문서·로그에는 기록하지 않습니다.
+
 ## 현재 보안 경계와 후속 작업
 
 현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인, 로컬 JWKS 키 조회·회전 검증을 제공합니다. Tenant 내부의 Member와 Administrator 역할은 아직 기본 API 접근에서 동일하게 취급합니다. 사용자 초대 수락과 외부 계정 연결, 토큰 발급·갱신·폐기 및 실제 비운영 외부 IdP 경계 검증은 별도 운영 계약이 필요합니다.

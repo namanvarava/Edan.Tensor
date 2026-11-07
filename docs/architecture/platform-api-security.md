@@ -15,6 +15,25 @@ Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청
 - 메타데이터 주소를 사용하면 `JwtBearer`가 JWKS를 조회하고 `RefreshOnIssuerKeyNotFound`로 알 수 없는 `kid`의 키를 다시 조회합니다. 키 회전은 새 키와 기존 키가 겹치는 안전한 전환 구간에서 검증합니다.
 - `Authentication:RequireHttpsMetadata=false`는 로컬 HTTP 테스트 서버에서만 허용하며, 운영에서는 HTTPS 메타데이터 주소와 비밀 저장소를 사용합니다.
 
+## 비운영 외부 IdP 권장 구성
+
+향후 유지보수자는 외부 인증 경계를 검증할 때 운영 인증 서버를 직접 사용하지 않고 `Edan.Identity`라는 별도 비운영 OIDC 서비스를 사용한다. API와 IdP는 별도 프로세스 또는 별도 배포 환경으로 운영하여 인증 서버 장애와 API 장애를 구분한다.
+
+| 설정 | 권장값 또는 규칙 |
+|---|---|
+| 테스트 주소 | `https://auth-test.<소유한도메인>` |
+| Issuer | `https://auth-test.<소유한도메인>`이며 토큰의 `iss` 값과 정확히 일치해야 함 |
+| Audience | `edan-tensor-api`이며 토큰의 `aud` 값과 정확히 일치해야 함 |
+| Metadata | `https://auth-test.<소유한도메인>/.well-known/openid-configuration` |
+| JWKS | Metadata 응답의 `jwks_uri`를 사용함 |
+| 테스트 Tenant | `edan-nonprod`와 같은 별도 비운영 Tenant를 사용함 |
+| 테스트 주체 | 이메일이 아닌 변경되지 않는 opaque `sub` 값을 Tenant 멤버십에 등록함 |
+| 서명 | RS256 기반 비대칭 키를 사용하고 기존 키와 새 키가 겹치는 회전 구간을 제공함 |
+
+`auth-test.<소유한도메인>`은 실제 소유 도메인의 HTTPS 주소로 교체한다. `localhost`, `.local`, `.test` 주소와 자체 서명 인증서는 로컬 개발에만 사용하며 외부 경계 검증의 증거로 사용하지 않는다. 개인키, 클라이언트 비밀값, 비밀번호와 액세스 토큰은 저장소·문서·로그에 기록하지 않고 환경 변수 또는 승인된 비밀 저장소로 주입한다.
+
+외부 경계 검증은 정상 토큰, 잘못된 Issuer, 잘못된 Audience, 만료 토큰, 서명 실패, 알 수 없는 `kid`, 기존 키와 새 키가 겹치는 키 회전을 모두 확인한다. 테스트 사용자는 IdP의 안정적인 `sub` 값을 확인한 뒤 `POST /api/platform/tenants/{tenantId}/memberships`로 Tenant의 Member 또는 Administrator 역할에 연결한다.
+
 대칭 서명 구성의 필수 설정은 `Authentication:Issuer`, `Authentication:Audience`, `Authentication:SigningKey`입니다. 서명 키는 UTF-8 기준 32바이트 이상이어야 합니다. JWKS 구성에서는 `Authentication:MetadataAddress`를 사용하고 발급자와 대상을 계속 설정합니다. 설정이 없거나 유효하지 않으면 JWT 검증은 성공할 수 없으며 보호 API는 닫힌 상태를 유지합니다. 상태 확인 경로는 계속 사용할 수 있습니다.
 
 ## 표준 클레임
@@ -74,6 +93,6 @@ Platform API는 Tenant·Organization·Project 계층의 접근 정책을 평가�
 
 ## 외부 운영 검증 조건
 
-이번 릴리스의 자동 검증은 저장소에 비밀을 남기지 않는 로컬 IdP/JWKS 서버로 완료합니다. 최종 운영 경계는 사용자가 제공하는 비운영 외부 IdP 테스트 테넌트에서 같은 여섯 가지 토큰 조건을 실행해야 합니다. 실행에는 발급자 메타데이터 주소, 기대 Issuer/Audience, 테스트 주체의 Tenant 소속 및 키 회전 권한이 필요합니다.
+이번 릴리스의 자동 검증은 저장소에 비밀을 남기지 않는 로컬 IdP/JWKS 서버로 완료합니다. 최종 외부 경계는 위 권장 구성을 따르는 비운영 외부 IdP 테스트 Tenant에서 같은 토큰 조건을 실행해야 합니다. 실행에는 Metadata 주소, 기대 Issuer/Audience, 테스트 주체의 Tenant 소속 및 키 회전 권한이 필요합니다.
 
 현재 구현은 기본 인증·인가 경계와 로컬 JWKS 검증을 제공합니다. 외부 테스트 테넌트가 제공되기 전에는 그 운영 경계를 완료했다고 선언하지 않습니다.
