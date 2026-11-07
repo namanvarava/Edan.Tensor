@@ -180,6 +180,7 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 
 다음 설정은 환경 변수 또는 비밀 저장소로 제공해야 합니다. 서명 키를 저장소에 커밋하지 마십시오.
 
+- `Authentication__Mode`: `External` 또는 `Bypass`를 선택합니다. 기본값은 `External`입니다.
 - `Authentication__Issuer`: 신뢰하는 인증 발급자
 - `Authentication__Audience`: EDAN Tensor API 대상 식별자
 - `Authentication__SigningKey`: UTF-8 기준 32바이트 이상의 비밀 서명 키
@@ -187,6 +188,18 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 - `Authentication__RequireHttpsMetadata`: 로컬 HTTP IdP를 사용할 때만 `false`로 지정합니다. 기본값은 `true`입니다.
 
 `MetadataAddress`를 지정하면 JWKS 기반 비대칭 서명을 사용하며 `Issuer`와 `Audience` 검증은 계속 적용됩니다. 설정이 없거나 유효하지 않으면 JWT 검증이 성공하지 않으므로 보호 API에 접근할 수 없습니다. 상태 확인 경로는 유지됩니다. 운영 환경에서는 전용 비밀 저장소와 키 교체 절차를 사용해야 합니다.
+
+### 개인 개발용 Bypass 모드
+
+개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다.
+
+```text
+Authentication__Mode=Bypass
+Authentication__BypassSubject=local-development-subject
+Authentication__BypassRole=platform_admin
+```
+
+Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 생략하지 않습니다. Bypass 주체를 Tenant Administrator로 등록해야 Tenant 업무 API를 사용할 수 있습니다. 운영 또는 비개발 환경에서 Bypass를 선택하면 API가 시작되지 않습니다.
 
 ### 비운영 외부 IdP 권장 설정
 
@@ -200,6 +213,8 @@ Authentication__RequireHttpsMetadata=true
 ```
 
 `example.com`은 설명용 값이므로 실제 소유 도메인으로 바꿉니다. JWKS 주소는 Metadata 응답의 `jwks_uri`를 사용하며, RS256 비대칭 키와 기존 키·새 키의 겹침 회전을 유지합니다. 테스트 Tenant는 `edan-nonprod`처럼 운영과 분리하고, 테스트 사용자의 이메일이 아니라 안정적인 `sub` 값을 Tenant Member 또는 Administrator 멤버십에 등록합니다. 개인키, 클라이언트 비밀값, 비밀번호와 액세스 토큰은 환경 변수 또는 비밀 저장소로만 주입하고 저장소·문서·로그에는 기록하지 않습니다.
+
+개인 개발에서 별도 장치의 IdP를 연결할 때는 `MetadataAddress`와 `Issuer`를 `http://192.168.0.10:5001`처럼 IP 주소가 포함된 실제 주소로 바꿀 수 있습니다. 이때도 `Authentication__Mode=External`을 사용하고, HTTP Metadata는 Development에서만 허용합니다. 운영 전환 시에는 인증서가 있는 HTTPS 주소와 `Authentication__RequireHttpsMetadata=true`를 사용합니다.
 
 ## 현재 보안 경계와 후속 작업
 

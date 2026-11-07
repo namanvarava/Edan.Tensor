@@ -51,6 +51,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - WorkerHost는 등록된 Handler를 실행하고 작업 카탈로그와 저장량 스냅샷을 관리합니다.
 - HostServices는 API와 Worker의 공통 조합 서비스를 제공합니다.
 - LicenseAuthority.Host는 라이선스 권한의 독립 호스트 경계이며 업무 기능은 아직 구현되지 않았습니다.
+- 개인 개발은 Development 환경의 `Authentication:Mode=Bypass`로 외부 IdP 없이 실행할 수 있습니다. 서비스 연결 시에는 `External` 모드와 실제 Metadata·Issuer·Audience·HTTPS 설정을 사용합니다.
 
 [로컬 DB 설정](docs/operations/platform-database-local-setup.md), [API 사용 가이드](docs/operations/platform-api-guide.md),
 [Worker 수명주기](docs/architecture/worker-task-lifecycle.md), [작업 카탈로그와 DataSet 검증](docs/architecture/worker-task-type-catalog-and-dataset-validation.md),
