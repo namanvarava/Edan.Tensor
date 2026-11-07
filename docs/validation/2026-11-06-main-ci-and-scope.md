@@ -427,4 +427,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `branches/main`은 `protected=false`로 조회되며 상세 보호 규칙 API는 비공개 저장소 요금제 제한으로 HTTP 403(`Upgrade to GitHub Pro or make this repository public`)을 반환한다. 설정 변경·과금 변경·보호 정책 우회는 하지 않았다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 이 조건은 Development 작업을 중지시키지 않으며 Bypass·로컬 IdP/JWKS·자체 호스팅 CI를 계속 사용한다. 다만 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다.
 
+## 2026-11-07 PR #58 병합 후 최신 main 재검증
+
+- PR #58은 `843a7ae643764708ac272aa7175da3f5b222686f`로 Squash Merge되었고 현재 로컬 `main`, `origin/main`, GitHub `main`이 같은 SHA를 가리킨다. 작업 디렉터리는 clean 상태이며 열린 Issue와 Pull Request는 각각 0개다.
+- PR #58 변경은 `tests/README.md`의 오래된 PR #53 테스트 기준을 최신 main 기준으로 갱신하는 문서 변경이다. 병합 후 Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore·Build·Test는 종료 코드 0이며 Build 경고 0개·오류 0개, 테스트 구성은 215개 통과·실패 0개·건너뜀 0개로 유지된다.
+- 병합 후 [Actions Run #734](https://github.com/namanvarava/Edan.Tensor/actions/runs/42372856339)은 head SHA `843a7ae643764708ac272aa7175da3f5b222686f`에서 Job `128404366909`를 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)로 실행했다. Restore·Build·Test·정리 단계가 모두 성공했다.
+- 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. 이 조건은 Development 작업을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
+
 
