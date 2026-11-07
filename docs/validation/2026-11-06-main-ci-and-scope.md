@@ -503,4 +503,17 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 [Actions Run #752](https://github.com/namanvarava/Edan.Tensor/actions/runs/42402487854)의 Job `128493082479`는 `EDAN-TENSOR-WIN` self-hosted Windows X64 Runner에서 실행되었다. Restore·Release Build·Release Test·정리 단계가 모두 성공했고, CI 로그의 테스트 합계도 218개 통과·실패 0개·건너뜀 0개로 확인했다.
 - PR #66의 필수 `build-and-test` Check도 동일 Runner에서 성공한 뒤 병합했다. 문서 변경은 현재 main에 반영되었으며 코드·설정 동작은 변경하지 않았다.
 
+## 2026-11-08 최신 main 최종 로컬·CI·정리 재검증
+
+- 현재 로컬 `main`, `origin/main`, GitHub `main`은 `bbb7ff986df892b9d4b77987502d7bdb192d74df`를 가리키며 작업 디렉터리는 clean 상태다. 이번 검증은 코드 동작을 변경하지 않고 현재 상태의 증거만 갱신했다.
+- 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 실행했다. Restore와 Build는 종료 코드 0으로 완료했고 Build는 경고 0개·오류 0개였다. 전체 Test는 218개 통과·실패 0개·건너뜀 0개였다.
+- 제한된 실행 컨텍스트에서 최초 Restore가 Windows Service Control Manager 접근 거부로 출력 없이 실패했지만, 진단에서 SDK 서비스 조회 권한 부족을 확인했다. 실제 Windows 권한으로 같은 명령을 재실행한 결과 Restore가 성공했으므로 제품 코드나 패키지 복원 결함으로 분류하지 않았다.
+- 로컬 JWKS 테스트 서버를 사용하는 `PlatformJwksAuthenticationTests`를 다시 실행하여 1개 테스트가 실패 0개·건너뜀 0개로 통과했다. 이 검증은 정상 토큰, 잘못된 Issuer·Audience, 만료, 서명 실패, 알 수 없는 `kid`, 키 회전 경계를 포함한 로컬 인증 경계이며 실제 비운영 외부 IdP 검증을 대체하지 않는다.
+- 최신 Release ApiHost를 임시 포트와 SQLite 네 개로 실제 Windows 프로세스에서 기동했다. Development Bypass 조건에서 `/health`, `/health/database`, `/api/platform/tenants/mine`은 모두 HTTP 200을 반환했고, 데이터베이스는 `Connected`·`Green`, Tenant 응답은 `tenantId`와 `Administrator`를 포함했다. 검증 후 프로세스·임시 SQLite·로그를 삭제했다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 종료 코드 0으로 완료되었고 모든 프로젝트에서 취약한 패키지가 없다고 보고했다.
+- 최신 [Actions Run #756](https://github.com/namanvarava/Edan.Tensor/actions/runs/42403586908)의 Job `128496404292`는 head SHA `bbb7ff986df892b9d4b77987502d7bdb192d74df`에서 `EDAN-TENSOR-WIN` Runner와 `self-hosted`, `Windows`, `X64` 레이블로 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했다. Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`도 `Running`·`Automatic`으로 확인했다.
+- 전체 Pull Request는 병합 67개·종료 1개·열림 0개이며 열린 Issue는 0개다. 원격 브랜치는 `main`만 남았고 로컬 브랜치도 `main`과 `origin/main`만 남아 병합된 head 브랜치 정리를 완료했다.
+- `gh api repos/namanvarava/Edan.Tensor/branches/main/protection`은 비공개 저장소 요금제 제한으로 HTTP 403과 `Upgrade to GitHub Pro or make this repository public`을 반환했다. 저장소 공개, Pro 업그레이드, 보호 규칙 변경은 수행하지 않았다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. Development Bypass·로컬 JWKS·자체 호스팅 CI는 중지하지 않으며, 실제 외부 IdP 경계만 환경 미검증으로 유지한다.
+
 
