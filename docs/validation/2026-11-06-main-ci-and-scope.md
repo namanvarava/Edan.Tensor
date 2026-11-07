@@ -390,4 +390,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 열린 Issue와 PR은 각각 0개이며 예약 실행 트리거는 없다. `branches/main`은 `protected=false`이고 보호 규칙 세부 API는 HTTP 403이므로, 해당 정책 상세는 검증하지 못한 환경 제약으로 남긴다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. 외부 경계 검증만 미완료이며 Development 작업은 중지하지 않는다.
 
+## 2026-11-07 PR #54 병합 후 ApiHost Host Smoke 재검증
+
+- PR #54 병합 직후 main 커밋 `0659d77b00b93c8c534a5c76591a6ecd6dae0645`의 Release 출력 디렉터리에서 실제 Windows ApiHost를 임시 포트와 임시 SQLite 네 개로 기동했다.
+- 첫 번째 Smoke 하네스는 실행 중인 프로세스가 점유한 표준 오류 로그 파일을 종료 전에 읽으려 하여 파일 잠금 예외로 실패했다. 제품 프로세스의 로그나 API 오류가 아니라 검증 하네스의 순서 결함으로 분류했으며, `finally`에서 프로세스를 종료한 뒤 로그를 읽도록 최소 수정했다.
+- 수정한 하네스로 `/health`, `/health/database`, `/`, `/openapi/v1.json`, `/api/platform/tenants/mine`을 호출했다. 모든 응답은 HTTP 200이었고 `/health/database`는 `Connected`·`Green`, Bypass 보호 API 응답은 빈 Tenant 배열, 표준 오류 길이는 0자였다.
+- 검증 후 ApiHost 프로세스와 임시 SQLite·아카이브 디렉터리를 제거했으며 임시 디렉터리 삭제 여부도 확인했다. 이 검증은 외부 IdP 경계를 대신하지 않으며 Development Bypass 실행 경계만 확인한다.
+
 
