@@ -442,4 +442,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실제 Windows 권한으로 실행했다. Restore·Build·Test는 종료 코드 0, Build 경고 0개·오류 0개, 전체 테스트는 216개 통과·실패 0개·건너뜀 0개였다.
 - README, Platform API 보안 설계, API 사용 가이드와 Handler의 한국어 설명을 같은 계약으로 갱신했다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 여전히 환경 미검증이며 Development Bypass를 중지시키지 않는다.
 
+## 2026-11-08 PR #60 병합 후 최신 main 재검증
+
+- PR #60은 `dcc01f10db4390a3a25652abb2f2fa869573d803`으로 Squash Merge되었고 로컬 `main`, `origin/main`, GitHub `main`이 이 SHA로 동기화되었다. 작업 디렉터리는 clean 상태이며 이번 변경의 열린 PR은 없다.
+- 병합 후 실제 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 216개 통과·실패 0개·건너뜀 0개를 확인했다.
+- [Actions Run #739](https://github.com/namanvarava/Edan.Tensor/actions/runs/42392176169), Job `128461854947`는 최신 main SHA에서 자체 호스팅 Windows Runner의 Restore·Build·Test·정리 단계를 모두 성공시켰다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. 이 조건은 Development Bypass와 로컬 검증을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
+
 
