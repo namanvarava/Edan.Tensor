@@ -201,6 +201,10 @@ Authentication__BypassRole=platform_admin
 
 Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 생략하지 않습니다. Bypass 주체를 Tenant Administrator로 등록해야 Tenant 업무 API를 사용할 수 있습니다. 운영 또는 비개발 환경에서 Bypass를 선택하면 API가 시작되지 않습니다.
 
+개발 연속성 정책에 따라 실제 비운영 IdP의 Metadata·JWKS·Issuer·Audience·테스트 Tenant·opaque `sub`·키 회전 권한이 아직 없더라도 개인 개발을 중지하지 않습니다. Development 환경에서는 이 Bypass 설정과 로컬 IdP/JWKS 테스트를 사용하고, 외부 경계 검증만 미완료로 기록합니다. GitHub main 보호 규칙 API의 HTTP 403도 저장소 요금제에 따른 형상 관리 제약으로 취급하며 제품 개발이나 자체 호스팅 CI를 중지하는 원인으로 사용하지 않습니다.
+
+이 연속성 정책은 `External` 또는 운영 환경의 인증 우회를 허용하지 않습니다. 해당 환경에서는 실제 Metadata·Issuer·Audience·JWKS·HTTPS 검증을 계속 적용하고, 외부 정보가 없으면 보호 API를 닫힌 상태로 유지합니다.
+
 ### 비운영 외부 IdP 권장 설정
 
 유지보수자는 외부 인증 경계를 시험할 때 운영 IdP 대신 API와 분리된 `Edan.Identity` 비운영 서비스를 사용해야 합니다. 실제 소유 도메인이 `example.com`인 경우 권장 환경 변수는 다음과 같습니다.

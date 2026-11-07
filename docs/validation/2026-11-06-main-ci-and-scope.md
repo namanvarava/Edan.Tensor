@@ -357,4 +357,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최신 Release ApiHost의 실제 Windows Bypass Smoke에서 `/health`, `/health/database`, `/`, `/openapi/v1.json`, 보호 API가 모두 HTTP 200을 반환했고 데이터베이스는 `Connected`·`Green`, 표준 오류는 0자였다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 외부 환경과 권한이 제공될 때까지 미완료로 유지한다. 토큰·비밀키·비밀번호는 저장소와 검증 기록에 기록하지 않는다.
 
+## 2026-11-07 외부 조건 비차단 개발 연속성 정책
+
+- 외부 IdP Metadata·JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·opaque `sub`·키 회전 권한의 부재는 Development 작업을 중지시키는 차단 사유가 아니라 외부 경계 검증의 미완료 조건으로 분류한다.
+- 위 정보가 없을 때는 Development `Authentication:Mode=Bypass`, 저장소에 비밀을 기록하지 않는 로컬 IdP/JWKS 테스트, Windows 자체 호스팅 CI를 계속 사용한다. Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 정책은 유지한다.
+- GitHub main 보호 규칙 API의 HTTP 403은 비공개 저장소 요금제에 따른 형상 관리 조회 제한이다. 예산·저장소 공개 설정·보호 정책을 변경하거나 우회하지 않고, 로컬 개발·PR·자체 호스팅 CI를 계속 진행한다. 보호 규칙을 확인하지 못한 사실은 완료 증거로 표현하지 않는다.
+- `External` 및 운영 환경에서는 이 정책을 적용하지 않는다. 실제 Metadata·Issuer·Audience·JWKS·HTTPS 검증을 유지하고, 외부 정보가 없으면 보호 API를 닫힌 상태로 유지한다. 외부 정보가 제공되면 동일한 인증 경계를 실제 비운영 환경에서 재검증한다.
+
 
