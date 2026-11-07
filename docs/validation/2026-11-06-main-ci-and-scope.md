@@ -516,4 +516,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `gh api repos/namanvarava/Edan.Tensor/branches/main/protection`은 비공개 저장소 요금제 제한으로 HTTP 403과 `Upgrade to GitHub Pro or make this repository public`을 반환했다. 저장소 공개, Pro 업그레이드, 보호 규칙 변경은 수행하지 않았다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. Development Bypass·로컬 JWKS·자체 호스팅 CI는 중지하지 않으며, 실제 외부 IdP 경계만 환경 미검증으로 유지한다.
 
+## 2026-11-08 PR #69 병합 후 최신 main 재검증
+
+- PR #69는 `2fdc01593b3bce832031a530c803e8f23a9163cf`로 Squash Merge되었고, 병합된 원격 head 브랜치는 삭제했다. 현재 로컬 `main`과 `origin/main`은 같은 SHA를 가리키며 작업 디렉터리는 clean 상태다.
+- 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. 세 명령은 모두 종료 코드 0이며 Build는 경고 0개·오류 0개, 전체 Test는 218개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #758](https://github.com/namanvarava/Edan.Tensor/actions/runs/42408588379)의 Job `128511577071`은 head SHA `2fdc01593b3bce832031a530c803e8f23a9163cf`에서 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner와 `self-hosted`, `Windows`, `X64` 레이블로 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했다.
+- PR #69의 검증 기록은 코드 동작을 변경하지 않았으며, 문서 변경 후 최신 main의 Release 검증과 self-hosted CI 성공을 다시 확인했다.
+
 
