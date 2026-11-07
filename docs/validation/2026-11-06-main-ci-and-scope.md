@@ -348,4 +348,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 교정 후 실제 Windows 프로세스에서 `/health`, `/health/database`, `/`, `/openapi/v1.json`, Bypass 보호 API가 모두 HTTP 200을 반환했고 데이터베이스 상태는 `Connected`·`Green`, 표준 오류는 0자였다. 임시 프로세스·SQLite·아카이브 디렉터리는 검증 후 제거했다.
 - 재발 방지를 위해 이후 Host Smoke는 DLL이 있는 호스트 출력 디렉터리를 작업 위치로 사용하고, `appsettings.Development.json` 로드 여부를 Bypass 보호 API 상태와 함께 확인한다. 최신 main Release 전체 테스트는 214개 통과·실패 0개·건너뜀 0개로 유지되었다.
 
+## 2026-11-07 PR #49 보안 경계 회귀 테스트 병합 후 재검증
+
+- PR #49 [Production HTTPS 인증 경계 회귀 테스트를 추가합니다](https://github.com/namanvarava/Edan.Tensor/pull/49)는 자체 호스팅 Check 성공 후 `6f0fa8b674dbe2819a9a22b56f706925c91c17f8`로 Squash Merge되었다.
+- `External` 인증이 Development가 아닌 환경에서 `RequireHttpsMetadata=false`와 HTTP Metadata 주소를 거부하는 회귀 테스트를 추가했다. Development Bypass와 External JWT 검증 구현은 변경하지 않았다.
+- 병합 후 Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 215개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #717](https://github.com/namanvarava/Edan.Tensor/actions/runs/42363000487)은 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)에서 Restore·Build·Test와 정리 단계를 모두 성공시켰다.
+- 최신 Release ApiHost의 실제 Windows Bypass Smoke에서 `/health`, `/health/database`, `/`, `/openapi/v1.json`, 보호 API가 모두 HTTP 200을 반환했고 데이터베이스는 `Connected`·`Green`, 표준 오류는 0자였다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 외부 환경과 권한이 제공될 때까지 미완료로 유지한다. 토큰·비밀키·비밀번호는 저장소와 검증 기록에 기록하지 않는다.
+
 
