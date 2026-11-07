@@ -15,7 +15,7 @@
 - Worker Infrastructure: 66개
 - API 통합: 14개
 
-2026-11-07 최신 `main` 커밋 `72cf580b1368e3273246a46e80f7801b7c5e14cb` 기준으로는 총 210개 테스트가 실패 0개·건너뜀 0개로 통과했다. 현재 변경은 DataSet Infrastructure의 오래된 Fencing Token 결과 쓰기 회귀 테스트 1개를 추가하므로, 병합 후 총 211개가 된다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
+2026-11-07 최신 `main` 커밋 `2e2a49efdac38417037b7072c1220af17eeb8afb`에서 총 211개 테스트가 실패 0개·건너뜀 0개로 통과했다. 같은 결과는 [Actions Run #692](https://github.com/namanvarava/Edan.Tensor/actions/runs/42326121824)에서 Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`으로 확인할 수 있다. 저장소 루트에서 다음 명령으로 동일한 Release 검증을 재현할 수 있다.
 
 ```powershell
 dotnet restore EDAN.Tensor.sln

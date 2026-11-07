@@ -275,4 +275,14 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최종 상태는 로컬 main·origin/main·GitHub main이 모두 `72cf580b1368e3273246a46e80f7801b7c5e14cb`이고 작업 디렉터리가 clean이며 열린 PR·Issue가 없다. Runner는 온라인·Idle이고 Windows 서비스는 `Running/Auto` 상태다.
 - 외부 비운영 IdP 테스트 테넌트의 실제 경계 검증만 환경 제공 전까지 남아 있다. Metadata/JWKS 주소, Issuer, Audience, Tenant 소속 테스트 주체, 키 회전 권한이 제공되면 정상 토큰·잘못된 Issuer/Audience·만료·서명 실패·알 수 없는 `kid`·키 회전을 외부 환경에서 재실행한다.
 
+## 2026-11-07 DataSet 검증 Fencing Token 결함 수정 후 main 재검증
+
+- PR #37 [DataSet 검증 결과에 Fencing Token을 적용합니다](https://github.com/namanvarava/Edan.Tensor/pull/37)는 필수 Check를 통과한 뒤 `2e2a49efdac38417037b7072c1220af17eeb8afb`로 squash merge되었다.
+- 기존 결함은 DataSet 검증 결과 저장소가 Worker의 Fencing Token을 받지 않아, 새 Worker가 같은 실행을 인계한 뒤에도 이전 실행이 결과·상세·상태를 기록할 수 있었던 점이다. 실행 레코드에 Token을 저장하고 시작·행 진행·완료·실패·재시도 대기 전환을 Token 및 낙관적 동시성으로 보호했다.
+- `20261107120000_AddDataSetValidationFencing` Migration과 오래된 Token의 결과 쓰기 거부 회귀 테스트를 추가했다. DataSet Infrastructure 테스트는 10개, 전체 Release 테스트는 211개이며 모두 실패 0개·건너뜀 0개로 통과했다.
+- 병합 후 로컬 Windows에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. 세 명령은 모두 종료 코드 0이고 Build는 경고 0개·오류 0개였다.
+- 병합 후 [Actions Run #692](https://github.com/namanvarava/Edan.Tensor/actions/runs/42326121824)은 `EDAN-TENSOR-WIN` Runner 버전 `2.338.2`에서 exact Restore·Release Build·Release Test를 성공시켰다. 로그는 Build 경고 0개·오류 0개와 전체 211개 통과·실패 0개·건너뜀 0개를 기록한다.
+- 병합 후 실제 Windows Host Smoke는 임시 SQLite 4개로 ApiHost와 WorkerHost를 기동하여 ApiHost `/health`, `/health/database`, `/`, `/openapi/v1.json`과 WorkerHost `/health`에 HTTP 200, 보호 API에 HTTP 401을 확인했다. 두 프로세스 stderr는 각각 0자였고 임시 DB·프로세스를 정리했다.
+- 현재 범위에서 남은 필수 외부 검증은 비운영 `Edan.Identity` 테스트 Tenant 경계뿐이다. 실제 Metadata/JWKS 주소, 기대 Issuer/Audience, Tenant 소속 테스트 사용자와 키 회전 권한이 제공되기 전에는 외부 IdP 검증을 완료로 표시하지 않는다. 토큰과 비밀키는 저장소·문서·로그에 기록하지 않는다.
+
 
