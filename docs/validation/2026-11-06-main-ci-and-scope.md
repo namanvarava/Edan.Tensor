@@ -469,4 +469,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 로컬 직접 Host 기동에서는 EF Migration과 Seeder의 `EDAN-LOCAL`·`local-development-subject` INSERT 및 `Now listening` 로그까지 확인했다. 그러나 현재 실행 컨텍스트에서는 별도 프로세스의 `127.0.0.1` 포트가 다른 명령 세션에서 연결되지 않아 `/health`·`/health/database`·`/api/platform/tenants/mine` HTTP Smoke를 성공으로 기록하지 않았다. 프로세스는 중단하고 임시 SQLite·로그 디렉터리를 삭제했다.
 - PR #63은 CI 성공 후 검토·병합 전 상태이며, 실제 비운영 외부 IdP 경계 검증은 외부 Metadata/JWKS·Issuer/Audience·Tenant·사용자·키 회전 권한이 제공될 때 별도로 수행한다.
 
+## 2026-11-08 PR #63 병합 후 최신 main 재검증
+
+- PR #63은 `5ede65b86ecbb393131caf6d531d095cbbbae7cd`로 Squash Merge되었고, 로컬 `main`, `origin/main`, GitHub `main`이 같은 SHA를 가리키며 작업 디렉터리는 clean 상태다. 열린 Issue와 PR은 각각 0개다.
+- 현재 Windows 로컬 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build는 경고 0개·오류 0개, 전체 테스트는 218개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #746](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399622276)의 Job `128484365527`은 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner에서 실행되었다. 로그에는 동일한 Restore·Release Build·Release Test 명령과 Build 경고 0개·오류 0개, 전체 테스트 218개 통과가 기록되어 있다.
+- 현재 실행 컨텍스트에서 Windows 서비스 관리자는 권한 부족으로 조회할 수 있었으므로 서비스의 현재 Running·자동 시작 상태는 이 세션에서 새로 확인하지 않았다. 다만 Run #746의 Runner 이름·레이블과 실제 Job 성공은 GitHub 실행 기록으로 확인했다. 서비스 상태를 독립적으로 확인하려면 로컬 관리자 권한 PowerShell에서 `Get-Service -Name 'actions.runner*'`를 실행해야 한다.
+- 인수인계 PDF 원본은 현재 작업 디렉터리와 확인 가능한 첨부 폴더에 존재하지 않아 이 세션에서 다시 렌더링할 수 없었다. 기존 검증 문서에 기록된 PDF 대조 결과는 역사적 기록으로 보존하며, 원본이 다시 제공되기 전까지 이번 감사에서는 PDF 원본 재검토를 미검증으로 분류한다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 이 조건은 Development Bypass와 로컬 검증을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
+
 
