@@ -364,4 +364,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - GitHub main 보호 규칙 API의 HTTP 403은 비공개 저장소 요금제에 따른 형상 관리 조회 제한이다. 예산·저장소 공개 설정·보호 정책을 변경하거나 우회하지 않고, 로컬 개발·PR·자체 호스팅 CI를 계속 진행한다. 보호 규칙을 확인하지 못한 사실은 완료 증거로 표현하지 않는다.
 - `External` 및 운영 환경에서는 이 정책을 적용하지 않는다. 실제 Metadata·Issuer·Audience·JWKS·HTTPS 검증을 유지하고, 외부 정보가 없으면 보호 API를 닫힌 상태로 유지한다. 외부 정보가 제공되면 동일한 인증 경계를 실제 비운영 환경에서 재검증한다.
 
+## 2026-11-07 최신 main 전체 검증 재실행
+
+- 현재 `main`과 `origin/main`은 `d1ae663547896191a4526dce4cf64f66a018fb32`로 동기화되어 있고 작업 디렉터리는 clean 상태다. GitHub 기본 브랜치도 같은 SHA를 가리킨다.
+- Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "console;verbosity=minimal"`을 순서대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 215개 통과·실패 0개·건너뜀 0개였다.
+- Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`은 `Running`·`Automatic` 상태다. 최신 [Actions Run #721](https://github.com/namanvarava/Edan.Tensor/actions/runs/42364856137)은 같은 SHA에서 Job `128380659254`를 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)로 실행했고 Restore·Build·Test를 모두 성공시켰다.
+- GitHub 원격 조회에서 열린 Issue와 PR은 각각 0개다. `branches/main`은 `protected=false`를 반환했으며 보호 규칙 세부 API는 HTTP 403으로 조회할 수 없었다. 이는 비공개 저장소 요금제에 따른 환경 제약으로 기록하고 보호 정책을 변경하거나 우회하지 않았다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 아직 제공되지 않았다. Development Bypass와 로컬 IdP/JWKS 경계 검증은 계속 사용할 수 있지만, 실제 외부 IdP 경계 검증은 완료로 표시하지 않는다.
+
 
