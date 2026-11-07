@@ -137,7 +137,34 @@ public sealed class PlatformAuthenticationConfigurationTests
         var result = await context.AuthenticateAsync("DevelopmentBypass");
 
         Assert.True(result.Succeeded);
+        Assert.True(result.Principal?.Identity?.IsAuthenticated);
         Assert.Equal("local-subject-for-test", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
+    }
+
+    /// <summary>외부 IdP 설정이 없어도 개발 Bypass는 토큰 없는 요청을 인증합니다.</summary>
+    [Fact]
+    public async Task DevelopmentBypassAuthenticatesWithoutExternalIdentityProvider()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Mode"] = "Bypass"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddLogging();
+        services.AddSingleton<UrlEncoder>(UrlEncoder.Default);
+        services.AddPlatformSecurity(configuration, new TestHostEnvironment(Environments.Development));
+
+        using var provider = services.BuildServiceProvider();
+        var context = new DefaultHttpContext { RequestServices = provider };
+        var result = await context.AuthenticateAsync("DevelopmentBypass");
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Principal?.Identity?.IsAuthenticated);
+        Assert.Equal("local-development-subject", result.Principal?.FindFirst("sub")?.Value);
         Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
     }
 
