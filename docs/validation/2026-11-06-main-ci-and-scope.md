@@ -449,4 +449,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - [Actions Run #739](https://github.com/namanvarava/Edan.Tensor/actions/runs/42392176169), Job `128461854947`는 최신 main SHA에서 자체 호스팅 Windows Runner의 Restore·Build·Test·정리 단계를 모두 성공시켰다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. 이 조건은 Development Bypass와 로컬 검증을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
 
+## 2026-11-08 Bypass 외부 설정 무시 회귀 보강
+
+- 외부 IdP의 Metadata/JWKS 주소, Issuer, Audience와 HTTPS 설정이 없거나 잘못되어도 Development `Authentication:Mode=Bypass`가 외부 인증 구성을 읽거나 검증하지 않는다는 계약을 명시했다. Bypass는 `local-development-subject`와 `platform_admin` Claim으로 요청을 인증하며 Tenant 소속·조직 범위·관리자 권한 검사는 유지한다.
+- `DevelopmentBypassIgnoresExternalIdentityProviderSettings` 회귀 테스트를 추가하여 잘못된 Metadata 주소와 외부 Claim 설정이 있어도 토큰 없는 요청이 `Succeeded=true`, `IsAuthenticated=true`로 처리되는 것을 확인했다. 외부 설정이 전혀 없는 Bypass 테스트와 운영 환경 Bypass 차단 테스트도 유지된다.
+- 대상 테스트 8개와 Release 전체 테스트 217개가 실패 0개·건너뜀 0개로 통과했으며, Build는 경고 0개·오류 0개였다. 실제 비운영 외부 IdP 경계는 여전히 외부 환경과 권한 제공 후 검증하며, 이 회귀는 외부 검증 완료를 의미하지 않는다.
+
 
