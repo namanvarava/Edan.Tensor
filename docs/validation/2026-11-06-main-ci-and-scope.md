@@ -572,4 +572,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 변경 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 219개 통과·실패 0개·건너뜀 0개였다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`도 취약 패키지 없음으로 종료했다.
 - 이 변경은 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·Tenant·사용자·키 회전 권한 검증을 완료한 것으로 표시하지 않는다. 실제 외부 환경이 제공되면 External 모드에서 실제 토큰·키 회전 경계를 별도로 재실행한다.
 
+## 2026-11-08 PR #76 병합 후 main 재검증
+
+- PR #76은 `fca8edb96f3fc12388a168347985d28ec2b62102`로 Squash Merge되었고, 병합 후 로컬 `main`, `origin/main`, GitHub `main`이 같은 SHA를 가리켰다.
+- 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 219개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #772](https://github.com/namanvarava/Edan.Tensor/actions/runs/42420682116)은 head SHA `fca8edb96f3fc12388a168347985d28ec2b62102`의 `EDAN-TENSOR-WIN` 자체 호스팅 Runner에서 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰다.
+- 최종 상태에서 열린 Issue와 Pull Request는 0건이고 원격 브랜치는 `main`만 남았으며, 병합된 작업 브랜치 `codex/development-bypass-fixed-profile-20261108`의 로컬·원격 삭제를 확인했다. 실제 외부 IdP 경계와 GitHub main 보호 규칙 HTTP 403 조건은 기존과 같이 환경 미검증으로 유지한다.
+
 
