@@ -3,6 +3,7 @@ using Xunit;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Tests;
 
+[Collection("WorkerExecutionRegistryShutdown")]
 public sealed class WorkerExecutionRegistryTests
 {
     [Fact]
@@ -77,7 +78,8 @@ public sealed class WorkerExecutionRegistryTests
             }
         }, out var execution));
 
-        var shutdown = registry.StopAsync(TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(250));
+        // grace 대기 없이 즉시 인계를 시작하여 테스트 준비가 짧은 타이머 스케줄링에 의존하지 않도록 합니다.
+        var shutdown = registry.StopAsync(TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
         // 자체 호스팅 Runner의 동시 실행 지연과 제품의 250밀리초 인계 예산을 분리하여 관찰합니다.
         await handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var result = await shutdown.WaitAsync(TimeSpan.FromSeconds(1));
@@ -183,4 +185,10 @@ public sealed class WorkerExecutionRegistryTests
         Assert.Equal(1, calls);
         execution.Dispose();
     }
+}
+
+/// <summary>시간 경계가 있는 Worker 종료 테스트를 다른 인프라 테스트와 병렬 실행하지 않는 컬렉션입니다.</summary>
+[CollectionDefinition("WorkerExecutionRegistryShutdown", DisableParallelization = true)]
+public sealed class WorkerExecutionRegistryShutdownCollectionDefinition
+{
 }
