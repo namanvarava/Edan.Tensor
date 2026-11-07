@@ -332,4 +332,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 현재 열린 Issue와 PR은 각각 0개이며, 예약 실행 트리거는 없다. `branches/main` 조회는 `protected=false`를 반환하지만 별도 보호 규칙 API는 HTTP 403으로 세부 규칙을 읽을 수 없다. 이 환경적 제한은 변경하거나 우회하지 않았다.
 - 개발 Bypass의 실제 Windows Host Smoke와 외부 IdP가 없는 개인 개발 경계는 앞 절의 증거로 확인되었다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 해당 외부 환경과 권한이 제공될 때까지 미완료로 유지한다.
 
+## 2026-11-07 PR #46 병합 후 최종 main 재검증
+
+- 최종 검증 증거 문서 PR #46은 자체 호스팅 Check 성공 후 `49aca0f7d15f536f614f8720674f7a19a35b7275`로 Squash Merge되었다. 병합 후 로컬 `main`, `origin/main`과 GitHub `main`은 이 SHA를 가리키고 작업 디렉터리는 clean 상태다.
+- 병합 후 Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 214개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #711](https://github.com/namanvarava/Edan.Tensor/actions/runs/42360939566)은 head SHA `49aca0f7d15f536f614f8720674f7a19a35b7275`에서 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)로 실행되었다. Restore·Build·Test와 정리 단계가 모두 성공했다.
+- 현재 열린 Issue와 PR은 각각 0개이며, Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다. `branches/main` 조회는 `protected=false`를 반환하지만 별도 main 보호 규칙 API는 HTTP 403으로 세부 규칙을 읽을 수 없다. 이 환경적 제한은 변경하거나 우회하지 않았다.
+- 개발 Bypass는 외부 IdP가 없는 Development 환경에서만 허용되고, External 모드는 Issuer·Audience·Metadata·JWKS·만료·서명 검증을 유지한다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 해당 외부 환경과 권한이 제공될 때까지 미완료로 유지한다.
+
 
