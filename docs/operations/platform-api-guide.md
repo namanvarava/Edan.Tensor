@@ -191,7 +191,7 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 
 ### 개인 개발용 Bypass 모드
 
-개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다.
+개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다. Bypass에서는 Metadata/JWKS, Issuer, Audience와 키 회전 설정을 입력하지 않아도 되며, 해당 값이 있더라도 외부 인증 검증에 사용하지 않습니다.
 
 ```text
 Authentication__Mode=Bypass

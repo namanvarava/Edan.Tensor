@@ -168,6 +168,36 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
     }
 
+    /// <summary>개발 Bypass는 외부 IdP 설정이 없거나 잘못되어도 외부 검증을 시도하지 않습니다.</summary>
+    [Fact]
+    public async Task DevelopmentBypassIgnoresExternalIdentityProviderSettings()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Mode"] = "Bypass",
+                ["Authentication:MetadataAddress"] = "not-a-metadata-address",
+                ["Authentication:Issuer"] = "not-an-issuer",
+                ["Authentication:Audience"] = "not-an-audience",
+                ["Authentication:RequireHttpsMetadata"] = "false"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddLogging();
+        services.AddSingleton<UrlEncoder>(UrlEncoder.Default);
+        services.AddPlatformSecurity(configuration, new TestHostEnvironment(Environments.Development));
+
+        using var provider = services.BuildServiceProvider();
+        var context = new DefaultHttpContext { RequestServices = provider };
+        var result = await context.AuthenticateAsync("DevelopmentBypass");
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Principal?.Identity?.IsAuthenticated);
+        Assert.Equal("local-development-subject", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
+    }
+
     /// <summary>운영 환경은 개발 Bypass 인증을 등록하지 않습니다.</summary>
     [Fact]
     public void BypassIsRejectedOutsideDevelopment()

@@ -14,7 +14,7 @@ namespace EDAN.Tensor.ApiHost.Security;
 /// Issuer는 토큰의 <c>iss</c> 값과 정확히 일치하는 <c>https://auth-test.&lt;소유한도메인&gt;</c> 형식을 사용하고,
 /// Audience는 API의 고정 식별자인 <c>edan-tensor-api</c>를 사용합니다.
 /// <c>Authentication:RequireHttpsMetadata=false</c>는 로컬 HTTP 테스트에서만 허용하고 비운영·운영 외부 환경에서는 HTTPS를 사용합니다.
-/// <c>Authentication:Mode=Bypass</c>는 개발 환경에서만 외부 JWT 검증을 생략하며, Tenant 소속·관리자 권한 검사는 그대로 수행합니다.
+/// <c>Authentication:Mode=Bypass</c>는 개발 환경에서만 외부 JWT 검증을 생략하며, Metadata·Issuer·Audience·JWKS 설정을 읽지 않습니다. Tenant 소속·관리자 권한 검사는 그대로 수행합니다.
 /// 인증 모드가 <c>External</c>이면 Metadata 주소·Issuer·Audience 설정을 사용하고, IP 주소를 포함한 실제 주소도 구성값으로 받을 수 있습니다.
 /// 개인키, 클라이언트 비밀값, 비밀번호와 액세스 토큰은 코드·문서·로그·저장소에 기록하지 않습니다.
 /// </remarks>
@@ -41,7 +41,7 @@ public static class PlatformAuthenticationExtensions
     /// <returns>인증과 인가 정책을 추가한 서비스 컬렉션을 반환합니다.</returns>
     /// <exception cref="InvalidOperationException">운영 환경에서 Bypass를 요청하거나 인증 모드가 지원되지 않으면 발생합니다.</exception>
     /// <remarks>
-    /// Bypass는 외부 JWT 확인만 생략하고 Tenant 소속과 관리자 권한 검사는 유지합니다.
+    /// Bypass는 외부 JWT 확인과 외부 IdP 설정 검증을 생략하고 Tenant 소속과 관리자 권한 검사는 유지합니다.
     /// External 모드에서는 Metadata 주소가 반환하는 <c>jwks_uri</c>를 사용하여 알 수 없는 <c>kid</c>와 키 회전을 검증합니다.
     /// Metadata 주소·Issuer·Audience는 환경 변수로 주입할 수 있으며, Metadata 주소는 실제 도메인 또는 IP 주소를 포함할 수 있습니다.
     /// 테스트 Tenant의 사용자는 이메일이 아닌 IdP의 안정적인 <c>sub</c> 값으로 Tenant 멤버십에 연결해야 합니다.
