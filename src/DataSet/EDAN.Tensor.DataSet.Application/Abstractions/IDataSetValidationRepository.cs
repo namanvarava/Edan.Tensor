@@ -24,30 +24,36 @@ public interface IDataSetValidationRepository
     Task<DataSetValidationExecutionSnapshot?> GetExecutionAsync(
         Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);
 
+    /// <summary>현재 Worker Fencing Token으로 검증 실행의 소유권을 시작합니다.</summary>
     Task<bool> TryStartAsync(
-        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);
+        Guid tenantId, Guid executionId, long fencingToken,
+        CancellationToken cancellationToken = default);
 
     Task<IReadOnlySet<string>> GetSeenKeysAsync(
         Guid executionId, CancellationToken cancellationToken = default);
 
     Task<bool> RecordRowAsync(
-        Guid tenantId, Guid executionId, int rowNumber,
+        Guid tenantId, Guid executionId, long fencingToken, int rowNumber,
         IReadOnlyList<DataSetValidationFinding> findings,
         IReadOnlyList<DataSetValidationFinding> detailFindings,
         IReadOnlyList<DataSetValidationDuplicateObservation> duplicateObservations,
         int processedRecords, int totalRecords, bool detailTruncated,
         CancellationToken cancellationToken = default);
 
-    Task CompleteAsync(
-        Guid tenantId, Guid executionId, DataSetValidationStatus status,
+    /// <summary>현재 Fencing Token이 유효할 때 검증 실행을 완료합니다.</summary>
+    Task<bool> CompleteAsync(
+        Guid tenantId, Guid executionId, long fencingToken, DataSetValidationStatus status,
         int totalRecords, bool detailTruncated, string ruleCountsJson,
         CancellationToken cancellationToken = default);
 
-    Task MarkQueuedAsync(
-        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);
+    /// <summary>현재 Fencing Token이 유효할 때 검증 실행을 재시도 대기로 되돌립니다.</summary>
+    Task<bool> MarkQueuedAsync(
+        Guid tenantId, Guid executionId, long fencingToken,
+        CancellationToken cancellationToken = default);
 
-    Task FailAsync(
-        Guid tenantId, Guid executionId, string code, string message,
+    /// <summary>현재 Fencing Token이 유효할 때 검증 실행을 실패로 종료합니다.</summary>
+    Task<bool> FailAsync(
+        Guid tenantId, Guid executionId, long fencingToken, string code, string message,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<DataSetValidationDetailSnapshot>> GetDetailsAsync(

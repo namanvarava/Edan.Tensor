@@ -64,3 +64,5 @@ Commercial·Licensing·WPF는 이번 릴리스 계약에 포함되지 않는다.
 - 입력 revision 변경, 취소·재개, 오래된 Fencing Token의 결과 공개가 검증된다.
 - 원문 값과 내부 저장 위치가 API·로그·결과 참조로 노출되지 않는다.
 - 최신 main 대상 GitHub Actions 전체 CI가 성공한다.
+
+구현은 검증 실행 레코드에 현재 Worker Fencing Token을 저장하고, 행 진행·완료·실패·재시도 대기 전환을 같은 Token과 낙관적 동시성으로 보호한다. 새 Worker가 같은 실행을 인계하면 이전 Token의 결과 쓰기는 거부되며, 이 경계는 DataSet Infrastructure 회귀 테스트로 확인한다.

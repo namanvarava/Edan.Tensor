@@ -100,16 +100,49 @@ public sealed class DataSetRepositoryTests
 
         var execution = await repository.CreateExecutionAsync(tenantA, Guid.NewGuid(), 1, 1,
             profile.Id, 1, DateTimeOffset.UtcNow);
-        Assert.True(await repository.TryStartAsync(tenantA, execution.Id));
-        Assert.True(await repository.RecordRowAsync(tenantA, execution.Id, 1,
+        Assert.True(await repository.TryStartAsync(tenantA, execution.Id, 10));
+        Assert.True(await repository.RecordRowAsync(tenantA, execution.Id, 10, 1,
             [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "형식이 올바르지 않습니다.")],
             [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "형식이 올바르지 않습니다.")],
             [], 1, 1, false));
-        await repository.CompleteAsync(tenantA, execution.Id, DataSetValidationStatus.Invalid, 1, false, "{\"field.id.type\":1}");
+        Assert.True(await repository.CompleteAsync(tenantA, execution.Id, 10,
+            DataSetValidationStatus.Invalid, 1, false, "{\"field.id.type\":1}"));
 
         Assert.Null(await repository.GetExecutionAsync(tenantB, execution.Id));
         Assert.Single(await repository.GetDetailsAsync(tenantA, execution.Id, 0, 10));
         Assert.True(await repository.DeleteExecutionAsync(tenantA, execution.Id));
         Assert.Null(await repository.GetExecutionAsync(tenantA, execution.Id));
+    }
+
+    [Fact]
+    public async Task StaleFencingTokenCannotWriteValidationResultAfterRetryTakesOwnership()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<DataSetDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+
+        await using var db = new DataSetDbContext(options);
+        await db.Database.MigrateAsync();
+        var repository = new EfDataSetValidationRepository(db);
+        var execution = await repository.CreateExecutionAsync(tenantId, Guid.NewGuid(), 1, 1,
+            Guid.NewGuid(), 1, DateTimeOffset.UtcNow);
+
+        Assert.True(await repository.TryStartAsync(tenantId, execution.Id, 10));
+        Assert.True(await repository.MarkQueuedAsync(tenantId, execution.Id, 10));
+        Assert.True(await repository.TryStartAsync(tenantId, execution.Id, 11));
+
+        Assert.False(await repository.RecordRowAsync(tenantId, execution.Id, 10, 1,
+            [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "오래된 실행")],
+            [], [], 1, 1, false));
+        Assert.False(await repository.CompleteAsync(tenantId, execution.Id, 10,
+            DataSetValidationStatus.Invalid, 1, false, "{}"));
+
+        var current = await repository.GetExecutionAsync(tenantId, execution.Id);
+        Assert.NotNull(current);
+        Assert.Equal(11, current.FencingToken);
+        Assert.Equal(DataSetValidationStatus.Running, current.Status);
+        Assert.Equal(0, current.ProcessedRecords);
+        Assert.Empty(await repository.GetDetailsAsync(tenantId, execution.Id, 0, 10));
     }
 }

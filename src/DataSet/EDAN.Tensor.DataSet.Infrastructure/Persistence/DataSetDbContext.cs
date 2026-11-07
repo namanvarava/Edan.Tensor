@@ -127,6 +127,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         execution.Property(x => x.FailureMessage).HasMaxLength(500);
         execution.Property(x => x.CreatedAtUtc).IsRequired();
         execution.Property(x => x.CompletedAtUtc);
+        execution.Property(x => x.FencingToken).IsConcurrencyToken().IsRequired();
         execution.Property(x => x.Version).IsConcurrencyToken().IsRequired();
         execution.HasIndex(x => new { x.TenantId, x.DataSetId, x.CreatedAtUtc });
         execution.HasIndex(x => new { x.TenantId, x.DetailReference }).IsUnique();

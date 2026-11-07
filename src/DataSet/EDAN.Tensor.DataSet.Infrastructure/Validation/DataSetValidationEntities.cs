@@ -89,6 +89,7 @@ public sealed class DataSetValidationExecution
         RuleCountsJson = "{}";
         CreatedAtUtc = createdAtUtc.ToUniversalTime();
         Version = 1;
+        FencingToken = 0;
     }
 
     public Guid Id { get; private set; }
@@ -98,6 +99,7 @@ public sealed class DataSetValidationExecution
     public int SchemaVersion { get; private set; }
     public Guid ProfileId { get; private set; }
     public int ProfileRevision { get; private set; }
+    public long FencingToken { get; private set; }
     public string Status { get; private set; } = "Queued";
     public string DetailReference { get; private set; } = string.Empty;
     public int ProcessedRecords { get; private set; }
@@ -112,6 +114,16 @@ public sealed class DataSetValidationExecution
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? CompletedAtUtc { get; private set; }
     public long Version { get; private set; }
+
+    /// <summary>현재 Worker 실행의 Fencing Token을 기록하여 오래된 실행의 결과 쓰기를 차단합니다.</summary>
+    public void SetFencingToken(long fencingToken)
+    {
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken), "Fencing Token은 양수여야 합니다.");
+        if (FencingToken == fencingToken) return;
+        FencingToken = fencingToken;
+        Version++;
+    }
 
     public void SetStatus(string status, DateTimeOffset? completedAtUtc = null)
     {

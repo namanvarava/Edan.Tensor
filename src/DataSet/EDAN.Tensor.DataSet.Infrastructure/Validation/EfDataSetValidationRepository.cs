@@ -78,8 +78,11 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
     }
 
     public async Task<bool> TryStartAsync(
-        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default)
+        Guid tenantId, Guid executionId, long fencingToken,
+        CancellationToken cancellationToken = default)
     {
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken));
         var execution = await dbContext.ValidationExecutions
             .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId, cancellationToken);
         if (execution is null) return false;
@@ -87,10 +90,12 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
             or nameof(DataSetValidationStatus.Invalid)
             or nameof(DataSetValidationStatus.Failed))
             return false;
-        if (execution.Status == nameof(DataSetValidationStatus.Queued))
-            execution.SetStatus(nameof(DataSetValidationStatus.Running));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return true;
+        if (execution.Status == nameof(DataSetValidationStatus.Running))
+            return execution.FencingToken == fencingToken;
+        if (execution.Status != nameof(DataSetValidationStatus.Queued)) return false;
+        execution.SetFencingToken(fencingToken);
+        execution.SetStatus(nameof(DataSetValidationStatus.Running));
+        return await SaveFencedAsync(execution, cancellationToken);
     }
 
     public async Task<IReadOnlySet<string>> GetSeenKeysAsync(
@@ -104,7 +109,7 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
     }
 
     public async Task<bool> RecordRowAsync(
-        Guid tenantId, Guid executionId, int rowNumber,
+        Guid tenantId, Guid executionId, long fencingToken, int rowNumber,
         IReadOnlyList<DataSetValidationFinding> findings,
         IReadOnlyList<DataSetValidationFinding> detailFindings,
         IReadOnlyList<DataSetValidationDuplicateObservation> duplicateObservations,
@@ -114,12 +119,15 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         ArgumentNullException.ThrowIfNull(findings);
         ArgumentNullException.ThrowIfNull(detailFindings);
         ArgumentNullException.ThrowIfNull(duplicateObservations);
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken));
         if (rowNumber <= 0 || processedRecords < rowNumber)
             throw new ArgumentOutOfRangeException(nameof(rowNumber));
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var execution = await dbContext.ValidationExecutions
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId, cancellationToken);
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId
+                && x.FencingToken == fencingToken, cancellationToken);
         if (execution is null) return false;
         if (execution.ProcessedRecords >= rowNumber)
         {
@@ -163,54 +171,73 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
             execution.DetailItemCount + detailFindings.Count,
             execution.DetailTruncated || detailTruncated,
             JsonSerializer.Serialize(ruleCounts));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return true;
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return false;
+        }
     }
 
-    public async Task CompleteAsync(
-        Guid tenantId, Guid executionId, DataSetValidationStatus status,
+    public async Task<bool> CompleteAsync(
+        Guid tenantId, Guid executionId, long fencingToken, DataSetValidationStatus status,
         int totalRecords, bool detailTruncated, string ruleCountsJson,
         CancellationToken cancellationToken = default)
     {
         if (status is not (DataSetValidationStatus.Valid or DataSetValidationStatus.Invalid))
             throw new ArgumentOutOfRangeException(nameof(status));
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken));
         var execution = await dbContext.ValidationExecutions
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId, cancellationToken)
-            ?? throw new KeyNotFoundException("Tenant 범위에서 검증 실행을 찾을 수 없습니다.");
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId
+                && x.FencingToken == fencingToken, cancellationToken);
+        if (execution is null) return false;
         execution.SetProgress(execution.ProcessedRecords, totalRecords,
             execution.ErrorCount, execution.WarningCount, execution.DetailItemCount,
             execution.DetailTruncated || detailTruncated, ruleCountsJson);
         execution.SetStatus(status.ToString(), DateTimeOffset.UtcNow);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return await SaveFencedAsync(execution, cancellationToken);
     }
 
-    public async Task MarkQueuedAsync(
-        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default)
+    public async Task<bool> MarkQueuedAsync(
+        Guid tenantId, Guid executionId, long fencingToken,
+        CancellationToken cancellationToken = default)
     {
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken));
         var execution = await dbContext.ValidationExecutions
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId, cancellationToken);
-        if (execution is null) return;
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId
+                && x.FencingToken == fencingToken, cancellationToken);
+        if (execution is null) return false;
         if (execution.Status == nameof(DataSetValidationStatus.Running))
         {
             execution.SetStatus(nameof(DataSetValidationStatus.Queued));
-            await dbContext.SaveChangesAsync(cancellationToken);
+            return await SaveFencedAsync(execution, cancellationToken);
         }
+        return execution.Status == nameof(DataSetValidationStatus.Queued);
     }
 
-    public async Task FailAsync(
-        Guid tenantId, Guid executionId, string code, string message,
+    public async Task<bool> FailAsync(
+        Guid tenantId, Guid executionId, long fencingToken, string code, string message,
         CancellationToken cancellationToken = default)
     {
+        if (fencingToken <= 0)
+            throw new ArgumentOutOfRangeException(nameof(fencingToken));
         var execution = await dbContext.ValidationExecutions
-            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId, cancellationToken)
-            ?? throw new KeyNotFoundException("Tenant 범위에서 검증 실행을 찾을 수 없습니다.");
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == executionId
+                && x.FencingToken == fencingToken, cancellationToken);
+        if (execution is null) return false;
         if (execution.Status is nameof(DataSetValidationStatus.Valid)
             or nameof(DataSetValidationStatus.Invalid)
             or nameof(DataSetValidationStatus.Failed))
-            return;
+            return true;
         execution.SetFailure(code, message, DateTimeOffset.UtcNow);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return await SaveFencedAsync(execution, cancellationToken);
     }
 
     public async Task<IReadOnlyList<DataSetValidationDetailSnapshot>> GetDetailsAsync(
@@ -249,9 +276,25 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         new(execution.Id, execution.TenantId, execution.DataSetId,
             execution.ExpectedDataSetVersion, execution.SchemaVersion, execution.ProfileId,
             execution.ProfileRevision,
+            execution.FencingToken,
             Enum.Parse<DataSetValidationStatus>(execution.Status),
             execution.DetailReference, execution.ProcessedRecords, execution.TotalRecords,
             execution.ErrorCount, execution.WarningCount, execution.DetailItemCount,
             execution.DetailTruncated, execution.RuleCountsJson, execution.FailureCode,
             execution.FailureMessage, execution.CreatedAtUtc, execution.CompletedAtUtc);
+
+    private async Task<bool> SaveFencedAsync(
+        DataSetValidationExecution execution, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            dbContext.ChangeTracker.Clear();
+            return false;
+        }
+    }
 }
