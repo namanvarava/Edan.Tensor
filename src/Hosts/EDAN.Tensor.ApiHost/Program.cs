@@ -146,6 +146,10 @@ if (app.Environment.IsDevelopment()
     await dataSetDb.Database.MigrateAsync();
 }
 
+// Development Bypass는 외부 IdP 대신 로컬 Tenant와 소속을 사용하므로 시작 시 멱등적으로 준비합니다.
+if (app.Environment.IsDevelopment())
+    await DevelopmentBypassDataSeeder.SeedAsync(app.Services, builder.Configuration);
+
 // OpenAPI 문서는 개발 환경에서만 제공하여 운영 API 표면을 불필요하게 공개하지 않습니다.
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();

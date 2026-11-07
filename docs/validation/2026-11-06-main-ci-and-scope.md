@@ -455,4 +455,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `DevelopmentBypassIgnoresExternalIdentityProviderSettings` 회귀 테스트를 추가하여 잘못된 Metadata 주소와 외부 Claim 설정이 있어도 토큰 없는 요청이 `Succeeded=true`, `IsAuthenticated=true`로 처리되는 것을 확인했다. 외부 설정이 전혀 없는 Bypass 테스트와 운영 환경 Bypass 차단 테스트도 유지된다.
 - 대상 테스트 8개와 Release 전체 테스트 217개가 실패 0개·건너뜀 0개로 통과했으며, Build는 경고 0개·오류 0개였다. 실제 비운영 외부 IdP 경계는 여전히 외부 환경과 권한 제공 후 검증하며, 이 회귀는 외부 검증 완료를 의미하지 않는다.
 
+## 2026-11-08 Development Bypass 로컬 Tenant 초기화 보강
+
+- `DevelopmentData:SeedBypassTenant=true`와 `Authentication:Mode=Bypass`가 함께 설정된 Development 환경에서만 `EDAN-LOCAL` Tenant와 Bypass `sub`의 Tenant 소속을 시작 시 멱등적으로 준비하도록 구현했다. 기본 주체 `local-development-subject`와 `platform_admin`은 Development 구성에만 있으며 외부 Issuer·Audience·JWKS·토큰·개인키를 대체하지 않는다.
+- 같은 Tenant 코드나 같은 Tenant·주체 소속 레코드가 이미 있으면 기존 역할과 상태를 덮어쓰지 않는다. 기존 Tenant가 비활성 상태이면 경고만 기록하고 데이터베이스를 변경하지 않는다. External 모드와 Development가 아닌 환경에서는 Seeder가 실행되지 않는다.
+- `DevelopmentBypassDataSeederTests`는 실제 Bypass Handler와 임시 SQLite를 사용하여 `/api/platform/tenants/mine`의 Administrator 소속, Tenant 수 1개, 동일 주체의 관리자 소속 1개를 확인한다. 테스트 실행 전 Release 대상 프로젝트 빌드는 `--maxcpucount:1`에서 경고 0개·오류 0개로 통과했다.
+- 이 세션의 로컬 VSTest는 기존 `PlatformAuthenticationConfigurationTests` 필터에서도 90초 동안 testhost 연결을 수립하지 못해 결과를 반환하지 않았다. 따라서 로컬 테스트 통과로 기록하지 않으며, 자체 호스팅 CI에서 대상 테스트와 전체 Release 테스트를 재검증해야 한다. 동일 환경의 직접 Host 기동 로그에서는 Seeder의 Tenant·소속 INSERT까지 확인했지만, 60초 준비 대기 안에 HTTP Health 응답을 확보하지 못해 Host Smoke 성공으로 기록하지 않는다.
+
 

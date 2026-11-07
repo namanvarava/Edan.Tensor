@@ -52,6 +52,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - HostServices는 API와 Worker의 공통 조합 서비스를 제공합니다.
 - LicenseAuthority.Host는 라이선스 권한의 독립 호스트 경계이며 업무 기능은 아직 구현되지 않았습니다.
 - 개인 개발은 Development 환경의 `Authentication:Mode=Bypass`로 외부 IdP 없이 실행할 수 있습니다. Bypass에서는 Metadata/JWKS·Issuer·Audience 설정을 요구하거나 사용하지 않으며, 토큰이 없는 모든 요청도 고정된 개발 주체로 인증하지만 Tenant 소속·조직 범위·관리자 권한 검사는 유지합니다. 서비스 연결 시에는 `External` 모드와 실제 Metadata·Issuer·Audience·HTTPS 설정을 사용합니다.
+- `appsettings.Development.json`은 Bypass 주체가 사용할 `EDAN-LOCAL` Tenant와 `local-development-subject`의 Administrator 소속을 Development 시작 시 한 번만 생성하도록 설정합니다. 이미 같은 Tenant·소속이 있으면 역할이나 상태를 덮어쓰지 않으며, 기존 데이터는 그대로 유지합니다. 이 초기화는 `Authentication:Mode=Bypass`와 Development 환경에서만 실행됩니다.
 - 개발 연속성 정책에 따라 외부 IdP Metadata·JWKS·Tenant·키 회전 정보가 아직 없거나 GitHub main 보호 규칙 API가 비공개 저장소 요금제 제한으로 HTTP 403을 반환해도 개발 작업을 중지하지 않습니다. Development Bypass, 로컬 IdP/JWKS 테스트, Windows 자체 호스팅 CI를 계속 사용하고 해당 외부 경계만 미검증으로 기록합니다.
 - `External` 및 운영 환경에서는 위 조건을 Bypass하지 않습니다. 외부 정보가 없으면 Issuer·Audience·Metadata·JWKS·HTTPS 검증을 유지한 채 보호 API를 닫힌 상태로 두며, 실제 외부 검증이 끝나기 전에는 전체 개발 완료로 판정하지 않습니다.
 
