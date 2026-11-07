@@ -397,4 +397,24 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 수정한 하네스로 `/health`, `/health/database`, `/`, `/openapi/v1.json`, `/api/platform/tenants/mine`을 호출했다. 모든 응답은 HTTP 200이었고 `/health/database`는 `Connected`·`Green`, Bypass 보호 API 응답은 빈 Tenant 배열, 표준 오류 길이는 0자였다.
 - 검증 후 ApiHost 프로세스와 임시 SQLite·아카이브 디렉터리를 제거했으며 임시 디렉터리 삭제 여부도 확인했다. 이 검증은 외부 IdP 경계를 대신하지 않으며 Development Bypass 실행 경계만 확인한다.
 
+## 2026-11-07 승인 범위 완료 감사 매트릭스
+
+다음 표는 README의 승인 범위와 인수인계 PDF를 현재 main의 구현·테스트·실행 증거와 대조한 결과다. `완료`는 이번 릴리스 범위가 실제 증거로 확인되었다는 뜻이며, `환경 미검증`은 제품 코드의 개발 중단 사유가 아니라 외부 실행 조건이 없어 확인하지 못한 경계다.
+
+| 영역 | 승인된 범위와 현재 상태 | 증거 | 판정 |
+| --- | --- | --- | --- |
+| Platform | Tenant·Organization·Project, Tenant 소속, 조직·프로젝트 권한, 감사·아카이브, 데이터베이스 무결성 및 격리를 구현했다. | Platform 테스트, API 통합 테스트, 실제 ApiHost Smoke | 완료 |
+| DataSet | SQLite 메타데이터·콘텐츠 분리, UTF-8 CSV·JSON 객체 배열, 필수값·형식·범위·중복 규칙, 불변 profile revision, 결과 보존·명시적 삭제와 fencing을 구현했다. | DataSet Domain/Application/Infrastructure 테스트, Migration 및 Tenant 격리 검증 | 완료 |
+| Worker | 전용 DbContext, 작업 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, Shutdown Handoff, DataSet Handler와 외부 전달 Idempotency를 구현했다. | Worker Domain/Infrastructure 테스트, 장애 복구·커서 LRU·외부 수신기 장애 테스트 | 완료 |
+| Commercial / Licensing | 모듈 경계와 기반 프로젝트만 유지했으며 업무 흐름·결제·권리·만료 기능은 승인 범위에서 제외했다. | README 범위 표, 아키텍처 의존성 테스트 | 완료(제외 범위 준수) |
+| Host / API | ApiHost·WorkerHost·HostServices 조합과 Health·OpenAPI·보호 API를 제공한다. | Release 빌드, 실제 Windows ApiHost Smoke, API 통합 테스트 | 완료 |
+| 클라이언트 | WPF 화면과 업무 흐름은 이번 릴리스에서 제외했다. | README와 승인 범위 기록 | 완료(제외 범위 준수) |
+| 보안 / 운영 | External 모드는 Issuer·Audience·Lifetime·서명·JWKS·HTTPS를 검증하고, Bypass는 Development에서만 외부 JWT 검증을 생략한다. | 로컬 JWKS 7개 경계 테스트, Bypass·HTTPS 회귀 테스트, 비밀 미저장 감사 | 완료 |
+| CI / 문서 / 의존성 | Windows 자체 호스팅 Runner, Release 전체 테스트, 취약성 감사, 사용 가이드와 검증 기록을 유지한다. | Run #729, 215개 테스트, NuGet 취약성 감사 종료 코드 0, 현재 문서 | 완료 |
+| 인수인계 PDF | PDF 기준 SHA `c187103cee76ad58e28633a259aeebc5e7dab75c` 이후의 변경을 현재 main과 대조했다. Worker Handoff·Tenant Cursor LRU·전용 DB·DataSet 저장소 분리·계층 규칙을 구현과 테스트에서 재확인했다. | PDF 검토 기록, ArchitectureDependencyTests, Worker 테스트, 현재 SHA `6bfd738f47fc4e8ca28bc474dd000a820c4c5f44` | 완료 |
+| 실제 비운영 외부 IdP | Metadata/JWKS 주소, 기대 Issuer/Audience, `edan-nonprod` 사용자·opaque `sub`, 겹치는 키 회전 권한이 제공되지 않아 실제 외부 환경은 시험하지 못했다. | README 외부 조건, 로컬 JWKS 대체 검증, GitHub/로컬 상태 | 환경 미검증 |
+| GitHub main 보호 규칙 | `branches/main`은 `protected=false`로 조회되지만 상세 보호 API는 비공개 저장소 요금제 제한으로 HTTP 403이다. 설정 변경이나 우회는 하지 않았다. | GitHub API 응답 기록 | 환경 미검증 |
+
+이 감사 결과에 따라 외부 IdP와 보호 규칙 상세 조회만 최종 외부 조건으로 남기며, 해당 조건이 없다는 이유로 Development Bypass·로컬 테스트·자체 호스팅 CI를 중지하지 않는다. 실제 외부 IdP 정보가 제공되면 정상 토큰, 잘못된 Issuer/Audience, 만료, 서명 실패, 알 수 없는 `kid`, 기존·신규 키 겹침 회전을 같은 테스트 계약으로 재실행한다.
+
 
