@@ -556,4 +556,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최소 안전 수정으로 제품 코드는 그대로 두고 해당 테스트의 인계 예산을 4초에서 8초로, 판정 상한을 8초에서 15초로 조정했다. 정상 경로는 약 9초로 완료되며, Dispatcher가 인계 예산을 다시 소비하는 잘못된 경로는 약 17초가 필요하므로 회귀 판정 간격을 유지한다. 한국어 주석은 실제 시간 계약과 Runner 지연 허용 조건을 설명하도록 갱신했다.
 - 수정 후 대상 테스트 3회가 각각 통과했고, Worker Infrastructure 전체 66개 및 솔루션 전체 Release Test 218개가 실패 0개·건너뜀 0개로 통과했다. Release Build는 경고 0개·오류 0개였고 Restore도 성공했다. 수정 PR의 자체 호스팅 Check와 병합 후 main push Check가 성공하는지 추가 확인한다.
 
+## 2026-11-08 PR #74 병합 후 최신 제품 코드 재검증
+
+- PR #74는 `9c3f2f4d6e9df1f247792af9c3332b78080948cf`로 Squash Merge되었다. 병합 후 로컬 `main`, `origin/main`, GitHub `main`은 이 SHA를 가리켰고 작업 디렉터리는 clean 상태였다.
+- 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, Test는 218개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 [Actions Run #768](https://github.com/namanvarava/Edan.Tensor/actions/runs/42415314493)의 Job `128532003342`는 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner에서 실행되었다. Restore·Build·Test·정리 단계가 모두 성공했고 head SHA는 `9c3f2f4d6e9df1f247792af9c3332b78080948cf`이다.
+- Run #766의 실패 원인이었던 Worker 종료 테스트는 수정 후 PR Check Run #767과 병합 후 Run #768에서 모두 통과했다. 수정은 테스트 시간 경계와 한국어 주석만 변경했으며 제품 종료 예산·공개 API·데이터·인증 계약은 변경하지 않았다.
+- 현재 열린 Issue와 Pull Request는 0건이며, 제품 코드 기준 외부 IdP 미검증 조건과 GitHub main 보호 규칙 상세 API의 HTTP 403은 환경 차단 사유로 계속 기록한다. 문서 전용 후속 커밋의 SHA가 제품 코드 검증 SHA와 달라질 수 있으므로 두 기준을 보고에서 구분한다.
+
 
