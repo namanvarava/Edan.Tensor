@@ -434,4 +434,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 [Actions Run #734](https://github.com/namanvarava/Edan.Tensor/actions/runs/42372856339)은 head SHA `843a7ae643764708ac272aa7175da3f5b222686f`에서 Job `128404366909`를 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)로 실행했다. Restore·Build·Test·정리 단계가 모두 성공했다.
 - 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 제공되지 않았다. 이 조건은 Development 작업을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
 
+## 2026-11-08 Development Bypass 인증 정책 재검증
+
+- Development `Authentication:Mode=Bypass`의 계약을 명확히 했다. 외부 IdP 설정과 Bearer 토큰이 없어도 모든 요청을 `local-development-subject`와 `platform_admin` Claim을 가진 인증 주체로 처리하며, Tenant 소속·조직 범위·관리자 권한 검사는 계속 수행한다.
+- `DevelopmentBypassAuthenticatesWithoutExternalIdentityProvider` 회귀 테스트를 추가하여 외부 IdP 설정이 전혀 없는 토큰 없는 요청의 `Succeeded=true`와 `IsAuthenticated=true`를 직접 확인했다. 구성된 주체·역할 Claim과 운영 환경 Bypass 차단도 함께 확인했다.
+- 실제 Windows Release ApiHost를 임시 SQLite 네 개와 Development 환경으로 기동했다. `/health`와 `/health/database`는 HTTP 200, 데이터베이스 상태는 `Connected`·`Green`, 토큰 없는 `/api/platform/tenants/mine`은 HTTP 200과 빈 Tenant 배열을 반환했으며 표준 오류는 없었다. 검증 후 프로세스와 임시 파일을 제거했다.
+- `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실제 Windows 권한으로 실행했다. Restore·Build·Test는 종료 코드 0, Build 경고 0개·오류 0개, 전체 테스트는 216개 통과·실패 0개·건너뜀 0개였다.
+- README, Platform API 보안 설계, API 사용 가이드와 Handler의 한국어 설명을 같은 계약으로 갱신했다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·opaque `sub`·키 회전 검증은 여전히 환경 미검증이며 Development Bypass를 중지시키지 않는다.
+
 

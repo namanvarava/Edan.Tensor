@@ -14,7 +14,7 @@ Platform API는 인증된 외부 주체의 Tenant 소속을 확인한 후 요청
 - 개발·자동 검증에서는 `Authentication:MetadataAddress`로 로컬 OpenID Connect 메타데이터와 JWKS 서버를 지정할 수 있습니다.
 - 메타데이터 주소를 사용하면 `JwtBearer`가 JWKS를 조회하고 `RefreshOnIssuerKeyNotFound`로 알 수 없는 `kid`의 키를 다시 조회합니다. 키 회전은 새 키와 기존 키가 겹치는 안전한 전환 구간에서 검증합니다.
 - `Authentication:RequireHttpsMetadata=false`는 로컬 HTTP 테스트 서버에서만 허용하며, 운영에서는 HTTPS 메타데이터 주소와 비밀 저장소를 사용합니다.
-- `Authentication:Mode=Bypass`는 Development 환경에서만 외부 JWT 검증을 생략하는 개인 개발 모드입니다. 이 모드도 Tenant 소속과 조직·프로젝트 권한 검사는 수행하며, 운영 환경에서는 시작 단계에서 거부합니다.
+- `Authentication:Mode=Bypass`는 Development 환경에서만 외부 JWT 검증을 생략하는 개인 개발 모드입니다. 토큰이 없는 모든 요청도 고정된 개발 주체로 인증하지만 Tenant 소속과 조직·프로젝트 권한 검사는 수행하며, 운영 환경에서는 시작 단계에서 거부합니다.
 - `Authentication:Mode=External`은 Metadata·Issuer·Audience·JWKS 검증을 사용합니다. MetadataAddress와 Issuer는 도메인 또는 개인 개발망의 IP 주소를 포함할 수 있으며, HTTP 주소는 Development에서만 허용합니다.
 
 ## 비운영 외부 IdP 권장 구성

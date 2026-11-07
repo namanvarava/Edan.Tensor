@@ -15,7 +15,7 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 
 ## 인증 및 Tenant 선택
 
-모든 Platform 관리 API는 JWT Bearer 인증을 사용합니다.
+모든 Platform 관리 API는 기본적으로 JWT Bearer 인증을 사용합니다. 개인 개발의 Development `Authentication:Mode=Bypass`에서는 외부 IdP와 Bearer 토큰이 없어도 모든 요청을 고정된 개발 주체로 인증합니다. 이 경우에도 Tenant 소속과 리소스 권한 검사는 수행합니다.
 
 - 인증 헤더: `Authorization: Bearer {access-token}`
 - 필수 JWT 클레임: `sub` (외부 인증 주체 식별자)

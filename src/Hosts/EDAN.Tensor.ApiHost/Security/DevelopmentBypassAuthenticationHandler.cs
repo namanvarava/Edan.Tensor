@@ -5,10 +5,11 @@ using Microsoft.Extensions.Options;
 
 namespace EDAN.Tensor.ApiHost.Security;
 
-/// <summary>개발 환경에서 외부 IdP 없이 고정된 로컬 주체를 인증합니다.</summary>
+/// <summary>개발 환경에서 외부 IdP 없이 모든 요청을 고정된 로컬 주체로 인증합니다.</summary>
 /// <remarks>
 /// 이 Handler는 <c>Authentication:Mode=Bypass</c>일 때만 등록됩니다.
-/// Bypass는 외부 JWT 검증만 생략하며, Tenant 소속·조직 범위·관리자 권한 검사는 기존 정책을 그대로 적용합니다.
+/// 요청에 Bearer 토큰이 없어도 인증된 ClaimsPrincipal을 만들며 외부 Metadata, Issuer, Audience와 JWKS를 읽지 않습니다.
+/// Bypass는 인증 절차만 대체하며, Tenant 소속·조직 범위·관리자 권한 검사는 기존 정책을 그대로 적용합니다.
 /// 운영 환경에서 Bypass를 선택하면 호스트가 시작되지 않도록 등록 단계에서 차단합니다.
 /// </remarks>
 internal sealed class DevelopmentBypassAuthenticationHandler(
@@ -18,8 +19,8 @@ internal sealed class DevelopmentBypassAuthenticationHandler(
     IConfiguration configuration)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    /// <summary>요청을 고정된 개발 주체로 인증합니다.</summary>
-    /// <returns>구성된 주체와 플랫폼 관리자 역할을 포함한 인증 티켓을 반환합니다.</returns>
+    /// <summary>토큰 유무와 관계없이 요청을 고정된 개발 주체로 인증합니다.</summary>
+    /// <returns>항상 인증 성공한 개발 주체의 인증 티켓을 반환합니다.</returns>
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var subject = configuration["Authentication:BypassSubject"]?.Trim();
