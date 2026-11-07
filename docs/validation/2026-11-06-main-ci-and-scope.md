@@ -475,7 +475,7 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 현재 Windows 로컬 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 실행했다. Restore·Build·Test는 모두 종료 코드 0이며 Build는 경고 0개·오류 0개, 전체 테스트는 218개 통과·실패 0개·건너뜀 0개였다.
 - 병합 후 [Actions Run #746](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399622276)의 Job `128484365527`은 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner에서 실행되었다. 로그에는 동일한 Restore·Release Build·Release Test 명령과 Build 경고 0개·오류 0개, 전체 테스트 218개 통과가 기록되어 있다.
 - 현재 실행 컨텍스트에서 Windows 서비스 관리자는 권한 부족으로 조회할 수 있었으므로 서비스의 현재 Running·자동 시작 상태는 이 세션에서 새로 확인하지 않았다. 다만 Run #746의 Runner 이름·레이블과 실제 Job 성공은 GitHub 실행 기록으로 확인했다. 서비스 상태를 독립적으로 확인하려면 로컬 관리자 권한 PowerShell에서 `Get-Service -Name 'actions.runner*'`를 실행해야 한다.
-- 인수인계 PDF 원본은 현재 작업 디렉터리와 확인 가능한 첨부 폴더에 존재하지 않아 이 세션에서 다시 렌더링할 수 없었다. 기존 검증 문서에 기록된 PDF 대조 결과는 역사적 기록으로 보존하며, 원본이 다시 제공되기 전까지 이번 감사에서는 PDF 원본 재검토를 미검증으로 분류한다.
+- 당시 확인 범위에서는 인수인계 PDF 원본을 찾지 못했다는 기록을 남겼다. 이후 2026-11-08 Windows 로컬 감사에서 동일 파일을 `C:\Users\naman\Downloads\Edan.Tensor_Continuation_Handoff_2026-11-06.pdf`에서 발견하여 아래 절에서 원본을 다시 렌더링하고 검토했다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 이 조건은 Development Bypass와 로컬 검증을 중지시키지 않으며, 실제 외부 IdP 경계 검증만 환경 미검증으로 유지한다. GitHub main 보호 규칙 상세 API의 HTTP 403도 변경하거나 우회하지 않는다.
 
 ## 2026-11-08 최신 main Release Host Smoke 재검증
@@ -483,5 +483,15 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합된 최신 main의 Release ApiHost를 임시 SQLite 네 개와 Development Bypass 설정으로 하나의 Windows 검증 프로세스에서 기동했다. 동일 프로세스에서 `/health`는 HTTP 200, `/health/database`는 HTTP 200과 `Connected`·`Green`, `/api/platform/tenants/mine`은 HTTP 200과 Administrator Tenant 1개 및 `tenantId`를 반환했다.
 - 첫 번째 Smoke 하네스는 Tenant API 응답에 존재하지 않는 `code` 필드를 기대해 실패했다. 로그에서 모든 HTTP 상태와 Administrator 응답은 정상임을 확인했고, 제품 오류가 아니라 검증 하네스의 응답 계약 불일치로 분류했다. 하네스를 실제 API 계약인 `tenantId`·`role` 검증으로 최소 수정한 뒤 동일 조건에서 재실행하여 성공했다.
 - 검증 후 ApiHost 프로세스와 임시 SQLite·아카이브 디렉터리를 종료·삭제했다. 이 검증은 외부 IdP를 대체하지 않으며 Development Bypass와 로컬 Tenant 초기화 경계만 확인한다.
+
+## 2026-11-08 인수인계 PDF 원본 재검토 및 현재 상태 대조
+
+- 인수인계 PDF 원본 `C:\Users\naman\Downloads\Edan.Tensor_Continuation_Handoff_2026-11-06.pdf`를 확인했다. 문서는 2쪽 A4, 비암호화 PDF이며 `pdfinfo`에서 JavaScript와 폼이 없음을 확인했다.
+- 두 페이지를 PNG로 렌더링하여 제목, 기준 SHA, Actions Run #605 예산 차단 기록, 저장소 운영 규칙, Worker 종료 인계·Tenant Task Cursor LRU·전용 DbContext·DataSet 저장소 분리·Platform 계층 규칙 및 재개 조건의 잘림·겹침·검은 사각형을 시각 확인했다. Poppler의 `Symbol`·`ArialUnicode` 글꼴 경고는 렌더링 경고였으며 페이지 내용의 누락으로 이어지지 않았다.
+- PDF가 기록한 기준 main SHA `c187103cee76ad58e28633a259aeebc5e7dab75c`는 현재 main SHA `ebfc71c50105196036176b51b6abf89d74f4da21`와 다르다. 현재 main의 후속 PR과 CI 결과를 기준으로 재평가했으며 PDF 기준 SHA를 최신 상태로 간주하지 않았다.
+- PDF의 Actions Run #605(`42124026661`)는 `runner_id=0`, Runner·Job Step·로그가 없는 Actions 예산 사전 차단이었다. 현재 Run #750(`42401219135`)은 실제 `EDAN-TENSOR-WIN` Windows X64 self-hosted Runner의 Job `128489158344`에서 Restore·Build·Test를 모두 성공시켰다. 과거 Run #605는 재실행하지 않았고 Billing·예산 설정도 변경하지 않았다.
+- PDF의 Worker 설계는 현재 구현과 테스트에서 확인했다. `WorkerExecutionRegistry`와 `WorkerTaskDispatcher`는 단일 handoff 예산을 공유하고, Tenant Task Cursor는 Dispatcher 단일 루프의 LRU로 관리하며 기본 10,000·허용 범위 500–100,000을 사용한다. Worker는 전용 `WorkerDbContext`를 사용하고 DataSet 메타데이터·콘텐츠는 별도 저장 경계를 사용한다. 모듈 의존성 테스트도 현재 Release 전체 테스트에 포함되어 있다.
+- PDF의 “예산 해제 전 코드 변경 중단” 지시는 당시 인수인계 절차였고, 현재 전체 개발 목표의 “CI 장애와 무관하게 가능한 개발을 계속한다”는 정책으로 대체되었다. 실제 CI가 정상화된 현재는 로컬 Release 검증과 self-hosted CI 증거를 함께 유지한다.
+- PDF가 요구한 Billing 화면 확인은 읽기 전용으로만 수행한다. 예산 증액, 사용 중지 옵션 변경, GitHub-hosted Runner 전환은 수행하지 않는다. 실제 비운영 외부 IdP 경계는 Metadata/JWKS·Issuer·Audience·테스트 Tenant·opaque `sub`·키 회전 권한이 제공되기 전까지 환경 미검증으로 유지한다.
 
 
