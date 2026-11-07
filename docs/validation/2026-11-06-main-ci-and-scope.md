@@ -304,6 +304,14 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PR #43의 첫 CI인 Actions Run #703(`42340222653`)은 `EDAN-TENSOR-WIN` Runner 22에서 Restore와 Release Build를 성공시켰지만 Test 단계에서 `WorkerExecutionRegistryTests.ShutdownReturnsWhenHandoffCallbackIgnoresCancellation`가 `handoffStarted.Task.WaitAsync(TimeSpan.FromSeconds(5))`에서 `TimeoutException`을 반환했다. 새 Bypass Claim 테스트가 아니라 기존 Worker 종료 테스트의 실패였으며, 나머지 테스트는 통과했다.
 - 실패 로그와 소스를 대조한 결과, 해당 테스트는 다른 Worker 인프라 테스트와 병렬 실행될 때 10밀리초 grace 타이머와 250밀리초 취소 타이머의 ThreadPool continuation 스케줄링에 의존했다. 제품의 종료 예산 계산 오류나 외부 환경 장애로 분류하지 않았다.
 - 제품의 250밀리초 인계 예산을 늘리거나 테스트 대기 상한을 무조건 늘리는 대안은 종료 계약을 약화하거나 관측을 흐리므로 적용하지 않았다. 테스트는 grace 대기 없이 인계를 시작하고, 시간 경계 테스트 컬렉션을 다른 Worker 인프라 테스트와 병렬 실행하지 않도록 격리했다. 이 변경은 제품 코드와 CI Workflow를 바꾸지 않으며, 취소 무시 콜백·실행 Lease 정리·인계 실패 결과 검증은 그대로 유지한다.
-- 수정 후 대상 테스트를 20회 연속 실행하여 모두 통과했고, 로컬 Windows에서 Release 전체 테스트 214개가 실패 0개·건너뜀 0개로 통과했다. PR #43의 실패 원인은 기록했으며, 수정 커밋의 PR Check에서 동일 Runner의 Restore·Build·Test를 다시 확인한다.
+- 수정 후 대상 테스트를 20회 연속 실행하여 모두 통과했고, 로컬 Windows에서 Release 전체 테스트 214개가 실패 0개·건너뜀 0개로 통과했다. PR #43의 수정 커밋은 동일 Runner의 Restore·Build·Test Check를 통과한 뒤 병합되었다.
+
+## 2026-11-07 PR #43 병합 후 최종 main 검증
+
+- PR #43은 필수 Check가 `pass`이고 병합 상태가 `CLEAN`인 것을 확인한 뒤 `874ec208e06bc08cc25fb7a5d09f547f9732fa0a`로 Squash Merge했다. 로컬 `main`, `origin/main` 및 원격 `refs/heads/main`은 모두 같은 SHA를 가리키며 작업 디렉터리는 clean 상태다.
+- 병합 후 push Actions Run #705(`42341308727`)는 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)에서 Restore·Release Build·Release Test를 모두 성공시켰다. Build는 경고 0개·오류 0개였고 테스트는 214개 통과·실패 0개·건너뜀 0개였다.
+- 병합 후 Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. 세 명령은 모두 종료 코드 0이며 동일하게 214개 테스트가 통과했다.
+- 병합된 PR #43과 기존 PR #42를 포함해 열린 Pull Request와 Issue는 각각 0개다. Runner는 `online`·`busy=false`이고 Windows 서비스는 `Running`·`Auto`이며, Workflow에는 `schedule`, `cron`, `workflow_dispatch` 예약 트리거가 없다.
+- 실제 비운영 외부 IdP의 Metadata/JWKS·Issuer·Audience·Tenant 테스트 주체·키 회전 권한이 없는 상태이므로 외부 경계 검증은 완료로 표시하지 않는다. GitHub 비공개 저장소의 main 보호 규칙 REST 조회는 요금제 제한 HTTP 403으로 계속 독립 확인할 수 없다.
 
 
