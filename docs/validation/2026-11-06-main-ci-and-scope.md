@@ -372,4 +372,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - GitHub 원격 조회에서 열린 Issue와 PR은 각각 0개다. `branches/main`은 `protected=false`를 반환했으며 보호 규칙 세부 API는 HTTP 403으로 조회할 수 없었다. 이는 비공개 저장소 요금제에 따른 환경 제약으로 기록하고 보호 정책을 변경하거나 우회하지 않았다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 아직 제공되지 않았다. Development Bypass와 로컬 IdP/JWKS 경계 검증은 계속 사용할 수 있지만, 실제 외부 IdP 경계 검증은 완료로 표시하지 않는다.
 
+## 2026-11-07 PR #52 병합 후 최신 main 재검증
+
+- PR #52의 문서 정정 변경을 `e94586fcbcae1ba1ebc4b0389385c5448de25906`으로 Squash Merge한 뒤 로컬 `main`과 `origin/main`, GitHub `main`이 같은 SHA를 가리키고 작업 디렉터리가 clean임을 확인했다.
+- Windows 로컬에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. 세 명령은 모두 종료 코드 0이며 Build 경고 0개·오류 0개, 전체 테스트 215개 통과·실패 0개·건너뜀 0개였다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive --format json`도 종료 코드 0으로 완료되었고 취약성 항목을 반환하지 않았다.
+- 최신 [Actions Run #723](https://github.com/namanvarava/Edan.Tensor/actions/runs/42368346011)은 병합 SHA에서 Job `128391099173`을 `EDAN-TENSOR-WIN` Runner 22(`self-hosted`, `Windows`, `X64`)로 실행하여 Restore·Build·Test·정리 단계를 모두 성공시켰다. Windows 서비스 `actions.runner.namanvarava-Edan.Tensor.EDAN-TENSOR-WIN`은 `RUNNING`·`AUTO_START`로 확인했다.
+- 열린 Issue와 PR은 각각 0개다. `branches/main`은 `protected=false`이며 보호 규칙 세부 API는 HTTP 403으로 조회할 수 없으므로, 이 저장소 요금제 제약을 완료 증거로 오인하지 않는다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·`edan-nonprod` Tenant·테스트 사용자·안정적인 opaque `sub`·키 회전 권한은 여전히 제공되지 않았다. 따라서 실제 외부 IdP 경계 검증만 미완료이며, Development 작업은 Bypass와 로컬 경계 검증으로 계속할 수 있다.
+
 
