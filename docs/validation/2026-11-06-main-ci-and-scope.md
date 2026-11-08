@@ -588,3 +588,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 219개 통과·실패 0개·건너뜀 0개였다. 이전 문서 값 `EDAN-LOCAL`·`local-development-subject` 검색과 `git diff --check`도 통과했다.
 - PR #78 자체 호스팅 검증 [Actions Run #775](https://github.com/namanvarava/Edan.Tensor/actions/runs/42444220095)는 성공했다. 병합 후 최신 main push [Actions Run #776](https://github.com/namanvarava/Edan.Tensor/actions/runs/42444334669)도 head SHA `2e9ff6d7a61faf924b267119c87a84370aeeb48f`에서 `success`로 완료되었고 `build-and-test` 작업이 성공했다.
 - 열린 Issue와 Pull Request는 각각 0건이며, 원격 브랜치 검색에서 병합된 `codex/align-bypass-docs-20261108`가 사라졌고 로컬 브랜치에는 `main`만 남았다. 현재 저장소 visibility는 여전히 private이고, `main` 보호 규칙 API HTTP 403과 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·테스트 사용자·안정적인 `sub`·키 회전 권한은 환경 미검증 상태다. 공개 전환이나 GitHub 요금제 변경은 수행하지 않았다.
+
+
+## 2026-11-08 PR #79 병합 후 최종 main Release·CI·정리 재검증
+
+- PR #79의 head `961ece39eefe59b9ac67fb8a8e15b931613ac100`는 검증 문서에 PR #78 병합과 최신 Release·CI 근거를 추가한 뒤 `0296e595758bb93ba2985a041736a572ebbf1494`로 Squash Merge되었다. 병합 후 로컬 `main`과 `origin/main`은 같은 SHA를 가리키고 작업 디렉터리는 clean 상태다.
+- 최종 병합 커밋에서 실제 Windows 권한으로 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 219개 통과·실패 0개·건너뜀 0개였다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`도 모든 프로젝트에 취약 패키지가 없다고 보고했다.
+- 병합 후 최신 main push [Actions Run #779](https://github.com/namanvarava/Edan.Tensor/actions/runs/42444750012)은 head SHA `0296e595758bb93ba2985a041736a572ebbf1494`에서 `success`로 완료되었고 `build-and-test` 작업이 성공했다. PR #79 검증 [Actions Run #777](https://github.com/namanvarava/Edan.Tensor/actions/runs/42444648454)도 성공했다.
+- 열린 Issue와 Pull Request는 각각 0건이며, 원격 브랜치 검색 결과 `main`만 남았다. 로컬 브랜치도 `main`만 남았고, 병합된 `codex/record-current-validation-20261108` 원격 브랜치 삭제를 확인했다. 저장소는 여전히 private이고 `main` 보호 규칙 HTTP 403과 실제 비운영 외부 IdP 경계는 환경 미검증으로 유지한다.
