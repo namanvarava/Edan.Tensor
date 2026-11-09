@@ -277,3 +277,7 @@ PR #154는 최신 검증 증거를 문서에 반영하여 `5fe4b343928edd70f3319
 ## 2026-11-10 PR #155 병합 후 최신 기준
 
 PR #155는 문서의 테스트 구성과 최신 main 증거가 이전 SHA를 현재 기준처럼 가리키던 정합성 결함을 수정하여 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`로 Squash Merge되었다. PR CI [Run #930](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718223926)과 병합 후 main CI [Run #931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718607611)이 성공했다. 병합 후 로컬에서 Release Restore·Build·Test를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다. PR #155 작업 브랜치는 병합 후 로컬·원격에서 삭제했고, 현재 내부 구현 범위와 외부 미검증 조건은 변경하지 않았다.
+
+## 2026-11-10 PR #157 OpenAPI 계약 회귀 보강
+
+PR #157은 승인된 Platform·DataSet·Validation·사용량·Worker·외부 전달 핵심 경로가 OpenAPI 문서에 계속 노출되는지와 Tenant 헤더, `Idempotency-Key`, `Replay-Request-Id`, Bearer 보안 요구가 유지되는지를 통합 테스트로 보강하여 `a379c6077b671e27f74dda267ae3715dfc374e0c`로 Squash Merge되었다. PR CI [Run #934](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721451802)와 병합 후 main CI [Run #935](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721752528)이 성공했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 기록했다. 이 변경은 제품 실행 경계를 확장하지 않으며 승인되지 않은 DuckDB·Parquet·Commercial·Licensing·WPF와 외부 환경 검증은 계속 별도 조건으로 남긴다.

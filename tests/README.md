@@ -20,7 +20,7 @@ Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬
 
 ## 현재 main 기준: 2026-11-10
 
-현재 `main`은 PR #155가 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`로 Squash Merge된 상태다. PR 자체 CI [Run #930](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718223926)과 병합 후 main CI [Run #931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718607611)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 기록했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 `main`은 PR #157이 `a379c6077b671e27f74dda267ae3715dfc374e0c`로 Squash Merge된 상태다. PR 자체 CI [Run #934](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721451802)와 병합 후 main CI [Run #935](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721752528)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id 회귀도 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 
