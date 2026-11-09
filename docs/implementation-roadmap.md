@@ -153,7 +153,7 @@ Tenant 생성 및 활성화
 
 ## 2026-11-10 최신 실행 기준
 
-최신 `main`의 기준 SHA는 `cf18d0436710e4440ff9dc90d415e1bf6bd85bbd`입니다. PR #130 병합 후 열린 PR은 없고, 로컬·원격 작업 브랜치는 `main`만 남아 있습니다. PR #128 병합 후 main CI Run #876, PR #129 병합 후 main CI Run #878, PR #130 병합 후 main CI Run #880은 성공했습니다. PR #128 변경 브랜치에서 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 232개 통과·실패 0개·건너뜀 0개를 확인했습니다. 이 문서 앞부분의 이전 SHA·테스트 수·CI 번호는 당시의 역사적 실행 기록이며, 이후 작업은 이 최신 기준을 사용합니다.
+최신 `main`의 기준 SHA는 `a1d3ce19a43fcb6ac5012b25a4fbc1e9ccccab82`입니다. PR #131 병합 후 열린 PR은 없고, 로컬·원격 작업 브랜치는 `main`만 남아 있습니다. PR #128 병합 후 main CI Run #876, PR #129 병합 후 main CI Run #878, PR #130 병합 후 main CI Run #880, PR #131 자체 CI Run #881은 성공했습니다. PR #131 병합 후 main CI Run #882는 GitHub Actions `Internal server error`로 실패했으며 Job 로그가 생성되지 않았고 재실행 API도 403으로 거부되었습니다. 따라서 최신 main CI 성공은 아직 확인되지 않았고, Run #880·#881의 성공을 Run #882의 대체 증거로 사용하지 않습니다. PR #128 변경 브랜치에서 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 232개 통과·실패 0개·건너뜀 0개를 확인했습니다. 이 문서 앞부분의 이전 SHA·테스트 수·CI 번호는 당시의 역사적 실행 기록이며, 이후 작업은 이 최신 기준을 사용합니다.
 
 이번 검증으로 로컬 SQLite·Migration·Swagger/OpenAPI 계약, Platform·DataSet·Worker API 통합 흐름, Tenant·인증 경계와 Worker 장애·복구 자동 검증을 현재 내부 범위의 기준으로 고정합니다. 다음 구현은 승인된 DuckDB·Parquet·Commercial·WPF 계약을 먼저 처리하고, 그 뒤 승인된 발급 규칙으로 LicenseAuthority와 개발 라이선스 1개를 구현합니다. 운영 DB·실제 비운영 IdP·외부 시스템·GitHub main 보호 규칙은 해당 환경과 권한이 제공된 뒤 검증합니다.
 

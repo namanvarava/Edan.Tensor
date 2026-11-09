@@ -841,6 +841,13 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 실제 프로세스 기동했을 때 Migration, 고정 Development Bypass Tenant 초기화, `http://127.0.0.1:5197` 수신 대기와 stderr 0바이트를 확인했다. 같은 Work에서 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API의 HTTP 상태는 소켓 접근 경계로 확인되지 않아 모두 환경 미검증으로 남겼다. HTTP 성공으로 확대하거나 운영 설정을 완화하지 않았다.
 - 동일 원인에 대해 원문 명령 무한 재시도, 캐시 삭제, CI 우회, 운영 인증·DataProtection 설정 완화는 수행하지 않았다. 재개 조건은 동기화 폴더 밖의 격리된 Windows checkout 또는 동일한 자체 호스팅 Runner에서 Testhost·loopback TCP 접근 권한을 확보한 뒤 원문 Test와 Host HTTP Smoke를 다시 실행하는 것이다. 이 기록은 제품 실패를 숨기지 않으면서 인프라 실패와 코드 실패를 구분한 증거다.
 
+## 2026-11-10 PR #131 병합 후 main CI 인프라 실패
+
+- PR #131 `docs: 현재 Work 검증 경계와 테스트 기준 기록`의 head `6b861d09879de6fdb91934b534dd192b4134919a`는 main에 `a1d3ce19a43fcb6ac5012b25a4fbc1e9ccccab82`로 Squash Merge되었다. PR Check [Actions Run #42672505068](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672505068)은 Restore·Build·Test를 성공시켰다.
+- 병합 후 main [Actions Run #42672786178](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672786178)은 51초 후 `Failure`로 종료되었다. GitHub Actions 화면의 유일한 Annotation은 `Internal server error. Correlation ID: f25b3d2b-471b-4b15-a2ff-110586259aa1`였고, Job 목록은 비어 있어 제품 단계·테스트 assertion·Runner 로그가 생성되지 않았다.
+- 실패 Job 재실행은 GitHub API에서 `403 This workflow run cannot be retried`로 거부되었다. 서비스 내부 오류와 재실행 권한 경계를 코드 실패로 분류하지 않았고, 캐시 삭제·무한 재시도·보호 정책 우회도 수행하지 않았다. 따라서 최신 main CI는 미검증이며, Run #880과 PR #131 Run #881의 성공을 Run #882 성공으로 대체하지 않는다.
+- 재개 조건은 GitHub Actions 서비스 오류가 해소되고 실패 Run 또는 새 main push에 대해 동일한 자체 호스팅 Restore·Build·Test가 성공하는 것이다. 그 성공 확인 전에는 전체 개발 완료를 선언하지 않는다.
+
 ## 2026-11-10 PR #128 API 계약·Tenant 선택·Worker 헤더 검증
 
 - API 계약 감사에서 OpenAPI 문서가 실제 Tenant 필터가 요구하는 `X-Tenant-Id`를 모든 보호 경로에서 선택사항으로 표시하던 불일치를 확인했다. 또한 Tenant 선택값이 없을 때 `TenantMembershipAuthorizationFilter`가 선택 Tenant 오류와 membership 오류를 같은 `platform.membership.forbidden` 코드로 반환하여 장애 원인을 구분하기 어려웠다. Worker API의 `Idempotency-Key`와 DLQ 재처리의 `Replay-Request-Id` 누락 응답도 통합 계약으로 고정할 필요가 있었다.
