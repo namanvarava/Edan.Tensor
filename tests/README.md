@@ -56,3 +56,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 ## 2026-11-10 main 최종 검증
 
 PR #143의 [PR CI Run #906](https://github.com/namanvarava/Edan.Tensor/actions/runs/42693768814)과 [main CI Run #907](https://github.com/namanvarava/Edan.Tensor/actions/runs/42694097462)이 성공했다. 병합된 main에서 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 235개 통과·실패 0개·건너뜀 0개를 다시 확인했다. 실제 Development Host Smoke는 ApiHost와 WorkerHost의 health·DB health·OpenAPI·Swagger·보호 Tenant API를 모두 HTTP 200으로 확인하고 자원을 정리했다.
+
+## Client API 연동 회귀
+
+`EDAN.Tensor.Client.Tests`는 인증 헤더, 기본 Tenant 헤더, `Idempotency-Key`, 구조화 API 오류, 404 선택 조회, 다운로드 스트림 수명, 입력·페이지 상한을 검증한다. 실제 임시 SQLite API Host에 typed Client를 연결하는 통합 테스트 1개도 추가했으며, 새 Client 테스트 6개를 포함한 솔루션 전체 Release Test는 현재 242개 통과·실패 0개·건너뜀 0개다.
