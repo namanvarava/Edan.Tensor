@@ -896,3 +896,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PR #138 `docs: 외부 IdP 검증 런북의 Bypass 경계 정정`의 head `ca0ac4af77d773ec734198ef3c14c94b08935bfc`는 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`로 Squash Merge되었다. PR 자체 CI Run #896과 병합 후 main CI [Run #897](https://github.com/namanvarava/Edan.Tensor/actions/runs/42685196379)은 Restore·Release Build·Release Test와 정리 단계를 모두 성공시켰다.
 - PR #138은 외부 IdP 런북에서 실제로 존재하지 않는 `Authentication__BypassSubject` 설정명을 제거하고, Development Bypass 고정 프로필은 External IdP 검증에 사용하지 않는다는 경계를 명시했다. 현재 로컬·원격 `main`은 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`로 일치하고 작업 디렉터리는 clean이다. PR #137·#138의 원격·로컬 작업 브랜치는 삭제되었고 원격·로컬 브랜치에는 `main`만 남았다.
 - 최신 내부 실행 순서는 API 계약·멱등성 → Tenant·인증 경계 → Worker 장애·복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 → 운영·외부 환경 검증이다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 이 CI 성공으로 대체하지 않으며 Issue #84와 Milestone #1의 외부 조건으로 유지한다.
+
+## 2026-11-10 PR #139 병합 후 Release 재검증
+
+- PR #139의 head `56a899ee2dd4646c2ba00830b4d87d4e81b167b9`는 `a0c990aca0ee3466701e4ccee21bc1c61815e956`로 Squash Merge되었다. PR 자체 CI Run #898과 병합 후 main CI [Run #899](https://github.com/namanvarava/Edan.Tensor/actions/runs/42686600210)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰다.
+- 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실제 실행했다. 제한된 Work 권한의 최초 Restore는 출력 없이 종료 코드 1을 반환했으며, 상세 실행에서 .NET SDK 10.0.402의 Service Control Manager 접근이 Win32 오류 5(액세스 거부)로 차단된 환경 원인을 확인했다. 권한 확장 후 같은 Restore는 성공했다.
+- 권한 확장 환경의 Release Build는 경고 0개·오류 0개였고, 전체 Release Test는 233개 통과·실패 0개·건너뜀 0개였다. 이 재검증은 인증 우회나 테스트 생략을 사용하지 않았으며, 개발 Bypass는 코드에 고정된 비운영 시뮬레이션 프로필로만 동작했다.
+- 중단 원인은 소스·의존성 결함이 아니라 로컬 Work의 Windows 서비스 조회 권한이었다. 재발 방지는 CI 자체 호스팅 Runner의 성공 증거와 로컬 권한 확장 재검증을 구분 기록하고, 실패 원인을 확인하지 않은 재시도를 하지 않는 것이다.
