@@ -4,7 +4,7 @@
 
 ## 기준 상태
 
-현재 main은 `6148f82cdbd4306eaf30d512233c63585e96f461`이며 PR #123 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+현재 main은 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`이며 PR #124 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 ### 현재 이동 게이트
 
@@ -154,12 +154,12 @@ Tenant 생성 및 활성화
 
 ## 2026-11-10 현재 실행 기준
 
-최신 `main`의 기준 SHA는 `6148f82cdbd4306eaf30d512233c63585e96f461`입니다. PR #123 병합 후 열린 PR은 없고, 원격 작업 브랜치는 `main`만 남아 있습니다. 병합 후 자체 호스팅 Windows CI Run #865는 Restore·Build·Test를 모두 성공시켰습니다.
+최신 `main`의 기준 SHA는 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`입니다. PR #124 병합 후 열린 PR은 없고, 원격 작업 브랜치는 `main`만 남아 있습니다. 병합 후 자체 호스팅 Windows CI Run #867은 Restore·Build·Test를 모두 성공시켰습니다.
 
 ```text
 dotnet restore EDAN.Tensor.sln
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
-dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-42660093117.trx"
+dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-42661262730.trx"
 ```
 
 현재 Work에서도 최신 main 기준으로 같은 대상 명령을 실제 실행하여 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 231개 통과·실패 0개·건너뜀 0개를 재확인했습니다. 별도 임시 SQLite 네 개로 실제 ApiHost를 기동하여 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, Development Bypass 보호 API가 모두 HTTP 200을 반환했고 stderr는 0바이트였습니다. 실제 WorkerHost도 Migration·Handler catalog 동기화 후 `/health` HTTP 200과 stderr 0바이트를 반환했습니다. 이 결과로 로컬 SQLite·Migration·Swagger/OpenAPI 계약, Platform·DataSet·Worker API 통합 흐름, Tenant·인증 경계와 Worker 장애·복구 자동 검증을 현재 내부 범위의 기준으로 고정합니다.
