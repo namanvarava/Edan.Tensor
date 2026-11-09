@@ -57,7 +57,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - 개발 연속성 정책에 따라 외부 IdP Metadata·JWKS·Tenant·키 회전 정보가 아직 없거나 GitHub main 보호 규칙 API가 비공개 저장소 요금제 제한으로 HTTP 403을 반환해도 개발 작업을 중지하지 않습니다. Development Bypass, 로컬 IdP/JWKS 테스트, Windows 자체 호스팅 CI를 계속 사용하고 해당 외부 경계만 미검증으로 기록합니다.
 - `External` 및 운영 환경에서는 위 조건을 Bypass하지 않습니다. 외부 정보가 없으면 Issuer·Audience·Metadata·JWKS·HTTPS 검증을 유지한 채 보호 API를 닫힌 상태로 두며, 실제 외부 검증이 끝나기 전에는 외부 경계 검증 완료로 판정하지 않습니다. 현재 개발 범위의 구현·문서·Release·CI 검증과 소스 병합은 후속 Milestone #1과 별도로 종료할 수 있습니다.
 
-[로컬 DB 설정](docs/operations/platform-database-local-setup.md), [API 사용 가이드](docs/operations/platform-api-guide.md),
+[로컬 DB 설정](docs/operations/platform-database-local-setup.md), [SQLite 백업·복구 런북](docs/operations/platform-database-backup-restore.md), [API 사용 가이드](docs/operations/platform-api-guide.md),
 [Worker 수명주기](docs/architecture/worker-task-lifecycle.md), [작업 카탈로그와 DataSet 검증](docs/architecture/worker-task-type-catalog-and-dataset-validation.md),
 [API 보안](docs/architecture/platform-api-security.md), [의존성 규칙](docs/architecture/dependency-rules.md)을 함께 확인하세요.
 

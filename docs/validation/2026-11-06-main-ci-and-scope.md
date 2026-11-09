@@ -684,3 +684,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
   - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 종료 코드 0, 전체 223개 통과·실패 0개·건너뜀 0개
 - 전체 테스트 중 API Host 통합 테스트 26개도 별도로 실행하여 26개 통과·실패 0개·건너뜀 0개를 확인했다. 테스트에는 Development Bypass 차단, 외부 IdP/JWKS 로컬 경계, Swagger UI·OpenAPI, health, Tenant 격리, DataSet SQLite 콘텐츠·Quota·검증, Worker Idempotency·DLQ·보상 정리가 포함된다.
 - 이 기록은 저장소 내부 범위의 최신 로컬 재검증 증거이며 전체 제품 개발 완료 선언이 아니다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 실제 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 Work에서 실행하지 않았고 성공으로 표시하지 않는다. 해당 조건이 제공되면 Issue #84와 Milestone #1의 런북을 수동 실행한 뒤 별도 판정한다.
+
+## 2026-11-09 SQLite 백업·복구 런북과 로컬 콘텐츠 복구 회귀 검증
+
+- 운영 검증 단계에 필요한 백업·복구 증거가 기존 문서에 흩어져 있어, 네 SQLite 저장소를 함께 다루는 한국어 런북 `docs/operations/platform-database-backup-restore.md`를 추가했다. 런북은 WAL·SHM 확인, `integrity_check`, `VACUUM INTO` 또는 동등한 온라인 백업, 별도 경로 복구, Migration·health·Tenant·Worker Lease/DLQ 확인과 실패 판정 기준을 정의한다.
+- 단순 파일 복사만 안내하면 WAL에 남은 커밋과 DataSet 콘텐츠가 누락될 수 있으므로, DataSet Infrastructure에 `VACUUM INTO`로 별도 백업을 생성한 뒤 복구 어댑터에서 동일한 불투명 Storage Reference의 콘텐츠를 읽는 회귀 테스트를 추가했다. 이 테스트는 운영 백업 성공을 대신하지 않으며 로컬 SQLite 콘텐츠 백업 시점의 정합성만 검증한다.
+- 변경 전에는 네 데이터베이스의 동시 쓰기 중지, 백업 세트 일치, 복구 후 Tenant 격리와 Worker Lease/DLQ 확인 절차가 하나의 문서로 고정되지 않은 영향이 있었다. 원본을 덮어쓰거나 운영 DB 공급자를 가정하는 대안은 적용하지 않고, 현재 구현과 운영 결정의 경계를 보존하는 최소 문서·테스트를 추가했다.
+- 대상 테스트 `SqliteBackupAndRestorePreservesContentAtTheBackupPoint`는 Release 환경에서 1개 통과·실패 0개·건너뜀 0개로 확인했다. 작업 브랜치에서 `dotnet restore EDAN.Tensor.sln`은 성공했고, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개로 완료했으며, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 종료 코드 0과 전체 224개 통과·실패 0개·건너뜀 0개를 기록했다. PR Check와 병합 후 main CI 결과는 이 문서의 후속 기록에 추가한다.
+- 운영 DB 공급자, 백업 보존 기간, RPO·RTO, 암호화·외부 Object Storage와 실제 장애 복구 시간은 아직 결정·검증하지 않았다. 이 항목은 운영 DB와 인프라가 제공된 뒤 별도 실행해야 하며 현재 Work의 로컬 SQLite 증거로 완료 처리하지 않는다.

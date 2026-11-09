@@ -36,7 +36,7 @@ dotnet run --project src/Hosts/EDAN.Tensor.ApiHost
 
 - SQLite 파일 경로에 API 프로세스의 읽기·쓰기 권한이 필요합니다.
 - 개발 환경 Migration 적용은 개발 편의 설정입니다. 운영 환경에서는 배포 파이프라인에서 Migration을 별도 승인·적용해야 합니다.
-- 운영 환경에 배포하기 전 EF Core Migration과 백업·복구 정책을 확정해야 합니다.
+- 운영 환경에 배포하기 전 EF Core Migration과 백업·복구 정책을 확정해야 합니다. 네 SQLite 파일을 함께 복구하는 절차는 [SQLite 백업·복구 런북](platform-database-backup-restore.md)을 따릅니다.
 - DataSet용 DuckDB·Parquet 저장소는 Platform 메타데이터 SQLite와 별도 수명주기로 관리합니다.
 
 ## API Host와 Worker Host의 공유 데이터베이스 구성
