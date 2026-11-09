@@ -29,6 +29,8 @@ PR #137·#138 병합 후 최신 `main`은 `6a5ff9e7227ace12e074a9d13759ac2403f59
 
 PR #139 병합 후 최신 `main`은 `a0c990aca0ee3466701e4ccee21bc1c61815e956`이다. PR 자체 CI Run #898과 병합 후 main CI [Run #899](https://github.com/namanvarava/Edan.Tensor/actions/runs/42686600210)이 Restore·Release Build·Release Test를 모두 성공했다. 최신 main의 권한 확장 로컬 실행도 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 233개 통과·실패 0개·건너뜀 0개를 기록했다. 제한된 Work 권한에서 최초 Restore가 Win32 오류 5로 중단된 원인은 Service Control Manager 접근 거부였으며, 코드 실패가 아님을 확인한 뒤 권한 확장 환경에서 재검증했다.
 
+최신 main의 직접 Host Smoke에서 임시 SQLite 4개로 ApiHost와 WorkerHost를 기동했고, ApiHost health·database health·OpenAPI·Swagger·Development Bypass Tenant API와 WorkerHost health가 모두 HTTP 200을 반환했다. 종료 후 프로세스·포트·임시 데이터가 남지 않았다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`에서도 모든 프로젝트에 알려진 취약 패키지가 없었다.
+
 PR #81 병합 기준 main 문서는 SHA `030d4c91db86b13d2eb198ace1f699989a59318a`였다. 병합 후 [Actions Run #783](https://github.com/namanvarava/Edan.Tensor/actions/runs/42539919996)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 실제 비운영 외부 IdP 검증은 아직 수행하지 않았으며, 수동 절차는 [외부 IdP 경계 수동 검증 런북](../docs/validation/external-idp-boundary-test-runbook.md)에 기록되어 있다.
 
 이번 Bypass 외부 설정 무시와 로컬 Tenant 초기화 회귀를 포함한 검증 기준에서 자체 호스팅 Windows Release 전체 테스트는 총 218개가 실패 0개·건너뜀 0개로 통과했다. 이 실행에는 개발 Bypass 선택, 외부 IdP 설정 없는 토큰 없는 요청의 인증 성공, 잘못된 외부 IdP 설정을 Bypass에서 무시하는 동작, 고정 Claim 발급, 비개발 환경 Bypass 차단, 로컬 Tenant·관리자 소속의 중복 방지 및 외부 인증 경계 회귀 테스트가 포함된다. PR #63 검증은 [Actions Run #744](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399072656)에서 확인했고, 병합 후 최신 `main`은 [Actions Run #746](https://github.com/namanvarava/Edan.Tensor/actions/runs/42399622276)의 `EDAN-TENSOR-WIN` Runner에서 Restore·Build·Test를 다시 성공시켰다.

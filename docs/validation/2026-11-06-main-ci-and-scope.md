@@ -903,3 +903,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실제 실행했다. 제한된 Work 권한의 최초 Restore는 출력 없이 종료 코드 1을 반환했으며, 상세 실행에서 .NET SDK 10.0.402의 Service Control Manager 접근이 Win32 오류 5(액세스 거부)로 차단된 환경 원인을 확인했다. 권한 확장 후 같은 Restore는 성공했다.
 - 권한 확장 환경의 Release Build는 경고 0개·오류 0개였고, 전체 Release Test는 233개 통과·실패 0개·건너뜀 0개였다. 이 재검증은 인증 우회나 테스트 생략을 사용하지 않았으며, 개발 Bypass는 코드에 고정된 비운영 시뮬레이션 프로필로만 동작했다.
 - 중단 원인은 소스·의존성 결함이 아니라 로컬 Work의 Windows 서비스 조회 권한이었다. 재발 방지는 CI 자체 호스팅 Runner의 성공 증거와 로컬 권한 확장 재검증을 구분 기록하고, 실패 원인을 확인하지 않은 재시도를 하지 않는 것이다.
+
+## 2026-11-10 최신 main 직접 Host Smoke·보안 검사
+
+- 최신 main에서 임시 SQLite 4개와 Development 환경의 고정 Bypass 프로필로 ApiHost와 WorkerHost를 Release 바이너리에서 직접 기동했다. ApiHost `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`와 WorkerHost `/health`가 모두 HTTP 200을 반환했다.
+- Smoke 종료 후 ApiHost·WorkerHost 프로세스 0개, 임시 Smoke 디렉터리 0개, 5061·5062 포트 Listen 0개를 확인했다. Bypass는 이 격리된 Development Smoke에서만 사용했으며 External·운영 인증 검증을 대체하지 않는다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 NuGet 공개 소스와 현재 등록 소스에서 실행했으며 모든 프로젝트에 알려진 취약 패키지가 없었다. 패키지 버전 변경이나 보안 검사 우회는 수행하지 않았다.
