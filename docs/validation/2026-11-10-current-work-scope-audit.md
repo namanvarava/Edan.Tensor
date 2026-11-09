@@ -69,3 +69,9 @@ PR #155의 [PR CI Run #930](https://github.com/namanvarava/Edan.Tensor/actions/r
 PR #157의 [PR CI Run #934](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721451802)와 Squash Merge 후 [main CI Run #935](https://github.com/namanvarava/Edan.Tensor/actions/runs/42721752528)이 성공했다. 병합된 `main`은 `a379c6077b671e27f74dda267ae3715dfc374e0c`이며, OpenAPI 통합 테스트가 Platform·DataSet·Validation·사용량·Worker·외부 전달 경로와 Tenant/Bearer/멱등성 헤더를 확인한다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, Test 243개 통과·실패 0개·건너뜀 0개를 기록했다.
 
 이번 변경은 OpenAPI 회귀 증거만 보강하며 DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF 업무 기능이나 실제 외부 환경 검증을 완료 처리하지 않는다.
+
+## 2026-11-10 외부 전달 취소 경계 보강
+
+Worker 외부 전달 Handler가 조정기의 취소 토큰과 별도의 토큰으로 HTTP 호출을 시작하여 작업 취소·종료 중에도 외부 부작용이 계속될 수 있는 결함을 확인했다. 시작 전 취소를 즉시 거부하고, 조정기 취소와 종료 인계 취소를 동일한 외부 HTTP 실행에 연결하는 최소 수정으로 경계를 보강했다. 대상 회귀 테스트 9개와 Worker Infrastructure 전체 테스트 71개가 통과했으며, 시작 전 취소와 진행 중 HTTP 호출 취소 전파를 각각 확인했다.
+
+이 수정은 외부 수신 시스템의 실제 응답·중복 처리 검증을 대체하지 않는다. 실제 외부 수신기와 운영 환경 검증은 Issue #84 및 Milestone #1의 외부 조건이 제공될 때 별도로 수행한다.
