@@ -265,3 +265,11 @@ Restore는 성공했고, Release Build는 경고 0개·오류 0개, 전체 Relea
 따라서 현재 main `2eb02fa46aae48eb5c10c97abdcaf2161c5c1c13`에서 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·취소·입력 revision 변경·결과 보존 경계의 내부 증거를 확보했다. Licensing·LicenseAuthority는 사용자의 지시에 따라 마지막 내부 단계로 남겨 두었으며, DuckDB·Parquet·Commercial·WPF는 승인된 계약과 수용 기준이 없으므로 임의 구현하지 않는다.
 
 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·배포 환경과 GitHub main 보호 규칙 HTTP 403은 이 내부 증거로 대체하지 않는다. 해당 항목은 외부 조건이 제공될 때 별도 런북과 권한으로 재개한다.
+
+## 2026-11-10 최종 main과 Client 삭제 계약 증거
+
+PR #153은 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`로 Squash Merge되었고, 기존 승인된 DataSet 검증 삭제 API를 `TensorApiClient.DeleteDataSetValidationAsync`와 단위·실제 API Host 통합 회귀에 연결했다. PR CI [Run #926](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715584623)과 병합 후 main CI [Run #927](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715896376)이 성공했다.
+
+PR #154는 최신 검증 증거를 문서에 반영하여 `5fe4b343928edd70f3319d31bba6d430e13b6a3d`로 Squash Merge되었다. PR CI [Run #928](https://github.com/namanvarava/Edan.Tensor/actions/runs/42716886955)과 병합 후 main CI [Run #929](https://github.com/namanvarava/Edan.Tensor/actions/runs/42717234264)이 자체 호스팅 Windows Runner에서 성공했다. 최종 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다.
+
+이 증거는 현재 승인된 로컬 SQLite·Swagger/OpenAPI, Platform·DataSet·Worker, Tenant·인증 경계, Worker 복구, typed Client 기반 범위에 한정한다. DuckDB·Parquet·Commercial·WPF와 Licensing·LicenseAuthority 업무 기능은 승인된 계약과 수용 기준이 제공되기 전까지 구현 완료로 표시하지 않으며, 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84의 외부 조건으로 유지한다.
