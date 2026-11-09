@@ -910,3 +910,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - Smoke 종료 후 ApiHost·WorkerHost 프로세스 0개, 임시 Smoke 디렉터리 0개, 5061·5062 포트 Listen 0개를 확인했다. Bypass는 이 격리된 Development Smoke에서만 사용했으며 External·운영 인증 검증을 대체하지 않는다.
 - `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 NuGet 공개 소스와 현재 등록 소스에서 실행했으며 모든 프로젝트에 알려진 취약 패키지가 없었다. 패키지 버전 변경이나 보안 검사 우회는 수행하지 않았다.
 - 같은 시점에 GitHub API `GET /repos/namanvarava/Edan.Tensor/branches/main/protection`을 읽기 전용으로 조회했지만 HTTP 403과 `Resource not accessible by integration`을 반환했다. 따라서 main 보호 규칙의 실제 설정·필수 Check·관리자 우회 여부는 환경 미검증으로 남기며, 권한 상승이나 보호 정책 우회는 수행하지 않는다.
+
+## 2026-11-10 외부 전달 loopback 설정 경계 보강
+
+- API Host와 Worker Host가 `ExternalDelivery:AllowLoopback=true`를 로컬 테스트 수신기 전용으로 문서화하고 있었지만, 호스트 시작 코드가 Development가 아닌 환경에서 해당 설정을 거부하지 않는 경로를 확인했다. 영향 범위는 운영 설정 실수로 loopback 주소를 외부 전달 대상에 허용하여 SSRF 방어 경계를 약화할 수 있다는 점이다. 기존 URI 호스트 허용 목록 검사는 유지되지만, loopback 허용 자체가 운영 설정으로 열릴 수 있었다.
+- 원인은 `ExternalDeliveryOptions`를 환경 정보 없이 직접 생성하는 설정 조합이었다. 문서만 보완하는 대안은 잘못된 운영 설정을 실행 시점에 차단하지 못하고, 모든 loopback을 제거하는 대안은 Development의 격리된 로컬 수신기 장애 검증을 잃는다. 두 Host가 같은 규칙을 적용하도록 환경 검증 팩토리를 추가하고, Development가 아니면서 loopback을 요청하면 호스트 등록 단계에서 `InvalidOperationException`으로 시작을 중단하는 최소 수정안을 선택했다.
+- `LoopbackAllowanceIsRejectedOutsideDevelopment`는 비개발 환경의 허용을 거부하고, `LoopbackAllowanceIsAcceptedInDevelopment`는 개발 환경의 격리 테스트만 허용하는 재발 방지 회귀다. 기존 외부 전달·Tenant·Worker·API 경계는 변경하지 않았다.
+- 수정 브랜치에서 대상 외부 전달 테스트 7개가 통과했고, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 235개 통과·실패 0개·건너뜀 0개로 완료했다. PR Check와 병합 후 main CI 결과는 후속 기록에 추가하며, 그 전에는 main 통합 완료로 판정하지 않는다.
+- 이 수정은 인증 Bypass가 아닌 외부 전달 loopback 허용 경계만 다룬다. 실제 외부 수신 시스템, 운영 DB, 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·사용자·안정적인 `sub`·키 회전, GitHub main 보호 규칙 HTTP 403은 기존 외부 조건으로 계속 미검증이다.

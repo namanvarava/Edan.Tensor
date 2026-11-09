@@ -11,6 +11,29 @@ namespace EDAN.Tensor.Worker.Infrastructure.Tests;
 
 public sealed class ExternalDeliveryTests
 {
+    /// <summary>Development가 아닌 환경에서 loopback 허용 옵션을 거부합니다.</summary>
+    [Fact]
+    public void LoopbackAllowanceIsRejectedOutsideDevelopment()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ExternalDeliveryOptions.Create(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase), true,
+                TimeSpan.FromSeconds(1), isDevelopment: false));
+
+        Assert.Contains("Development", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>Development 환경에서는 격리된 loopback 테스트 수신기를 허용합니다.</summary>
+    [Fact]
+    public void LoopbackAllowanceIsAcceptedInDevelopment()
+    {
+        var options = ExternalDeliveryOptions.Create(
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase), true,
+            TimeSpan.FromSeconds(1), isDevelopment: true);
+
+        Assert.True(options.AllowLoopback);
+    }
+
     [Fact]
     public async Task CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate()
     {

@@ -46,3 +46,9 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 ```
 
 원격 CI는 Windows 자체 호스팅 Runner에서 동일한 명령을 실행하며, 로컬 실행 결과와 원격 CI 결과를 구분해 검증 문서에 기록한다.
+
+## 2026-11-10 loopback 설정 경계 회귀
+
+`ExternalDelivery:AllowLoopback=true`는 Development 환경에서만 허용하도록 두 Host의 옵션 생성 경계를 고정했다. 비개발 환경에서는 잘못된 운영 설정을 호스트 시작 단계에서 거부하고, Development에서는 격리된 로컬 수신기 테스트를 계속 허용한다.
+
+대상 외부 전달 테스트 7개와 솔루션 전체 Release 테스트 235개가 실패 0개·건너뜀 0개로 통과했다. PR Check와 병합 후 main CI 결과가 추가되기 전까지 이 결과는 작업 브랜치 검증으로만 판정한다.

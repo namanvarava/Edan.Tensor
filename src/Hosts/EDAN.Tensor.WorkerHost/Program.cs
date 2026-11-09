@@ -62,9 +62,9 @@ var deliveryHosts = builder.Configuration.GetSection("ExternalDelivery:AllowedHo
     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 var deliveryTimeoutSeconds = Math.Clamp(
     builder.Configuration.GetValue<int?>("ExternalDelivery:TimeoutSeconds") ?? 30, 1, 300);
-builder.Services.AddSingleton(new ExternalDeliveryOptions(deliveryHosts,
+builder.Services.AddSingleton(ExternalDeliveryOptions.Create(deliveryHosts,
     builder.Configuration.GetValue("ExternalDelivery:AllowLoopback", false),
-    TimeSpan.FromSeconds(deliveryTimeoutSeconds)));
+    TimeSpan.FromSeconds(deliveryTimeoutSeconds), builder.Environment.IsDevelopment()));
 builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client) =>
 {
     client.Timeout = serviceProvider.GetRequiredService<ExternalDeliveryOptions>().Timeout;

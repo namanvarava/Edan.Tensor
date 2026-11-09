@@ -219,3 +219,7 @@ PR #139는 `a0c990aca0ee3466701e4ccee21bc1c61815e956`로 `main`에 병합되었�
 최신 main의 직접 Host Smoke도 임시 SQLite 4개로 ApiHost와 WorkerHost를 기동하여 health·database health·OpenAPI·Swagger·Development Bypass Tenant API의 HTTP 200을 확인했다. 종료 후 프로세스·포트·임시 데이터가 남지 않았고, `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 알려진 취약 패키지 없음을 반환했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 GitHub API의 main 보호 규칙 조회는 HTTP 403 `Resource not accessible by integration`으로 거부되었다. 따라서 보호 규칙은 성공으로 표시하지 않고 Issue #84의 외부 권한 재개 조건으로 유지한다.
+
+## 2026-11-10 외부 전달 loopback 보안 경계 보강
+
+현재 Work의 내부 보안 감사에서 `ExternalDelivery:AllowLoopback=true`가 문서상 Development 전용이지만 운영 설정으로도 전달될 수 있는 경로를 확인했다. 두 Host가 공통 옵션 생성 검증을 사용하도록 수정하여 Development가 아닌 환경에서는 호스트 시작을 중단하고, Development의 격리된 로컬 수신기 장애 검증은 유지한다. 대상 테스트 7개와 전체 Release Test 235개가 통과했으며, PR Check와 main 병합 후 CI 성공 전에는 통합 완료로 판정하지 않는다.
