@@ -764,3 +764,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - Commercial과 Licensing은 Contracts·Domain·Application·Infrastructure 프로젝트 경계와 아키텍처 회귀만 존재하며 상품·요금·결제·권리·만료 또는 발급·서명·검증 업무 계약이 없다. LicenseAuthority.Host도 Foundation 상태만 제공한다. 발급 규칙, LicenseId/Site/Tenant 범위, 제품·기능 Claim, KeyId·서명 형식, 폐기·오프라인·만료 정책이 승인되면 별도 LicenseAuthority와 개발 라이선스 1개를 마지막 내부 단계로 구현한다.
 - WPF 프로젝트나 승인된 화면·업무 흐름·클라이언트 API 계약은 현재 저장소에 없다. 임의의 클라이언트 화면이나 공개 API를 만들지 않고, 향후 화면 수용 기준과 API 연동 계약이 제공될 때 진행한다.
 - 따라서 현재 저장소 내부에서 즉시 구현할 수 있는 필수 결함은 재현되지 않았고, 다음 구현 재개 조건은 DuckDB/Parquet 계약 승인, Commercial 계약 승인, Licensing·LicenseAuthority 발급 계약 승인, WPF 클라이언트 계약 승인이다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 외부 조건으로 계속 분리한다.
+
+## 2026-11-10 PR #111 병합 및 최신 main 상태 재확인
+
+- PR #111 `docs: 잔여 내부 범위와 최신 기준 동기화`의 head `858b8a554b2fef611a8279870b54af3e658353a7`은 main에 `319b61ee6b2523f0257908627748c48185f298df`로 Squash Merge되었다. PR Check [Actions Run #42641196808](https://github.com/namanvarava/Edan.Tensor/actions/runs/42641196808)과 병합 후 main [Actions Run #42641569157](https://github.com/namanvarava/Edan.Tensor/actions/runs/42641569157)의 `build-and-test`는 모두 성공했다.
+- 병합 후 로컬 `main`을 `origin/main`의 `319b61ee6b2523f0257908627748c48185f298df`로 fast-forward했고, 작업 디렉터리는 clean이다. 열린 PR은 0건이며, 병합된 `codex/audit-remaining-internal-scope-20261110`은 원격 Branch API 404와 `origin` 원격 브랜치 목록으로 삭제를 확인했고 로컬 브랜치 목록에도 `main`만 남았다.
+- 이 문서 병합으로 저장소 내부 잔여 범위 감사와 최신 main 기준을 기록했다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF의 승인 계약 부재와 실제 비운영 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403의 환경 미검증 상태는 변경되지 않았다.
