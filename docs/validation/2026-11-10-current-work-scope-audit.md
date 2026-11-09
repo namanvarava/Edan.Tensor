@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 `main` 커밋 `062a0aae3816e1c1f6297c04530d66da28a36275`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 `main` 커밋 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 감사 결과
 
@@ -26,7 +26,7 @@ dotnet restore EDAN.Tensor.sln                         성공
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 242개·실패 0개·건너뜀 0개
+  통과 243개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
@@ -51,3 +51,9 @@ Development Bypass는 고정된 비운영 Tenant·사용자·`sub`를 사용하�
 4. 외부 IdP·운영 DB·외부 수신 시스템·배포·GitHub 보호 규칙은 조건이 제공된 뒤 별도 실행합니다.
 
 계약 또는 외부 환경이 제공되기 전에는 해당 범위를 임의 구현하거나 완료로 표시하지 않습니다. 중단이 발생하면 재현, 영향, 로그·코드·설정 근거, 원인과 대안, 최소 수정, 대상·전체 회귀 테스트, 재발 방지, 증거 기록 순서로 처리합니다.
+
+## 2026-11-10 typed Client 삭제 계약 병합 후 재검증
+
+PR #153의 [PR CI Run #926](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715584623)과 Squash Merge 후 [main CI Run #927](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715896376)이 자체 호스팅 Windows Runner에서 Restore·Release Build·Release Test를 모두 성공했다. 병합된 main 커밋은 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`이며, 로컬에서 동일한 Release 명령을 재실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다.
+
+변경은 기존 승인된 `DELETE /api/platform/tenants/{tenantId}/datasets/validations/{executionId}` 경로를 `TensorApiClient.DeleteDataSetValidationAsync`와 단위·실제 API Host 통합 회귀에 연결한 범위다. Commercial·Licensing 업무, DuckDB·Parquet, WPF, 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증 범위는 확장하지 않았다.
