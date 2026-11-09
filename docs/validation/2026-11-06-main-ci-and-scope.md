@@ -880,3 +880,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 다음 Work 구현 순서는 API 계약·멱등성 경쟁 조건 → Tenant·인증 경계 → Worker Lease/Fencing·체크포인트·재시도·DLQ·종료 복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 검증 → 운영·외부 환경 검증이다. Licensing은 앞 단계가 안정된 뒤 마지막 내부 구현 단계로 유지한다.
 - 이번 Work에서 추가한 외부 전달 저장 경계는 DB 유일성 경쟁 시 동일 Tenant·Idempotency Key의 커밋된 기존 전달을 반환하고, API 보상 삭제는 이번 요청이 실제 생성한 레코드에만 적용하도록 했다. 대상 테스트는 `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate`이며, Work의 테스트 호스트가 출력 없이 정체되어 원문 성공을 판정하지 못했으므로 Release 컴파일 0 오류와 CI 재검증을 분리해 기록한다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 여전히 환경 미검증이다. Issue #84와 Milestone #1의 외부 조건이 제공될 때만 해당 범위를 재개한다.
+
+## 2026-11-10 PR #135 병합 후 최신 main 기준
+
+- PR #135 `fix: 외부 전달 멱등성 경쟁 조건 보강`의 head `e9fa905679145aa5ae5d18dcddb0ad2a9f4e023e`는 `ce460ec7f3c4efcc54b4da5297879149b2f52b97`로 `main`에 Squash Merge되었다. PR 자체 CI Run #890과 병합 후 main CI [Run #891](https://github.com/namanvarava/Edan.Tensor/actions/runs/42681139618)은 Restore·Release Build·Release Test와 정리 단계를 모두 성공시켰다.
+- 변경 원인은 같은 Tenant·Idempotency Key의 동시 외부 전달 생성에서 DB 유일성 충돌이 발생할 때 첫 요청의 보상 삭제가 두 번째 요청의 커밋된 레코드를 삭제할 수 있었던 경쟁 조건이다. 저장소는 충돌 시 커밋된 기존 전달을 반환하고, API는 이번 요청이 실제 생성한 경우에만 보상 삭제 식별자를 설정한다.
+- 대상 회귀 테스트는 `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate`이며, 전체 Release 회귀는 main CI Run #891에서 성공했다. 병합 후 로컬·원격 `main`은 위 SHA로 일치하고 작업 디렉터리는 clean이다. PR 브랜치 `codex/fix-external-delivery-idempotency-20261110`은 원격·로컬에서 삭제했고 현재 브랜치는 `main`만 남았다.
+- 현재 내부 실행 순서는 API 계약·멱등성 → Tenant·인증 경계 → Worker 장애·복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 → 운영·외부 환경 검증이다. Commercial·DuckDB·Parquet·WPF의 승인 계약이 없는 상태에서 임의 기능을 추가하지 않는다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템과 GitHub main 보호 규칙 HTTP 403은 여전히 환경 미검증이다. Issue #84와 Milestone #1의 외부 조건이 제공될 때만 해당 범위를 재개한다.

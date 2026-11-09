@@ -190,3 +190,18 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --lo
 6. 개발 라이선스 적용 후 운영 DB, 실제 비운영 IdP, 외부 수신 시스템, 배포·백업·성능·GitHub 보호 규칙을 별도 환경에서 검증합니다.
 
 각 단계에서 중단되면 원인 재현, 로그·코드·설정 근거, 근본 원인과 대안, 최소 수정, 대상·전체 회귀 테스트, 재발 방지책, 증거 기록을 끝낸 뒤 다음 단계로 복귀합니다. 외부 권한·비용·서비스 계정이 필요한 항목은 성공으로 표시하지 않고 재개 조건만 기록합니다.
+
+## 2026-11-10 현재 main과 연속 실행 기준 갱신
+
+PR #135 `fix: 외부 전달 멱등성 경쟁 조건 보강`이 `ce460ec7f3c4efcc54b4da5297879149b2f52b97`로 `main`에 Squash Merge되었다. PR 자체 CI Run #890과 병합 후 main CI [Run #891](https://github.com/namanvarava/Edan.Tensor/actions/runs/42681139618)은 자체 호스팅 Windows Runner에서 Restore·Release Build·Release Test를 모두 성공했다.
+
+현재 Work에서는 다음 순서를 한 번의 연속 작업으로 유지한다.
+
+1. API 계약, 오류 코드, 입력 상한, 페이징, Idempotency-Key, OpenAPI 헤더와 경쟁 요청을 고정하고 회귀 검증한다.
+2. Tenant 경로·`X-Tenant-Id`·활성 소속·조직·프로젝트·관리자 권한을 교차 검증하고, Development Bypass와 External·운영 fail-closed를 분리 검증한다.
+3. Worker Lease/Fencing, 체크포인트, 재시도, DLQ, 재처리, 종료 복구, 외부 전달의 응답 유실·중복·DB 유일성 경쟁을 검증한다.
+4. 승인된 DuckDB·Parquet·Commercial·WPF 계약과 수용 기준이 제공된 경우에만 구현한다. 현재 저장소에는 해당 업무 계약이 없으므로 임의 구현하지 않고 승인 대기로 유지한다.
+5. 비라이선스 내부 범위가 안정된 뒤에만 Licensing 규칙을 확정하고 별도 LicenseAuthority와 개발 라이선스 1개를 구현한다. 라이선스는 마지막 내부 구현 단계다.
+6. 개발 라이선스 적용 후 운영 DB·실제 비운영 IdP·외부 수신 시스템·배포·백업·성능·GitHub 보호 규칙을 제공된 환경에서 검증한다.
+
+PR #135에서 보강한 저장 경계는 동일 Tenant와 Idempotency Key의 동시 생성 시 커밋된 기존 전달을 반환하고, 요청이 실제로 생성한 레코드에만 API 보상 삭제를 적용한다. 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 HTTP 403은 Issue #84 및 Milestone #1의 외부 조건으로 남아 있으며 이 내부 CI 성공으로 대체하지 않는다.

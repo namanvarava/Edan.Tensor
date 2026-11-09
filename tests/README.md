@@ -21,7 +21,9 @@ Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬
 
 ## 현재 최신 main 기준
 
-PR #133·#134의 문서 동기화 후 최신 `main`은 `d973499f8f888bd36862ed7935ac93fb4a79ee21`이다. 병합 후 main CI [Run #889](https://github.com/namanvarava/Edan.Tensor/actions/runs/42678160541)가 Restore·Release Build·Release Test를 성공했다. Work에서 다음 구현 순서는 API 계약·멱등성 경쟁 검증 → Tenant·인증 경계 → Worker 장애 복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 검증 → 운영·외부 환경 검증이다. 실제 외부 IdP, 운영 DB, 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 테스트 결과에 포함하지 않는다.
+PR #135 병합 후 최신 `main`은 `ce460ec7f3c4efcc54b4da5297879149b2f52b97`이다. PR 자체 CI Run #890과 병합 후 main CI [Run #891](https://github.com/namanvarava/Edan.Tensor/actions/runs/42681139618)이 Restore·Release Build·Release Test를 성공했다. Work에서 다음 구현 순서는 API 계약·멱등성 경쟁 검증 → Tenant·인증 경계 → Worker 장애 복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 검증 → 운영·외부 환경 검증이다. 실제 외부 IdP, 운영 DB, 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 테스트 결과에 포함하지 않는다.
+
+PR #135는 동일 Tenant·Idempotency Key의 동시 외부 전달 생성에서 DB 유일성 충돌과 API 보상 삭제가 서로의 레코드에 영향을 줄 수 있던 경쟁 조건을 수정했다. `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate` 회귀 테스트와 main CI Run #891로 재검증했으며, 승인 계약이 없는 Commercial·DuckDB·Parquet·WPF는 임의 구현하지 않는다.
 
 PR #81 병합 기준 main 문서는 SHA `030d4c91db86b13d2eb198ace1f699989a59318a`였다. 병합 후 [Actions Run #783](https://github.com/namanvarava/Edan.Tensor/actions/runs/42539919996)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 실제 비운영 외부 IdP 검증은 아직 수행하지 않았으며, 수동 절차는 [외부 IdP 경계 수동 검증 런북](../docs/validation/external-idp-boundary-test-runbook.md)에 기록되어 있다.
 
