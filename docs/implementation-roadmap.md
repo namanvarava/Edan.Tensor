@@ -4,7 +4,7 @@
 
 ## 기준 상태
 
-현재 기준 main은 `02a14d23af1e8bcdf5fb7924babd7f06a3da4da9`입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리합니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+현재 기준 main은 `4022281098003a31ebafb60f9ae4839c84a97efa`입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 개발 초기에는 별도 DB 서버를 설치하지 않습니다. 현재 구조의 로컬 SQLite 파일과 임시 SQLite 테스트 DB를 사용하며, 운영 DB 공급자는 0단계에서 결정한 뒤 별도 Migration 호환성 검증을 수행합니다.
 
