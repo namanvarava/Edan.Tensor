@@ -2,6 +2,7 @@ using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
@@ -148,10 +149,9 @@ public static class PlatformEndpoints
                     return Results.Created($"/api/platform/tenants/{tenantId}/storage-quota-policies/{policy.Id}",
                         ToStorageQuotaPolicyResponse(policy));
                 }
-                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.conflict")
+                catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.conflict")
                 {
-                    return Results.Conflict(new ApiError("quota_policy.conflict",
-                        "동일한 Tenant 범위와 대상에는 저장 용량 정책을 하나만 등록할 수 있습니다."));
+                    return Results.Conflict(new ApiError(exception.Code, exception.Message));
                 }
                 catch (ArgumentException exception)
                 {
@@ -176,10 +176,9 @@ public static class PlatformEndpoints
                             "선택한 Tenant에서 저장 용량 정책을 찾을 수 없습니다."))
                         : Results.Ok(ToStorageQuotaPolicyResponse(policy));
                 }
-                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.version_conflict")
+                catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
                 {
-                    return Results.Conflict(new ApiError("quota_policy.version_conflict",
-                        "저장 용량 정책이 변경되었습니다. 최신 버전을 다시 조회해야 합니다."));
+                    return Results.Conflict(new ApiError(exception.Code, exception.Message));
                 }
                 catch (ArgumentException exception)
                 {
@@ -203,10 +202,9 @@ public static class PlatformEndpoints
                             "선택한 Tenant에서 저장 용량 정책을 찾을 수 없습니다."))
                         : Results.Ok(ToStorageQuotaPolicyResponse(policy));
                 }
-                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.version_conflict")
+                catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
                 {
-                    return Results.Conflict(new ApiError("quota_policy.version_conflict",
-                        "저장 용량 정책이 변경되었습니다. 최신 버전을 다시 조회해야 합니다."));
+                    return Results.Conflict(new ApiError(exception.Code, exception.Message));
                 }
                 catch (ArgumentException exception)
                 {
@@ -335,7 +333,10 @@ public static class PlatformEndpoints
             async (Guid tenantId, Guid jobId, AuthorizationAuditArchiveJobService service, CancellationToken token) =>
             {
                 var result = await service.GetAsync(new TenantId(tenantId), jobId, token);
-                return result is null ? Results.NotFound() : Results.Ok(result);
+                return result is null
+                    ? Results.NotFound(new ApiError("authorization.audit.archive_job.not_found",
+                        "Tenant 범위에서 감사 아카이브 작업을 찾을 수 없습니다."))
+                    : Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs/{jobId:guid}/retry",
@@ -344,7 +345,10 @@ public static class PlatformEndpoints
                 try
                 {
                     var result = await service.RetryAsync(new TenantId(tenantId), jobId, token);
-                    return result is null ? Results.NotFound() : Results.Ok(result);
+                    return result is null
+                        ? Results.NotFound(new ApiError("authorization.audit.archive_job.not_found",
+                            "Tenant 범위에서 감사 아카이브 작업을 찾을 수 없습니다."))
+                        : Results.Ok(result);
                 }
                 catch (InvalidOperationException ex) { return ValidationError(ex.Message); }
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
@@ -357,7 +361,10 @@ public static class PlatformEndpoints
                 {
                     var result = await service.VerifyAsync(new TenantId(tenantId), jobId,
                         request.ExpectedSha256, token);
-                    return result is null ? Results.NotFound() : Results.Ok(result);
+                    return result is null
+                        ? Results.NotFound(new ApiError("authorization.audit.archive_job.not_found",
+                            "Tenant 범위에서 감사 아카이브 작업을 찾을 수 없습니다."))
+                        : Results.Ok(result);
                 }
                 catch (ArgumentException ex) { return ValidationError(ex.Message); }
                 catch (InvalidOperationException ex) { return ValidationError(ex.Message); }

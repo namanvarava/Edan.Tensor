@@ -74,7 +74,9 @@ public static class ExternalDeliveryEndpoints
                 if (createdDeliveryId.HasValue)
                     await service.DeleteUnqueuedAsync(tenantId, createdDeliveryId.Value, idempotencyKey,
                         CancellationToken.None);
-                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+                return Results.Json(new ApiError("worker.task_type_unavailable",
+                    "외부 전달 작업을 실행할 수 있는 Worker 작업 유형이 등록되지 않았습니다."),
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
             }
             catch (ArgumentException exception)
             {

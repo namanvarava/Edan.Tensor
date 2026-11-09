@@ -61,7 +61,8 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
     {
         await ValidateTargetAsync(tenantId, scope, targetId, token);
         if (await db.StorageQuotaPolicies.AnyAsync(x => x.TenantId == tenantId && x.Scope == scope && x.TargetId == targetId, token))
-            throw new InvalidOperationException("quota_policy.conflict");
+            throw new BusinessRuleViolationException(
+                "quota_policy.conflict", "동일한 Tenant 범위와 대상에는 저장 용량 정책을 하나만 등록할 수 있습니다.");
         var now = DateTimeOffset.UtcNow;
         var policy = StorageQuotaPolicy.Create(Guid.NewGuid(), tenantId, scope, targetId,
             tenantLimit, organizationLimit, projectLimit, dataSetLimit, warningPercent, planCode, actor, now);
@@ -90,7 +91,7 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
         }
         catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
         {
-            throw new InvalidOperationException("quota_policy.version_conflict", exception);
+            throw;
         }
         await using var transaction = await db.Database.BeginTransactionAsync(token);
         db.StorageQuotaPolicyChangeAuditEntries.Add(StorageQuotaPolicyChangeAuditEntry.Create(
@@ -104,7 +105,8 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync(token);
-            throw new InvalidOperationException("quota_policy.version_conflict");
+            throw new BusinessRuleViolationException(
+                "quota_policy.version_conflict", "저장 용량 정책이 변경되었습니다. 최신 정책을 다시 조회해야 합니다.");
         }
     }
 
@@ -122,7 +124,7 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
         }
         catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
         {
-            throw new InvalidOperationException("quota_policy.version_conflict", exception);
+            throw;
         }
         if (before == Snapshot(policy)) return policy;
         await using var transaction = await db.Database.BeginTransactionAsync(token);
@@ -138,7 +140,8 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
         catch (DbUpdateConcurrencyException)
         {
             await transaction.RollbackAsync(token);
-            throw new InvalidOperationException("quota_policy.version_conflict");
+            throw new BusinessRuleViolationException(
+                "quota_policy.version_conflict", "저장 용량 정책이 변경되었습니다. 최신 정책을 다시 조회해야 합니다.");
         }
     }
 
