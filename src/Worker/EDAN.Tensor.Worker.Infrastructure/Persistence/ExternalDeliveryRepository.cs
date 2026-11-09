@@ -8,14 +8,40 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
 public sealed class ExternalDeliveryRepository(WorkerDbContext dbContext) : IExternalDeliveryRepository
 {
     /// <inheritdoc />
-    public async Task<ExternalDeliverySnapshot> CreateAsync(Guid tenantId, string targetUri, string payload,
+    public async Task<ExternalDeliveryCreateResult> CreateOrGetAsync(Guid tenantId, string targetUri, string payload,
         string idempotencyKey, int maxAttempts, DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
         var delivery = ExternalDelivery.Create(tenantId, targetUri, payload, idempotencyKey, maxAttempts, nowUtc);
         dbContext.ExternalDeliveries.Add(delivery);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return ToSnapshot(delivery);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new ExternalDeliveryCreateResult(ToSnapshot(delivery), Created: true);
+        }
+        catch (DbUpdateException)
+        {
+            // 동시에 같은 멱등 키를 저장한 요청이 있으면 새 엔티티를 분리하고 커밋된 기존 값을 다시 읽습니다.
+            dbContext.Entry(delivery).State = EntityState.Detached;
+            var existing = await GetByIdempotencyKeyAsync(tenantId, idempotencyKey, cancellationToken);
+            if (existing is null)
+                throw;
+            return new ExternalDeliveryCreateResult(existing, Created: false);
+        }
+        catch
+        {
+            dbContext.Entry(delivery).State = EntityState.Detached;
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ExternalDeliverySnapshot> CreateAsync(Guid tenantId, string targetUri, string payload,
+        string idempotencyKey, int maxAttempts, DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return (await CreateOrGetAsync(tenantId, targetUri, payload, idempotencyKey, maxAttempts,
+            nowUtc, cancellationToken)).Delivery;
     }
 
     /// <inheritdoc />

@@ -872,3 +872,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 main [Run #885](https://github.com/namanvarava/Edan.Tensor/actions/runs/42676094148)은 merge commit `8a82bf9f2a6546c593e44928d588f12d2fa2126c`에서 Restore·Build·Test·정리를 모두 성공시켰다. `build-and-test` Job의 Set up, checkout, Runner environment, Restore, Build, Test, Post checkout, Complete job 단계가 모두 성공했다.
 - PR #132 병합 직후 로컬 `main`·`origin/main`·HEAD는 같은 SHA `8a82bf9f2a6546c593e44928d588f12d2fa2126c`를 가리켰고, `git diff --check`와 작업 디렉터리 clean 상태를 확인했다. 그 시점의 PR 검색 결과 열린 PR은 0건이며, 원격·로컬 브랜치 검색 결과 `main`만 남았다. `codex/record-main-ci-infra-failure-20261110`은 원격 push 삭제와 로컬 branch 삭제를 각각 성공시켰다. 이후 이 문서의 상태 정합성을 PR #133으로 갱신했으며, 현재 main SHA는 해당 후속 병합 커밋으로 변경되었다.
 - Run #882·#883의 Job 생성 전 GitHub Actions 내부 오류는 Run #884·#885에서 재현되지 않았고, 새 main CI 성공으로 최신 문서 변경의 병합 상태를 검증했다. 다만 현재 Work의 원문 Testhost·loopback HTTP 실패, 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 이 CI 성공으로 대체하지 않으며 Issue #84와 Milestone #1에서 계속 환경 미검증으로 추적한다.
+
+## 2026-11-10 최신 main과 다음 연속 작업 기준
+
+- PR #133의 head `583cac798d53d755a642ca6b55219e6f3d4e7d00`는 `19c75191b16ca08ae30fde14a1ed19cfc552768f`로 squash merge되었고, PR 자체 CI Run #886과 병합 후 main CI Run #887이 Restore·Release Build·Release Test를 성공시켰다.
+- PR #134의 head `2aa2c13f1a179faabc8f77b092ba693203546c3e`는 `d973499f8f888bd36862ed7935ac93fb4a79ee21`로 squash merge되었고, PR 자체 CI Run #888과 병합 후 main CI [Run #889](https://github.com/namanvarava/Edan.Tensor/actions/runs/42678160541)이 Restore·Release Build·Release Test를 성공시켰다. 현재 로컬·원격 `main`은 이 SHA를 가리키며 작업 디렉터리는 clean이고, 열린 PR과 작업 브랜치는 없다.
+- 다음 Work 구현 순서는 API 계약·멱등성 경쟁 조건 → Tenant·인증 경계 → Worker Lease/Fencing·체크포인트·재시도·DLQ·종료 복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 검증 → 운영·외부 환경 검증이다. Licensing은 앞 단계가 안정된 뒤 마지막 내부 구현 단계로 유지한다.
+- 이번 Work에서 추가한 외부 전달 저장 경계는 DB 유일성 경쟁 시 동일 Tenant·Idempotency Key의 커밋된 기존 전달을 반환하고, API 보상 삭제는 이번 요청이 실제 생성한 레코드에만 적용하도록 했다. 대상 테스트는 `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate`이며, Work의 테스트 호스트가 출력 없이 정체되어 원문 성공을 판정하지 못했으므로 Release 컴파일 0 오류와 CI 재검증을 분리해 기록한다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 여전히 환경 미검증이다. Issue #84와 Milestone #1의 외부 조건이 제공될 때만 해당 범위를 재개한다.
