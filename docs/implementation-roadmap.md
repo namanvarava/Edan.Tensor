@@ -229,3 +229,9 @@ GitHub API의 main 보호 규칙 조회는 HTTP 403 `Resource not accessible by 
 PR #143은 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`으로 main에 squash merge되었고, PR CI Run #906과 병합 후 main CI Run #907이 성공했다. 병합된 main에서 Release restore·build·test를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 235개 통과·실패 0개·건너뜀 0개를 확인했다. 실제 Development Smoke에서도 임시 SQLite와 Swagger/OpenAPI를 포함한 ApiHost·WorkerHost 흐름이 HTTP 200을 반환했고, Bypass는 격리된 개발 환경에서만 사용했다. Smoke 종료 후 stderr·프로세스·포트·임시 경로가 남지 않았다.
 
 PR #143 작업 브랜치는 원격 삭제와 GitHub API 404를 확인한 뒤 로컬에서도 삭제했으며, 로컬·원격 `main`은 동일한 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`을 가리킨다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거로 완료 처리하지 않고 Issue #84와 Milestone #1의 외부 조건으로 유지한다.
+
+## 2026-11-10 Client API 연동 기반 추가
+
+WPF 화면이 없는 현재 저장소에서도 승인된 Platform·DataSet·Worker 흐름을 실제 소비할 수 있도록 `EDAN.Tensor.Client.Contracts`와 `EDAN.Tensor.Client`를 추가했다. Client는 API Host의 Tenant 경로와 `X-Tenant-Id`를 일치시키고, Bearer 토큰·`Idempotency-Key`·`Replay-Request-Id`를 요청 경계에서 구성하며, 표준 `{ Code, Description }` 오류를 `TensorApiException`으로 보존한다. 콘텐츠 업로드·다운로드 스트림과 404 선택 조회도 계약으로 고정했다.
+
+Client 대상 회귀 6개와 실제 임시 SQLite API Host 통합 1개를 포함한 솔루션 전체 Release Test 242개가 실패 0개·건너뜀 0개로 통과했다. 이 구현은 WPF 화면, 결제·Commercial entitlement, Licensing 발급·검증, DuckDB·Parquet 어댑터를 임의로 확장하지 않으며 해당 계약이 제공될 때 같은 Client 경계 위에 추가한다.

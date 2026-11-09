@@ -927,3 +927,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - Smoke 종료 후 ApiHost·WorkerHost stderr는 각각 0바이트였고, 시작 프로세스 0개·5061/5062 포트 Listen 0개·임시 Smoke 디렉터리 삭제를 확인했다. 정리 하네스의 빈 stderr 처리 오류는 원인을 확인한 뒤 0바이트 처리로 수정하고 동일 Smoke를 재실행해 성공 결과를 확보했다.
 - 병합된 main의 HEAD와 `origin/main`은 모두 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`이다. PR #143의 작업 브랜치 `codex/guard-loopback-development-only-20261110`은 원격 삭제 후 GitHub API에서 404를 확인했고, 로컬에서도 삭제하여 현재 로컬 브랜치는 `main`만 남았다.
 - 인증 Bypass, 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403의 외부 검증 범위는 변경하지 않았다. 이 항목들은 Issue #84와 Milestone #1의 재개 조건으로 남는다.
+
+## 2026-11-10 Client API 연동 기반 구현
+
+- WPF 화면이 아직 없는 저장소에서 승인된 Platform·DataSet·Worker API 흐름을 검증하고 소비할 수 있도록 `EDAN.Tensor.Client.Contracts`와 `EDAN.Tensor.Client`를 솔루션에 추가했다. `TensorApiClient`는 Bearer 토큰 공급자, Tenant 경로와 `X-Tenant-Id`의 일치, `Idempotency-Key`, `Replay-Request-Id`, API 오류 계약과 콘텐츠 스트림 수명을 처리한다.
+- Client 테스트에서 인증·Tenant 헤더, 검증 예약 Idempotency, 구조화 오류, 404 선택 조회, 다운로드 스트림 해제, 입력·페이지 상한을 검증했다. 대상 단위 테스트 6개와 실제 임시 SQLite API Host 통합 테스트 1개를 포함한 솔루션 전체 Release Test 242개가 실패 0개·건너뜀 0개로 통과했다.
+- Client는 WPF 화면·Commercial entitlement·결제·Licensing 발급/검증·DuckDB/Parquet을 구현했다고 표시하지 않는다. 해당 범위는 승인된 업무·화면·포맷 계약이 제공된 뒤 같은 API 계약 위에 재개한다.
