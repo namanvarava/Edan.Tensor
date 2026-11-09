@@ -10,14 +10,20 @@ namespace EDAN.Tensor.WorkerHost.Handlers;
 public sealed class DataSetValidationTaskHandler(IServiceScopeFactory scopeFactory) : IWorkerTaskHandler
 {
     /// <summary>검증 실행을 시작하고 Lease 인계에 사용할 실행 세션을 반환합니다.</summary>
+    /// <param name="task">DataSet 검증의 Tenant, Fencing Token 및 불투명 실행 참조를 포함한 작업입니다.</param>
+    /// <param name="cancellationToken">조정기가 요청한 취소 신호이며 검증 실행의 취소 경계와 연결됩니다.</param>
+    /// <returns>검증 완료 결과와 안전한 종료 인계를 제공하는 실행 세션을 반환합니다.</returns>
+    /// <exception cref="OperationCanceledException">검증 실행을 시작하기 전에 취소가 요청되면 예외를 반환합니다.</exception>
     public Task<IWorkerTaskExecution> StartAsync(WorkerTask task, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!DataSetValidationTaskContract.TryParsePayloadReference(task.PayloadReference, out var executionId))
             throw new InvalidOperationException("지원하지 않는 DataSet 검증 Payload Reference입니다.");
 
         var scope = scopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<DataSetValidationService>();
-        var cancellation = new CancellationTokenSource();
+        // 조정기의 취소와 종료 인계의 명시적 취소가 같은 검증 실행을 중단하도록 연결합니다.
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var run = service.RunAsync(task.TenantId, executionId, task.FencingToken, cancellation.Token);
         return Task.FromResult<IWorkerTaskExecution>(
             new DataSetValidationExecution(scope, cancellation, run, executionId));
