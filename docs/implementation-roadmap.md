@@ -2,7 +2,7 @@
 
 이 문서는 EDAN Tensor의 이후 구현 순서와 단계별 완료 기준을 고정합니다. 구현자는 이 순서를 임의로 바꾸지 않으며, 앞 단계의 수용 기준과 증거가 확보된 뒤 다음 단계로 이동합니다. 이 문서는 구현 방향을 기록하는 기준 문서이며, 각 업무 기능의 상세 계약은 해당 단계의 승인 문서와 함께 확정합니다.
 
-## 기준 상태
+## 이전 기준 상태 기록
 
 현재 main은 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`이며 PR #124 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
@@ -151,7 +151,13 @@ Tenant 생성 및 활성화
 
 외부 권한이나 운영 환경이 없는 경우에는 해당 단계만 `환경 미검증`으로 기록하며, 성공으로 표시하지 않습니다. 예약 작업·스케줄러·정기 알림은 생성하지 않습니다.
 
-## 2026-11-10 현재 실행 기준
+## 2026-11-10 최신 실행 기준
+
+최신 `main`의 기준 SHA는 `84d9ed422ea46058f26d07fa237514de5533c55c`입니다. PR #129 병합 후 열린 PR은 없고, 로컬·원격 작업 브랜치는 `main`만 남아 있습니다. PR #128 병합 후 main CI Run #876과 PR #129 병합 후 main CI Run #878은 성공했습니다. PR #128 변경 브랜치에서 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 232개 통과·실패 0개·건너뜀 0개를 확인했습니다. 이 문서 앞부분의 이전 SHA·테스트 수·CI 번호는 당시의 역사적 실행 기록이며, 이후 작업은 이 최신 기준을 사용합니다.
+
+이번 검증으로 로컬 SQLite·Migration·Swagger/OpenAPI 계약, Platform·DataSet·Worker API 통합 흐름, Tenant·인증 경계와 Worker 장애·복구 자동 검증을 현재 내부 범위의 기준으로 고정합니다. 다음 구현은 승인된 DuckDB·Parquet·Commercial·WPF 계약을 먼저 처리하고, 그 뒤 승인된 발급 규칙으로 LicenseAuthority와 개발 라이선스 1개를 구현합니다. 운영 DB·실제 비운영 IdP·외부 시스템·GitHub main 보호 규칙은 해당 환경과 권한이 제공된 뒤 검증합니다.
+
+## 2026-11-10 이전 실행 기준 기록
 
 최신 `main`의 기준 SHA는 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`입니다. PR #124 병합 후 열린 PR은 없고, 원격 작업 브랜치는 `main`만 남아 있습니다. 병합 후 자체 호스팅 Windows CI Run #867은 Restore·Build·Test를 모두 성공시켰습니다.
 
