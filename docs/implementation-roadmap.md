@@ -211,3 +211,7 @@ PR #135에서 보강한 저장 경계는 동일 Tenant와 Idempotency Key의 동
 PR #137은 API 사용 가이드와 실제 Bypass 고정 프로필의 정합성을 맞췄고, PR 자체 CI Run #894와 병합 후 main CI Run #895를 성공시켰다. PR #138은 외부 IdP 검증 런북에서 폐기된 Bypass 설정명을 제거했고, PR 자체 CI Run #896과 병합 후 main CI Run #897을 성공시켰다. 최신 main은 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`이며 작업 브랜치는 로컬·원격에서 삭제되어 `main`만 남았다.
 
 이 변경은 제품 실행 경계를 확장하지 않는다. Development Bypass의 고정 시뮬레이션 프로필은 실제 외부 IdP 검증을 대체하지 않으며, External·운영 환경은 실제 Metadata·JWKS·Issuer·Audience·HTTPS 검증을 계속 요구한다. 다음 구현은 승인된 비라이선스 계약이 제공될 때만 진행하고 Licensing은 마지막 내부 단계로 유지한다.
+
+## 2026-11-10 PR #139 병합 후 Release 재검증
+
+PR #139는 `a0c990aca0ee3466701e4ccee21bc1c61815e956`로 `main`에 병합되었고, PR CI Run #898과 main CI Run #899가 Restore·Release Build·Release Test를 성공시켰다. 최신 main에서 동일한 세 명령을 권한 확장 환경으로 재현하여 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 233개 통과·실패 0개·건너뜀 0개를 확인했다. 최초 제한 환경의 Restore 중단은 .NET SDK 10.0.402가 Service Control Manager를 열지 못한 Win32 오류 5였으며, 소스 오류가 아니므로 권한 확장 재검증으로 해결하고 근거를 기록했다. 다음 단계는 API 계약·Tenant/인증·Worker 장애 복구 순서를 유지하며, 승인되지 않은 기능을 임의로 추가하지 않는다.

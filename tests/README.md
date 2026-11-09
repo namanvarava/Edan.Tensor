@@ -12,7 +12,7 @@
 - DataSet Application: 14개
 - DataSet Infrastructure: 11개
 - Worker Domain: 21개
-- Worker Infrastructure: 66개
+- Worker Infrastructure: 67개
 - API 통합: 32개
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
@@ -26,6 +26,8 @@ PR #135 병합 후 최신 `main`은 `ce460ec7f3c4efcc54b4da5297879149b2f52b97`�
 PR #135는 동일 Tenant·Idempotency Key의 동시 외부 전달 생성에서 DB 유일성 충돌과 API 보상 삭제가 서로의 레코드에 영향을 줄 수 있던 경쟁 조건을 수정했다. `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate` 회귀 테스트와 main CI Run #891로 재검증했으며, 승인 계약이 없는 Commercial·DuckDB·Parquet·WPF는 임의 구현하지 않는다.
 
 PR #137·#138 병합 후 최신 `main`은 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`이다. PR #137 자체 CI Run #894와 병합 후 main CI Run #895, PR #138 자체 CI Run #896과 병합 후 main CI Run #897은 Restore·Release Build·Release Test를 모두 성공했다. PR #137은 API 사용 가이드와 Development Bypass 고정 프로필의 경계를 정정했고, PR #138은 외부 IdP 런북에서 폐기된 `Authentication__BypassSubject` 설정명을 제거했다. 현재 원격·로컬 작업 브랜치는 `main`만 남아 있고 열린 PR은 없다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 이 내부 CI 결과에 포함하지 않으며 Issue #84에서 별도 추적한다.
+
+PR #139 병합 후 최신 `main`은 `a0c990aca0ee3466701e4ccee21bc1c61815e956`이다. PR 자체 CI Run #898과 병합 후 main CI [Run #899](https://github.com/namanvarava/Edan.Tensor/actions/runs/42686600210)이 Restore·Release Build·Release Test를 모두 성공했다. 최신 main의 권한 확장 로컬 실행도 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 233개 통과·실패 0개·건너뜀 0개를 기록했다. 제한된 Work 권한에서 최초 Restore가 Win32 오류 5로 중단된 원인은 Service Control Manager 접근 거부였으며, 코드 실패가 아님을 확인한 뒤 권한 확장 환경에서 재검증했다.
 
 PR #81 병합 기준 main 문서는 SHA `030d4c91db86b13d2eb198ace1f699989a59318a`였다. 병합 후 [Actions Run #783](https://github.com/namanvarava/Edan.Tensor/actions/runs/42539919996)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 실제 비운영 외부 IdP 검증은 아직 수행하지 않았으며, 수동 절차는 [외부 IdP 경계 수동 검증 런북](../docs/validation/external-idp-boundary-test-runbook.md)에 기록되어 있다.
 
