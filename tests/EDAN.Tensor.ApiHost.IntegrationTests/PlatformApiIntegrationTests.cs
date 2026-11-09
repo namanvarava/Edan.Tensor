@@ -852,6 +852,26 @@ public sealed class PlatformApiIntegrationTests
         Assert.True(completedExecution.ErrorCount > 0);
         Assert.Equal(2, completedExecution.ProcessedRecords);
 
+        using var details = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details");
+        Assert.Equal(HttpStatusCode.OK, details.StatusCode);
+        using var detailsJson = await JsonDocument.ParseAsync(await details.Content.ReadAsStreamAsync());
+        var detailItems = detailsJson.RootElement.GetProperty("items").EnumerateArray().ToArray();
+        Assert.NotEmpty(detailItems);
+        Assert.All(detailItems, item =>
+        {
+            var message = item.GetProperty("message").GetString();
+            Assert.DoesNotContain("alpha", message, StringComparison.Ordinal);
+            Assert.DoesNotContain("beta", message, StringComparison.Ordinal);
+        });
+
+        using var delete = await client.DeleteAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+        using var deleted = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
+        Assert.Equal(HttpStatusCode.NotFound, deleted.StatusCode);
+
         workerDb.WorkerTaskTypes.Remove(validationTaskType);
         await workerDb.SaveChangesAsync();
         using var unavailable = new HttpRequestMessage(HttpMethod.Post,
