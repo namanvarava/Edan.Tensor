@@ -811,9 +811,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 따라서 현재 Work의 로컬 Release Test는 성공으로 표시하지 않고 testhost 실행 환경 미검증으로 기록한다. main CI가 계속 정체된 동일 증거와 합쳐져, 재개 조건은 `EDAN-TENSOR-WIN` Runner의 Test job 종료 또는 Runner/testhost 상태·로그 제공, 그리고 loopback HTTP 통신 권한이다. 이 조건이 충족되면 원문 Restore·Build·Test와 Host Smoke를 다시 실행한다.
 - 후속 확인에서 main [Actions Run #42652394931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42652394931)은 `2026-11-09T16:14:02Z`에 성공으로 종료되었고, Restore·Build·Test의 CI 성공 증거가 확보되었다. 이 결과는 Work 로컬 testhost 연결 실패를 해소한 것이 아니므로 로컬 Test 성공으로 대체하지 않는다.
 
-## 2026-11-10 PR #121 병합 후 최신 main Release·Host Smoke 재검증
+## 2026-11-10 PR #122 병합 후 최신 main Release·Host Smoke 재검증
 
-- PR #121 `docs: 최신 main 기준 진행 게이트 동기화`의 head `0c5ed0576fdfbdf838081f5aec3caeb886aec0f0`은 `06accba186f171702b2dc202808f5ba409a207f0`으로 main에 Squash Merge되었다. PR Check [Actions Run #42657465176](https://github.com/namanvarava/Edan.Tensor/actions/runs/42657465176)과 병합 후 main [Actions Run #42657797796](https://github.com/namanvarava/Edan.Tensor/actions/runs/42657797796)은 자체 호스팅 Windows Runner에서 Restore·Build·Test를 모두 성공시켰다.
+- PR #122 `docs: 최신 Host Smoke 증거 기록`의 head `0ce97be02e6369d85f41880193748494dabbd569`은 `0a5de8b41386ef76d42edcc9e2d61e36c6b34061`으로 main에 Squash Merge되었다. PR Check [Actions Run #42658916399](https://github.com/namanvarava/Edan.Tensor/actions/runs/42658916399)과 병합 후 main [Actions Run #42659216754](https://github.com/namanvarava/Edan.Tensor/actions/runs/42659216754)은 자체 호스팅 Windows Runner에서 Restore·Build·Test를 모두 성공시켰다.
 - 병합 후 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실제 실행했다. Restore는 종료 코드 0, Build는 경고 0개·오류 0개로 종료 코드 0, Test는 231개 통과·실패 0개·건너뜀 0개로 종료 코드 0을 기록했다. API Host 통합 테스트 31개와 Worker Infrastructure 테스트 66개도 통과했다.
 - 최신 Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 외부 프로세스에서 기동했다. Development Bypass에서 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호된 `/api/platform/tenants/mine`이 모두 HTTP 200을 반환했고 stderr는 0바이트였다. 실행 후 프로세스·임시 DB·키 경로를 정리했다.
 - 최신 Release WorkerHost도 임시 SQLite 네 개로 외부 프로세스에서 기동했다. Migration과 Handler catalog 동기화 후 `/health`가 HTTP 200을 반환했고 stderr는 0바이트였다. 실행 후 프로세스와 임시 DB 경로를 정리했다.
