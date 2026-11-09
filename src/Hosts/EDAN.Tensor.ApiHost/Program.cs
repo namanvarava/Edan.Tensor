@@ -129,7 +129,8 @@ builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client
     client.Timeout = serviceProvider.GetRequiredService<ExternalDeliveryOptions>().Timeout;
 });
 builder.Services.AddHealthChecks();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
 var app = builder.Build();
 
@@ -152,7 +153,14 @@ if (app.Environment.IsDevelopment())
 
 // OpenAPI 문서는 개발 환경에서만 제공하여 운영 API 표면을 불필요하게 공개하지 않습니다.
 if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "EDAN Tensor API v1");
+        options.DocumentTitle = "EDAN Tensor API";
+    });
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
