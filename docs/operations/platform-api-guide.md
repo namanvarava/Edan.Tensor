@@ -164,6 +164,12 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 
 상세 권한 모델은 [조직·프로젝트 권한 API 안내](platform-scoped-authorization-guide.md)를 참고하십시오.
 
+## DataSet 검증 예약
+
+`POST /api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations`는 Tenant Administrator가 호출하며, 요청에는 `expectedDataSetVersion`, `schemaVersion`, `profileId`, `profileRevision`을 지정하고 `Idempotency-Key` 헤더를 함께 보냅니다.
+
+같은 Tenant에서 같은 키와 같은 DataSet·버전·스키마·프로필 revision을 다시 보내면 기존 검증 실행과 Worker 작업으로 수렴하며 HTTP 202를 반환합니다. 다른 요청에 이미 사용한 키를 보내면 HTTP 409와 `dataset.validation.idempotency_conflict`를 반환합니다. 키는 200자를 초과할 수 없습니다.
+
 ## 오류 응답
 
 업무 오류는 다음 공통 JSON 형식으로 반환합니다.

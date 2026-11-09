@@ -114,6 +114,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         execution.Property(x => x.SchemaVersion).IsRequired();
         execution.Property(x => x.ProfileId).IsRequired();
         execution.Property(x => x.ProfileRevision).IsRequired();
+        execution.Property(x => x.IdempotencyKey).HasMaxLength(200);
         execution.Property(x => x.Status).HasMaxLength(24).IsRequired();
         execution.Property(x => x.DetailReference).HasMaxLength(128).IsRequired();
         execution.Property(x => x.ProcessedRecords).IsRequired();
@@ -131,6 +132,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         execution.Property(x => x.Version).IsConcurrencyToken().IsRequired();
         execution.HasIndex(x => new { x.TenantId, x.DataSetId, x.CreatedAtUtc });
         execution.HasIndex(x => new { x.TenantId, x.DetailReference }).IsUnique();
+        execution.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
 
         var detail = modelBuilder.Entity<DataSetValidationDetail>();
         detail.ToTable("dataset_validation_details");

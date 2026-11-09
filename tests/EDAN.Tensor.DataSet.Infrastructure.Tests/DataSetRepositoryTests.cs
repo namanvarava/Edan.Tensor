@@ -99,7 +99,10 @@ public sealed class DataSetRepositoryTests
         Assert.Null(await repository.GetProfileAsync(tenantB, profile.Id, 1));
 
         var execution = await repository.CreateExecutionAsync(tenantA, Guid.NewGuid(), 1, 1,
-            profile.Id, 1, DateTimeOffset.UtcNow);
+            profile.Id, 1, DateTimeOffset.UtcNow, "validation-repository-1");
+        Assert.Equal(execution.Id, (await repository.GetExecutionByIdempotencyKeyAsync(
+            tenantA, "validation-repository-1"))!.Id);
+        Assert.Null(await repository.GetExecutionByIdempotencyKeyAsync(tenantB, "validation-repository-1"));
         Assert.True(await repository.TryStartAsync(tenantA, execution.Id, 10));
         Assert.True(await repository.RecordRowAsync(tenantA, execution.Id, 10, 1,
             [new DataSetValidationFinding("field.id.type", DataSetValidationSeverity.Error, "id", "형식이 올바르지 않습니다.")],

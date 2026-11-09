@@ -59,14 +59,38 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
     public async Task<DataSetValidationExecutionSnapshot> CreateExecutionAsync(
         Guid tenantId, Guid dataSetId, int expectedDataSetVersion, int schemaVersion,
         Guid profileId, int profileRevision, DateTimeOffset nowUtc,
+        string? idempotencyKey = null,
         CancellationToken cancellationToken = default)
     {
         var execution = new DataSetValidationExecution(Guid.NewGuid(), tenantId, dataSetId,
             expectedDataSetVersion, schemaVersion, profileId, profileRevision,
-            "validation-detail:" + Guid.NewGuid().ToString("N"), nowUtc);
+            "validation-detail:" + Guid.NewGuid().ToString("N"), nowUtc, idempotencyKey);
         dbContext.ValidationExecutions.Add(execution);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return ToSnapshot(execution);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ToSnapshot(execution);
+        }
+        catch (DbUpdateException)
+        {
+            dbContext.Entry(execution).State = EntityState.Detached;
+            if (string.IsNullOrWhiteSpace(idempotencyKey))
+                throw;
+
+            var existing = await GetExecutionByIdempotencyKeyAsync(tenantId, idempotencyKey, cancellationToken);
+            if (existing is null)
+                throw;
+            return existing;
+        }
+    }
+
+    public async Task<DataSetValidationExecutionSnapshot?> GetExecutionByIdempotencyKeyAsync(
+        Guid tenantId, string idempotencyKey, CancellationToken cancellationToken = default)
+    {
+        var execution = await dbContext.ValidationExecutions.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.IdempotencyKey == idempotencyKey,
+                cancellationToken);
+        return execution is null ? null : ToSnapshot(execution);
     }
 
     public async Task<DataSetValidationExecutionSnapshot?> GetExecutionAsync(

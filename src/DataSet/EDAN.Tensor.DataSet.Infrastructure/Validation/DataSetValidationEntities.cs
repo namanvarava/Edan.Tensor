@@ -65,7 +65,7 @@ public sealed class DataSetValidationExecution
 
     public DataSetValidationExecution(Guid id, Guid tenantId, Guid dataSetId,
         int expectedDataSetVersion, int schemaVersion, Guid profileId, int profileRevision,
-        string detailReference, DateTimeOffset createdAtUtc)
+        string detailReference, DateTimeOffset createdAtUtc, string? idempotencyKey = null)
     {
         if (id == Guid.Empty) throw new ArgumentException("실행 식별자는 비어 있을 수 없습니다.", nameof(id));
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
@@ -85,6 +85,9 @@ public sealed class DataSetValidationExecution
         ProfileId = profileId;
         ProfileRevision = profileRevision;
         DetailReference = detailReference.Trim();
+        IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey)
+            ? null
+            : ValidateText(idempotencyKey, 200, nameof(idempotencyKey));
         Status = "Queued";
         RuleCountsJson = "{}";
         CreatedAtUtc = createdAtUtc.ToUniversalTime();
@@ -99,6 +102,8 @@ public sealed class DataSetValidationExecution
     public int SchemaVersion { get; private set; }
     public Guid ProfileId { get; private set; }
     public int ProfileRevision { get; private set; }
+    /// <summary>같은 Tenant의 중복 검증 예약을 하나로 수렴시키는 선택적 키입니다.</summary>
+    public string? IdempotencyKey { get; private set; }
     public long FencingToken { get; private set; }
     public string Status { get; private set; } = "Queued";
     public string DetailReference { get; private set; } = string.Empty;
