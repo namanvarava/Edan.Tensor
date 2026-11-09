@@ -81,6 +81,140 @@ public static class PlatformEndpoints
                 }));
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 저장 용량 정책은 Tenant 관리자만 변경하며 조회도 제한된 페이지로 반환합니다.
+        tenantGroup.MapGet("/{tenantId:guid}/storage-quota-policies",
+            async (Guid tenantId, StorageQuotaPolicyManagementService service, CancellationToken token,
+                int page = 1, int pageSize = 50) =>
+            {
+                try
+                {
+                    var result = await service.GetPoliciesAsync(new TenantId(tenantId), page, pageSize, token);
+                    return Results.Ok(new
+                    {
+                        result.TotalCount,
+                        result.Page,
+                        result.PageSize,
+                        Items = result.Items.Select(ToStorageQuotaPolicyResponse)
+                    });
+                }
+                catch (ArgumentException exception)
+                {
+                    return ValidationError(exception.Message);
+                }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("GetStorageQuotaPolicies");
+
+        tenantGroup.MapGet("/{tenantId:guid}/storage-quota-policies/{policyId:guid}/history",
+            async (Guid tenantId, Guid policyId, StorageQuotaPolicyManagementService service,
+                CancellationToken token, int page = 1, int pageSize = 50) =>
+            {
+                try
+                {
+                    var result = await service.GetHistoryAsync(new TenantId(tenantId), policyId,
+                        page, pageSize, token);
+                    if (result is null)
+                        return Results.NotFound(new ApiError("quota_policy.not_found",
+                            "선택한 Tenant에서 저장 용량 정책을 찾을 수 없습니다."));
+                    return Results.Ok(new
+                    {
+                        result.TotalCount,
+                        result.Page,
+                        result.PageSize,
+                        Items = result.Items.Select(ToStorageQuotaPolicyHistoryResponse)
+                    });
+                }
+                catch (ArgumentException exception)
+                {
+                    return ValidationError(exception.Message);
+                }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("GetStorageQuotaPolicyHistory");
+
+        tenantGroup.MapPost("/{tenantId:guid}/storage-quota-policies",
+            async (Guid tenantId, CreateStorageQuotaPolicyRequest request, HttpContext context,
+                StorageQuotaPolicyManagementService service, CancellationToken token) =>
+            {
+                if (!Enum.TryParse<StorageQuotaPolicyScope>(request.Scope, true, out var scope))
+                    return Results.BadRequest(new ApiError("quota_policy.invalid_scope",
+                        "지원하지 않는 저장 용량 정책 범위입니다."));
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                try
+                {
+                    var policy = await service.CreateAsync(new TenantId(tenantId), scope, request.TargetId,
+                        request.TenantLimitBytes, request.OrganizationLimitBytes, request.ProjectLimitBytes,
+                        request.DataSetLimitBytes, request.WarningThresholdPercent, request.PlanCode ?? "Community",
+                        actor, token);
+                    return Results.Created($"/api/platform/tenants/{tenantId}/storage-quota-policies/{policy.Id}",
+                        ToStorageQuotaPolicyResponse(policy));
+                }
+                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.conflict")
+                {
+                    return Results.Conflict(new ApiError("quota_policy.conflict",
+                        "동일한 Tenant 범위와 대상에는 저장 용량 정책을 하나만 등록할 수 있습니다."));
+                }
+                catch (ArgumentException exception)
+                {
+                    return ValidationError(exception.Message);
+                }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("CreateStorageQuotaPolicy");
+
+        tenantGroup.MapPut("/{tenantId:guid}/storage-quota-policies/{policyId:guid}",
+            async (Guid tenantId, Guid policyId, UpdateStorageQuotaPolicyRequest request, HttpContext context,
+                StorageQuotaPolicyManagementService service, CancellationToken token) =>
+            {
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                try
+                {
+                    var policy = await service.UpdateAsync(new TenantId(tenantId), policyId, request.ExpectedVersion,
+                        request.TenantLimitBytes, request.OrganizationLimitBytes, request.ProjectLimitBytes,
+                        request.DataSetLimitBytes, request.WarningThresholdPercent, request.PlanCode, actor, token);
+                    return policy is null
+                        ? Results.NotFound(new ApiError("quota_policy.not_found",
+                            "선택한 Tenant에서 저장 용량 정책을 찾을 수 없습니다."))
+                        : Results.Ok(ToStorageQuotaPolicyResponse(policy));
+                }
+                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.version_conflict")
+                {
+                    return Results.Conflict(new ApiError("quota_policy.version_conflict",
+                        "저장 용량 정책이 변경되었습니다. 최신 버전을 다시 조회해야 합니다."));
+                }
+                catch (ArgumentException exception)
+                {
+                    return ValidationError(exception.Message);
+                }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("UpdateStorageQuotaPolicy");
+
+        tenantGroup.MapPatch("/{tenantId:guid}/storage-quota-policies/{policyId:guid}/enabled",
+            async (Guid tenantId, Guid policyId, SetStorageQuotaPolicyEnabledRequest request, HttpContext context,
+                StorageQuotaPolicyManagementService service, CancellationToken token) =>
+            {
+                var actor = context.User.FindFirst("sub")?.Value;
+                if (string.IsNullOrWhiteSpace(actor)) return Results.Unauthorized();
+                try
+                {
+                    var policy = await service.SetEnabledAsync(new TenantId(tenantId), policyId,
+                        request.IsEnabled, request.ExpectedVersion, actor, token);
+                    return policy is null
+                        ? Results.NotFound(new ApiError("quota_policy.not_found",
+                            "선택한 Tenant에서 저장 용량 정책을 찾을 수 없습니다."))
+                        : Results.Ok(ToStorageQuotaPolicyResponse(policy));
+                }
+                catch (InvalidOperationException exception) when (exception.Message == "quota_policy.version_conflict")
+                {
+                    return Results.Conflict(new ApiError("quota_policy.version_conflict",
+                        "저장 용량 정책이 변경되었습니다. 최신 버전을 다시 조회해야 합니다."));
+                }
+                catch (ArgumentException exception)
+                {
+                    return ValidationError(exception.Message);
+                }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("SetStorageQuotaPolicyEnabled");
+
         // 권한 감사 조회는 Tenant 관리자에게만 허용하며 감사 데이터는 읽기 전용으로 제공합니다.
         tenantGroup.MapGet("/{tenantId:guid}/authorization-audit",
             async (Guid tenantId, AuthorizationAuditQueryService service, CancellationToken token,
@@ -358,6 +492,36 @@ public static class PlatformEndpoints
 
     private static IResult ValidationError(string description) =>
         Results.Json(new ApiError("platform.validation", description), statusCode: StatusCodes.Status400BadRequest);
+
+    private static object ToStorageQuotaPolicyResponse(StorageQuotaPolicy policy) => new
+    {
+        policy.Id,
+        TenantId = policy.TenantId.Value,
+        Scope = policy.Scope.ToString(),
+        policy.TargetId,
+        policy.TenantLimitBytes,
+        policy.OrganizationLimitBytes,
+        policy.ProjectLimitBytes,
+        policy.DataSetLimitBytes,
+        policy.WarningThresholdPercent,
+        policy.PlanCode,
+        policy.IsEnabled,
+        policy.Version,
+        policy.UpdatedBy,
+        policy.UpdatedAtUtc
+    };
+
+    private static object ToStorageQuotaPolicyHistoryResponse(StorageQuotaPolicyChangeAuditEntry entry) => new
+    {
+        entry.Id,
+        TenantId = entry.TenantId.Value,
+        entry.PolicyId,
+        entry.ActorSubjectId,
+        entry.ChangeType,
+        entry.BeforeJson,
+        entry.AfterJson,
+        entry.OccurredAtUtc
+    };
 }
 
 public sealed record ApiError(string Code, string Description);
@@ -379,10 +543,15 @@ public sealed record InviteUserRequest(string Email, string DisplayName);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
 public sealed record CreatePolicyRequest(Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
 
+/// <summary>Tenant 관리자가 생성할 저장 용량 정책의 입력입니다.</summary>
 public sealed record CreateStorageQuotaPolicyRequest(string Scope, Guid TargetId, long? TenantLimitBytes,
     long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes,
     int WarningThresholdPercent = 80, string? PlanCode = "Community");
+
+/// <summary>Tenant 관리자가 변경할 저장 용량 정책의 입력입니다.</summary>
 public sealed record UpdateStorageQuotaPolicyRequest(long ExpectedVersion, long? TenantLimitBytes,
     long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes,
     int WarningThresholdPercent, string PlanCode);
+
+/// <summary>Tenant 관리자가 저장 용량 정책의 활성 상태를 변경할 입력입니다.</summary>
 public sealed record SetStorageQuotaPolicyEnabledRequest(bool IsEnabled, long ExpectedVersion);

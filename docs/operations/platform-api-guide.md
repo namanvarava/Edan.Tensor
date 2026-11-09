@@ -188,6 +188,41 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 - 409: 중복·상태·소유권 충돌
 - 503: 데이터베이스 상태 확인 실패
 
+## 저장 용량 정책
+
+Tenant Administrator는 Tenant·Organization·Project·DataSet 범위의 저장 용량 정책을 관리할 수 있습니다. 정책의 `targetId`는 선택한 Tenant에 속해야 하며 Tenant 범위 정책은 경로의 Tenant 식별자와 같아야 합니다. 하위 범위의 한도는 상위 범위의 한도를 완화하지 않습니다.
+
+정책 목록 조회:
+
+`GET /api/platform/tenants/{tenantId}/storage-quota-policies?page=1&pageSize=50`
+
+정책 생성:
+
+`POST /api/platform/tenants/{tenantId}/storage-quota-policies`
+
+```json
+{
+  "scope": "Tenant",
+  "targetId": "00000000-0000-0000-0000-000000000000",
+  "tenantLimitBytes": 1073741824,
+  "organizationLimitBytes": null,
+  "projectLimitBytes": null,
+  "dataSetLimitBytes": null,
+  "warningThresholdPercent": 80,
+  "planCode": "Community"
+}
+```
+
+정책 수정은 응답의 `version`을 `expectedVersion`으로 보내야 합니다.
+
+`PUT /api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}`
+
+활성 상태 변경은 다음 경로에서 동일하게 `expectedVersion`을 사용합니다.
+
+`PATCH /api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/enabled`
+
+`GET /api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/history?page=1&pageSize=50`은 생성·수정·활성 상태 변경의 전후 JSON과 수행 주체를 반환합니다. 정책과 이력은 항상 요청 Tenant 조건으로 조회하며, `pageSize`는 1~100으로 제한합니다. 대상이 없으면 404, 중복 정책은 `quota_policy.conflict`와 409, 오래된 `expectedVersion`은 `quota_policy.version_conflict`와 409를 반환합니다.
+
 ## 필수 설정
 
 다음 설정은 환경 변수 또는 비밀 저장소로 제공해야 합니다. 서명 키를 저장소에 커밋하지 마십시오.
