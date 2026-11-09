@@ -825,3 +825,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 실제 Windows 프로세스로 Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 기동했다. `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, Development Bypass 보호 API가 모두 HTTP 200을 반환했고 ApiHost 표준 오류 출력은 0바이트였다.
 - 같은 임시 데이터베이스 경계를 사용하여 Release WorkerHost를 기동했고 `/health`가 HTTP 200을 반환했으며 WorkerHost 표준 오류 출력은 0바이트였다. 프로세스 종료 후 임시 DB·키·로그 경로가 존재하지 않음을 확인했다.
 - 이번 실행은 코드에 고정된 Development Bypass 프로필과 `EDAN-NONPROD` Tenant·안정적인 `sub`만 사용했다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 실행으로 검증하지 않았다.
+
+## 2026-11-10 PR #128 API 계약·Tenant 선택·Worker 헤더 검증
+
+- API 계약 감사에서 OpenAPI 문서가 실제 Tenant 필터가 요구하는 `X-Tenant-Id`를 모든 보호 경로에서 선택사항으로 표시하던 불일치를 확인했다. 또한 Tenant 선택값이 없을 때 `TenantMembershipAuthorizationFilter`가 선택 Tenant 오류와 membership 오류를 같은 `platform.membership.forbidden` 코드로 반환하여 장애 원인을 구분하기 어려웠다. Worker API의 `Idempotency-Key`와 DLQ 재처리의 `Replay-Request-Id` 누락 응답도 통합 계약으로 고정할 필요가 있었다.
+- 최소 안전 수정으로 Tenant 경로와 `/api/platform/resources`, `/api/platform/policies`의 `X-Tenant-Id`를 OpenAPI에서 필수로 표시하고, 플랫폼 관리자가 Tenant 선택 없이 수행하는 `/activate`·`/memberships` 경로는 선택사항으로 유지했다. Tenant 컨텍스트 오류는 `platform.tenant.forbidden`, 실제 활성 소속 부재는 `platform.membership.forbidden`으로 분리했다. 기존 인증·Tenant 소속·관리자 권한 검사는 변경하지 않았다.
+- 대상 통합 테스트는 OpenAPI의 Bearer 보안 요구, Tenant 헤더 필수 여부와 예외 경로, Worker 필수 헤더 누락 오류, Tenant 헤더 누락 오류를 확인했다. 대상 테스트 3개와 변경 후 API 통합 테스트 32개가 통과했다.
+- 변경 브랜치에서 다음 요구 명령을 실제 실행했다. `dotnet restore EDAN.Tensor.sln`은 성공했고, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개로 성공했다. `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 전체 232개 통과·실패 0개·건너뜀 0개로 종료했다.
+- PR #128의 head `904669c545aee60823db8422d34bc83a09f2b814`에 대한 자체 호스팅 Windows CI Run #875는 Restore·Build·Test·정리를 모두 성공시켰다. PR은 `2341f0704d55ed30804e0b0bc653fcf03a5eadeb`로 Squash Merge되었고, 병합 후 main CI Run #876도 성공했다. 병합 후 로컬 `main`과 `origin/main`은 같은 SHA를 가리켰으며 `codex/api-contract-tenant-worker-20261110`은 로컬·원격에서 삭제했다.
+- 이 검증은 로컬 SQLite·Swagger/OpenAPI와 내부 Platform·DataSet·Worker 계약을 강화한 증거다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 검증하지 않았으며 Issue #84와 Milestone #1의 외부 조건으로 계속 추적한다.
