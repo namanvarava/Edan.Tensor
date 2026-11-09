@@ -933,3 +933,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - WPF 화면이 아직 없는 저장소에서 승인된 Platform·DataSet·Worker API 흐름을 검증하고 소비할 수 있도록 `EDAN.Tensor.Client.Contracts`와 `EDAN.Tensor.Client`를 솔루션에 추가했다. `TensorApiClient`는 Bearer 토큰 공급자, Tenant 경로와 `X-Tenant-Id`의 일치, `Idempotency-Key`, `Replay-Request-Id`, API 오류 계약과 콘텐츠 스트림 수명을 처리한다.
 - Client 테스트에서 인증·Tenant 헤더, 검증 예약 Idempotency, 구조화 오류, 404 선택 조회, 다운로드 스트림 해제, 입력·페이지 상한을 검증했다. 대상 단위 테스트 6개와 실제 임시 SQLite API Host 통합 테스트 1개를 포함한 솔루션 전체 Release Test 242개가 실패 0개·건너뜀 0개로 통과했다.
 - Client는 WPF 화면·Commercial entitlement·결제·Licensing 발급/검증·DuckDB/Parquet을 구현했다고 표시하지 않는다. 해당 범위는 승인된 업무·화면·포맷 계약이 제공된 뒤 같은 API 계약 위에 재개한다.
+
+## 2026-11-10 Client API PR #145 병합 및 main 재검증
+
+- PR #145 `feat: API 연동 Client 계약과 typed client 추가`의 head `55ac91ddb6ca8a97e73a08658b6d4e744dbaf2d7`는 `9ea41d69335c8ed76a5c8718ad5a0d3839a628e1`로 squash merge되었다. PR CI [Run #910](https://github.com/namanvarava/Edan.Tensor/actions/runs/42699663428)과 병합 후 main CI [Run #911](https://github.com/namanvarava/Edan.Tensor/actions/runs/42699956771)은 자체 호스팅 Runner에서 Restore·Release Build·Release Test를 모두 성공시켰다.
+- 병합 후 로컬 `main`에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore는 성공했고, Release Build는 경고 0개·오류 0개였으며, 전체 Release Test는 실패 0개·건너뜀 0개로 종료되었다. API Host 통합 테스트를 독립 실행하여 33개 통과·실패 0개·건너뜀 0개를 추가 확인했다.
+- PR #145의 작업 브랜치는 병합 후 정리 대상이며, 브랜치 삭제 확인과 최종 `main`·`origin/main` SHA 일치는 후속 정리 단계에서 확인한다. 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 병합으로 검증되지 않는다.
