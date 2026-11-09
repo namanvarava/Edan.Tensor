@@ -865,3 +865,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 원문 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 출력 없이 정체되었다. API 통합 테스트 프로젝트만 단일 노드로 실행해도 testhost 결과가 생성되지 않았고, 관찰 시점에 dotnet·MSBuild·vstest·testhost 프로세스가 존재하지 않았다. 안전한 제한 관찰 후 중단했으며, 제품 assertion·제품 예외·테스트 실패 로그는 확인되지 않았다. 이 결과를 테스트 성공으로 표시하지 않는다.
 - `dotnet --info`는 SDK 정보 출력 중 Windows Service Control Manager 접근 거부 예외를 기록했고, `dotnet --version` 자체는 성공했다. 따라서 현재 Work의 권한·프로세스 실행·NuGet 네트워크 상태를 저장소 코드 결함으로 추측하지 않는다.
 - 재개 조건은 병렬 MSBuild와 testhost가 실제로 실행되고 로그가 보존되는 자체 호스팅 Windows Runner 또는 동등한 격리 환경, NuGet 감사 피드 접근 또는 그 상태를 판정할 수 있는 네트워크, loopback TCP 접근 권한이다. 조건 충족 후 원문 Restore·Build·Test와 ApiHost/WorkerHost HTTP Smoke를 다시 실행한다.
+
+## 2026-11-10 PR #132 병합 후 최신 main 재검증
+
+- PR #132의 head `451a3db88a93bfbcfbdf72ccb067e55813829ccd`는 `8a82bf9f2a6546c593e44928d588f12d2fa2126c`로 squash merge되었다. PR 자체 CI [Run #884](https://github.com/namanvarava/Edan.Tensor/actions/runs/42675745493)는 Restore·Build·Test·정리를 모두 성공시켰다.
+- 병합 후 main [Run #885](https://github.com/namanvarava/Edan.Tensor/actions/runs/42676094148)은 merge commit `8a82bf9f2a6546c593e44928d588f12d2fa2126c`에서 Restore·Build·Test·정리를 모두 성공시켰다. `build-and-test` Job의 Set up, checkout, Runner environment, Restore, Build, Test, Post checkout, Complete job 단계가 모두 성공했다.
+- 병합 후 로컬 `main`·`origin/main`·HEAD는 같은 SHA `8a82bf9f2a6546c593e44928d588f12d2fa2126c`를 가리키고, `git diff --check`와 작업 디렉터리 clean 상태를 확인했다. PR 검색 결과 열린 PR은 0건이며, 원격·로컬 브랜치 검색 결과 `main`만 남았다. `codex/record-main-ci-infra-failure-20261110`은 원격 push 삭제와 로컬 branch 삭제를 각각 성공시켰다.
+- Run #882·#883의 Job 생성 전 GitHub Actions 내부 오류는 Run #884·#885에서 재현되지 않았고, 새 main CI 성공으로 최신 문서 변경의 병합 상태를 검증했다. 다만 현재 Work의 원문 Testhost·loopback HTTP 실패, 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 이 CI 성공으로 대체하지 않으며 Issue #84와 Milestone #1에서 계속 환경 미검증으로 추적한다.
