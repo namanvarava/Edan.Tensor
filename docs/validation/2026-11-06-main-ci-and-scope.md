@@ -818,3 +818,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최신 Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 외부 프로세스에서 기동했다. Development Bypass에서 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호된 `/api/platform/tenants/mine`이 모두 HTTP 200을 반환했고 stderr는 0바이트였다. 실행 후 프로세스·임시 DB·키 경로를 정리했다.
 - 최신 Release WorkerHost도 임시 SQLite 네 개로 외부 프로세스에서 기동했다. Migration과 Handler catalog 동기화 후 `/health`가 HTTP 200을 반환했고 stderr는 0바이트였다. 실행 후 프로세스와 임시 DB 경로를 정리했다.
 - 이 Smoke는 Development Bypass와 로컬 SQLite·Host 경계의 실제 HTTP 실행을 증명하지만, 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한을 증명하지 않는다. 운영 DB·실제 외부 수신 시스템과 GitHub main 보호 규칙 상세 API HTTP 403도 계속 환경 미검증으로 Issue #84와 Milestone #1에서 추적한다.
+
+## 2026-11-10 최종 main Host Smoke 재실행
+
+- PR #125 병합 후 검증 대상 main은 `b149411ab1c5b8edc23e867c0a9fb9d213b52521`이며, 병합 후 자체 호스팅 Windows CI [Actions Run #42662765923](https://github.com/namanvarava/Edan.Tensor/actions/runs/42662765923)은 Restore·Build·Test·정리 단계를 모두 성공시켰다. 이 PR은 검증 문서만 갱신했으며 제품 소스 동작은 변경하지 않았다.
+- 실제 Windows 프로세스로 Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 기동했다. `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, Development Bypass 보호 API가 모두 HTTP 200을 반환했고 ApiHost 표준 오류 출력은 0바이트였다.
+- 같은 임시 데이터베이스 경계를 사용하여 Release WorkerHost를 기동했고 `/health`가 HTTP 200을 반환했으며 WorkerHost 표준 오류 출력은 0바이트였다. 프로세스 종료 후 임시 DB·키·로그 경로가 존재하지 않음을 확인했다.
+- 이번 실행은 코드에 고정된 Development Bypass 프로필과 `EDAN-NONPROD` Tenant·안정적인 `sub`만 사용했다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 실행으로 검증하지 않았다.
