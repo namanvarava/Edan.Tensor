@@ -770,3 +770,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - PR #111 `docs: 잔여 내부 범위와 최신 기준 동기화`의 head `858b8a554b2fef611a8279870b54af3e658353a7`은 main에 `319b61ee6b2523f0257908627748c48185f298df`로 Squash Merge되었다. PR Check [Actions Run #42641196808](https://github.com/namanvarava/Edan.Tensor/actions/runs/42641196808)과 병합 후 main [Actions Run #42641569157](https://github.com/namanvarava/Edan.Tensor/actions/runs/42641569157)의 `build-and-test`는 모두 성공했다.
 - 병합 후 로컬 `main`을 `origin/main`의 `319b61ee6b2523f0257908627748c48185f298df`로 fast-forward했고, 작업 디렉터리는 clean이다. 열린 PR은 0건이며, 병합된 `codex/audit-remaining-internal-scope-20261110`은 원격 Branch API 404와 `origin` 원격 브랜치 목록으로 삭제를 확인했고 로컬 브랜치 목록에도 `main`만 남았다.
 - 이 문서 병합으로 저장소 내부 잔여 범위 감사와 최신 main 기준을 기록했다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF의 승인 계약 부재와 실제 비운영 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403의 환경 미검증 상태는 변경되지 않았다.
+
+## 2026-11-10 API Host Development Smoke의 loopback 권한 미검증
+
+- 검증 시작 기준 main은 `6b9ec32262fd1be75ea77c19e4dd3ccc1b61dc73`였다. Host 단독 Debug 빌드는 처음에 VBCSCompiler named pipe 접근 거부와 `obj\\Debug` 출력 DLL 파일 잠금으로 종료되었고, 관련 프로세스가 남아 있지 않은 상태에서 `-m:1 -p:UseSharedCompilation=false`를 사용한 재현 가능한 빌드는 경고 0개·오류 0개로 통과했다. 이 실패는 제품 코드 오류가 아니라 현재 Work의 컴파일러 프로세스·파일 잠금 경계로 분류한다.
+- `ASPNETCORE_ENVIRONMENT=Development`와 `dotnet run --no-build --project src/Hosts/EDAN.Tensor.ApiHost --no-launch-profile --urls http://127.0.0.1:5127`로 Host를 기동했다. 로그에서 SQLite Migration 적용, `EDAN-NONPROD` Tenant와 `edan-nonprod-test-subject` 초기화, `http://127.0.0.1:5127` 수신 대기를 확인했다. Development Bypass는 실제 외부 IdP가 아니라 고정 시뮬레이션 프로필을 사용했다.
+- 별도 HTTP 클라이언트로 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API를 호출했지만 모든 요청이 동일한 “액세스 권한에 의해 숨겨진 소켓” 오류로 실패했다. 따라서 HTTP 상태·응답 본문·Swagger UI와 보호 API의 실제 loopback 호출은 성공으로 판정하지 않고 환경 미검증으로 남긴다. Host 로그의 DataProtection 키 저장 권한 거부도 확인했으며, 이번 Work에서는 운영 키 저장 경로를 임의로 우회하지 않았다.
+- Host 종료 후 이번 Smoke가 만든 추적되지 않은 SQLite 파일은 정확한 경로를 확인해 제거했고, 작업 디렉터리는 clean으로 복귀했다. 재개 조건은 loopback 통신 권한과 개발 DataProtection 키 저장 경로를 제공한 격리된 Windows 환경이며, 이 조건이 충족되면 같은 런북으로 Migration·health·OpenAPI·Swagger·보호 API를 다시 수행한다.
