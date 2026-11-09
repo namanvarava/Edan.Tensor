@@ -644,3 +644,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 전후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 220개 통과·실패 0개·건너뜀 0개였다. 추가한 DataSet API 경계 테스트는 1개 통과했다.
 - 병합 후 로컬 `main`과 `origin/main`은 `2fa678e33621e4581172bf87867e20856a6703e6`으로 일치하고 작업 디렉터리는 clean 상태다. PR #92의 작업 브랜치 `codex/work-scope-audit-20261109`는 로컬·원격에서 삭제했고, 열린 PR은 0개다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템과 GitHub 보호 규칙 HTTP 403은 이 Work 실행에서 검증하지 않았다. 이 조건은 승인된 별도 Milestone #1·Issue #84의 재개 조건으로 유지한다. Development Bypass는 Development에서만 활성화되고 External·운영 설정에는 포함되지 않는다.
+
+## 2026-11-09 API 데이터베이스 health 경계 보강 및 PR #94 병합 후 재검증
+
+- 기존 `/health`는 실제 데이터베이스를 확인하지 않았고 `/health/database`는 Platform DB만 확인했다. 이 원인을 재현한 뒤 Platform·Worker·DataSet 메타데이터와 DataSet 콘텐츠 SQLite를 모두 확인하는 `DatabaseHealthService`를 추가했다. 어느 하나라도 연결 또는 기본 테이블 읽기에 실패하면 두 health 경로가 HTTP 503을 반환하고, 응답에는 데이터베이스별 성공 여부만 포함하도록 했다.
+- `/health`·`/health/database`의 네 개 저장소 상태와 OpenAPI 경계를 확인하는 API Host 통합 테스트를 추가했다. API Host 통합 테스트는 24개 통과·실패 0개·건너뜀 0개였다.
+- PR #94의 head `ac9753f4dd18bd976ed04fc56ff4c2f6aa18adda`는 `f2eaafb2fc16a772ebde468af9457e1ad594ef8e`로 Squash Merge되었다. PR CI [Actions Run #807](https://github.com/namanvarava/Edan.Tensor/actions/runs/42604564612)와 병합 후 main push CI [Actions Run #808](https://github.com/namanvarava/Edan.Tensor/actions/runs/42604905013)는 Restore·Build·Test 단계를 모두 성공시켰다.
+- 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 221개 통과·실패 0개·건너뜀 0개였다. 로컬 `main`과 `origin/main`은 `f2eaafb2fc16a772ebde468af9457e1ad594ef8e`로 일치했고 작업 디렉터리는 clean 상태였다.
+- 병합된 작업 브랜치 `codex/health-observability-20261109`는 로컬·원격에서 삭제했다. 실제 비운영 외부 IdP, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403은 이 변경으로 검증하지 않았으며 Issue #84·Milestone #1의 별도 재개 조건으로 유지한다.
