@@ -832,6 +832,15 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 로컬 `main`과 `origin/main`은 같은 SHA `84d9ed422ea46058f26d07fa237514de5533c55c`를 가리키고 작업 디렉터리는 clean이다. `codex/record-api-contract-evidence-20261110`은 원격·로컬에서 삭제했으며, 현재 원격·로컬 브랜치는 `main`만 남았다. 열린 PR은 0건이다.
 - 이 기록은 PR #128의 API 계약·Tenant 선택·Worker 헤더 수정과 PR #129의 증거 문서 병합 상태를 최신 main에 고정한다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 외부 조건으로 계속 미검증이다.
 
+## 2026-11-10 현재 Work 실행 환경 재검증
+
+- 검증 대상은 PR #130 병합 후 main `cf18d0436710e4440ff9dc90d415e1bf6bd85bbd`이며, 병합 후 main CI [Actions Run #42670256154](https://github.com/namanvarava/Edan.Tensor/actions/runs/42670256154)은 Restore·Build·Test를 성공시켰다.
+- 요구된 `dotnet restore EDAN.Tensor.sln`은 현재 Work에서 종료 코드 0으로 완료했다.
+- 요구된 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 종료 코드 1로 끝났고, 출력에는 경고 0개·오류 0개만 표시되었다. 단일 노드와 공유 컴파일을 끈 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false`는 전체 프로젝트를 경고 0개·오류 0개, 종료 코드 0으로 완료했다. 따라서 이번 Build 실패는 제품 컴파일 오류가 아니라 OneDrive 작업 경로와 병렬 MSBuild 실행 경계로 분류한다.
+- 요구된 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 출력 없이 종료 코드 1로 끝났다. 같은 단일 노드·공유 컴파일 비활성화 조건에서도 첫 Testhost가 `vstest.console`의 90초 연결 시간 초과로 중단되었고 assertion·제품 예외 로그는 없었다. 잔류 dotnet·testhost·vstest 프로세스는 확인 후 남지 않도록 정리했다. 로컬 Release Test는 성공으로 표시하지 않으며, Windows 자체 호스팅 CI의 성공 결과로만 제품 회귀를 판정한다.
+- Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 실제 프로세스 기동했을 때 Migration, 고정 Development Bypass Tenant 초기화, `http://127.0.0.1:5197` 수신 대기와 stderr 0바이트를 확인했다. 같은 Work에서 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API의 HTTP 상태는 소켓 접근 경계로 확인되지 않아 모두 환경 미검증으로 남겼다. HTTP 성공으로 확대하거나 운영 설정을 완화하지 않았다.
+- 동일 원인에 대해 원문 명령 무한 재시도, 캐시 삭제, CI 우회, 운영 인증·DataProtection 설정 완화는 수행하지 않았다. 재개 조건은 동기화 폴더 밖의 격리된 Windows checkout 또는 동일한 자체 호스팅 Runner에서 Testhost·loopback TCP 접근 권한을 확보한 뒤 원문 Test와 Host HTTP Smoke를 다시 실행하는 것이다. 이 기록은 제품 실패를 숨기지 않으면서 인프라 실패와 코드 실패를 구분한 증거다.
+
 ## 2026-11-10 PR #128 API 계약·Tenant 선택·Worker 헤더 검증
 
 - API 계약 감사에서 OpenAPI 문서가 실제 Tenant 필터가 요구하는 `X-Tenant-Id`를 모든 보호 경로에서 선택사항으로 표시하던 불일치를 확인했다. 또한 Tenant 선택값이 없을 때 `TenantMembershipAuthorizationFilter`가 선택 Tenant 오류와 membership 오류를 같은 `platform.membership.forbidden` 코드로 반환하여 장애 원인을 구분하기 어려웠다. Worker API의 `Idempotency-Key`와 DLQ 재처리의 `Replay-Request-Id` 누락 응답도 통합 계약으로 고정할 필요가 있었다.
