@@ -880,6 +880,39 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
         Assert.Equal(HttpStatusCode.NotFound, deleted.StatusCode);
 
+        using var changedInput = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedDataSetVersion = 3, schemaVersion = 1, profileId, profileRevision = 1
+            })
+        };
+        changedInput.Headers.Add("Idempotency-Key", "validation-input-changed-1");
+        using var changedInputResponse = await client.SendAsync(changedInput);
+        Assert.Equal(HttpStatusCode.Accepted, changedInputResponse.StatusCode);
+        using var changedInputJson = await JsonDocument.ParseAsync(
+            await changedInputResponse.Content.ReadAsStreamAsync());
+        var changedExecutionId = changedInputJson.RootElement.GetProperty("execution").GetProperty("id").GetGuid();
+        var changedWorkerTaskId = changedInputJson.RootElement.GetProperty("workerTaskId").GetGuid();
+
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas",
+            new { schemaJson = "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}" })).StatusCode);
+
+        var changedOutcome = await coordinator.ExecuteAsync(
+            tenantId, changedWorkerTaskId, "integration-worker", TimeSpan.FromMinutes(5));
+        Assert.Equal(WorkerTaskExecutionOutcome.Succeeded, changedOutcome);
+        await using var changedScope = factory.Services.CreateAsyncScope();
+        var changedDataSetDb = changedScope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        var changedExecution = await changedDataSetDb.ValidationExecutions
+            .SingleAsync(item => item.Id == changedExecutionId);
+        Assert.Equal("Failed", changedExecution.Status);
+        Assert.Equal("dataset.validation.input_changed", changedExecution.FailureCode);
+        Assert.NotNull(changedExecution.FailureMessage);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validations/{changedExecutionId}")).StatusCode);
+
         workerDb.WorkerTaskTypes.Remove(validationTaskType);
         await workerDb.SaveChangesAsync();
         using var unavailable = new HttpRequestMessage(HttpMethod.Post,
@@ -887,7 +920,7 @@ public sealed class PlatformApiIntegrationTests
         {
             Content = JsonContent.Create(new
             {
-                expectedDataSetVersion = 3, schemaVersion = 1, profileId, profileRevision = 1
+                expectedDataSetVersion = 4, schemaVersion = 1, profileId, profileRevision = 1
             })
         };
         unavailable.Headers.Add("Idempotency-Key", "validation-type-unavailable-1");
