@@ -205,3 +205,9 @@ PR #135 `fix: 외부 전달 멱등성 경쟁 조건 보강`이 `ce460ec7f3c4efcc
 6. 개발 라이선스 적용 후 운영 DB·실제 비운영 IdP·외부 수신 시스템·배포·백업·성능·GitHub 보호 규칙을 제공된 환경에서 검증한다.
 
 PR #135에서 보강한 저장 경계는 동일 Tenant와 Idempotency Key의 동시 생성 시 커밋된 기존 전달을 반환하고, 요청이 실제로 생성한 레코드에만 API 보상 삭제를 적용한다. 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 HTTP 403은 Issue #84 및 Milestone #1의 외부 조건으로 남아 있으며 이 내부 CI 성공으로 대체하지 않는다.
+
+## 2026-11-10 현재 main 증거 갱신
+
+PR #137은 API 사용 가이드와 실제 Bypass 고정 프로필의 정합성을 맞췄고, PR 자체 CI Run #894와 병합 후 main CI Run #895를 성공시켰다. PR #138은 외부 IdP 검증 런북에서 폐기된 Bypass 설정명을 제거했고, PR 자체 CI Run #896과 병합 후 main CI Run #897을 성공시켰다. 최신 main은 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`이며 작업 브랜치는 로컬·원격에서 삭제되어 `main`만 남았다.
+
+이 변경은 제품 실행 경계를 확장하지 않는다. Development Bypass의 고정 시뮬레이션 프로필은 실제 외부 IdP 검증을 대체하지 않으며, External·운영 환경은 실제 Metadata·JWKS·Issuer·Audience·HTTPS 검증을 계속 요구한다. 다음 구현은 승인된 비라이선스 계약이 제공될 때만 진행하고 Licensing은 마지막 내부 단계로 유지한다.
