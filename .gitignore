@@ -8,6 +8,7 @@ TestResults/
 artifacts/
 appsettings.Local.json
 appsettings.*.Local.json
+**/App_Data/DataProtection-Keys/
 *.pfx
 *.p12
 *.key
