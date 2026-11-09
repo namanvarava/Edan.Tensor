@@ -800,3 +800,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 별도 HTTP 클라이언트로 `http://localhost:5131/health`, `http://127.0.0.1:5131/health`, `http://[::1]:5131/health`, `http://localhost:5131/openapi/v1.json`을 호출했다. 네 주소 모두 “액세스 권한에 의해 숨겨진 소켓에 액세스를 시도했습니다” 오류로 실패했다. 따라서 포트 충돌이나 단일 DNS 주소 문제가 아니라 현재 Work 실행 환경의 loopback 소켓 접근 경계로 분류한다.
 - 동일 원인에 대한 주소·포트 무한 재시도와 운영 설정 변경은 수행하지 않았다. Host가 만든 `App_Data` SQLite·DataProtection 키와 `edan-worker.db` 계열 파일은 정확한 경로를 확인한 뒤 제거했고 작업 디렉터리는 clean으로 복귀했다.
 - HTTP Smoke 재개 조건은 loopback TCP 통신을 허용하고 Testhost·HTTP 클라이언트가 같은 격리 환경에서 실행되는 Windows 환경이다. 이 조건이 제공되기 전에는 Migration·Host 수신 대기만 성공으로 기록하고 `/health`, OpenAPI, Swagger UI와 보호 API의 HTTP 성공으로 확대하지 않는다.
+
+## 2026-11-10 PR #117 병합 후 Release 명령과 self-hosted Test 정체 분석
+
+- PR #117 `docs: Host Smoke loopback 재현 증거 기록`의 head `76e40883e22bce3fff2b241a28355bf635fade15`는 main에 `89f73ea484e322918ce9da087958a4d0912457a8`로 Squash Merge되었다. PR Check [Actions Run #42651837649](https://github.com/namanvarava/Edan.Tensor/actions/runs/42651837649)는 성공했다.
+- 병합 후 main의 [Actions Run #42652394931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42652394931)은 `EDAN-TENSOR-WIN` self-hosted Runner에서 Restore·Build를 성공시켰지만, `Test` 단계가 `2026-11-09T16:13:11Z`부터 계속 `in_progress`로 남았다. Job 단계는 코드 컴파일이 아니라 testhost 실행·연결 대기에서 정체되었고, 실행 중 로그 다운로드도 404여서 코드 assertion 실패나 테스트 오류로 분류할 근거가 없다. Runner 상태와 실행 job 로그가 제공되기 전에는 무한 재시도나 캐시 삭제를 수행하지 않는다.
+- 현재 Work에서 요구된 원문 `dotnet restore EDAN.Tensor.sln`은 종료 코드 0으로 성공했다. 원문 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 경고 0개·오류 0개로 종료 코드 1을 반환했다. 진단 로그는 `EDAN.Tensor.Platform.Domain` 종속성 확인 중 병렬 MSBuild 작업이 오류 메시지 없이 실패하는 환경 현상을 보여 주었다.
+- 원인 분리를 위해 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release --maxcpucount:1`을 실행했고 전체 프로젝트가 경고 0개·오류 0개, 종료 코드 0으로 성공했다. 이는 제품 컴파일 결함보다 현재 Work의 병렬 MSBuild·OneDrive 실행 경계가 원인임을 입증한다. 이 환경 우회 옵션을 저장소나 CI에 추가하지 않았다.
+- 원문 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 종료 코드 1로 출력 없이 끝났다. 원인 분리를 위해 단일 노드 Test를 실행하자 첫 `SharedKernel.Tests`에서 `vstest.console`이 90초 동안 testhost에 연결하지 못하고 `MSB4181: VSTestTask 작업이 false를 반환했지만 오류를 기록하지 않았습니다`로 중단되었다. 제품 assertion·예외 로그는 없었고, 잔류 dotnet·testhost·vstest 프로세스도 정리 후 남지 않았다.
+- 따라서 현재 Work의 로컬 Release Test는 성공으로 표시하지 않고 testhost 실행 환경 미검증으로 기록한다. main CI가 계속 정체된 동일 증거와 합쳐져, 재개 조건은 `EDAN-TENSOR-WIN` Runner의 Test job 종료 또는 Runner/testhost 상태·로그 제공, 그리고 loopback HTTP 통신 권한이다. 이 조건이 충족되면 원문 Restore·Build·Test와 Host Smoke를 다시 실행한다.
