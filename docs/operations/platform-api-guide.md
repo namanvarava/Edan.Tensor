@@ -172,6 +172,114 @@ Tenant Administrator는 조직·프로젝트 소속을 부여할 수 있습니�
 
 같은 Tenant에서 같은 키와 같은 DataSet·버전·스키마·프로필 revision을 다시 보내면 기존 검증 실행과 Worker 작업으로 수렴하며 HTTP 202를 반환합니다. 다른 요청에 이미 사용한 키를 보내면 HTTP 409와 `dataset.validation.idempotency_conflict`를 반환합니다. 키는 200자를 초과할 수 없습니다.
 
+## DataSet 메타데이터와 콘텐츠
+
+DataSet API는 선택한 Tenant의 활성 Organization·Project에 소유 범위를 고정합니다. 생성·스키마 등록·콘텐츠 기록·활성화는 Tenant Administrator가 수행하고, 메타데이터·콘텐츠 조회와 저장량 조회는 활성 Tenant 구성원이 수행합니다. `tenantId` 경로, `X-Tenant-Id` 헤더와 활성 소속은 모든 요청에서 함께 확인합니다.
+
+DataSet 초안 생성:
+
+`POST /api/platform/tenants/{tenantId}/datasets`
+
+```json
+{
+  "organizationId": "00000000-0000-0000-0000-000000000000",
+  "projectId": "00000000-0000-0000-0000-000000000000",
+  "name": "매출 데이터",
+  "storageAdapter": "sqlite",
+  "contentFormat": "json-array"
+}
+```
+
+`organizationId`와 `projectId`는 생략할 수 없으며 선택한 Tenant에 속한 활성 범위여야 합니다. 현재 승인된 저장 엔진은 `sqlite`이고 콘텐츠 형식은 `csv` 또는 `json-array`입니다. DuckDB·Parquet 어댑터는 승인된 별도 포맷·복구·동시성 계약이 제공될 때까지 사용할 수 없습니다.
+
+생성한 DataSet에 JSON Schema revision을 등록합니다.
+
+`POST /api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas`
+
+```json
+{
+  "schemaJson": "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\"}}}"
+}
+```
+
+스키마가 등록된 초안만 다음 경로에서 활성화할 수 있습니다.
+
+`POST /api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate`
+
+콘텐츠는 요청 본문에 원문 스트림으로 기록하고 별도 JSON 래퍼를 사용하지 않습니다.
+
+`POST /api/platform/tenants/{tenantId}/datasets/{dataSetId}/content`
+
+현재 개발 기본 최대 크기는 64MiB이며, 한도 초과는 HTTP 413과 `dataset.content_too_large`, 보관된 DataSet 또는 quota 초과는 HTTP 409로 반환합니다. 콘텐츠는 전용 SQLite 콘텐츠 저장소에 기록되고 API 응답이나 로그에 내부 Storage Reference를 노출하지 않습니다.
+
+다음 경로는 Tenant 범위 메타데이터·콘텐츠·저장량을 조회합니다.
+
+- `GET /api/platform/tenants/{tenantId}/datasets/{dataSetId}`는 DataSet 상태, 버전과 스키마 revision을 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/datasets/{dataSetId}/content`는 콘텐츠를 `application/octet-stream` 스트림으로 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage`는 Tenant·Organization·Project·DataSet별 사용량, 한도와 경고를 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/storage-usage`는 Tenant 전체의 현재 사용량을 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/storage-usage/history?take=168`은 저장량 스냅샷을 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/storage-usage/quota-events?take=100`은 quota 임계치 이벤트를 Tenant 관리자에게 반환합니다.
+
+## DataSet Validation 프로필과 결과
+
+Tenant 관리자는 검증 프로필을 생성하고 불변 revision을 추가합니다.
+
+- `POST /api/platform/tenants/{tenantId}/datasets/validation-profiles`
+- `POST /api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}/revisions`
+
+프로필의 최상위 객체는 `fields` 배열을 포함해야 하며, 필드 형식은 `string`, `integer`, `decimal`, `boolean`입니다. `duplicateSets`와 `limits`는 승인된 v1 규칙만 사용합니다. 원문 셀 값과 내부 저장 경로는 결과에 기록하지 않습니다.
+
+검증 실행 예약 요청은 다음과 같습니다.
+
+```json
+{
+  "expectedDataSetVersion": 2,
+  "schemaVersion": 1,
+  "profileId": "00000000-0000-0000-0000-000000000000",
+  "profileRevision": 1
+}
+```
+
+`POST /api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations`에 `Idempotency-Key`를 함께 보내면 HTTP 202와 검증 실행·Worker 작업 식별자를 반환합니다. 실행 상태는 `GET /api/platform/tenants/{tenantId}/datasets/validations/{executionId}`, 상세 항목은 `GET /api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details?skip=0&take=100`으로 조회합니다. 결과 삭제는 `DELETE /api/platform/tenants/{tenantId}/datasets/validations/{executionId}`로 수행하며 실행 중인 결과는 HTTP 409로 거부합니다.
+
+## Worker 작업과 장애 복구
+
+Tenant 관리자는 등록된 작업 유형만 불투명 Payload Reference로 예약할 수 있습니다. 요청 본문에 작업 Payload 자체를 넣지 않고 `Idempotency-Key`를 반드시 사용합니다.
+
+```json
+{
+  "taskType": "dataset.validation.v1",
+  "payloadReference": "dataset-validation:v1:00000000000000000000000000000000",
+  "maxAttempts": 5
+}
+```
+
+`POST /api/platform/tenants/{tenantId}/worker/tasks`는 새 작업이면 HTTP 201, 동일 Tenant·Idempotency Key로 같은 내용을 재요청하면 HTTP 200, 다른 내용을 재사용하면 HTTP 409를 반환합니다. `GET /api/platform/tenants/{tenantId}/worker/tasks/{taskId}`로 작업 상태를 조회합니다. 작업은 Lease·Fencing Token·체크포인트를 사용하고, 만료 Lease는 재시도 또는 DLQ 경로로 복구합니다.
+
+DLQ 작업은 다음 관리자 API로 조회·재처리합니다.
+
+- `GET /api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=50`
+- `POST /api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay`
+
+재처리 요청에는 새로운 GUID 형식의 `Replay-Request-Id` 헤더가 필요합니다. 같은 재처리 식별자를 반복 사용해도 동일한 재처리 작업으로 수렴하며, 원본 작업과 Tenant 범위는 유지됩니다.
+
+## 외부 전달
+
+Tenant 관리자는 허용 목록에 등록된 대상 URI로 외부 전달을 예약할 수 있습니다. 요청 본문은 저장되지만 상태 응답에는 Payload를 반환하지 않으며, `Idempotency-Key`는 Tenant 범위에서 전달 저장과 Worker 작업에 함께 적용됩니다.
+
+`POST /api/platform/tenants/{tenantId}/worker/deliveries`
+
+```json
+{
+  "targetUri": "https://receiver.example.test/events",
+  "payload": { "event": "dataset.updated" },
+  "maxAttempts": 5
+}
+```
+
+전달 상태는 구성원도 `GET /api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}`로 조회할 수 있습니다. 대상 Host가 허용되지 않거나 loopback 허용 설정이 없으면 예약이 거부됩니다. 응답 유실·5xx·timeout은 재시도 상태로 남기고, 동일 Tenant·Idempotency Key의 동시 생성은 하나의 커밋된 전달과 작업으로 수렴합니다.
+
 ## 오류 응답
 
 업무 오류는 다음 공통 JSON 형식으로 반환합니다.
@@ -240,13 +348,16 @@ Tenant Administrator는 Tenant·Organization·Project·DataSet 범위의 저장 
 
 ### 개인 개발용 Bypass 모드
 
-개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다. Bypass에서는 Metadata/JWKS, Issuer, Audience와 키 회전 설정을 입력하지 않아도 되며, 해당 값이 있더라도 외부 인증 검증에 사용하지 않습니다.
+개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 기본 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다. Bypass에서는 Metadata/JWKS, Issuer, Audience와 키 회전 설정을 입력하지 않아도 되며, 해당 값이 있더라도 외부 인증 검증에 사용하지 않습니다.
+
+Bypass 프로필의 Metadata 주소, JWKS 주소, Issuer, Audience, 테스트 Tenant, 테스트 사용자, 안정적인 `sub`와 키 회전 권한 식별자는 코드에 고정되어 설정값으로 변경할 수 없습니다. 현재 고정값은 `https://auth-test.example.com/.well-known/openid-configuration`, `https://auth-test.example.com/jwks`, `https://auth-test.example.com`, `edan-tensor-api`, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, `nonprod-idp-test-key-rotation`입니다. 이 값은 실제 외부 IdP의 Metadata·JWKS·Issuer·Audience·권한을 검증했다는 뜻이 아니라, 외부 IdP가 없는 Development 테스트에서 사용할 시뮬레이션 식별자입니다.
 
 ```text
 Authentication__Mode=Bypass
-Authentication__BypassSubject=edan-nonprod-test-subject
 Authentication__BypassRole=platform_admin
 ```
+
+`Authentication__BypassRole`은 Development 테스트 Claim의 역할만 선택하며 고정 Tenant·사용자·`sub`·외부 IdP 시뮬레이션 프로필을 변경하지 않습니다. `EDAN-NONPROD` Tenant와 `edan-nonprod-test-subject`의 Administrator 소속은 Development 초기화가 멱등적으로 준비합니다.
 
 Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 생략하지 않습니다. Bypass 주체를 Tenant Administrator로 등록해야 Tenant 업무 API를 사용할 수 있습니다. 운영 또는 비개발 환경에서 Bypass를 선택하면 API가 시작되지 않습니다.
 
