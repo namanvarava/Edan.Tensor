@@ -15,8 +15,25 @@ public sealed class ExternalDeliveryService(
         string idempotencyKey, int maxAttempts, DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
+        return (await CreateOrGetAsync(tenantId, targetUri, payload, idempotencyKey, maxAttempts,
+            nowUtc, cancellationToken)).Delivery;
+    }
+
+    /// <summary>동일한 Tenant·Idempotency Key의 경쟁 요청을 하나의 전달로 수렴시킵니다.</summary>
+    /// <param name="tenantId">외부 전달을 소유하는 Tenant 식별자입니다.</param>
+    /// <param name="targetUri">호출할 허용 대상 URI입니다.</param>
+    /// <param name="payload">전달할 JSON 본문입니다.</param>
+    /// <param name="idempotencyKey">동일 요청을 하나로 수렴시키는 Tenant 범위 키입니다.</param>
+    /// <param name="maxAttempts">허용할 최대 전달 시도 횟수입니다.</param>
+    /// <param name="nowUtc">새 전달의 생성 시각으로 사용할 UTC 시각입니다.</param>
+    /// <param name="cancellationToken">저장 작업을 취소할 토큰입니다.</param>
+    /// <returns>전달 상태와 이번 호출의 신규 생성 여부를 반환합니다.</returns>
+    public async Task<ExternalDeliveryCreateResult> CreateOrGetAsync(Guid tenantId, string targetUri, string payload,
+        string idempotencyKey, int maxAttempts, DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
         ValidateTarget(targetUri);
-        return await repository.CreateAsync(tenantId, targetUri, payload, idempotencyKey,
+        return await repository.CreateOrGetAsync(tenantId, targetUri, payload, idempotencyKey,
             maxAttempts, nowUtc, cancellationToken);
     }
 

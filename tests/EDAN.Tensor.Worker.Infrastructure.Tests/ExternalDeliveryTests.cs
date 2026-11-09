@@ -12,6 +12,30 @@ namespace EDAN.Tensor.Worker.Infrastructure.Tests;
 public sealed class ExternalDeliveryTests
 {
     [Fact]
+    public async Task CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(options);
+        await db.Database.MigrateAsync();
+        var repository = new ExternalDeliveryRepository(db);
+        var tenantId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+
+        var first = await repository.CreateOrGetAsync(tenantId, "https://receiver.test/events",
+            "{\"event\":\"created\"}", "delivery-create-once", 3, now);
+        var second = await repository.CreateOrGetAsync(tenantId, "https://receiver.test/events",
+            "{\"event\":\"created\"}", "delivery-create-once", 3, now.AddMinutes(1));
+
+        Assert.True(first.Created);
+        Assert.False(second.Created);
+        Assert.Equal(first.Delivery.Id, second.Delivery.Id);
+        Assert.Equal(1, await db.ExternalDeliveries.CountAsync(x =>
+            x.TenantId == tenantId && x.IdempotencyKey == "delivery-create-once"));
+    }
+
+    [Fact]
     public async Task ResponseLoss_ReusesSameIdempotencyKeyAndSucceedsOnRetry()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

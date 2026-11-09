@@ -42,18 +42,18 @@ public static class ExternalDeliveryEndpoints
             if (string.IsNullOrWhiteSpace(idempotencyKey))
                 return Results.BadRequest(new { Code = "external.delivery.idempotency_key_required", Description = "Idempotency-Key 헤더가 필요합니다." });
 
-            var payload = request.Payload.GetRawText();
-            var existing = await service.GetByIdempotencyKeyAsync(tenantId, idempotencyKey, token);
-            if (existing is not null && (!string.Equals(existing.TargetUri, request.TargetUri, StringComparison.Ordinal)
-                || !string.Equals(existing.Payload, payload, StringComparison.Ordinal)))
-                return Results.Conflict(new { Code = "external.delivery.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 전달 내용으로 이미 사용되었습니다." });
-
             Guid? createdDeliveryId = null;
             try
             {
-                var delivery = existing ?? await service.CreateAsync(tenantId, request.TargetUri, payload,
+                var payload = request.Payload.GetRawText();
+                var createResult = await service.CreateOrGetAsync(tenantId, request.TargetUri, payload,
                     idempotencyKey, request.MaxAttempts, DateTimeOffset.UtcNow, token);
-                if (existing is null)
+                var delivery = createResult.Delivery;
+                if (!string.Equals(delivery.TargetUri, request.TargetUri, StringComparison.Ordinal)
+                    || !string.Equals(delivery.Payload, payload, StringComparison.Ordinal)
+                    || delivery.MaxAttempts != request.MaxAttempts)
+                    return Results.Conflict(new { Code = "external.delivery.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 전달 내용으로 이미 사용되었습니다." });
+                if (createResult.Created)
                     createdDeliveryId = delivery.Id;
                 var task = await enqueue.EnqueueAsync(tenantId, idempotencyKey,
                     ExternalDeliveryTaskContract.TaskType,
