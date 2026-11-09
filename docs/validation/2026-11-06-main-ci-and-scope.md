@@ -888,3 +888,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 대상 회귀 테스트는 `CreateOrGet_ReturnsExistingDeliveryWithoutCreatingDuplicate`이며, 전체 Release 회귀는 main CI Run #891에서 성공했다. 병합 후 로컬·원격 `main`은 위 SHA로 일치하고 작업 디렉터리는 clean이다. PR 브랜치 `codex/fix-external-delivery-idempotency-20261110`은 원격·로컬에서 삭제했고 현재 브랜치는 `main`만 남았다.
 - 현재 내부 실행 순서는 API 계약·멱등성 → Tenant·인증 경계 → Worker 장애·복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 → 운영·외부 환경 검증이다. Commercial·DuckDB·Parquet·WPF의 승인 계약이 없는 상태에서 임의 기능을 추가하지 않는다.
 - 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템과 GitHub main 보호 규칙 HTTP 403은 여전히 환경 미검증이다. Issue #84와 Milestone #1의 외부 조건이 제공될 때만 해당 범위를 재개한다.
+
+## 2026-11-10 PR #137·#138 병합 후 최신 main 기준
+
+- PR #137 `docs: API 사용 가이드와 Bypass 경계 정합화`의 head `6c1155ec413f805b519200a6a6639ee6d9f5e95e`는 `3c018f02764134f7c4a8cd73965642160aa168b1`로 Squash Merge되었다. PR 자체 CI Run #894와 병합 후 main CI [Run #895](https://github.com/namanvarava/Edan.Tensor/actions/runs/42684182214)은 Restore·Release Build·Release Test와 정리 단계를 모두 성공시켰다.
+- PR #137은 실제 코드의 `DevelopmentBypassExternalIdentityProfile.Fixed`와 API 엔드포인트 동작에 맞춰 API 가이드를 보완했다. Bypass Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 식별자는 코드에 고정되고 설정값으로 변경되지 않으며, `Authentication__BypassRole`은 Development Claim 역할만 선택한다. DataSet·Validation·Worker·외부 전달의 실제 호출 순서와 오류·멱등성 계약도 같은 가이드에 기록했다.
+- PR #138 `docs: 외부 IdP 검증 런북의 Bypass 경계 정정`의 head `ca0ac4af77d773ec734198ef3c14c94b08935bfc`는 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`로 Squash Merge되었다. PR 자체 CI Run #896과 병합 후 main CI [Run #897](https://github.com/namanvarava/Edan.Tensor/actions/runs/42685196379)은 Restore·Release Build·Release Test와 정리 단계를 모두 성공시켰다.
+- PR #138은 외부 IdP 런북에서 실제로 존재하지 않는 `Authentication__BypassSubject` 설정명을 제거하고, Development Bypass 고정 프로필은 External IdP 검증에 사용하지 않는다는 경계를 명시했다. 현재 로컬·원격 `main`은 `6a5ff9e7227ace12e074a9d13759ac2403f59aa6`로 일치하고 작업 디렉터리는 clean이다. PR #137·#138의 원격·로컬 작업 브랜치는 삭제되었고 원격·로컬 브랜치에는 `main`만 남았다.
+- 최신 내부 실행 순서는 API 계약·멱등성 → Tenant·인증 경계 → Worker 장애·복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 → 운영·외부 환경 검증이다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 이 CI 성공으로 대체하지 않으며 Issue #84와 Milestone #1의 외부 조건으로 유지한다.
