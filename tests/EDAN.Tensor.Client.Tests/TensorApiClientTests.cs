@@ -119,6 +119,27 @@ public sealed class TensorApiClientTests
         Assert.Equal("content", await reader.ReadToEndAsync());
     }
 
+    /// <summary>검증 결과 삭제가 Tenant 경로와 DELETE 메서드를 전달하고 빈 응답을 처리합니다.</summary>
+    [Fact]
+    public async Task DeleteDataSetValidationAsync_SendsTenantScopedDelete()
+    {
+        var tenantId = Guid.NewGuid();
+        var executionId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(HttpMethod.Delete, request.Method);
+            Assert.Equal(
+                $"/api/platform/tenants/{tenantId:D}/datasets/validations/{executionId:D}",
+                request.RequestUri!.AbsolutePath);
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        await client.DeleteDataSetValidationAsync(tenantId, executionId);
+    }
+
     /// <summary>페이지 입력과 식별자 입력의 경계를 클라이언트에서 먼저 차단합니다.</summary>
     [Fact]
     public async Task ClientRejectsInvalidPagingAndIdentifiers()

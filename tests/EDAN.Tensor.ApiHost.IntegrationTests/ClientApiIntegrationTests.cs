@@ -26,9 +26,12 @@ public sealed class ClientApiIntegrationTests
             var memberships = await api.GetMyMembershipsAsync();
             var membership = Assert.Single(memberships);
             var dataSet = await api.GetDataSetAsync(membership.TenantId, Guid.NewGuid());
+            var exception = await Assert.ThrowsAsync<TensorApiException>(() =>
+                api.DeleteDataSetValidationAsync(membership.TenantId, Guid.NewGuid()));
 
             Assert.Equal("Administrator", membership.Role);
             Assert.Null(dataSet);
+            Assert.Equal("dataset.validation.not_found", exception.Code);
         }
         finally
         {
