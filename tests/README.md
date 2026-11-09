@@ -60,3 +60,5 @@ PR #143의 [PR CI Run #906](https://github.com/namanvarava/Edan.Tensor/actions/r
 ## Client API 연동 회귀
 
 `EDAN.Tensor.Client.Tests`는 인증 헤더, 기본 Tenant 헤더, `Idempotency-Key`, 구조화 API 오류, 404 선택 조회, 다운로드 스트림 수명, 입력·페이지 상한을 검증한다. 실제 임시 SQLite API Host에 typed Client를 연결하는 통합 테스트 1개도 추가했으며, 새 Client 테스트 6개를 포함한 솔루션 전체 Release Test는 현재 242개 통과·실패 0개·건너뜀 0개다.
+
+DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작업을 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`에 전달하고, Lease/Fencing 실행 후 Worker 작업 성공과 Invalid 검증 결과·처리 행 수를 확인한다. API Host 통합 프로젝트는 이 경계를 포함하여 33개 테스트가 통과한다.

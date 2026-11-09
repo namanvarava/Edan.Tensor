@@ -235,3 +235,9 @@ PR #143 작업 브랜치는 원격 삭제와 GitHub API 404를 확인한 뒤 로
 WPF 화면이 없는 현재 저장소에서도 승인된 Platform·DataSet·Worker 흐름을 실제 소비할 수 있도록 `EDAN.Tensor.Client.Contracts`와 `EDAN.Tensor.Client`를 추가했다. Client는 API Host의 Tenant 경로와 `X-Tenant-Id`를 일치시키고, Bearer 토큰·`Idempotency-Key`·`Replay-Request-Id`를 요청 경계에서 구성하며, 표준 `{ Code, Description }` 오류를 `TensorApiException`으로 보존한다. 콘텐츠 업로드·다운로드 스트림과 404 선택 조회도 계약으로 고정했다.
 
 Client 대상 회귀 6개와 실제 임시 SQLite API Host 통합 1개를 포함한 솔루션 전체 Release Test 242개가 실패 0개·건너뜀 0개로 통과했다. 이 구현은 WPF 화면, 결제·Commercial entitlement, Licensing 발급·검증, DuckDB·Parquet 어댑터를 임의로 확장하지 않으며 해당 계약이 제공될 때 같은 Client 경계 위에 추가한다.
+
+## 2026-11-10 DataSet Validation Worker 실행 경계 보강
+
+기존 API 통합 테스트는 DataSet Validation 실행을 Queue 상태까지 확인했으므로, 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`가 API가 예약한 불투명 Payload Reference를 처리하는 경계를 같은 임시 SQLite Host 구성에서 추가 검증했다. 테스트는 Lease/Fencing Token으로 작업을 시작하고, 중복 행이 포함된 CSV를 검증하여 Worker 작업은 `Succeeded`, 검증 결과는 `Invalid`, 처리 행 수는 2건으로 저장되는지 확인한다.
+
+첫 통합 시도에서는 테스트 프로젝트에 WorkerHost를 직접 참조하면서 API Host와 WorkerHost의 전역 `Program` 타입이 충돌하는 CS0433 컴파일 오류가 발생했다. 별도 테스트 프로젝트로 분리하는 대안보다 변경 범위가 작은 프로젝트 참조 별칭을 선택하여 WorkerHost Handler만 명시적으로 참조했고, 대상 통합 테스트 33개와 독립 경계 테스트 1개가 통과했다. 솔루션 전체 Release Build는 경고 0개·오류 0개, 전체 Release Test는 242개 통과·실패 0개·건너뜀 0개로 통과했다.

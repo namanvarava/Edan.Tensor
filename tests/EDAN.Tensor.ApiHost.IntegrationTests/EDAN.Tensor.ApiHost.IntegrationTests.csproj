@@ -11,6 +11,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Hosts/EDAN.Tensor.ApiHost/EDAN.Tensor.ApiHost.csproj" />
+    <ProjectReference Include="../../src/Hosts/EDAN.Tensor.WorkerHost/EDAN.Tensor.WorkerHost.csproj">
+      <Aliases>workerhost</Aliases>
+    </ProjectReference>
     <ProjectReference Include="../../src/Client/EDAN.Tensor.Client/EDAN.Tensor.Client.csproj" />
     <ProjectReference Include="../../src/Client/EDAN.Tensor.Client.Contracts/EDAN.Tensor.Client.Contracts.csproj" />
   </ItemGroup>
