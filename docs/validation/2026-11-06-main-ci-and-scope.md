@@ -793,3 +793,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 main CI 로그는 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-42649632425.trx"`를 원문으로 실행했다. Restore·Build는 성공하고 경고 0개·오류 0개였으며, 전체 테스트는 231개 통과·실패 0개·건너뜀 0개였다. API Host 통합 테스트 31개와 Development DataProtection 키 저장 회귀가 포함되었다.
 - 병합 후 로컬 `main`과 `origin/main`은 `95aeca244c6f7d8614e1874f1749af0944278c86`으로 일치하고 작업 디렉터리는 clean이다. PR #115는 merged 상태이며 열린 PR은 0건이다. 원격 refs에는 `main`만 남았고, 병합된 `codex/fix-development-host-key-ring-20261110`은 원격 Git ref 404와 로컬 브랜치 목록에서 삭제를 확인했다.
 - 이번 변경은 Development 환경의 로컬 키 저장 경계와 문서·회귀 테스트를 안정화했지만, 외부 IdP Metadata·JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 검증하지 않았다. Issue #84와 Milestone #1의 선행 조건이 충족될 때 별도 런북으로 수행한다.
+
+## 2026-11-10 API Host Smoke 주소 변형 재시도와 loopback 권한 경계 확정
+
+- 최신 main `f44c3f480239ac249b6dcc6447deec633a3c2b08`에서 `ASPNETCORE_ENVIRONMENT=Development`와 `dotnet run --project src/Hosts/EDAN.Tensor.ApiHost --no-launch-profile --no-build --configuration Release --urls http://localhost:5131`로 Host를 다시 기동했다. SQLite Migration 적용, 고정 `EDAN-NONPROD` Tenant 초기화, DataProtection 키 저장, `http://localhost:5131` 수신 대기를 확인했으며 이전의 키 저장 권한 오류는 재현되지 않았다.
+- 별도 HTTP 클라이언트로 `http://localhost:5131/health`, `http://127.0.0.1:5131/health`, `http://[::1]:5131/health`, `http://localhost:5131/openapi/v1.json`을 호출했다. 네 주소 모두 “액세스 권한에 의해 숨겨진 소켓에 액세스를 시도했습니다” 오류로 실패했다. 따라서 포트 충돌이나 단일 DNS 주소 문제가 아니라 현재 Work 실행 환경의 loopback 소켓 접근 경계로 분류한다.
+- 동일 원인에 대한 주소·포트 무한 재시도와 운영 설정 변경은 수행하지 않았다. Host가 만든 `App_Data` SQLite·DataProtection 키와 `edan-worker.db` 계열 파일은 정확한 경로를 확인한 뒤 제거했고 작업 디렉터리는 clean으로 복귀했다.
+- HTTP Smoke 재개 조건은 loopback TCP 통신을 허용하고 Testhost·HTTP 클라이언트가 같은 격리 환경에서 실행되는 Windows 환경이다. 이 조건이 제공되기 전에는 Migration·Host 수신 대기만 성공으로 기록하고 `/health`, OpenAPI, Swagger UI와 보호 API의 HTTP 성공으로 확대하지 않는다.
