@@ -217,3 +217,5 @@ PR #137은 API 사용 가이드와 실제 Bypass 고정 프로필의 정합성�
 PR #139는 `a0c990aca0ee3466701e4ccee21bc1c61815e956`로 `main`에 병합되었고, PR CI Run #898과 main CI Run #899가 Restore·Release Build·Release Test를 성공시켰다. 최신 main에서 동일한 세 명령을 권한 확장 환경으로 재현하여 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 233개 통과·실패 0개·건너뜀 0개를 확인했다. 최초 제한 환경의 Restore 중단은 .NET SDK 10.0.402가 Service Control Manager를 열지 못한 Win32 오류 5였으며, 소스 오류가 아니므로 권한 확장 재검증으로 해결하고 근거를 기록했다. 다음 단계는 API 계약·Tenant/인증·Worker 장애 복구 순서를 유지하며, 승인되지 않은 기능을 임의로 추가하지 않는다.
 
 최신 main의 직접 Host Smoke도 임시 SQLite 4개로 ApiHost와 WorkerHost를 기동하여 health·database health·OpenAPI·Swagger·Development Bypass Tenant API의 HTTP 200을 확인했다. 종료 후 프로세스·포트·임시 데이터가 남지 않았고, `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 알려진 취약 패키지 없음을 반환했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+
+GitHub API의 main 보호 규칙 조회는 HTTP 403 `Resource not accessible by integration`으로 거부되었다. 따라서 보호 규칙은 성공으로 표시하지 않고 Issue #84의 외부 권한 재개 조건으로 유지한다.

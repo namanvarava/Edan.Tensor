@@ -909,3 +909,4 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최신 main에서 임시 SQLite 4개와 Development 환경의 고정 Bypass 프로필로 ApiHost와 WorkerHost를 Release 바이너리에서 직접 기동했다. ApiHost `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`와 WorkerHost `/health`가 모두 HTTP 200을 반환했다.
 - Smoke 종료 후 ApiHost·WorkerHost 프로세스 0개, 임시 Smoke 디렉터리 0개, 5061·5062 포트 Listen 0개를 확인했다. Bypass는 이 격리된 Development Smoke에서만 사용했으며 External·운영 인증 검증을 대체하지 않는다.
 - `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 NuGet 공개 소스와 현재 등록 소스에서 실행했으며 모든 프로젝트에 알려진 취약 패키지가 없었다. 패키지 버전 변경이나 보안 검사 우회는 수행하지 않았다.
+- 같은 시점에 GitHub API `GET /repos/namanvarava/Edan.Tensor/branches/main/protection`을 읽기 전용으로 조회했지만 HTTP 403과 `Resource not accessible by integration`을 반환했다. 따라서 main 보호 규칙의 실제 설정·필수 Check·관리자 우회 여부는 환경 미검증으로 남기며, 권한 상승이나 보호 정책 우회는 수행하지 않는다.
