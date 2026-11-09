@@ -18,10 +18,10 @@ dotnet run --project src/Hosts/EDAN.Tensor.ApiHost
 
 브라우저 또는 HTTP 클라이언트에서 다음 주소를 호출합니다.
 
-- `GET http://localhost:5000/health`: API 프로세스 상태
-- `GET http://localhost:5000/health/database`: 데이터베이스 연결 상태
+- `GET http://localhost:5000/health`: API 프로세스와 Platform·Worker·DataSet·DataSet 콘텐츠 SQLite 상태
+- `GET http://localhost:5000/health/database`: 네 개 데이터베이스의 연결·기본 스키마 상태
 
-실제 포트는 실행 시 출력되는 ASP.NET Core 주소를 사용합니다. 연결 성공 시 `Connected`와 `Green`을 반환하고 연결 실패 시 HTTP 503과 `Red` 상태를 반환합니다.
+실제 포트는 실행 시 출력되는 ASP.NET Core 주소를 사용합니다. 모든 데이터베이스가 연결되고 기본 테이블을 읽을 수 있으면 `/health`는 HTTP 200과 `Healthy`, `/health/database`는 `Connected`와 `Green`을 반환합니다. 하나라도 실패하면 두 경로 모두 HTTP 503을 반환하며, 응답에는 데이터베이스별 성공 여부만 포함하고 연결 문자열과 예외 상세는 포함하지 않습니다.
 
 ## 연결 문자열 변경
 

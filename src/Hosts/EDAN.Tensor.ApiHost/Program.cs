@@ -111,6 +111,8 @@ var quotaAssignments = builder.Configuration.GetSection("DataSetContent:Quota:As
     .ToArray();
 builder.Services.AddDataSetSqliteStorage(dataSetContentSqliteConnection.ConnectionString, maxDataSetContentBytes, dataSetQuotaPolicy, quotaAssignments);
 builder.Services.AddScoped<IDataSetStorageQuotaPolicyProvider, PlatformDataSetStorageQuotaPolicyProvider>();
+builder.Services.AddSingleton(new SqliteDatabaseHealthProbe(dataSetContentSqliteConnection.ConnectionString));
+builder.Services.AddSingleton<DatabaseHealthService>();
 builder.Services.AddScoped<StorageQuotaPolicyManagementService>();
 builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
@@ -128,7 +130,6 @@ builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client
 {
     client.Timeout = serviceProvider.GetRequiredService<ExternalDeliveryOptions>().Timeout;
 });
-builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
@@ -165,7 +166,6 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHealthChecks("/health");
 app.MapPlatformEndpoints();
 app.MapWorkerEndpoints();
 app.MapDataSetEndpoints();
@@ -173,29 +173,28 @@ app.MapDataSetValidationEndpoints();
 app.MapExternalDeliveryEndpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
-app.MapGet("/health/database", async (PlatformDbContext db, CancellationToken cancellationToken) =>
+app.MapGet("/health", async (DatabaseHealthService health, CancellationToken cancellationToken) =>
 {
-    try
+    var snapshot = await health.CheckAsync(cancellationToken);
+    return Results.Json(new
     {
-        var connected = await db.Database.CanConnectAsync(cancellationToken);
-        if (connected)
-            _ = await db.Tenants.AnyAsync(cancellationToken);
-        return Results.Ok(new
-        {
-            Status = connected ? "Connected" : "Disconnected",
-            Indicator = connected ? "Green" : "Red",
-            CanConnect = connected
-        });
-    }
-    catch
+        Status = snapshot.CanConnect ? "Healthy" : "Unhealthy",
+        Service = "ApiHost",
+        snapshot.CanConnect,
+        snapshot.Databases
+    }, statusCode: snapshot.CanConnect ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+});
+
+app.MapGet("/health/database", async (DatabaseHealthService health, CancellationToken cancellationToken) =>
+{
+    var snapshot = await health.CheckAsync(cancellationToken);
+    return Results.Json(new
     {
-        return Results.Json(new
-        {
-            Status = "Disconnected",
-            Indicator = "Red",
-            CanConnect = false
-        }, statusCode: StatusCodes.Status503ServiceUnavailable);
-    }
+        snapshot.Status,
+        snapshot.Indicator,
+        snapshot.CanConnect,
+        snapshot.Databases
+    }, statusCode: snapshot.CanConnect ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
 });
 
 app.MapGet("/", () => Results.Ok(new { Product = "EDAN Tensor", Service = "ApiHost", Status = "Foundation" }));
