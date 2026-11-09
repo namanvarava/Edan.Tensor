@@ -614,3 +614,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 제한된 실행 컨텍스트에서는 Testhost가 127.0.0.1 통신 채널에 연결하지 못해 90초 후 중단되었고, 상세 진단 로그는 Testhost가 실행되었지만 연결하지 못한 사실을 기록했다. 실제 Windows 권한으로 재실행하자 SQLite Migration, Development Bypass Seeder, API Host 초기화가 완료되고 대상 테스트가 통과했으므로 이 중단은 제품 코드 실패가 아닌 실행 환경 권한 경계로 분류했다. 이후 통합 테스트는 동일 환경에서 무한 재시도하지 않고 필요한 경우 외부 권한 실행으로 한 번 검증한다.
 - 수정 후 `/m:1` 단일 노드 Release 빌드는 경고 0개·오류 0개로 완료했다. OpenAPI 경로·보안 표시와 Swagger UI 설정을 확인하는 대상 통합 테스트 2개, API Host 전체 통합 테스트 23개가 모두 통과했다. Platform Tenant·소속·조직·프로젝트, DataSet schema·SQLite 콘텐츠·quota, Worker validation 작업·Idempotency·상태 조회·DLQ 경계가 현재 통합 테스트 범위에 포함된다.
 - 이 절은 현재 작업의 중간 증거이며, 전체 솔루션 exact Release Restore·Build·Test, PR Check, main 병합 후 재검증이 끝나기 전에는 해당 범위를 최종 완료로 판정하지 않는다. 실제 외부 IdP, 운영 DB, LicenseAuthority, GitHub 보호 규칙 HTTP 403은 이 작업에서 성공으로 표시하지 않는다.
+
+## 2026-11-09 PR #88 병합 후 SQLite·Swagger UI·API 흐름 최종 검증
+
+- PR #88의 head `50e6677a07522f056587d9a6b901831f262d0192`는 `8f0f21734863fa4ff0b4cbeb8f241571fa315c74`로 Squash Merge되었다. PR Check [Actions Run #795](https://github.com/namanvarava/Edan.Tensor/actions/runs/42587916847)와 병합 후 main [Actions Run #796](https://github.com/namanvarava/Edan.Tensor/actions/runs/42588150944)은 `EDAN-TENSOR-WIN` 자체 호스팅 Runner에서 Restore·Build·Test·정리 단계를 모두 성공시켰다.
+- 병합된 최신 main에서 실제 Windows 권한으로 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 220개 통과·실패 0개·건너뜀 0개였다.
+- 별도 HTTP Smoke에서 Development API Host가 SQLite Migration과 Seeder를 완료한 뒤 `/health`, `/health/database`, `/swagger/index.html`, `/swagger/index.js`, `/openapi/v1.json`을 모두 200으로 응답했다. OpenAPI 응답에는 `Bearer`와 `X-Tenant-Id`가 포함되었고, 임시 SQLite 데이터는 검증 후 삭제했다.
+- 검증 완료 범위는 로컬 SQLite·Migration·Swagger UI와 Platform/DataSet/Worker API 흐름이다. Development Bypass는 명시적 Development 설정에서만 고정 프로필을 사용하고 경고 로그를 남기며, 운영·CI의 인증·인가 경계를 우회하지 않는다. 실제 비운영 외부 IdP, 운영 DB, LicenseAuthority, GitHub 보호 규칙 HTTP 403은 여전히 환경 미검증이며 Issue #84와 Milestone #1의 별도 후속 조건으로 남긴다.
