@@ -12,6 +12,9 @@ public interface IExternalDeliveryRepository
         CancellationToken cancellationToken = default);
     Task<ExternalDeliverySnapshot?> GetByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey,
         CancellationToken cancellationToken = default);
+    /// <summary>아직 실행되지 않은 외부 전달을 Worker 등록 실패 보상으로 제거합니다.</summary>
+    Task<bool> DeleteUnqueuedAsync(Guid tenantId, Guid deliveryId, string idempotencyKey,
+        CancellationToken cancellationToken = default);
     Task<ExternalDeliverySnapshot?> BeginAttemptAsync(Guid tenantId, Guid deliveryId,
         CancellationToken cancellationToken = default);
     Task CompleteAsync(Guid tenantId, Guid deliveryId, DateTimeOffset nowUtc,

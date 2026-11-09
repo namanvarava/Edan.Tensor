@@ -97,7 +97,7 @@ public static class WorkerEndpoints
         taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
             EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>
         {
-            var idempotencyKey = request.Headers["Idempotency-Key"].ToString();
+            var idempotencyKey = request.Headers["Idempotency-Key"].ToString().Trim();
             if (string.IsNullOrWhiteSpace(idempotencyKey))
                 return Results.BadRequest(new
                 {

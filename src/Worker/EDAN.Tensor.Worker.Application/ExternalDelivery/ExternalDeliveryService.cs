@@ -89,6 +89,11 @@ public sealed class ExternalDeliveryService(
         CancellationToken cancellationToken = default) => repository.GetByIdempotencyKeyAsync(
             tenantId, idempotencyKey, cancellationToken);
 
+    /// <summary>Worker 등록에 실패한 새 외부 전달만 Tenant 범위에서 보상 제거합니다.</summary>
+    public Task<bool> DeleteUnqueuedAsync(Guid tenantId, Guid deliveryId, string idempotencyKey,
+        CancellationToken cancellationToken = default) => repository.DeleteUnqueuedAsync(
+            tenantId, deliveryId, idempotencyKey, cancellationToken);
+
     private void ValidateTarget(string targetUri)
     {
         if (!Uri.TryCreate(targetUri, UriKind.Absolute, out var uri)

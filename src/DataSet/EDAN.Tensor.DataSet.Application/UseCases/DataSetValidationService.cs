@@ -227,6 +227,11 @@ public sealed class DataSetValidationService(
         CancellationToken cancellationToken = default) =>
         validations.DeleteExecutionAsync(tenantId, executionId, cancellationToken);
 
+    /// <summary>Worker 등록에 실패한 새 검증 실행만 내부 보상으로 제거합니다.</summary>
+    public Task<bool> DeleteUnqueuedExecutionAsync(Guid tenantId, Guid executionId,
+        CancellationToken cancellationToken = default) =>
+        validations.DeleteUnqueuedExecutionAsync(tenantId, executionId, cancellationToken);
+
     private static void EnsureTenant(Guid tenantId)
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
