@@ -4,11 +4,11 @@
 
 ## 기준 상태
 
-PR #111 병합 전 제품 코드 기준 main은 `abe0c5ad55928b7dd22121484c07cfcfc4f952a5`였고, PR #111 병합 결과는 `319b61ee6b2523f0257908627748c48185f298df`였습니다. 이 SHA는 검증 기록의 역사 기준이며 현재 main SHA는 GitHub와 검증 기록의 최신 항목에서 확인합니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+현재 main은 `54f417b99c94e73e9a0be2a4a5419fe9f68042d8`이며 PR #120 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 ### 현재 이동 게이트
 
-API 계약·공통 오류 처리는 PR #107에서, 고정된 Development Bypass Tenant·주체 경계는 PR #108에서 main에 병합되었고, 병합 후 Windows 자체 호스팅 Release CI에서 전체 230개 테스트가 통과했습니다. Worker는 Lease/Fencing, 체크포인트, 재시도·DLQ, 재처리, 종료 인계, 강제 종료 복구, Tenant 격리, 외부 전달 멱등성까지 자동 검증되어 있습니다. 따라서 다음 구현 단위는 새 Worker 기능을 중복 추가하는 것이 아니라 다음 순서로 진행합니다.
+API 계약·공통 오류 처리, 고정된 Development Bypass Tenant·주체 경계, Worker Lease/Fencing·체크포인트·재시도·DLQ·재처리·종료 인계·강제 종료 복구·Tenant 격리·외부 전달 멱등성은 main에 반영되어 있습니다. PR #120 병합 후 Windows 자체 호스팅 Release CI에서 전체 231개 테스트가 통과했습니다. 따라서 다음 구현 단위는 새 Worker 기능을 중복 추가하는 것이 아니라 다음 순서로 진행합니다.
 
 1. 현재 main의 API 계약·Tenant·인증 경계와 Worker 장애 증거를 문서·운영 가이드에 동기화합니다.
 2. 실제 로컬 API Host를 외부 프로세스로 기동해 SQLite Migration, `/health`, OpenAPI JSON, Swagger UI와 보호 API를 확인합니다. 실행 환경의 loopback·프로세스 권한이 막히면 성공으로 표시하지 않고 환경 미검증으로 기록합니다.
@@ -152,3 +152,24 @@ Tenant 생성 및 활성화
 6. 문서와 공개 API 설명이 실제 동작과 일치해야 합니다.
 
 외부 권한이나 운영 환경이 없는 경우에는 해당 단계만 `환경 미검증`으로 기록하며, 성공으로 표시하지 않습니다. 예약 작업·스케줄러·정기 알림은 생성하지 않습니다.
+
+## 2026-11-10 현재 실행 기준
+
+최신 `main`의 기준 SHA는 `54f417b99c94e73e9a0be2a4a5419fe9f68042d8`입니다. PR #120 병합 후 열린 PR은 없고, 원격 작업 브랜치는 `main`만 남아 있습니다. 병합 후 자체 호스팅 Windows CI는 다음 명령을 실행하여 Restore·Build·Test를 모두 성공시켰고, 전체 231개 테스트가 통과했습니다.
+
+```text
+dotnet restore EDAN.Tensor.sln
+dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-42655652191.trx"
+```
+
+현재 Work에서도 같은 대상 명령을 실제 실행하여 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 231개 통과·실패 0개·건너뜀 0개를 재확인했습니다. 이 결과로 로컬 SQLite·Migration·Swagger/OpenAPI 계약, Platform·DataSet·Worker API 통합 흐름, Tenant·인증 경계와 Worker 장애·복구 자동 검증을 현재 내부 범위의 기준으로 고정합니다.
+
+다음 진행은 아래 순서를 유지합니다.
+
+1. 승인된 Licensing 발급 규칙이 제공되면 별도 `LicenseAuthority` 솔루션과 개발 라이선스 1개를 구현하고, 발급·서명·만료·폐기·Tenant 범위 테스트를 추가합니다.
+2. 개발 라이선스를 API에 연결하여 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 `KeyId`를 검증합니다.
+3. DuckDB·Parquet, Commercial, WPF와 실제 외부 수신 시스템은 각각 승인된 계약과 수용 기준이 제공된 뒤 구현합니다.
+4. 운영 DB, 실제 비운영 IdP, 외부 시스템, 배포·백업·성능·보호 규칙은 해당 환경과 권한이 제공된 뒤 별도로 실행합니다.
+
+실제 비운영 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 상세 HTTP 403은 이 문서의 내부 성공 증거로 대체하지 않습니다. 이 외부 조건은 Issue #84와 Milestone #1에서 별도 추적하며, 제공되기 전에는 개발 완료로 판정하지 않습니다.
