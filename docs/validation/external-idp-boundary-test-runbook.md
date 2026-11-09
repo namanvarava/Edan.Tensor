@@ -32,7 +32,7 @@ Authentication__Audience=<API Audience 값>
 Authentication__RequireHttpsMetadata=true
 ```
 
-4. **Authentication__Mode=Bypass**와 **Authentication__BypassSubject**를 설정하지 않습니다. Bypass 경고 로그가 나타나거나 비개발 환경에서 Bypass가 선택되면 검증을 중단하고 실패로 기록합니다.
+4. **Authentication__Mode=Bypass**를 설정하지 않습니다. Bypass 경고 로그가 나타나거나 비개발 환경에서 Bypass가 선택되면 검증을 중단하고 실패로 기록합니다. Development Bypass의 주체·Tenant·IdP 시뮬레이션 값은 코드의 고정 프로필에서만 제공되며, 이 런북의 External 검증에는 사용하지 않습니다.
 5. API 로그와 IdP 감사 로그의 보존 위치를 확인하되, 토큰 원문과 개인키가 로그에 남지 않는지 먼저 확인합니다.
 
 ## 검증 순서
