@@ -777,3 +777,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `ASPNETCORE_ENVIRONMENT=Development`와 `dotnet run --no-build --project src/Hosts/EDAN.Tensor.ApiHost --no-launch-profile --urls http://127.0.0.1:5127`로 Host를 기동했다. 로그에서 SQLite Migration 적용, `EDAN-NONPROD` Tenant와 `edan-nonprod-test-subject` 초기화, `http://127.0.0.1:5127` 수신 대기를 확인했다. Development Bypass는 실제 외부 IdP가 아니라 고정 시뮬레이션 프로필을 사용했다.
 - 별도 HTTP 클라이언트로 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API를 호출했지만 모든 요청이 동일한 “액세스 권한에 의해 숨겨진 소켓” 오류로 실패했다. 따라서 HTTP 상태·응답 본문·Swagger UI와 보호 API의 실제 loopback 호출은 성공으로 판정하지 않고 환경 미검증으로 남긴다. Host 로그의 DataProtection 키 저장 권한 거부도 확인했으며, 이번 Work에서는 운영 키 저장 경로를 임의로 우회하지 않았다.
 - Host 종료 후 이번 Smoke가 만든 추적되지 않은 SQLite 파일은 정확한 경로를 확인해 제거했고, 작업 디렉터리는 clean으로 복귀했다. 재개 조건은 loopback 통신 권한과 개발 DataProtection 키 저장 경로를 제공한 격리된 Windows 환경이며, 이 조건이 충족되면 같은 런북으로 Migration·health·OpenAPI·Swagger·보호 API를 다시 수행한다.
+
+## 2026-11-10 Development Host 키 저장 경계 수정과 재검증
+
+- 원인 조사에서 Development Host가 DataProtection 기본 사용자 프로필 경로를 사용하여 현재 Work 실행 계정의 키 저장 권한에 의존하는 결함을 확인했다. 영향 범위는 Host 시작 시 키 저장 권한 경고·오류가 발생하고, 인증·Swagger 자체의 성공 여부와 무관하게 로컬 실행 증거가 불안정해지는 것이었다. 운영 환경의 인증·키 저장 구성을 임의로 완화하는 대안은 제외했다.
+- 최소 안전 수정으로 `Development` 환경에서만 `App_Data/DataProtection-Keys`를 사용하고, 상대 경로는 Host 콘텐츠 루트 아래로 변환하도록 구성했다. 해당 경로는 저장소에서 제외했으며, 운영 환경은 이 분기를 실행하지 않고 배포 환경의 승인된 영속 키 저장소를 사용한다. 실제 보호 데이터를 생성해 지정 경로에 XML 키가 생기는 API Host 통합 회귀 테스트도 추가했다.
+- 고정된 Development Bypass Tenant와 안정적인 `sub`는 기존 코드 계약을 유지하며, 문서에서 구성값으로 바꿀 수 있다고 안내하던 내용을 실제 동작과 일치하도록 수정했다. Metadata·JWKS·Issuer·Audience와 키 회전 식별자는 여전히 RFC 예약 주소를 사용하는 시뮬레이션 값이며 실제 외부 IdP 권한을 증명하지 않는다.
+- `dotnet build src/Hosts/EDAN.Tensor.ApiHost/EDAN.Tensor.ApiHost.csproj --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false`는 경고 0개·오류 0개로 통과했다. Development Host 직접 기동에서는 SQLite Migration, 고정 Bypass Tenant 초기화, 수신 대기와 키 파일 생성 경로를 확인했으며, 이전 DataProtection 권한 오류는 재현되지 않았다. 키 XML은 평문 저장 암호화기를 별도로 구성하지 않은 Development 경고만 남겼다.
+- 같은 Host에서 `/health`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API를 호출했지만 Windows loopback 숨김 소켓 오류가 계속되어 HTTP 응답과 Swagger 화면은 환경 미검증으로 남겼다. 대상 Testhost는 테스트 DLL 빌드 이후 프로세스가 시작되지 않고 출력 없이 정지하여 제한된 재현 후 중단했으며, 제품 assertion 실패로 판정하지 않았다. 병렬 빌드에서 동일 `obj` 파일 잠금도 재현되어 이후 검증은 직렬로 수행한다.
+- 실행 중 생성된 SQLite와 DataProtection 키 산출물은 정확한 경로를 확인한 뒤 제거했고, 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 변경에서도 검증하지 않았다. 다음 재개 조건은 loopback 통신 권한과 안정적인 Testhost 실행 환경이며, 외부 경계 조건은 Issue #84와 Milestone #1의 별도 후속 범위다.

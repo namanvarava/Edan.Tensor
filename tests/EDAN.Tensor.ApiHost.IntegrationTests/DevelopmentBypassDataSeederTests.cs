@@ -1,6 +1,7 @@
 using System.Text.Json;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -44,8 +45,34 @@ public sealed class DevelopmentBypassDataSeederTests
         }
     }
 
+    /// <summary>Development Host가 사용자 프로필 대신 지정된 로컬 키 저장 경로를 사용합니다.</summary>
+    [Fact]
+    public void DevelopmentHostPersistsDataProtectionKeysToConfiguredLocalPath()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"edan-tensor-data-protection-{Guid.NewGuid():N}");
+        var keyPath = Path.Combine(root, "data-protection-keys");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            using var factory = new BypassApiHostFactory(root, keyPath);
+            using var scope = factory.Services.CreateScope();
+            var provider = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>();
+            var protectedValue = provider.CreateProtector("integration-test").Protect("development-key-ring");
+
+            Assert.NotEmpty(protectedValue);
+            Assert.True(Directory.Exists(keyPath));
+            Assert.NotEmpty(Directory.EnumerateFiles(keyPath, "*.xml"));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
     /// <summary>실제 Development Bypass 기본 설정과 임시 SQLite 데이터베이스만 사용하는 테스트 Host를 생성합니다.</summary>
-    private sealed class BypassApiHostFactory(string root) : WebApplicationFactory<Program>
+    private sealed class BypassApiHostFactory(string root, string? dataProtectionKeyPath = null) : WebApplicationFactory<Program>
     {
         protected override IHost CreateHost(IHostBuilder builder)
         {
@@ -61,7 +88,8 @@ public sealed class DevelopmentBypassDataSeederTests
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
                     ["Authentication:Mode"] = "Bypass",
                     ["Authentication:BypassSubject"] = "untrusted-subject-override",
-                    ["DevelopmentData:TenantCode"] = "UNTRUSTED-TENANT-OVERRIDE"
+                    ["DevelopmentData:TenantCode"] = "UNTRUSTED-TENANT-OVERRIDE",
+                    ["DataProtection:DevelopmentKeyPath"] = dataProtectionKeyPath ?? Path.Combine(root, "data-protection-keys")
                 });
             });
             return base.CreateHost(builder);

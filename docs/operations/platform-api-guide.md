@@ -13,6 +13,8 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 
 .NET 10 기본 OpenAPI 생성 기능과 Swagger UI를 사용하며, Development 환경에서 `/openapi/v1.json`과 `/swagger/index.html`을 제공합니다. Swagger UI는 API 문서와 Bearer 인증·Tenant 헤더 입력을 함께 표시합니다. 운영 환경에서는 두 개발용 문서 경로를 제공하지 않습니다.
 
+Development Host는 사용자 프로필 권한과 분리된 `App_Data/DataProtection-Keys`에 DataProtection 키를 저장합니다. 이 경로는 `.gitignore`로 저장소에서 제외하며, 운영 환경에는 적용하지 않습니다. 운영 배포는 플랫폼이 승인한 영속 키 저장소와 접근 권한을 별도로 구성해야 합니다.
+
 ## 인증 및 Tenant 선택
 
 모든 Platform 관리 API는 기본적으로 JWT Bearer 인증을 사용합니다. 개인 개발의 Development `Authentication:Mode=Bypass`에서는 외부 IdP와 Bearer 토큰이 없어도 모든 요청을 고정된 개발 주체로 인증합니다. 이 경우에도 Tenant 소속과 리소스 권한 검사는 수행합니다. Bypass는 `auth-test.example.com`을 사용하는 고정 시뮬레이션 프로필을 기록하지만 실제 외부 IdP에 연결하거나 외부 JWT를 검증하지 않습니다.

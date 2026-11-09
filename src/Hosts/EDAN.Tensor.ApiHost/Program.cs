@@ -15,10 +15,26 @@ using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.HostServices.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Development 환경은 사용자 프로필 권한과 분리된 로컬 키 저장 경로를 사용합니다.
+// 운영 환경은 이 분기를 실행하지 않으며 배포 환경이 관리하는 키 저장소를 사용합니다.
+if (builder.Environment.IsDevelopment())
+{
+    var developmentKeyPath = builder.Configuration["DataProtection:DevelopmentKeyPath"]
+        ?? "App_Data/DataProtection-Keys";
+    if (!Path.IsPathRooted(developmentKeyPath))
+        developmentKeyPath = Path.Combine(builder.Environment.ContentRootPath, developmentKeyPath);
+
+    Directory.CreateDirectory(developmentKeyPath);
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(developmentKeyPath))
+        .SetApplicationName("EDAN.Tensor.ApiHost");
+}
 
 // SQLite는 로컬 개발용 기본 메타데이터 저장소이며 운영 환경에서는 연결 문자열을 환경 설정으로 교체합니다.
 var connectionString = builder.Configuration.GetConnectionString("PlatformDatabase")
