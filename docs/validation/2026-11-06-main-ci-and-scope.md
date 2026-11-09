@@ -714,3 +714,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
   - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release -m:1 --logger "console;verbosity=minimal"`: 전체 225개 통과·실패 0개·건너뜀 0개
 - 단일 노드 옵션은 현재 Work 실행 환경의 프로세스·Testhost 제한 때문에 로컬에서 재현 가능한 검증을 위해 사용했다. CI에서는 저장소가 정의한 옵션 없는 원문 Release 명령을 별도로 확인해야 하며, PR Check·main 병합 후 CI 결과가 추가되기 전에는 이 변경을 최종 통합 완료로 판정하지 않는다.
 - 이 변경은 SQLite 기반 Platform/DataSet quota 관리 API 범위만 다룬다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF, 운영 DB·실제 외부 IdP·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 검증에 포함하지 않으며, 승인된 외부 조건 후속 Issue와 해당 계약 승인 후 별도로 수행한다.
+
+## 2026-11-09 PR #103 병합 후 저장 용량 정책 API 최종 검증
+
+- PR #103의 head `dde620d4af957ac2ce6bfdd238bdfe73e666b535`는 `02a14d23af1e8bcdf5fb7924babd7f06a3da4da9`로 Squash Merge되었다. PR Check [Actions Run #825](https://github.com/namanvarava/Edan.Tensor/actions/runs/42622162668)는 Restore·Build·Test를 모두 성공시켰고, 병합 후 main [Actions Run #826](https://github.com/namanvarava/Edan.Tensor/actions/runs/42622511237)도 같은 단계를 모두 성공시켰다. 두 Run 모두 `EDAN-TENSOR-WIN` 자체 호스팅 Windows Runner의 `build-and-test` 작업에서 성공했다.
+- 병합 후 로컬 main에서 실제 Windows 권한으로 `dotnet restore EDAN.Tensor.sln -m:1`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release -m:1 --logger "console;verbosity=minimal"`를 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 SharedKernel 11·Platform 27/30/12·API 27·Worker 21/66·DataSet 6/14/11로 총 225개 통과·실패 0개·건너뜀 0개였다.
+- 최종 로컬 `main`과 `origin/main`은 `02a14d23af1e8bcdf5fb7924babd7f06a3da4da9`로 일치했다. 원격 refs 확인에서 원격 브랜치는 `main`만 남았고, 병합된 `codex/implement-storage-quota-policy-api-20261109`는 원격·로컬에서 삭제했다. Squash Merge로 원래 커밋이 main의 조상으로 표시되지 않아 로컬 안전 삭제가 거부되었으므로, PR 병합 SHA와 main CI 성공을 재확인한 뒤 해당 단일 브랜치만 명시적으로 삭제했다.
+- 최종 상태 확인 중 제한된 실행 컨텍스트의 최초 `git ls-remote`는 스레드 생성 오류로 실패했다. 이는 저장소·코드 오류가 아니라 실행 환경의 일시적 네트워크 프로세스 경계였으며, 같은 명령을 실제 Windows 권한으로 재실행해 `refs/heads/main`만 반환되는 것을 확인했다. 무한 재시도나 캐시 삭제는 수행하지 않았다.
+- 저장 용량 정책 관리 API와 SQLite 감사 이력 경계는 PR·main CI와 병합 후 로컬 Release 회귀로 검증되었다. 이 증거는 SQLite 기반 Platform/DataSet quota 범위에 한정되며, DuckDB·Parquet·Commercial·LicenseAuthority·WPF, 운영 DB·실제 비운영 외부 IdP·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 여전히 별도 외부 조건 또는 승인된 계약 대기 범위다.
