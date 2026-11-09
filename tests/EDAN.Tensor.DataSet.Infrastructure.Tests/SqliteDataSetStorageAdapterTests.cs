@@ -1,6 +1,7 @@
 using EDAN.Tensor.DataSet.Domain.Model;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Infrastructure.Storage;
+using Microsoft.Data.Sqlite;
 using Xunit;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Tests;
@@ -191,6 +192,41 @@ public sealed class SqliteDataSetStorageAdapterTests
         finally
         {
             if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SqliteBackupAndRestorePreservesContentAtTheBackupPoint()
+    {
+        var sourcePath = Path.Combine(Path.GetTempPath(), "edan-content-backup-source-" + Guid.NewGuid().ToString("N") + ".db");
+        var backupPath = Path.Combine(Path.GetTempPath(), "edan-content-backup-copy-" + Guid.NewGuid().ToString("N") + ".db");
+        try
+        {
+            var allocation = Allocation();
+            var sourceAdapter = new SqliteDataSetStorageAdapter("Data Source=" + sourcePath + ";Pooling=False");
+            var reference = await sourceAdapter.AllocateAsync(allocation);
+            await using (var content = new MemoryStream("backup-consistency"u8.ToArray()))
+                await sourceAdapter.WriteAsync(allocation, reference, content, Unlimited());
+
+            await using (var connection = new SqliteConnection("Data Source=" + sourcePath + ";Pooling=False"))
+            {
+                await connection.OpenAsync();
+                await using var command = connection.CreateCommand();
+                command.CommandText = "VACUUM INTO $backupPath;";
+                command.Parameters.AddWithValue("$backupPath", backupPath);
+                await command.ExecuteNonQueryAsync();
+            }
+
+            var restoredAdapter = new SqliteDataSetStorageAdapter("Data Source=" + backupPath + ";Pooling=False");
+            await using var restoredContent = await restoredAdapter.OpenReadAsync(allocation, reference);
+            Assert.NotNull(restoredContent);
+            using var reader = new StreamReader(restoredContent!);
+            Assert.Equal("backup-consistency", await reader.ReadToEndAsync());
+        }
+        finally
+        {
+            if (File.Exists(sourcePath)) File.Delete(sourcePath);
+            if (File.Exists(backupPath)) File.Delete(backupPath);
         }
     }
 
