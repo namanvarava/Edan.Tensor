@@ -635,3 +635,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 프로세스 장애 복구 시험은 저장된 체크포인트와 만료 Lease를 새 DbContext에서 복구하고, 새 Worker의 Fencing Token 증가·Tenant 외 작업 접근 차단·이전 Worker의 체크포인트·완료 쓰기 거부를 확인했다. 재시도 한도 초과는 DLQ로 전이되고, 외부 전달 Timeout은 원문 응답 없이 재시도 가능한 오류로 저장된다.
 - 최신 Release WorkerHost를 임시 SQLite Platform·DataSet·Worker DB 3개로 실제 기동했다. Migration과 Handler 카탈로그 동기화가 완료되고 `/health`가 HTTP 200을 반환했으며 표준 오류 출력은 0자였다. 검증 후 프로세스와 임시 DB 디렉터리를 삭제했고 `ExistsAfterCleanup=False`를 확인했다.
 - 이 단계에서 제품 코드의 추가 결함은 재현되지 않았다. 기존 Lease/Fencing·재시도·DLQ·Timeout·프로세스 복구 구현을 그대로 유지하고, 대상 테스트와 실제 Host Smoke를 재검증 증거로 기록한다. 실제 외부 수신 시스템의 운영 응답 유실 검증은 외부 환경 조건으로 별도 범위에 남긴다.
+
+## 2026-11-09 Work 범위 감사 및 PR #92 병합 후 재검증
+
+- 저장소 내부에서 현재 승인된 범위는 Platform·DataSet·Worker의 SQLite 기반 API 흐름과 Development Swagger·OpenAPI·Tenant·인증 경계·Worker 장애 흐름이다. 이 범위에서 지원하지 않는 `duckdb` 저장소 요청이 `dataset.adapter_unavailable`로 거부되고 콘텐츠를 할당하지 않는 API 회귀 테스트를 추가했다.
+- 문서의 기준 SHA와 DataSet 기반 문서를 현재 구현과 대조했다. SQLite 메타데이터 Migration·콘텐츠 어댑터·Tenant 조건 조회·스키마 revision 영속화는 구현 상태로 정리했고, DuckDB·Parquet은 포맷·스키마·용량·동시성·복구 계약 승인 전 구현하지 않도록 명시했다.
+- PR #92의 head `21493194eccf2edda4599439b3beb7d32d83e4fe`는 `2fa678e33621e4581172bf87867e20856a6703e6`으로 Squash Merge되었다. PR CI [Actions Run #803](https://github.com/namanvarava/Edan.Tensor/actions/runs/42601199765)와 병합 후 main CI [Actions Run #804](https://github.com/namanvarava/Edan.Tensor/actions/runs/42601510340)는 자체 호스팅 Windows Runner에서 Restore·Build·Test 단계를 모두 성공시켰다.
+- 병합 전후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 220개 통과·실패 0개·건너뜀 0개였다. 추가한 DataSet API 경계 테스트는 1개 통과했다.
+- 병합 후 로컬 `main`과 `origin/main`은 `2fa678e33621e4581172bf87867e20856a6703e6`으로 일치하고 작업 디렉터리는 clean 상태다. PR #92의 작업 브랜치 `codex/work-scope-audit-20261109`는 로컬·원격에서 삭제했고, 열린 PR은 0개다.
+- 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템과 GitHub 보호 규칙 HTTP 403은 이 Work 실행에서 검증하지 않았다. 이 조건은 승인된 별도 Milestone #1·Issue #84의 재개 조건으로 유지한다. Development Bypass는 Development에서만 활성화되고 External·운영 설정에는 포함되지 않는다.
