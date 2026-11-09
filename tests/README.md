@@ -13,11 +13,11 @@
 - DataSet Infrastructure: 11개
 - Worker Domain: 21개
 - Worker Infrastructure: 66개
-- API 통합: 31개
+- API 통합: 32개
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
-최신 `main` 기준은 SHA `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`이다. API 공통 오류 계약과 Development Bypass 고정 Tenant·주체 경계를 포함한 Windows 자체 호스팅 Release CI [Run #867](https://github.com/namanvarava/Edan.Tensor/actions/runs/42661262730)는 Restore·Build·Test를 성공시켰다. 현재 전체 테스트는 231개 통과·실패 0개·건너뜀 0개이며, API 통합 테스트는 31개 통과·실패 0개·건너뜀 0개이다. 이 문단은 아래의 역사적 실행 기록과 문서·테스트 전용 후속 커밋을 구분하는 현재 검증 기준이다.
+최신 `main` 기준은 SHA `cf18d0436710e4440ff9dc90d415e1bf6bd85bbd`이다. PR #130 병합 후 Windows 자체 호스팅 Release CI [Run #880](https://github.com/namanvarava/Edan.Tensor/actions/runs/42670256154)는 Restore·Build·Test를 성공시켰다. 현재 전체 테스트는 232개 통과·실패 0개·건너뜀 0개이며, API 통합 테스트는 32개 통과·실패 0개·건너뜀 0개이다. 이 문단은 아래의 역사적 실행 기록과 문서·테스트 전용 후속 커밋을 구분하는 현재 검증 기준이다.
 
 PR #81 병합 기준 main 문서는 SHA `030d4c91db86b13d2eb198ace1f699989a59318a`였다. 병합 후 [Actions Run #783](https://github.com/namanvarava/Edan.Tensor/actions/runs/42539919996)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 실제 비운영 외부 IdP 검증은 아직 수행하지 않았으며, 수동 절차는 [외부 IdP 경계 수동 검증 런북](../docs/validation/external-idp-boundary-test-runbook.md)에 기록되어 있다.
 
