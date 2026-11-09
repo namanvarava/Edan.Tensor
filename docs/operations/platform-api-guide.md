@@ -5,8 +5,8 @@
 API Host를 실행한 뒤 다음 경로를 사용합니다.
 
 - 기본 상태: `/`
-- 서비스 상태: `/health`
-- 데이터베이스 상태: `/health/database`
+- 서비스 상태: `/health` (API와 네 개 로컬 데이터베이스)
+- 데이터베이스 상태: `/health/database` (Platform·Worker·DataSet·DataSet 콘텐츠)
 - Platform API: `/api/platform`
 
 ## OpenAPI 문서

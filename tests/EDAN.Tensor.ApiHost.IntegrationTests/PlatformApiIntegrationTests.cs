@@ -87,6 +87,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
+        Assert.Contains("/health", document, StringComparison.Ordinal);
+        Assert.Contains("/health/database", document, StringComparison.Ordinal);
         Assert.Contains("\"Bearer\"", document, StringComparison.Ordinal);
         Assert.Contains("X-Tenant-Id", document, StringComparison.Ordinal);
     }
@@ -109,6 +111,39 @@ public sealed class PlatformApiIntegrationTests
 
         Assert.Equal(HttpStatusCode.OK, scriptResponse.StatusCode);
         Assert.Contains("/openapi/v1.json", script, StringComparison.Ordinal);
+    }
+
+    /// <summary>API와 데이터베이스 상태 확인 API가 모든 로컬 저장소의 상태를 반환합니다.</summary>
+    [Fact]
+    public async Task HealthEndpointsReportAllConfiguredDatabases()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+
+        using var healthResponse = await client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+        using var healthDocument = await JsonDocument.ParseAsync(
+            await healthResponse.Content.ReadAsStreamAsync());
+        Assert.Equal("Healthy", healthDocument.RootElement.GetProperty("status").GetString());
+        Assert.True(healthDocument.RootElement.GetProperty("canConnect").GetBoolean());
+        AssertAllDatabasesConnected(healthDocument.RootElement.GetProperty("databases"));
+
+        using var databaseResponse = await client.GetAsync("/health/database");
+        Assert.Equal(HttpStatusCode.OK, databaseResponse.StatusCode);
+        using var databaseDocument = await JsonDocument.ParseAsync(
+            await databaseResponse.Content.ReadAsStreamAsync());
+        Assert.Equal("Connected", databaseDocument.RootElement.GetProperty("status").GetString());
+        Assert.Equal("Green", databaseDocument.RootElement.GetProperty("indicator").GetString());
+        Assert.True(databaseDocument.RootElement.GetProperty("canConnect").GetBoolean());
+        AssertAllDatabasesConnected(databaseDocument.RootElement.GetProperty("databases"));
+
+        static void AssertAllDatabasesConnected(JsonElement databases)
+        {
+            Assert.True(databases.GetProperty("Platform").GetBoolean());
+            Assert.True(databases.GetProperty("Worker").GetBoolean());
+            Assert.True(databases.GetProperty("DataSet").GetBoolean());
+            Assert.True(databases.GetProperty("DataSetContent").GetBoolean());
+        }
     }
 
     [Fact]
