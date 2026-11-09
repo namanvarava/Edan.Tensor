@@ -756,3 +756,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 요구된 원문 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 경고 0개·오류 0개를 표시하고 종료 코드 1로 끝났다. 단일 MSBuild 노드의 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -v:minimal`은 2분 46초 후 경고 0개·오류 0개와 종료 코드 0으로 완료했다.
 - 요구된 원문 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`도 현재 환경에서 출력 없이 종료 코드 1로 끝났다. 직전 Worker Infrastructure 실행은 프로젝트 빌드 후 `vstest.console`이 90초 동안 testhost에 연결하지 못해 중단되었고, 제품 테스트 실패·코드 예외·assertion 로그는 없었다. 이 결과는 제품 실패가 아니라 현재 실행 환경의 프로세스·testhost 경계로 분류한다.
 - 동일한 옵션 없는 세 원문 명령은 PR #109 병합 후 main CI [Actions Run #42638182485](https://github.com/namanvarava/Edan.Tensor/actions/runs/42638182485)에서 Windows 자체 호스팅 Runner로 성공했고, 전체 230개 테스트가 통과했다. 따라서 로컬 명령 실패는 성공으로 숨기지 않고 환경 미검증으로 남기며, 캐시 삭제나 무한 재시도는 수행하지 않는다.
+
+## 2026-11-10 저장소 내부 잔여 범위 감사
+
+- 최신 main은 `abe0c5ad55928b7dd22121484c07cfcfc4f952a5`이며 작업 디렉터리는 clean이고 열린 PR은 없다. 현재 main CI [Actions Run #42640048471](https://github.com/namanvarava/Edan.Tensor/actions/runs/42640048471)은 원문 Restore·Release Build·Release Test를 성공시켰고 전체 230개 테스트가 통과했다.
+- DataSet의 승인된 로컬 대체 범위는 전용 SQLite 콘텐츠 어댑터, 불투명 Storage Reference, Tenant·Organization·Project 격리, 계층형 quota, UTF-8 CSV·JSON 객체 배열 검증, 백업 시점 복구 회귀다. `docs/architecture/dataset-foundation.md`는 DuckDB·Parquet의 포맷·스키마 매핑·용량 계산·동시 쓰기·복구·Migration 호환성 계약이 승인되기 전 구현하지 않도록 명시한다. 따라서 현재 Work에서는 가짜 DuckDB/Parquet 어댑터를 추가하지 않는다.
+- Commercial과 Licensing은 Contracts·Domain·Application·Infrastructure 프로젝트 경계와 아키텍처 회귀만 존재하며 상품·요금·결제·권리·만료 또는 발급·서명·검증 업무 계약이 없다. LicenseAuthority.Host도 Foundation 상태만 제공한다. 발급 규칙, LicenseId/Site/Tenant 범위, 제품·기능 Claim, KeyId·서명 형식, 폐기·오프라인·만료 정책이 승인되면 별도 LicenseAuthority와 개발 라이선스 1개를 마지막 내부 단계로 구현한다.
+- WPF 프로젝트나 승인된 화면·업무 흐름·클라이언트 API 계약은 현재 저장소에 없다. 임의의 클라이언트 화면이나 공개 API를 만들지 않고, 향후 화면 수용 기준과 API 연동 계약이 제공될 때 진행한다.
+- 따라서 현재 저장소 내부에서 즉시 구현할 수 있는 필수 결함은 재현되지 않았고, 다음 구현 재개 조건은 DuckDB/Parquet 계약 승인, Commercial 계약 승인, Licensing·LicenseAuthority 발급 계약 승인, WPF 클라이언트 계약 승인이다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 외부 조건으로 계속 분리한다.
