@@ -748,3 +748,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 로컬에서 Worker Infrastructure 전체를 재실행했을 때 프로젝트 빌드는 성공했으나 Testhost가 90초 동안 연결되지 않아 종료되었다. 로그는 `vstest.console`의 testhost 연결 시간 초과를 기록했으며 제품 테스트 실패나 코드 예외는 기록하지 않았다. 동일한 원문 명령은 위 Windows 자체 호스팅 main CI에서 성공했으므로, 로컬 결과는 실행 환경 미검증으로 분류하고 무한 재시도·캐시 삭제는 수행하지 않았다.
 - PR #108 병합 후 로컬 `main`은 `1f4eda2f25f5c6a4a511a2cbb2edf008cccae3df`로 동기화되었고 작업 디렉터리에는 변경이 없다. 병합된 `codex/tenant-auth-worker-recovery-20261109`는 원격 삭제 성공 응답과 GitHub API의 Branch 404로 원격 삭제를 확인했으며, 로컬 브랜치 목록에도 `main`만 남았다.
 - Development Bypass는 `Development` 환경에서만 고정된 RFC 예약 Metadata/JWKS 주소, Issuer, Audience, `EDAN-NONPROD` Tenant, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, 개발 키 회전 권한 식별자를 시뮬레이션한다. 이 값은 실제 외부 IdP 권한이나 키 회전 검증이 아니며 운영·External 구성에는 포함되지 않는다. 실제 비운영 IdP, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403과 LicenseAuthority는 여전히 별도 외부 조건 또는 승인된 후속 계약 범위다.
+
+## 2026-11-09 PR #109 병합 후 로컬 Release 명령 재확인
+
+- PR #109 병합 후 최신 로컬 `main`은 `b7da77c3ba31354a17477c7d81b5612e94def592`이다. 작업 디렉터리는 clean이고 로컬 브랜치는 `main`만 남아 있다.
+- 요구된 원문 `dotnet restore EDAN.Tensor.sln`은 현재 Work 실행 환경에서 출력 없이 종료 코드 1로 끝났다. 같은 복원은 `dotnet restore EDAN.Tensor.sln -m:1 -v:minimal`에서 모든 프로젝트가 최신 상태라는 메시지와 함께 종료 코드 0으로 완료했다.
+- 요구된 원문 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 경고 0개·오류 0개를 표시하고 종료 코드 1로 끝났다. 단일 MSBuild 노드의 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -v:minimal`은 2분 46초 후 경고 0개·오류 0개와 종료 코드 0으로 완료했다.
+- 요구된 원문 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`도 현재 환경에서 출력 없이 종료 코드 1로 끝났다. 직전 Worker Infrastructure 실행은 프로젝트 빌드 후 `vstest.console`이 90초 동안 testhost에 연결하지 못해 중단되었고, 제품 테스트 실패·코드 예외·assertion 로그는 없었다. 이 결과는 제품 실패가 아니라 현재 실행 환경의 프로세스·testhost 경계로 분류한다.
+- 동일한 옵션 없는 세 원문 명령은 PR #109 병합 후 main CI [Actions Run #42638182485](https://github.com/namanvarava/Edan.Tensor/actions/runs/42638182485)에서 Windows 자체 호스팅 Runner로 성공했고, 전체 230개 테스트가 통과했다. 따라서 로컬 명령 실패는 성공으로 숨기지 않고 환경 미검증으로 남기며, 캐시 삭제나 무한 재시도는 수행하지 않는다.
