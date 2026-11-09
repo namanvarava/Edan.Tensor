@@ -193,6 +193,22 @@ public sealed class TensorApiClient
         return SendJsonAsync<DataSetValidationDetailsPageContract>(CreateRequest(HttpMethod.Get, path, tenantId), cancellationToken);
     }
 
+    /// <summary>Tenant 관리자가 완료된 검증 실행과 보존된 상세 결과를 명시적으로 삭제합니다.</summary>
+    /// <param name="tenantId">검증 실행이 속한 Tenant 식별자입니다.</param>
+    /// <param name="executionId">삭제할 검증 실행 식별자입니다.</param>
+    /// <param name="cancellationToken">요청 취소를 감시하는 토큰입니다.</param>
+    /// <exception cref="ArgumentException">Tenant 또는 검증 실행 식별자가 비어 있으면 발생합니다.</exception>
+    /// <exception cref="TensorApiException">검증 실행이 없거나 아직 실행 중이면 API 오류 계약과 함께 발생합니다.</exception>
+    public Task DeleteDataSetValidationAsync(
+        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(executionId, nameof(executionId));
+        return SendNoContentAsync(
+            CreateRequest(HttpMethod.Delete, TenantPath(tenantId, $"datasets/validations/{executionId:D}"), tenantId),
+            cancellationToken);
+    }
+
     /// <summary>활성 Worker 작업 유형을 Tenant 작업으로 등록합니다.</summary>
     public Task<EnqueueWorkerTaskResponseContract> EnqueueWorkerTaskAsync(
         Guid tenantId, EnqueueWorkerTaskRequestContract request, string idempotencyKey,

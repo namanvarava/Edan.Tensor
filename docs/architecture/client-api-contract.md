@@ -42,6 +42,7 @@ var task = await api.EnqueueWorkerTaskAsync(
 ## 오류와 스트림 규칙
 
 - `GetDataSetAsync`, `GetDataSetValidationAsync`, `GetWorkerTaskAsync`는 Tenant 범위에서 404를 반환하면 `null`을 반환합니다.
+- `DeleteDataSetValidationAsync`는 Tenant 관리자가 완료된 검증 실행을 명시적으로 삭제하며, 실행 중이거나 존재하지 않는 대상은 `TensorApiException`으로 전달합니다.
 - 생성·변경·작업 등록 요청의 400·409·413·500 응답은 `TensorApiException`으로 전달하며 API가 제공한 안정적인 오류 코드를 보존합니다.
 - 검증 예약과 Worker 등록에는 호출자가 제공한 `Idempotency-Key`를 그대로 전달하되 200자 제한을 Client에서도 먼저 확인합니다.
 - DLQ 재처리에는 호출자가 생성한 `Replay-Request-Id` GUID가 필요합니다.
