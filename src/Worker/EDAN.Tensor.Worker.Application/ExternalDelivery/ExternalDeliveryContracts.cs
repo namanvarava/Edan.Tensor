@@ -28,6 +28,28 @@ public sealed record ExternalDeliveryOptions(
     bool AllowLoopback,
     TimeSpan Timeout)
 {
+    /// <summary>호스트 환경에 맞는 외부 전달 옵션을 생성합니다.</summary>
+    /// <param name="allowedHosts">운영 환경에서 호출을 허용할 호스트 이름 집합입니다.</param>
+    /// <param name="allowLoopback">로컬 loopback 수신기를 허용할지 나타냅니다.</param>
+    /// <param name="timeout">외부 전달 요청의 제한 시간입니다.</param>
+    /// <param name="isDevelopment">현재 호스트가 Development 환경인지 나타냅니다.</param>
+    /// <returns>환경 제한을 통과한 외부 전달 옵션을 반환합니다.</returns>
+    /// <exception cref="InvalidOperationException">Development가 아닌 환경에서 loopback 허용을 요청하면 발생합니다.</exception>
+    /// <remarks>
+    /// loopback 허용은 개인 개발과 격리된 테스트 수신기에서만 사용합니다.
+    /// 운영 환경에서 잘못된 설정이 적용되면 호스트를 시작하지 않아 SSRF 경계를 닫습니다.
+    /// </remarks>
+    public static ExternalDeliveryOptions Create(
+        IReadOnlySet<string> allowedHosts, bool allowLoopback, TimeSpan timeout, bool isDevelopment)
+    {
+        ArgumentNullException.ThrowIfNull(allowedHosts);
+        if (allowLoopback && !isDevelopment)
+            throw new InvalidOperationException(
+                "ExternalDelivery:AllowLoopback=true는 Development 환경에서만 사용할 수 있습니다.");
+
+        return new ExternalDeliveryOptions(allowedHosts, allowLoopback, timeout);
+    }
+
     public static ExternalDeliveryOptions Default { get; } = new(
         new HashSet<string>(StringComparer.OrdinalIgnoreCase), false, TimeSpan.FromSeconds(30));
 }
