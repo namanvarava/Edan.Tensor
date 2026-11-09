@@ -5,6 +5,7 @@
 
 - [프로젝트 구조](architecture/project-structure.md)
 - [구현 및 CI 검증 현황](validation/2026-11-06-main-ci-and-scope.md)
+- [비운영 외부 IdP 경계 수동 검증 런북](validation/external-idp-boundary-test-runbook.md)
 - [DataSet 검증 v1 상세 계약](architecture/dataset-validation-v1-proposal.md) (기존 파일명은 호환성을 위해 유지)
 - [API 사용 가이드](operations/platform-api-guide.md)
 - [Worker 수명주기와 운영 설정](architecture/worker-task-lifecycle.md)
