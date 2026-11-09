@@ -121,7 +121,9 @@ public static class DataSetValidationEndpoints
             {
                 if (createdExecutionId.HasValue)
                     await service.DeleteUnqueuedExecutionAsync(tenantId, createdExecutionId.Value, CancellationToken.None);
-                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+                return Results.Json(new ApiError("worker.task_type_unavailable",
+                    "검증 작업을 실행할 수 있는 Worker 작업 유형이 등록되지 않았습니다."),
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
             }
         }).WithName("CreateDataSetValidation");
 

@@ -71,7 +71,9 @@ public static class DataSetEndpoints
         {
             var maxUploadBytes = configuration.GetValue<long>("DataSetContent:MaxUploadBytes", 67_108_864);
             if (request.ContentLength is long contentLength && contentLength > maxUploadBytes)
-                return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+                return Results.Json(new ApiError("dataset.content_too_large",
+                    "요청 콘텐츠가 허용된 최대 크기를 초과했습니다."),
+                    statusCode: StatusCodes.Status413PayloadTooLarge);
 
             var result = await service.WriteContentAsync(new DataSetId(dataSetId), tenantId, request.Body, token);
             if (result.IsSuccess)
@@ -79,7 +81,8 @@ public static class DataSetEndpoints
             return result.Error.Code switch
             {
                 "dataset.not_found" => Results.NotFound(new { result.Error.Code, result.Error.Description }),
-                "dataset.content_too_large" => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+                "dataset.content_too_large" => Results.Json(new ApiError(result.Error.Code, result.Error.Description),
+                    statusCode: StatusCodes.Status413PayloadTooLarge),
                 "dataset.archived" or "dataset.quota_exceeded" => Results.Conflict(new { result.Error.Code, result.Error.Description }),
                 _ => Results.BadRequest(new { result.Error.Code, result.Error.Description })
             };
@@ -129,23 +132,16 @@ public static class DataSetEndpoints
                 });
         }).WithName("GetDataSetStorageUsage");
         tenantGroup.MapPost("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
-            AddDataSetSchemaRequest request, DataSetManagementService service, ILoggerFactory loggerFactory,
-            IWebHostEnvironment environment, CancellationToken token) =>
+            AddDataSetSchemaRequest request, DataSetManagementService service, CancellationToken token) =>
         {
-            try
-            {
-                var result = await service.AddSchemaAsync(new DataSetId(dataSetId), tenantId,
-                    request.SchemaJson, DateTimeOffset.UtcNow, token);
-                return result.IsSuccess
-                    ? Results.Created($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}",
-                        new { DataSetId = dataSetId, SchemaVersion = result.Value })
-                    : Results.BadRequest(new { result.Error.Code, result.Error.Description });
-            }
-            catch (Exception exception)
-            {
-                loggerFactory.CreateLogger("DataSetEndpoints").LogError(exception, "DataSet schema registration failed for {DataSetId}", dataSetId);
-                return Results.Problem(title: "DataSet schema registration failed");
-            }
+            var result = await service.AddSchemaAsync(new DataSetId(dataSetId), tenantId,
+                request.SchemaJson, DateTimeOffset.UtcNow, token);
+            return result.IsSuccess
+                ? Results.Created($"/api/platform/tenants/{tenantId}/datasets/{dataSetId}",
+                    new { DataSetId = dataSetId, SchemaVersion = result.Value })
+                : result.Error.Code == "dataset.not_found"
+                    ? Results.NotFound(new ApiError(result.Error.Code, result.Error.Description))
+                    : Results.BadRequest(new ApiError(result.Error.Code, result.Error.Description));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("AddDataSetSchema");
 
         tenantGroup.MapPost("/{dataSetId:guid}/activate", async (Guid tenantId, Guid dataSetId,
