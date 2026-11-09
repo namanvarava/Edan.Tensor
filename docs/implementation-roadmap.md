@@ -241,3 +241,27 @@ Client 대상 회귀 6개와 실제 임시 SQLite API Host 통합 1개를 포함
 기존 API 통합 테스트는 DataSet Validation 실행을 Queue 상태까지 확인했으므로, 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`가 API가 예약한 불투명 Payload Reference를 처리하는 경계를 같은 임시 SQLite Host 구성에서 추가 검증했다. 테스트는 Lease/Fencing Token으로 작업을 시작하고, 중복 행이 포함된 CSV를 검증하여 Worker 작업은 `Succeeded`, 검증 결과는 `Invalid`, 처리 행 수는 2건으로 저장되는지 확인한다.
 
 첫 통합 시도에서는 테스트 프로젝트에 WorkerHost를 직접 참조하면서 API Host와 WorkerHost의 전역 `Program` 타입이 충돌하는 CS0433 컴파일 오류가 발생했다. 별도 테스트 프로젝트로 분리하는 대안보다 변경 범위가 작은 프로젝트 참조 별칭을 선택하여 WorkerHost Handler만 명시적으로 참조했고, 대상 통합 테스트 33개와 독립 경계 테스트 1개가 통과했다. 솔루션 전체 Release Build는 경고 0개·오류 0개, 전체 Release Test는 242개 통과·실패 0개·건너뜀 0개로 통과했다.
+
+## 2026-11-10 API·Tenant·Worker 내부 범위 최종 증거 갱신
+
+이 Work에서 승인된 현재 내부 범위의 남은 경계를 다음 순서로 확인했다.
+
+1. PR #148 `test: DataSet 검증 결과 경계 회귀 보강`은 `a736bbb2399ac1e7ee6a12d8e11cea87b6a420c5`로 병합했다. 실제 Worker가 완료한 검증의 상세 조회가 200이며 원문 CSV 값이 오류 메시지에 노출되지 않고, 관리자의 명시적 삭제 뒤 조회가 404가 되는 경계를 통합 테스트로 확인했다. PR CI Run #916과 병합 후 main CI Run #917이 성공했다.
+2. PR #149 `fix: DataSet 검증 Handler 취소 경계 연결`은 `76f3f54f652bec71431c56ed8daf5a6448245752`로 병합했다. 조정기의 취소 토큰을 실제 Handler 실행에 연결하고 시작 전 취소를 검사하도록 최소 수정했으며, 실제 WorkerHost Handler의 취소 회귀 테스트를 추가했다. PR CI Run #918과 병합 후 main CI Run #919가 성공했다.
+3. PR #150 `test: DataSet 입력 revision 변경 경계 검증`은 `2eb02fa46aae48eb5c10c97abdcaf2161c5c1c13`으로 병합했다. 예약 뒤 Schema revision이 변경되면 실제 Worker 실행이 `dataset.validation.input_changed`로 검증을 `Failed`에 닫는 경계를 확인했다. 첫 실패는 제품 오류가 아니라 후속 요청이 변경된 DataSet 버전 4 대신 버전 3을 기대한 테스트 시나리오 결함이었고, 원인 확인 후 기대값만 최소 수정했다. PR CI Run #920과 병합 후 main CI Run #921이 성공했다.
+
+PR #150 병합 후 main에서 다음 명령을 다시 실행했다.
+
+```text
+dotnet restore EDAN.Tensor.sln
+dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
+```
+
+Restore는 성공했고, Release Build는 경고 0개·오류 0개, 전체 Release Test는 242개 통과·실패 0개·건너뜀 0개였다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`도 알려진 취약 패키지가 없음을 반환했다.
+
+실제 Release Host Smoke는 샌드박스 외부의 loopback 권한을 허용한 격리 실행에서 임시 SQLite 네 개로 확인했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`가 모두 HTTP 200을 반환했고, 두 Host의 표준 오류 출력은 0바이트였다. 첫 실행의 Worker `worker_task_types` 누락은 WorkerHost에 `Database:ApplyMigrationsInDevelopment=true`를 전달하지 않은 검증 설정 결함으로 재현·분류했으며, 설정을 보정한 재실행에서 해결했다. 검증 종료 후 프로세스·포트·임시 SQLite·키·아카이브 경로가 남지 않았다.
+
+따라서 현재 main `2eb02fa46aae48eb5c10c97abdcaf2161c5c1c13`에서 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·취소·입력 revision 변경·결과 보존 경계의 내부 증거를 확보했다. Licensing·LicenseAuthority는 사용자의 지시에 따라 마지막 내부 단계로 남겨 두었으며, DuckDB·Parquet·Commercial·WPF는 승인된 계약과 수용 기준이 없으므로 임의 구현하지 않는다.
+
+실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·배포 환경과 GitHub main 보호 규칙 HTTP 403은 이 내부 증거로 대체하지 않는다. 해당 항목은 외부 조건이 제공될 때 별도 런북과 권한으로 재개한다.
