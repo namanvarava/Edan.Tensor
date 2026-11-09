@@ -672,3 +672,15 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 변경 브랜치에서 대상 API 통합 4개와 Worker 외부 전달·Coordinator 장애 테스트 13개를 통과시켰다. 병합 후 실제 Windows 권한에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했으며 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 223개 통과·실패 0개·건너뜀 0개를 확인했다.
 - 병합 후 로컬 `main`과 `origin/main`은 `eb0765877c48dda06207b027f481f614f3301b9a`로 일치하고 작업 디렉터리는 clean 상태다. 병합된 작업 브랜치 `codex/external-delivery-rollback-20261109`는 로컬·원격에서 삭제했고 현재 원격 브랜치는 `main`만 남았다.
 - 실제 비운영 외부 IdP Metadata·JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템과 GitHub 보호 규칙 HTTP 403은 이번 변경에서 검증하지 않았다. Development Bypass는 고정된 RFC 예약 주소 시뮬레이션 프로필을 Development에서만 사용하며 실제 외부 IdP 검증을 대체하지 않는다. 해당 조건은 Issue #84·Milestone #1 및 승인된 후속 단계의 재개 조건으로 유지한다.
+
+## 2026-11-09 Work 전체 실행 감사 및 현재 main 재검증
+
+- 현재 로컬 `main`의 기준 SHA는 `632f894f664e262d3bc0e62be09c218cac6b4c27`이며, 검증을 시작할 때 작업 디렉터리는 clean 상태이고 로컬·원격 작업 브랜치는 `main`만 유지했다. 이 문서 변경을 제출하기 위한 작업 브랜치는 검증 후 별도로 만들었다. 열린 Pull Request는 없고, Issue #84만 사용자가 승인한 외부 경계 검증 Milestone #1 추적용으로 열려 있다.
+- 현재 Work에서 승인된 저장소 내부 범위는 API 계약·공통 오류·OpenAPI/Swagger, Tenant·인증·인가 경계, 로컬 SQLite Migration과 DataSet 콘텐츠·Quota·검증, Worker Lease/Fencing·재시도·DLQ·복구·외부 전달 Idempotency 흐름이다. 이 범위의 실제 구현을 재점검했으며 새 결함은 재현되지 않았다.
+- DuckDB·Parquet 어댑터, Commercial 상품·요금·결제·권리, LicenseAuthority 발급·검증 업무, WPF 화면은 포맷·권리·서명·만료·화면 수용 기준이 승인된 계약으로 저장소에 존재하지 않는다. 기존 문서의 제외 범위를 유지하고 임의의 공개 API·데이터 형식·라이선스 발급 규칙을 추가하지 않았다. 해당 단계의 재개 조건은 각 업무 계약과 수용 테스트의 승인이다.
+- 현재 main에서 다음 명령을 실제 실행했다.
+  - `dotnet restore EDAN.Tensor.sln`: 성공
+  - `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0개·오류 0개
+  - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 종료 코드 0, 전체 223개 통과·실패 0개·건너뜀 0개
+- 전체 테스트 중 API Host 통합 테스트 26개도 별도로 실행하여 26개 통과·실패 0개·건너뜀 0개를 확인했다. 테스트에는 Development Bypass 차단, 외부 IdP/JWKS 로컬 경계, Swagger UI·OpenAPI, health, Tenant 격리, DataSet SQLite 콘텐츠·Quota·검증, Worker Idempotency·DLQ·보상 정리가 포함된다.
+- 이 기록은 저장소 내부 범위의 최신 로컬 재검증 증거이며 전체 제품 개발 완료 선언이 아니다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 실제 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 Work에서 실행하지 않았고 성공으로 표시하지 않는다. 해당 조건이 제공되면 Issue #84와 Milestone #1의 런북을 수동 실행한 뒤 별도 판정한다.
