@@ -38,7 +38,7 @@ public static class ExternalDeliveryEndpoints
             CreateExternalDeliveryRequest request, ExternalDeliveryService service,
             WorkerTaskEnqueueService enqueue, CancellationToken token) =>
         {
-            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString();
+            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString().Trim();
             if (string.IsNullOrWhiteSpace(idempotencyKey))
                 return Results.BadRequest(new { Code = "external.delivery.idempotency_key_required", Description = "Idempotency-Key 헤더가 필요합니다." });
 
@@ -48,21 +48,32 @@ public static class ExternalDeliveryEndpoints
                 || !string.Equals(existing.Payload, payload, StringComparison.Ordinal)))
                 return Results.Conflict(new { Code = "external.delivery.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 전달 내용으로 이미 사용되었습니다." });
 
+            Guid? createdDeliveryId = null;
             try
             {
                 var delivery = existing ?? await service.CreateAsync(tenantId, request.TargetUri, payload,
                     idempotencyKey, request.MaxAttempts, DateTimeOffset.UtcNow, token);
+                if (existing is null)
+                    createdDeliveryId = delivery.Id;
                 var task = await enqueue.EnqueueAsync(tenantId, idempotencyKey,
                     ExternalDeliveryTaskContract.TaskType,
                     ExternalDeliveryTaskContract.CreatePayloadReference(delivery.Id),
                     request.MaxAttempts, token);
                 if (task.Conflict)
+                {
+                    if (createdDeliveryId.HasValue)
+                        await service.DeleteUnqueuedAsync(tenantId, createdDeliveryId.Value, idempotencyKey,
+                            CancellationToken.None);
                     return Results.Conflict(new { Code = "external.delivery.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 Worker 작업으로 이미 사용되었습니다." });
+                }
                 return Results.Accepted($"/api/platform/tenants/{tenantId}/worker/deliveries/{delivery.Id}",
                     new { Delivery = ToResponse(delivery), WorkerTaskId = task.Task.Id, task.Created });
             }
             catch (WorkerTaskTypeNotAvailableException)
             {
+                if (createdDeliveryId.HasValue)
+                    await service.DeleteUnqueuedAsync(tenantId, createdDeliveryId.Value, idempotencyKey,
+                        CancellationToken.None);
                 return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
             }
             catch (ArgumentException exception)

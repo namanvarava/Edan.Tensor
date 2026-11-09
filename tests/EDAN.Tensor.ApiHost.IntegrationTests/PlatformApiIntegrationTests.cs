@@ -703,8 +703,9 @@ public sealed class PlatformApiIntegrationTests
 
         using var scope = factory.Services.CreateScope();
         var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
-        workerDb.WorkerTaskTypes.Add(new WorkerTaskTypeCatalogEntry(
-            DataSetValidationTaskContract.TaskType, "DataSet 검증 v1", DateTimeOffset.UtcNow));
+        var validationTaskType = new WorkerTaskTypeCatalogEntry(
+            DataSetValidationTaskContract.TaskType, "DataSet 검증 v1", DateTimeOffset.UtcNow);
+        workerDb.WorkerTaskTypes.Add(validationTaskType);
         await workerDb.SaveChangesAsync();
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
@@ -786,6 +787,25 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, status.StatusCode);
         using var statusJson = await JsonDocument.ParseAsync(await status.Content.ReadAsStreamAsync());
         Assert.Equal("Queued", statusJson.RootElement.GetProperty("status").GetString());
+
+        workerDb.WorkerTaskTypes.Remove(validationTaskType);
+        await workerDb.SaveChangesAsync();
+        using var unavailable = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
+        {
+            Content = JsonContent.Create(new
+            {
+                expectedDataSetVersion = 3, schemaVersion = 1, profileId, profileRevision = 1
+            })
+        };
+        unavailable.Headers.Add("Idempotency-Key", "validation-type-unavailable-1");
+        using var unavailableResponse = await client.SendAsync(unavailable);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, unavailableResponse.StatusCode);
+        await using var unavailableScope = factory.Services.CreateAsyncScope();
+        var unavailableDb = unavailableScope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        Assert.Equal(0, await unavailableDb.ValidationExecutions.CountAsync(
+            execution => execution.TenantId == tenantId
+                && execution.IdempotencyKey == "validation-type-unavailable-1"));
     }
 
     [Fact]
@@ -855,6 +875,111 @@ public sealed class PlatformApiIntegrationTests
 
         using var status = await client.GetAsync($"/api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}");
         Assert.Equal(HttpStatusCode.OK, status.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExternalDeliveryWorkerConflictRemovesOnlyNewPendingDelivery()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"EDC-{suffix}", name = "외부 전달 충돌 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships",
+                new { subjectId = "delivery-conflict-admin", role = "Administrator" })).StatusCode);
+
+        const string idempotencyKey = "delivery-worker-conflict-1";
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var workerDb = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+            workerDb.WorkerTaskTypes.Add(new WorkerTaskTypeCatalogEntry(
+                EDAN.Tensor.Worker.Application.ExternalDelivery.ExternalDeliveryTaskContract.TaskType,
+                "외부 전달 v1", DateTimeOffset.UtcNow));
+            workerDb.WorkerTasks.Add(WorkerTask.Create(tenantId, "integration.other", idempotencyKey,
+                "private://conflicting-task", DateTimeOffset.UtcNow, maxAttempts: 3));
+            await workerDb.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "delivery-conflict-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/worker/deliveries")
+        {
+            Content = JsonContent.Create(new
+            {
+                targetUri = "http://127.0.0.1:4567/receiver",
+                payload = new { eventName = "conflict" },
+                maxAttempts = 3
+            })
+        };
+        request.Headers.Add("Idempotency-Key", idempotencyKey);
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+        Assert.Equal(0, await verificationDb.ExternalDeliveries.CountAsync(
+            delivery => delivery.TenantId == tenantId && delivery.IdempotencyKey == idempotencyKey));
+        Assert.Equal(1, await verificationDb.WorkerTasks.CountAsync(
+            task => task.TenantId == tenantId && task.IdempotencyKey == idempotencyKey));
+    }
+
+    [Fact]
+    public async Task ExternalDeliveryUnavailableWorkerTypeRemovesNewPendingDelivery()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"EDU-{suffix}", name = "외부 전달 유형 미사용 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships",
+                new { subjectId = "delivery-unavailable-admin", role = "Administrator" })).StatusCode);
+
+        const string idempotencyKey = "delivery-worker-type-unavailable-1";
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "delivery-unavailable-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/worker/deliveries")
+        {
+            Content = JsonContent.Create(new
+            {
+                targetUri = "http://127.0.0.1:4567/receiver",
+                payload = new { eventName = "unavailable" },
+                maxAttempts = 3
+            })
+        };
+        request.Headers.Add("Idempotency-Key", idempotencyKey);
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+        Assert.Equal(0, await verificationDb.ExternalDeliveries.CountAsync(
+            delivery => delivery.TenantId == tenantId && delivery.IdempotencyKey == idempotencyKey));
+        Assert.Equal(0, await verificationDb.WorkerTasks.CountAsync(
+            task => task.TenantId == tenantId && task.IdempotencyKey == idempotencyKey));
     }
 
     [Fact]

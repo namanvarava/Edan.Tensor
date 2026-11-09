@@ -68,6 +68,10 @@ public interface IDataSetValidationRepository
 
     Task<bool> DeleteExecutionAsync(
         Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);
+
+    /// <summary>Worker 등록 전에 생성된 미실행 검증 실행을 내부 보상으로 제거합니다.</summary>
+    Task<bool> DeleteUnqueuedExecutionAsync(
+        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>검증 실행에 저장할 한 행의 오류·경고 결과입니다.</summary>

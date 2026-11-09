@@ -80,7 +80,7 @@ public static class DataSetValidationEndpoints
             CreateDataSetValidationRequest request, DataSetValidationService service,
             WorkerTaskEnqueueService enqueue, CancellationToken token) =>
         {
-            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString();
+            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString().Trim();
             if (string.IsNullOrWhiteSpace(idempotencyKey))
                 return Results.BadRequest(new
                 {
@@ -102,6 +102,7 @@ public static class DataSetValidationEndpoints
                 };
             }
 
+            var createdExecutionId = existingExecution is null ? result.Value.Id : (Guid?)null;
             try
             {
                 var task = await enqueue.EnqueueAsync(tenantId, idempotencyKey,
@@ -109,8 +110,8 @@ public static class DataSetValidationEndpoints
                     DataSetValidationTaskContract.CreatePayloadReference(result.Value.Id), 5, token);
                 if (task.Conflict)
                 {
-                    if (existingExecution is null)
-                        await service.DeleteExecutionAsync(tenantId, result.Value.Id, CancellationToken.None);
+                    if (createdExecutionId.HasValue)
+                        await service.DeleteUnqueuedExecutionAsync(tenantId, createdExecutionId.Value, CancellationToken.None);
                     return Results.Conflict(new { Code = "dataset.validation.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 작업으로 이미 사용되었습니다." });
                 }
                 return Results.Accepted($"/api/platform/tenants/{tenantId}/datasets/validations/{result.Value.Id}",
@@ -118,6 +119,8 @@ public static class DataSetValidationEndpoints
             }
             catch (WorkerTaskTypeNotAvailableException)
             {
+                if (createdExecutionId.HasValue)
+                    await service.DeleteUnqueuedExecutionAsync(tenantId, createdExecutionId.Value, CancellationToken.None);
                 return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
             }
         }).WithName("CreateDataSetValidation");

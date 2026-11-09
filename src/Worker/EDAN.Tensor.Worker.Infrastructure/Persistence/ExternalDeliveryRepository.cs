@@ -38,6 +38,26 @@ public sealed class ExternalDeliveryRepository(WorkerDbContext dbContext) : IExt
     }
 
     /// <inheritdoc />
+    public async Task<bool> DeleteUnqueuedAsync(Guid tenantId, Guid deliveryId, string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        var delivery = await dbContext.ExternalDeliveries.SingleOrDefaultAsync(
+            x => x.TenantId == tenantId
+                && x.Id == deliveryId
+                && x.IdempotencyKey == idempotencyKey
+                && x.Status == ExternalDeliveryStatus.Pending
+                && x.AttemptCount == 0
+                && x.CompletedAtUtc == null,
+            cancellationToken);
+        if (delivery is null)
+            return false;
+
+        dbContext.ExternalDeliveries.Remove(delivery);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    /// <inheritdoc />
     public async Task<ExternalDeliverySnapshot?> BeginAttemptAsync(Guid tenantId, Guid deliveryId,
         CancellationToken cancellationToken = default)
     {

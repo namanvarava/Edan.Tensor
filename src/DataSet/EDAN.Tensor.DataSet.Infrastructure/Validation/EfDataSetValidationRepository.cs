@@ -296,6 +296,26 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         return true;
     }
 
+    /// <inheritdoc />
+    public async Task<bool> DeleteUnqueuedExecutionAsync(
+        Guid tenantId, Guid executionId, CancellationToken cancellationToken = default)
+    {
+        var execution = await dbContext.ValidationExecutions
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId
+                && x.Id == executionId
+                && x.Status == nameof(DataSetValidationStatus.Queued)
+                && x.FencingToken == 0
+                && x.ProcessedRecords == 0
+                && x.CompletedAtUtc == null,
+                cancellationToken);
+        if (execution is null) return false;
+        dbContext.ValidationDetails.RemoveRange(dbContext.ValidationDetails.Where(x => x.ExecutionId == executionId));
+        dbContext.ValidationSeenKeys.RemoveRange(dbContext.ValidationSeenKeys.Where(x => x.ExecutionId == executionId));
+        dbContext.ValidationExecutions.Remove(execution);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private static DataSetValidationExecutionSnapshot ToSnapshot(DataSetValidationExecution execution) =>
         new(execution.Id, execution.TenantId, execution.DataSetId,
             execution.ExpectedDataSetVersion, execution.SchemaVersion, execution.ProfileId,
