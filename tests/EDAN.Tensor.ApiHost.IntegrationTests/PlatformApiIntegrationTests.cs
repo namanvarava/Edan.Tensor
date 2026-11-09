@@ -67,6 +67,10 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-policies/{policyId}/enabled", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-quota-policies", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/history", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/enabled", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
@@ -1338,6 +1342,135 @@ public sealed class PlatformApiIntegrationTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>저장 용량 정책 API가 Tenant 관리자·페이지·감사·낙관적 동시성 경계를 함께 적용합니다.</summary>
+    [Fact]
+    public async Task StorageQuotaPolicyApiSupportsPagingAuditingAndOptimisticConcurrency()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"QUOTA-{suffix}",
+            name = "Quota API 테스트 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+
+        using var activation = await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null);
+        Assert.Equal(HttpStatusCode.NoContent, activation.StatusCode);
+        using var membership = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new
+        {
+            subjectId = "quota-admin",
+            role = "Administrator"
+        });
+        Assert.Equal(HttpStatusCode.Created, membership.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "quota-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        using var create = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies", new
+            {
+                scope = "Tenant",
+                targetId = tenantId,
+                tenantLimitBytes = 1024L,
+                organizationLimitBytes = (long?)null,
+                projectLimitBytes = (long?)null,
+                dataSetLimitBytes = (long?)null,
+                warningThresholdPercent = 75,
+                planCode = "Community"
+            });
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        using var createdDocument = await JsonDocument.ParseAsync(await create.Content.ReadAsStreamAsync());
+        var policyId = createdDocument.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(1, createdDocument.RootElement.GetProperty("version").GetInt64());
+
+        using var duplicate = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies", new
+            {
+                scope = "Tenant",
+                targetId = tenantId,
+                tenantLimitBytes = 2048L,
+                warningThresholdPercent = 80,
+                planCode = "Community"
+            });
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.Equal("quota_policy.conflict", await ReadErrorCodeAsync(duplicate));
+
+        using var list = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies?page=1&pageSize=1");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        using var listDocument = await JsonDocument.ParseAsync(await list.Content.ReadAsStreamAsync());
+        Assert.Equal(1, listDocument.RootElement.GetProperty("totalCount").GetInt32());
+        Assert.Equal(1, listDocument.RootElement.GetProperty("items").GetArrayLength());
+
+        using var update = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}", new
+            {
+                expectedVersion = 1L,
+                tenantLimitBytes = 2048L,
+                organizationLimitBytes = (long?)null,
+                projectLimitBytes = (long?)null,
+                dataSetLimitBytes = (long?)null,
+                warningThresholdPercent = 80,
+                planCode = "Community"
+            });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        using var updateDocument = await JsonDocument.ParseAsync(await update.Content.ReadAsStreamAsync());
+        Assert.Equal(2, updateDocument.RootElement.GetProperty("version").GetInt64());
+
+        using var history = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/history?page=1&pageSize=1");
+        Assert.True(history.IsSuccessStatusCode, await history.Content.ReadAsStringAsync());
+        using var historyDocument = await JsonDocument.ParseAsync(await history.Content.ReadAsStreamAsync());
+        Assert.Equal(2, historyDocument.RootElement.GetProperty("totalCount").GetInt32());
+        Assert.Equal(1, historyDocument.RootElement.GetProperty("items").GetArrayLength());
+
+        using var disable = new HttpRequestMessage(HttpMethod.Patch,
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}/enabled")
+        {
+            Content = JsonContent.Create(new { isEnabled = false, expectedVersion = 2L })
+        };
+        using var disabled = await client.SendAsync(disable);
+        Assert.Equal(HttpStatusCode.OK, disabled.StatusCode);
+        using var disabledDocument = await JsonDocument.ParseAsync(await disabled.Content.ReadAsStreamAsync());
+        Assert.False(disabledDocument.RootElement.GetProperty("isEnabled").GetBoolean());
+        Assert.Equal(3, disabledDocument.RootElement.GetProperty("version").GetInt64());
+
+        using var staleUpdate = await client.PutAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies/{policyId}", new
+            {
+                expectedVersion = 1L,
+                tenantLimitBytes = 4096L,
+                warningThresholdPercent = 80,
+                planCode = "Community"
+            });
+        Assert.Equal(HttpStatusCode.Conflict, staleUpdate.StatusCode);
+        Assert.Equal("quota_policy.version_conflict", await ReadErrorCodeAsync(staleUpdate));
+
+        using var invalidPage = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies?pageSize=0");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidPage.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "quota-member-without-membership");
+        using var forbidden = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/storage-quota-policies");
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+    }
+
+    private static async Task<string?> ReadErrorCodeAsync(HttpResponseMessage response)
+    {
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        return document.RootElement.GetProperty("code").GetString();
     }
 
     private static async Task<int> ReadArrayLengthAsync(HttpResponseMessage response)

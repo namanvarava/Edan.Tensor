@@ -700,3 +700,17 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합 후 로컬 Work에서 같은 명령을 원문 그대로 다시 실행한 결과, 기본 병렬 MSBuild가 현재 실행 환경의 프로세스 생성 제한에서 출력 없이 종료 코드 1을 반환했다. 상세 로그는 `_FilterRestoreGraphProjectInputItems` 단계의 병렬 MSBuild 실패를 보여 주었고, 단일 노드 `-m:1` 복원·빌드는 경고 0개·오류 0개로 성공했다. 단일 노드 전체 테스트는 첫 Testhost 연결 90초 제한에 걸려 중단되었으므로 로컬 실패를 제품 코드 실패로 판정하지 않으며, CI의 동일 명령 성공을 최종 Release 회귀 증거로 사용한다.
 - 병합 후 로컬 `main`과 `origin/main`은 `2881bd54aeb38bd40d1dd494b2a158620912b0bf`로 일치하고 작업 디렉터리는 clean 상태다. 병합된 `codex/add-sqlite-backup-restore-runbook-20261109`는 로컬·원격에서 삭제했으며 원격 `refs/heads`에는 `main`만 남았다.
 - 이 재검증은 로컬 SQLite 백업·복구 절차와 콘텐츠 시점 정합성만 증명한다. 운영 DB 공급자, RPO·RTO, 보존·암호화·외부 저장소, 실제 장애 복구 시간과 외부 IdP·GitHub 보호 규칙은 여전히 별도 환경 조건이다.
+
+## 2026-11-09 저장 용량 정책 관리 API 구현 및 SQLite 경계 수정
+
+- Work 범위 감사에서 저장 용량 정책 도메인·Migration·관리 서비스·DTO는 존재하지만 Tenant 관리자용 목록·생성·수정·활성화·감사 이력 HTTP 경로가 없어 DataSet quota 계약을 외부에서 사용할 수 없는 미완료 상태임을 확인했다. 영향 범위는 정책을 등록하거나 변경 이력을 조회할 수 없고, 기존의 Tenant 관리자·대상 소속·버전 조건을 API에서 검증할 진입점이 없다는 점이었다.
+- 승인된 기존 계약을 확장하지 않는 최소 수정으로 `PlatformEndpoints`에 Tenant 관리자 전용 정책 API를 추가했다. 목록과 감사 이력은 1~100건 페이지 범위와 `totalCount`를 반환하고, 생성·수정·활성화는 정책 대상 Tenant 소속과 `expectedVersion`을 확인한다. 중복 정책은 409 `quota_policy.conflict`, 오래된 버전은 409 `quota_policy.version_conflict`로 반환하며 변경 감사 기록은 기존 원자적 서비스 경계를 사용한다.
+- 최초 대상 회귀 테스트에서 감사 이력 GET이 HTTP 500으로 재현되었다. 실제 응답 로그와 스택 추적은 SQLite 공급자가 `DateTimeOffset`을 SQL `ORDER BY`로 변환하지 못하고 `GetHistoryAsync`의 `CountAsync` 단계에서 `NotSupportedException`을 발생시킨다고 기록했다. 서버 정렬을 그대로 재시도하는 대안은 SQLite 경계에서 재발하므로, 기존 감사 저장소의 패턴과 동일하게 Tenant·정책으로 먼저 제한한 뒤 UTC 시각과 식별자로 메모리 정렬·페이지 절단을 수행하는 최소 수정으로 해결했다.
+- 수정 후 실제 Windows 권한에서 다음 검증을 수행했다.
+  - 저장 용량 정책 API 대상 회귀 테스트: 1개 통과·실패 0개·건너뜀 0개
+  - API Host 통합 테스트: 27개 통과·실패 0개·건너뜀 0개
+  - `dotnet restore EDAN.Tensor.sln -m:1`: 성공
+  - `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1`: 성공, 경고 0개·오류 0개
+  - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release -m:1 --logger "console;verbosity=minimal"`: 전체 225개 통과·실패 0개·건너뜀 0개
+- 단일 노드 옵션은 현재 Work 실행 환경의 프로세스·Testhost 제한 때문에 로컬에서 재현 가능한 검증을 위해 사용했다. CI에서는 저장소가 정의한 옵션 없는 원문 Release 명령을 별도로 확인해야 하며, PR Check·main 병합 후 CI 결과가 추가되기 전에는 이 변경을 최종 통합 완료로 판정하지 않는다.
+- 이 변경은 SQLite 기반 Platform/DataSet quota 관리 API 범위만 다룬다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF, 운영 DB·실제 외부 IdP·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 검증에 포함하지 않으며, 승인된 외부 조건 후속 Issue와 해당 계약 승인 후 별도로 수행한다.
