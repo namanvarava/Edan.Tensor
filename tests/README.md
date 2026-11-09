@@ -18,9 +18,15 @@
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
+## 현재 main 기준: 2026-11-10
+
+현재 `main`은 PR #155가 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`로 Squash Merge된 상태다. PR 자체 CI [Run #930](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718223926)과 병합 후 main CI [Run #931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718607611)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 기록했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+
+## 과거 단일 실행 기록
+
 이번 실행의 검증 대상 `main`은 PR #132 병합 커밋 SHA `8a82bf9f2a6546c593e44928d588f12d2fa2126c`이다. PR #132([최신 main CI 실패 상태 기록](https://github.com/namanvarava/Edan.Tensor/pull/132))의 head `451a3db88a93bfbcfbdf72ccb067e55813829ccd`는 squash merge되었다. PR #131 자체 CI [Run #881](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672505068), PR #132 자체 CI [Run #884](https://github.com/namanvarava/Edan.Tensor/actions/runs/42675745493)와 병합 후 main CI [Run #885](https://github.com/namanvarava/Edan.Tensor/actions/runs/42676094148)는 Restore·Build·Test를 성공시켰다. 병합 직후 main CI [Run #882](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672786178)와 PR #132 이전 head의 [Run #883](https://github.com/namanvarava/Edan.Tensor/actions/runs/42673460577)는 Job 생성 전 GitHub Actions `Internal server error`로 실패했지만, Run #884·#885에서 최신 문서 변경을 성공으로 재검증했다. 전체 테스트의 마지막 성공 증거는 main CI Run #885이며, PR #128 변경 브랜치에서 전체 232개·API 통합 32개가 통과했고 실패 0개·건너뜀 0개였다. 현재 main의 최신 SHA는 병합 후 GitHub 기록을 기준으로 확인하며, 외부 IdP·운영 DB·GitHub 보호 규칙 HTTP 403은 별도 환경 미검증으로 유지한다.
 
-## 현재 최신 main 기준
+## 과거 단계별 검증 기록
 
 PR #135 병합 후 최신 `main`은 `ce460ec7f3c4efcc54b4da5297879149b2f52b97`이다. PR 자체 CI Run #890과 병합 후 main CI [Run #891](https://github.com/namanvarava/Edan.Tensor/actions/runs/42681139618)이 Restore·Release Build·Release Test를 성공했다. Work에서 다음 구현 순서는 API 계약·멱등성 경쟁 검증 → Tenant·인증 경계 → Worker 장애 복구 → 승인된 비라이선스 기능 → Licensing·LicenseAuthority → 라이선스 적용 검증 → 운영·외부 환경 검증이다. 실제 외부 IdP, 운영 DB, 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 테스트 결과에 포함하지 않는다.
 

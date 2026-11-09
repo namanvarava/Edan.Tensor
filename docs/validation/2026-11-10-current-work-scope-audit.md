@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 `main` 커밋 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 `main` 커밋 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 감사 결과
 
@@ -57,3 +57,9 @@ Development Bypass는 고정된 비운영 Tenant·사용자·`sub`를 사용하�
 PR #153의 [PR CI Run #926](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715584623)과 Squash Merge 후 [main CI Run #927](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715896376)이 자체 호스팅 Windows Runner에서 Restore·Release Build·Release Test를 모두 성공했다. 병합된 main 커밋은 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`이며, 로컬에서 동일한 Release 명령을 재실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다.
 
 변경은 기존 승인된 `DELETE /api/platform/tenants/{tenantId}/datasets/validations/{executionId}` 경로를 `TensorApiClient.DeleteDataSetValidationAsync`와 단위·실제 API Host 통합 회귀에 연결한 범위다. Commercial·Licensing 업무, DuckDB·Parquet, WPF, 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증 범위는 확장하지 않았다.
+
+## 2026-11-10 최신 main 문서 정합성 재검증
+
+PR #155의 [PR CI Run #930](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718223926)과 Squash Merge 후 [main CI Run #931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718607611)이 성공했다. 병합된 `main`은 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`이며, 문서의 현재 기준 SHA·테스트 구성·CI 증거를 최신 상태로 정정했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, Test 243개 통과·실패 0개·건너뜀 0개를 기록했다.
+
+이번 변경은 문서 정합성만 보정하며 DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF 업무 기능이나 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 완료 처리하지 않는다.

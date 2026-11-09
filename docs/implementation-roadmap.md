@@ -4,7 +4,7 @@
 
 ## 이전 기준 상태 기록
 
-현재 main은 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`이며 PR #124 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+당시 기준 main은 `99ede108a165764e7f6c57a7dfe80ef678ad5ea3`이며 PR #124 병합 후의 기준입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 ### 현재 이동 게이트
 
@@ -273,3 +273,7 @@ PR #153은 `7b1ca7a7fdaa1bd2fc6a760e153f53b8896d27b5`로 Squash Merge되었고, 
 PR #154는 최신 검증 증거를 문서에 반영하여 `5fe4b343928edd70f3319d31bba6d430e13b6a3d`로 Squash Merge되었다. PR CI [Run #928](https://github.com/namanvarava/Edan.Tensor/actions/runs/42716886955)과 병합 후 main CI [Run #929](https://github.com/namanvarava/Edan.Tensor/actions/runs/42717234264)이 자체 호스팅 Windows Runner에서 성공했다. 최종 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다.
 
 이 증거는 현재 승인된 로컬 SQLite·Swagger/OpenAPI, Platform·DataSet·Worker, Tenant·인증 경계, Worker 복구, typed Client 기반 범위에 한정한다. DuckDB·Parquet·Commercial·WPF와 Licensing·LicenseAuthority 업무 기능은 승인된 계약과 수용 기준이 제공되기 전까지 구현 완료로 표시하지 않으며, 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84의 외부 조건으로 유지한다.
+
+## 2026-11-10 PR #155 병합 후 최신 기준
+
+PR #155는 문서의 테스트 구성과 최신 main 증거가 이전 SHA를 현재 기준처럼 가리키던 정합성 결함을 수정하여 `8139a07ebdbe85bb42acdabbc8a58ad1bb4983e9`로 Squash Merge되었다. PR CI [Run #930](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718223926)과 병합 후 main CI [Run #931](https://github.com/namanvarava/Edan.Tensor/actions/runs/42718607611)이 성공했다. 병합 후 로컬에서 Release Restore·Build·Test를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 243개 통과·실패 0개·건너뜀 0개를 확인했다. PR #155 작업 브랜치는 병합 후 로컬·원격에서 삭제했고, 현재 내부 구현 범위와 외부 미검증 조건은 변경하지 않았다.
