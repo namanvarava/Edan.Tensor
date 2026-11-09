@@ -828,6 +828,14 @@ public sealed class PlatformApiIntegrationTests
 
         var handler = new DataSetValidationTaskHandler(
             factory.Services.GetRequiredService<IServiceScopeFactory>());
+        using var cancelledStart = new CancellationTokenSource();
+        cancelledStart.Cancel();
+        var cancelledTask = WorkerTask.Create(tenantId, DataSetValidationTaskContract.TaskType,
+            "validation-cancelled-start", DataSetValidationTaskContract.CreatePayloadReference(executionId),
+            DateTimeOffset.UtcNow);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            handler.StartAsync(cancelledTask, cancelledStart.Token));
+
         var coordinator = new WorkerTaskExecutionCoordinator(
             new WorkerTaskRepository(workerDb),
             new WorkerTaskHandlerRegistry([
