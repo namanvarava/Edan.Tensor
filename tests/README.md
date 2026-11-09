@@ -17,7 +17,7 @@
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인과 `edan-nonprod` 테스트 식별자를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
-최신 제품 코드 기준은 `main` SHA `fca8edb96f3fc12388a168347985d28ec2b62102`이다. Windows 자체 호스팅 Runner `EDAN-TENSOR-WIN`에서 실행한 [Actions Run #772](https://github.com/namanvarava/Edan.Tensor/actions/runs/42420682116)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 이 문단은 아래의 역사적 실행 기록과 문서 전용 후속 커밋을 구분하는 현재 제품 코드 검증 기준이다.
+최신 제품 코드 기준은 `main` SHA `90ef1599afb096d08696d9efcaa85cfa90842866`이다. 이 기준의 실제 Windows 권한 Release 검증은 전체 테스트 220개 통과·실패 0개·건너뜀 0개였고, API 통합 테스트는 23개였다. 이 문단은 아래의 역사적 실행 기록과 문서 전용 후속 커밋을 구분하는 현재 제품 코드 검증 기준이다.
 
 PR #81 병합 기준 main 문서는 SHA `030d4c91db86b13d2eb198ace1f699989a59318a`였다. 병합 후 [Actions Run #783](https://github.com/namanvarava/Edan.Tensor/actions/runs/42539919996)은 Restore·Release Build·Release Test·정리 단계를 모두 성공시켰고, 전체 테스트는 219개 통과·실패 0개·건너뜀 0개였다. 실제 비운영 외부 IdP 검증은 아직 수행하지 않았으며, 수동 절차는 [외부 IdP 경계 수동 검증 런북](../docs/validation/external-idp-boundary-test-runbook.md)에 기록되어 있다.
 

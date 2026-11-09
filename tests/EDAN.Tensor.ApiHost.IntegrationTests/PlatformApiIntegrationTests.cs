@@ -519,6 +519,23 @@ public sealed class PlatformApiIntegrationTests
             await invalidAdapter.Content.ReadAsStreamAsync());
         Assert.Equal("dataset.validation", invalidAdapterDocument.RootElement.GetProperty("code").GetString());
 
+        using var unavailableAdapter = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/datasets",
+            new { organizationId, projectId, name = "구현되지 않은 저장소 어댑터", storageAdapter = "duckdb" });
+        Assert.Equal(HttpStatusCode.BadRequest, unavailableAdapter.StatusCode);
+        using var unavailableAdapterDocument = await JsonDocument.ParseAsync(
+            await unavailableAdapter.Content.ReadAsStreamAsync());
+        Assert.Equal("dataset.adapter_unavailable", unavailableAdapterDocument.RootElement.GetProperty("code").GetString());
+
+        await using (var contentScope = factory.Services.CreateAsyncScope())
+        {
+            var contentUsage = contentScope.ServiceProvider
+                .GetRequiredService<IDataSetTenantStorageUsageReader>();
+            var usage = await contentUsage.GetTenantUsageAsync(tenantId);
+            Assert.Equal(0, usage.TenantBytes);
+            Assert.Equal(0, usage.TenantDataSetCount);
+        }
+
         using var create = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/datasets",
             new { organizationId, projectId, name = "고객 원천 데이터", storageAdapter = "sqlite" });
