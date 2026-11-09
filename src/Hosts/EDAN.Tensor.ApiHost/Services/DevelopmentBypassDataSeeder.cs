@@ -8,7 +8,6 @@ namespace EDAN.Tensor.ApiHost.Services;
 /// <summary>Development Bypass가 사용할 로컬 Tenant와 소속을 멱등적으로 준비합니다.</summary>
 internal static class DevelopmentBypassDataSeeder
 {
-    private const string DefaultTenantCode = "EDAN-NONPROD";
     private const string DefaultTenantName = "Edan Non-Production Development";
 
     /// <summary>Development Bypass가 활성화된 경우에만 로컬 Tenant와 관리자 소속을 준비합니다.</summary>
@@ -25,19 +24,16 @@ internal static class DevelopmentBypassDataSeeder
             !string.Equals(configuration["Authentication:Mode"], "Bypass", StringComparison.OrdinalIgnoreCase))
             return;
 
-        var subject = configuration["Authentication:BypassSubject"]?.Trim();
-        if (string.IsNullOrWhiteSpace(subject))
-            throw new InvalidOperationException("Authentication:BypassSubject가 Development Bypass 초기화에 필요합니다.");
-
         var role = ParseRole(configuration["Authentication:BypassRole"]);
-        var tenantCode = new TenantCode(configuration["DevelopmentData:TenantCode"] ?? DefaultTenantCode);
+        var profile = DevelopmentBypassExternalIdentityProfile.Fixed;
+        var subject = profile.StableSubject;
+        var tenantCode = new TenantCode(profile.TestTenant);
         var tenantName = configuration["DevelopmentData:TenantName"] ?? DefaultTenantName;
 
         await using var scope = services.CreateAsyncScope();
         var database = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("DevelopmentBypassDataSeeder");
-        var profile = DevelopmentBypassExternalIdentityProfile.Fixed;
         logger.LogWarning(
             "Development Bypass가 실제 외부 IdP 대신 고정 시뮬레이션 프로필을 사용합니다. TestTenant={TestTenant}, TestUser={TestUser}, StableSubject={StableSubject}, KeyRotationPermission={KeyRotationPermission}",
             profile.TestTenant, profile.TestUser, profile.StableSubject, profile.KeyRotationPermission);

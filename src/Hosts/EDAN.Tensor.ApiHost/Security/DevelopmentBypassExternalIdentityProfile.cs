@@ -22,7 +22,7 @@ internal sealed record DevelopmentBypassExternalIdentityProfile(
         "https://auth-test.example.com/jwks",
         "https://auth-test.example.com",
         "edan-tensor-api",
-        "edan-nonprod",
+        "EDAN-NONPROD",
         "edan-nonprod-test-user",
         "edan-nonprod-test-subject",
         "nonprod-idp-test-key-rotation");

@@ -59,7 +59,9 @@ public sealed class DevelopmentBypassDataSeederTests
                     ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={Path.Combine(root, "dataset-content.db")};Cache=Shared;Pooling=False",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
-                    ["Authentication:Mode"] = "Bypass"
+                    ["Authentication:Mode"] = "Bypass",
+                    ["Authentication:BypassSubject"] = "untrusted-subject-override",
+                    ["DevelopmentData:TenantCode"] = "UNTRUSTED-TENANT-OVERRIDE"
                 });
             });
             return base.CreateHost(builder);
