@@ -56,18 +56,42 @@ public sealed class DataSetValidationService(
         }
     }
 
-    /// <summary>현재 DataSet·스키마·프로필 revision을 고정한 검증 실행을 예약합니다.</summary>
+    /// <summary>현재 DataSet·스키마·프로필 revision을 고정하고 Idempotency-Key에 수렴하는 검증 실행을 예약합니다.</summary>
+    /// <param name="tenantId">검증 실행을 소유하는 Tenant 식별자입니다.</param>
+    /// <param name="dataSetId">검증할 DataSet 식별자입니다.</param>
+    /// <param name="request">기대 DataSet 버전과 스키마·프로필 revision을 지정하는 요청입니다.</param>
+    /// <param name="idempotencyKey">동일 Tenant에서 같은 검증 요청을 하나의 실행으로 수렴시키는 키입니다.</param>
+    /// <param name="nowUtc">검증 실행 생성 시각으로 사용할 UTC 시각입니다.</param>
+    /// <param name="cancellationToken">작업을 중단할 취소 토큰입니다.</param>
+    /// <returns>새로 만들었거나 기존 키에서 찾은 검증 실행, 또는 입력·소유권 오류를 반환합니다.</returns>
     public async Task<Result<DataSetValidationExecutionSnapshot>> CreateExecutionAsync(
-        Guid tenantId, Guid dataSetId, DataSetValidationRequest request, DateTimeOffset nowUtc,
+        Guid tenantId, Guid dataSetId, DataSetValidationRequest request, string idempotencyKey,
+        DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
         try
         {
             EnsureTenant(tenantId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
+            var normalizedIdempotencyKey = idempotencyKey.Trim();
+            if (normalizedIdempotencyKey.Length > 200)
+                return Failure<DataSetValidationExecutionSnapshot>(
+                    "dataset.validation.idempotency_key_invalid", "Idempotency-Key는 200자를 초과할 수 없습니다.");
             if (request.ExpectedDataSetVersion <= 0 || request.SchemaVersion <= 0
                 || request.ProfileId == Guid.Empty || request.ProfileRevision <= 0)
                 return Failure<DataSetValidationExecutionSnapshot>(
                     "dataset.validation.request_invalid", "검증 실행 요청의 버전과 식별자가 올바르지 않습니다.");
+
+            var existing = await validations.GetExecutionByIdempotencyKeyAsync(
+                tenantId, normalizedIdempotencyKey, cancellationToken);
+            if (existing is not null)
+            {
+                return IsSameRequest(existing, dataSetId, request)
+                    ? Result<DataSetValidationExecutionSnapshot>.Success(existing)
+                    : Failure<DataSetValidationExecutionSnapshot>(
+                        "dataset.validation.idempotency_conflict",
+                        "동일 Idempotency-Key가 다른 검증 요청으로 이미 사용되었습니다.");
+            }
 
             var dataSet = await dataSets.GetAsync(new DataSetId(dataSetId), tenantId, cancellationToken);
             if (dataSet is null)
@@ -83,7 +107,7 @@ public sealed class DataSetValidationService(
 
             return Result<DataSetValidationExecutionSnapshot>.Success(await validations.CreateExecutionAsync(
                 tenantId, dataSetId, request.ExpectedDataSetVersion, request.SchemaVersion,
-                request.ProfileId, request.ProfileRevision, nowUtc, cancellationToken));
+                request.ProfileId, request.ProfileRevision, nowUtc, normalizedIdempotencyKey, cancellationToken));
         }
         catch (ArgumentException exception)
         {
@@ -188,6 +212,11 @@ public sealed class DataSetValidationService(
         Guid tenantId, Guid executionId, CancellationToken cancellationToken = default) =>
         validations.GetExecutionAsync(tenantId, executionId, cancellationToken);
 
+    /// <summary>Tenant와 Idempotency-Key로 기존 검증 실행을 조회합니다.</summary>
+    public Task<DataSetValidationExecutionSnapshot?> GetExecutionByIdempotencyKeyAsync(
+        Guid tenantId, string idempotencyKey, CancellationToken cancellationToken = default) =>
+        validations.GetExecutionByIdempotencyKeyAsync(tenantId, idempotencyKey, cancellationToken);
+
     /// <summary>Tenant 범위에서 원문 값 없이 저장된 검증 상세를 페이지 단위로 조회합니다.</summary>
     public Task<IReadOnlyList<DataSetValidationDetailSnapshot>> GetDetailsAsync(
         Guid tenantId, Guid executionId, int skip, int take, CancellationToken cancellationToken = default) =>
@@ -205,4 +234,12 @@ public sealed class DataSetValidationService(
 
     private static Result<T> Failure<T>(string code, string description) =>
         Result<T>.Failure(new Error(code, description));
+
+    private static bool IsSameRequest(DataSetValidationExecutionSnapshot existing,
+        Guid dataSetId, DataSetValidationRequest request) =>
+        existing.DataSetId == dataSetId
+        && existing.ExpectedDataSetVersion == request.ExpectedDataSetVersion
+        && existing.SchemaVersion == request.SchemaVersion
+        && existing.ProfileId == request.ProfileId
+        && existing.ProfileRevision == request.ProfileRevision;
 }

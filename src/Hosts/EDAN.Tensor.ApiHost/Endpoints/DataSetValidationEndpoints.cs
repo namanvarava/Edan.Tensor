@@ -88,13 +88,19 @@ public static class DataSetValidationEndpoints
                     Description = "검증 실행의 중복 예약을 막으려면 Idempotency-Key 헤더가 필요합니다."
                 });
 
+            var existingExecution = await service.GetExecutionByIdempotencyKeyAsync(tenantId, idempotencyKey, token);
             var result = await service.CreateExecutionAsync(tenantId, dataSetId,
                 new DataSetValidationRequest(request.ExpectedDataSetVersion, request.SchemaVersion,
-                    request.ProfileId, request.ProfileRevision), DateTimeOffset.UtcNow, token);
+                    request.ProfileId, request.ProfileRevision), idempotencyKey, DateTimeOffset.UtcNow, token);
             if (!result.IsSuccess)
-                return result.Error.Code == "dataset.not_found"
-                    ? Results.NotFound(new { result.Error.Code, result.Error.Description })
-                    : Results.BadRequest(new { result.Error.Code, result.Error.Description });
+            {
+                return result.Error.Code switch
+                {
+                    "dataset.not_found" => Results.NotFound(new { result.Error.Code, result.Error.Description }),
+                    "dataset.validation.idempotency_conflict" => Results.Conflict(new { result.Error.Code, result.Error.Description }),
+                    _ => Results.BadRequest(new { result.Error.Code, result.Error.Description })
+                };
+            }
 
             try
             {
@@ -102,7 +108,11 @@ public static class DataSetValidationEndpoints
                     DataSetValidationTaskContract.TaskType,
                     DataSetValidationTaskContract.CreatePayloadReference(result.Value.Id), 5, token);
                 if (task.Conflict)
+                {
+                    if (existingExecution is null)
+                        await service.DeleteExecutionAsync(tenantId, result.Value.Id, CancellationToken.None);
                     return Results.Conflict(new { Code = "dataset.validation.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 작업으로 이미 사용되었습니다." });
+                }
                 return Results.Accepted($"/api/platform/tenants/{tenantId}/datasets/validations/{result.Value.Id}",
                     new { Execution = ToResponse(result.Value), WorkerTaskId = task.Task.Id, task.Created });
             }

@@ -16,10 +16,16 @@ public interface IDataSetValidationRepository
         Guid tenantId, Guid profileId, string definitionJson, DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
 
+    /// <summary>검증 실행을 저장하고 동시 중복 요청은 기존 키의 실행으로 수렴시킵니다.</summary>
     Task<DataSetValidationExecutionSnapshot> CreateExecutionAsync(
         Guid tenantId, Guid dataSetId, int expectedDataSetVersion, int schemaVersion,
         Guid profileId, int profileRevision, DateTimeOffset nowUtc,
+        string? idempotencyKey = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Tenant와 Idempotency-Key로 기존 검증 실행을 조회합니다.</summary>
+    Task<DataSetValidationExecutionSnapshot?> GetExecutionByIdempotencyKeyAsync(
+        Guid tenantId, string idempotencyKey, CancellationToken cancellationToken = default);
 
     Task<DataSetValidationExecutionSnapshot?> GetExecutionAsync(
         Guid tenantId, Guid executionId, CancellationToken cancellationToken = default);

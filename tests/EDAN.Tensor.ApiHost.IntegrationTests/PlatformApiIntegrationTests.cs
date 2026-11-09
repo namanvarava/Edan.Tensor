@@ -17,6 +17,7 @@ using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using EDAN.Tensor.DataSet.Infrastructure.Validation;
 using EDAN.Tensor.HostServices.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -91,6 +92,21 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/health/database", document, StringComparison.Ordinal);
         Assert.Contains("\"Bearer\"", document, StringComparison.Ordinal);
         Assert.Contains("X-Tenant-Id", document, StringComparison.Ordinal);
+        Assert.Contains("Idempotency-Key", document, StringComparison.Ordinal);
+        Assert.Contains("Replay-Request-Id", document, StringComparison.Ordinal);
+
+        using var openApiJson = JsonDocument.Parse(document);
+        AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations", "post", "Idempotency-Key");
+        AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", "post", "Replay-Request-Id");
+
+        static void AssertRequiredHeader(JsonElement document, string path, string method, string name)
+        {
+            var operation = document.GetProperty("paths").GetProperty(path).GetProperty(method);
+            Assert.Contains(operation.GetProperty("parameters").EnumerateArray(), parameter =>
+                string.Equals(parameter.GetProperty("name").GetString(), name, StringComparison.Ordinal)
+                && parameter.GetProperty("in").GetString() == "header"
+                && parameter.GetProperty("required").GetBoolean());
+        }
     }
 
     /// <summary>Development 환경의 Swagger UI가 API OpenAPI 문서를 표시합니다.</summary>
@@ -746,7 +762,25 @@ public sealed class PlatformApiIntegrationTests
         };
         duplicate.Headers.Add("Idempotency-Key", "validation-integration-1");
         using var duplicateResponse = await client.SendAsync(duplicate);
-        Assert.Equal(HttpStatusCode.Conflict, duplicateResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, duplicateResponse.StatusCode);
+        using var duplicateJson = await JsonDocument.ParseAsync(await duplicateResponse.Content.ReadAsStreamAsync());
+        Assert.Equal(executionId, duplicateJson.RootElement.GetProperty("execution").GetProperty("id").GetGuid());
+        Assert.False(duplicateJson.RootElement.GetProperty("created").GetBoolean());
+
+        using var conflicting = new HttpRequestMessage(HttpMethod.Post,
+            $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
+        {
+            Content = JsonContent.Create(new { expectedDataSetVersion = 2, schemaVersion = 1, profileId, profileRevision = 1 })
+        };
+        conflicting.Headers.Add("Idempotency-Key", "validation-integration-1");
+        using var conflictingResponse = await client.SendAsync(conflicting);
+        Assert.Equal(HttpStatusCode.Conflict, conflictingResponse.StatusCode);
+
+        await using var validationScope = factory.Services.CreateAsyncScope();
+        var dataSetDb = validationScope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        Assert.Equal(1, await dataSetDb.ValidationExecutions.CountAsync(
+            execution => execution.TenantId == tenantId
+                && execution.IdempotencyKey == "validation-integration-1"));
 
         using var status = await client.GetAsync($"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
         Assert.Equal(HttpStatusCode.OK, status.StatusCode);

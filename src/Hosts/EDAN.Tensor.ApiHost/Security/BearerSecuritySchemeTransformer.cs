@@ -3,7 +3,7 @@ using Microsoft.OpenApi;
 
 namespace EDAN.Tensor.ApiHost.Security;
 
-/// <summary>OpenAPI 문서에 보호 API를 호출하는 Bearer와 Tenant 헤더 사용법을 기록합니다.</summary>
+/// <summary>OpenAPI 문서에 보호 API를 호출하는 인증·Tenant·멱등 헤더 사용법을 기록합니다.</summary>
 /// <remarks>
 /// API는 토큰을 발급하지 않으며 외부 IdP가 발급한 Bearer 토큰을 검증합니다.
 /// Development Bypass를 사용하는 경우에도 이 문서는 운영 인증 계약을 대체하지 않습니다.
@@ -18,7 +18,7 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
         "/health/database"
     ];
 
-    /// <summary>OpenAPI 문서에 Bearer 인증과 선택적 Tenant 식별 헤더를 추가합니다.</summary>
+    /// <summary>OpenAPI 문서에 Bearer 인증과 업무별 필수 헤더를 추가합니다.</summary>
     /// <param name="document">변경할 OpenAPI 문서를 지정합니다.</param>
     /// <param name="context">현재 문서와 API 설명 그룹을 제공하는 변환 컨텍스트를 지정합니다.</param>
     /// <param name="cancellationToken">문서 변환을 취소할 토큰을 지정합니다.</param>
@@ -70,6 +70,21 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
                     });
                 }
 
+                if (string.Equals(operation.Key.ToString(), "Post", StringComparison.OrdinalIgnoreCase)
+                    && TryGetRequiredHeader(path.Key, out var requiredHeaderName, out var requiredHeaderDescription)
+                    && !operation.Value.Parameters.Any(parameter =>
+                        parameter.In == ParameterLocation.Header
+                        && string.Equals(parameter.Name, requiredHeaderName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    operation.Value.Parameters.Add(new OpenApiParameter
+                    {
+                        Name = requiredHeaderName,
+                        In = ParameterLocation.Header,
+                        Required = true,
+                        Description = requiredHeaderDescription
+                    });
+                }
+
                 operation.Value.Security ??= [];
                 operation.Value.Security.Add(new OpenApiSecurityRequirement
                 {
@@ -79,5 +94,28 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool TryGetRequiredHeader(string path, out string name, out string description)
+    {
+        if (path.EndsWith("/worker/tasks", StringComparison.Ordinal)
+            || path.EndsWith("/worker/deliveries", StringComparison.Ordinal)
+            || path.EndsWith("/datasets/{dataSetId}/validations", StringComparison.Ordinal))
+        {
+            name = "Idempotency-Key";
+            description = "같은 Tenant의 동일 요청을 하나의 작업으로 수렴시키는 키입니다. 최대 200자이며 요청마다 고유하게 지정합니다.";
+            return true;
+        }
+
+        if (path.EndsWith("/worker/dead-letters/{taskId}/replay", StringComparison.Ordinal))
+        {
+            name = "Replay-Request-Id";
+            description = "DLQ 재처리 요청을 한 번만 생성하기 위한 GUID입니다.";
+            return true;
+        }
+
+        name = string.Empty;
+        description = string.Empty;
+        return false;
     }
 }
