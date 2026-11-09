@@ -134,22 +134,22 @@ public sealed class PlatformAuthenticationConfigurationTests
         Assert.Equal("https://auth-test.example.com/jwks", profile.JwksAddress);
         Assert.Equal("https://auth-test.example.com", profile.Issuer);
         Assert.Equal("edan-tensor-api", profile.Audience);
-        Assert.Equal("edan-nonprod", profile.TestTenant);
+        Assert.Equal("EDAN-NONPROD", profile.TestTenant);
         Assert.Equal("edan-nonprod-test-user", profile.TestUser);
         Assert.Equal("edan-nonprod-test-subject", profile.StableSubject);
         Assert.Equal("nonprod-idp-test-key-rotation", profile.KeyRotationPermission);
     }
 
-    /// <summary>개발 Bypass는 구성된 안정적인 주체와 역할을 인증 Claim으로 발급합니다.</summary>
+    /// <summary>개발 Bypass는 구성값으로 덮어쓸 수 없는 고정 주체와 역할을 인증 Claim으로 발급합니다.</summary>
     [Fact]
-    public async Task DevelopmentBypassEmitsConfiguredSubjectAndRoleClaims()
+    public async Task DevelopmentBypassEmitsFixedSubjectAndConfiguredRoleClaims()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Authentication:Mode"] = "Bypass",
-                ["Authentication:BypassSubject"] = "local-subject-for-test",
-                ["Authentication:BypassRole"] = "platform_admin"
+                ["Authentication:BypassSubject"] = "untrusted-override",
+                ["Authentication:BypassRole"] = "member"
             })
             .Build();
         var services = new ServiceCollection();
@@ -164,8 +164,8 @@ public sealed class PlatformAuthenticationConfigurationTests
 
         Assert.True(result.Succeeded);
         Assert.True(result.Principal?.Identity?.IsAuthenticated);
-        Assert.Equal("local-subject-for-test", result.Principal?.FindFirst("sub")?.Value);
-        Assert.Equal("platform_admin", result.Principal?.FindFirst("role")?.Value);
+        Assert.Equal("edan-nonprod-test-subject", result.Principal?.FindFirst("sub")?.Value);
+        Assert.Equal("member", result.Principal?.FindFirst("role")?.Value);
     }
 
     /// <summary>외부 IdP 설정이 없어도 개발 Bypass는 토큰 없는 요청을 인증합니다.</summary>

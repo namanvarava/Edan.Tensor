@@ -35,10 +35,7 @@ internal sealed class DevelopmentBypassAuthenticationHandler(
                 profile.TestTenant, profile.TestUser, profile.StableSubject, profile.KeyRotationPermission);
         }
 
-        var subject = configuration["Authentication:BypassSubject"]?.Trim();
-        if (string.IsNullOrWhiteSpace(subject))
-            subject = profile.StableSubject;
-
+        var subject = profile.StableSubject;
         var role = configuration["Authentication:BypassRole"]?.Trim();
         if (string.IsNullOrWhiteSpace(role))
             role = "platform_admin";
