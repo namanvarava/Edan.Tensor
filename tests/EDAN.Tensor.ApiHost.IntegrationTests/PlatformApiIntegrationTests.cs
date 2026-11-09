@@ -92,9 +92,19 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}/revisions", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage/history", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage/quota-events", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/deliveries", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/health", document, StringComparison.Ordinal);
@@ -121,6 +131,10 @@ public sealed class PlatformApiIntegrationTests
         AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/tasks", "post", "Idempotency-Key");
         AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/deliveries", "post", "Idempotency-Key");
         AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", "post", "Replay-Request-Id");
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details", "get", requiredTenantHeader: true);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}", "get", requiredTenantHeader: true);
 
         static void AssertRequiredHeader(JsonElement document, string path, string method, string name)
         {
