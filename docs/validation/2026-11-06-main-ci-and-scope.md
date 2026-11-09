@@ -722,3 +722,11 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최종 로컬 `main`과 `origin/main`은 `02a14d23af1e8bcdf5fb7924babd7f06a3da4da9`로 일치했다. 원격 refs 확인에서 원격 브랜치는 `main`만 남았고, 병합된 `codex/implement-storage-quota-policy-api-20261109`는 원격·로컬에서 삭제했다. Squash Merge로 원래 커밋이 main의 조상으로 표시되지 않아 로컬 안전 삭제가 거부되었으므로, PR 병합 SHA와 main CI 성공을 재확인한 뒤 해당 단일 브랜치만 명시적으로 삭제했다.
 - 최종 상태 확인 중 제한된 실행 컨텍스트의 최초 `git ls-remote`는 스레드 생성 오류로 실패했다. 이는 저장소·코드 오류가 아니라 실행 환경의 일시적 네트워크 프로세스 경계였으며, 같은 명령을 실제 Windows 권한으로 재실행해 `refs/heads/main`만 반환되는 것을 확인했다. 무한 재시도나 캐시 삭제는 수행하지 않았다.
 - 저장 용량 정책 관리 API와 SQLite 감사 이력 경계는 PR·main CI와 병합 후 로컬 Release 회귀로 검증되었다. 이 증거는 SQLite 기반 Platform/DataSet quota 범위에 한정되며, DuckDB·Parquet·Commercial·LicenseAuthority·WPF, 운영 DB·실제 비운영 외부 IdP·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 여전히 별도 외부 조건 또는 승인된 계약 대기 범위다.
+
+## 2026-11-09 저장 용량 정책 버전 충돌 오류 코드 고정
+
+- 내부 계약 감사에서 `StorageQuotaPolicy`가 오래된 버전을 한국어 예외 메시지로만 알리고, API 서비스가 그 메시지에 `버전` 문자열이 있는지 검색하여 HTTP 409 오류 코드를 결정하는 취약한 결합을 확인했다. 메시지 변경이나 다국어 처리 시 `quota_policy.version_conflict`가 사라질 수 있으므로 API의 오류 계약을 안정적으로 보장하지 못하는 영향이 있었다.
+- 최소 안전 수정으로 도메인은 공통 `BusinessRuleViolationException`에 `quota_policy.version_conflict` 코드를 담아 던지고, API 서비스는 메시지 검색 대신 이 코드를 정확히 검사하도록 변경했다. 기존 HTTP 409 응답과 외부 API 코드는 유지했으며, 오래된 버전에서는 정책 값·활성 상태·Version을 변경하지 않는 도메인 회귀 테스트 2개를 추가했다.
+- 최초 대상 테스트는 새 테스트 파일의 `Xunit` using 누락으로 `FactAttribute` 컴파일 오류가 발생했다. 로그에서 테스트 코드 컴파일 단계의 네임스페이스 누락임을 확인하고 `using Xunit;`만 추가한 뒤 같은 테스트를 재실행했다. 제품 코드 결함으로 오인해 무관한 재시도나 인증·저장소 변경은 하지 않았다.
+- 수정 후 실제 Windows 권한에서 저장 용량 정책 도메인 테스트 2개, API 동시성 회귀 테스트 1개가 통과했다. 단일 노드 Release 전체 검증은 `dotnet restore EDAN.Tensor.sln -m:1` 성공, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1` 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release -m:1 --logger "console;verbosity=minimal"` 전체 227개 통과·실패 0개·건너뜀 0개로 종료 코드 0을 기록했다.
+- 이 변경은 저장 용량 정책의 내부 도메인 오류 계약만 안정화하며, PR Check·main 병합 후 CI 증거를 이 문서의 후속 기록에 추가해야 한다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF와 실제 운영·외부 환경 조건은 계속 별도 범위다.

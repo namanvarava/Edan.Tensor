@@ -2,6 +2,7 @@ using System.Text.Json;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.SharedKernel.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.Services;
@@ -87,7 +88,7 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
             policy.Update(tenantLimit, organizationLimit, projectLimit,
                 dataSetLimit, warningPercent, planCode, actor, expectedVersion, now);
         }
-        catch (InvalidOperationException exception) when (exception.Message.Contains("버전", StringComparison.Ordinal))
+        catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
         {
             throw new InvalidOperationException("quota_policy.version_conflict", exception);
         }
@@ -119,7 +120,7 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
         {
             policy.SetEnabled(enabled, actor, expectedVersion, now);
         }
-        catch (InvalidOperationException exception) when (exception.Message.Contains("버전", StringComparison.Ordinal))
+        catch (BusinessRuleViolationException exception) when (exception.Code == "quota_policy.version_conflict")
         {
             throw new InvalidOperationException("quota_policy.version_conflict", exception);
         }
