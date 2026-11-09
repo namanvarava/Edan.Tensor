@@ -1,3 +1,5 @@
+using EDAN.Tensor.SharedKernel.Exceptions;
+
 namespace EDAN.Tensor.Platform.Domain.Model;
 
 /// <summary>플랫폼 저장 용량 정책의 적용 범위입니다.</summary>
@@ -74,7 +76,9 @@ public sealed class StorageQuotaPolicy
 
     private void CheckVersion(long expected)
     {
-        if (expected != Version) throw new InvalidOperationException("Quota 정책 버전이 변경되었습니다. 최신 정책을 다시 조회해야 합니다.");
+        if (expected != Version)
+            throw new BusinessRuleViolationException(
+                "quota_policy.version_conflict", "Quota 정책 버전이 변경되었습니다. 최신 정책을 다시 조회해야 합니다.");
     }
 
     private static void ValidateLimits(long? tenant, long? organization, long? project, long? dataSet, int threshold)
