@@ -1,3 +1,5 @@
+extern alias workerhost;
+
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -12,8 +14,11 @@ using Microsoft.Extensions.Hosting;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.Validation;
+using EDAN.Tensor.Worker.Application.Abstractions;
+using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
+using DataSetValidationTaskHandler = workerhost::EDAN.Tensor.WorkerHost.Handlers.DataSetValidationTaskHandler;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
@@ -787,6 +792,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.Accepted, executionResponse.StatusCode);
         using var executionJson = await JsonDocument.ParseAsync(await executionResponse.Content.ReadAsStreamAsync());
         var executionId = executionJson.RootElement.GetProperty("execution").GetProperty("id").GetGuid();
+        var workerTaskId = executionJson.RootElement.GetProperty("workerTaskId").GetGuid();
 
         using var duplicate = new HttpRequestMessage(HttpMethod.Post,
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations")
@@ -819,6 +825,32 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, status.StatusCode);
         using var statusJson = await JsonDocument.ParseAsync(await status.Content.ReadAsStreamAsync());
         Assert.Equal("Queued", statusJson.RootElement.GetProperty("status").GetString());
+
+        var handler = new DataSetValidationTaskHandler(
+            factory.Services.GetRequiredService<IServiceScopeFactory>());
+        var coordinator = new WorkerTaskExecutionCoordinator(
+            new WorkerTaskRepository(workerDb),
+            new WorkerTaskHandlerRegistry([
+                new WorkerTaskHandlerRegistration(DataSetValidationTaskContract.TaskType, handler)
+            ]),
+            new SuccessfulLeaseRenewer(),
+            new WorkerExecutionRegistry(),
+            TimeProvider.System);
+
+        var workerOutcome = await coordinator.ExecuteAsync(
+            tenantId, workerTaskId, "integration-worker", TimeSpan.FromMinutes(5));
+        Assert.Equal(WorkerTaskExecutionOutcome.Succeeded, workerOutcome);
+
+        await using var completedScope = factory.Services.CreateAsyncScope();
+        var completedWorkerDb = completedScope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+        var completedTask = await completedWorkerDb.WorkerTasks.SingleAsync(task => task.Id == workerTaskId);
+        Assert.Equal(WorkerTaskStatus.Succeeded, completedTask.Status);
+        var completedDataSetDb = completedScope.ServiceProvider.GetRequiredService<DataSetDbContext>();
+        var completedExecution = await completedDataSetDb.ValidationExecutions
+            .SingleAsync(item => item.Id == executionId);
+        Assert.Equal("Invalid", completedExecution.Status);
+        Assert.True(completedExecution.ErrorCount > 0);
+        Assert.Equal(2, completedExecution.ProcessedRecords);
 
         workerDb.WorkerTaskTypes.Remove(validationTaskType);
         await workerDb.SaveChangesAsync();
@@ -1543,6 +1575,14 @@ public sealed class PlatformApiIntegrationTests
     {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         return document.RootElement.GetProperty("id").GetGuid();
+    }
+
+    /// <summary>짧은 통합 검증 작업에서 Lease 갱신을 계속 허용합니다.</summary>
+    private sealed class SuccessfulLeaseRenewer : IWorkerTaskLeaseRenewer
+    {
+        public Task<bool> RenewAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken,
+            DateTimeOffset nowUtc, DateTimeOffset expiresAtUtc, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
     }
 
     /// <summary>각 테스트에 독립된 SQLite 데이터베이스와 테스트 전용 인증 방식을 제공합니다.</summary>
