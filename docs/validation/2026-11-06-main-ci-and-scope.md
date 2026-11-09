@@ -826,6 +826,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 같은 임시 데이터베이스 경계를 사용하여 Release WorkerHost를 기동했고 `/health`가 HTTP 200을 반환했으며 WorkerHost 표준 오류 출력은 0바이트였다. 프로세스 종료 후 임시 DB·키·로그 경로가 존재하지 않음을 확인했다.
 - 이번 실행은 코드에 고정된 Development Bypass 프로필과 `EDAN-NONPROD` Tenant·안정적인 `sub`만 사용했다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 이 실행으로 검증하지 않았다.
 
+## 2026-11-10 PR #129 병합 및 최신 main·브랜치 정리 확인
+
+- PR #129 `docs: API 계약 검증 증거 기록`의 head `c9d057d63243815d5cc880a33a4369f4daf4c2c0`은 main에 `84d9ed422ea46058f26d07fa237514de5533c55c`으로 Squash Merge되었다. PR Check [Actions Run #42668308955](https://github.com/namanvarava/Edan.Tensor/actions/runs/42668308955)와 병합 후 main [Actions Run #42668603514](https://github.com/namanvarava/Edan.Tensor/actions/runs/42668603514)은 성공했다.
+- 병합 후 로컬 `main`과 `origin/main`은 같은 SHA `84d9ed422ea46058f26d07fa237514de5533c55c`를 가리키고 작업 디렉터리는 clean이다. `codex/record-api-contract-evidence-20261110`은 원격·로컬에서 삭제했으며, 현재 원격·로컬 브랜치는 `main`만 남았다. 열린 PR은 0건이다.
+- 이 기록은 PR #128의 API 계약·Tenant 선택·Worker 헤더 수정과 PR #129의 증거 문서 병합 상태를 최신 main에 고정한다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub main 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 외부 조건으로 계속 미검증이다.
+
 ## 2026-11-10 PR #128 API 계약·Tenant 선택·Worker 헤더 검증
 
 - API 계약 감사에서 OpenAPI 문서가 실제 Tenant 필터가 요구하는 `X-Tenant-Id`를 모든 보호 경로에서 선택사항으로 표시하던 불일치를 확인했다. 또한 Tenant 선택값이 없을 때 `TenantMembershipAuthorizationFilter`가 선택 Tenant 오류와 membership 오류를 같은 `platform.membership.forbidden` 코드로 반환하여 장애 원인을 구분하기 어려웠다. Worker API의 `Idempotency-Key`와 DLQ 재처리의 `Replay-Request-Id` 누락 응답도 통합 계약으로 고정할 필요가 있었다.
