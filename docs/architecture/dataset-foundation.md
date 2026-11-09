@@ -17,6 +17,8 @@
 - 저장소 할당 후 메타데이터 저장에 실패하면 ReleaseAsync로 보상 해제를 시도합니다.
 - 실제 DB 구현, 트랜잭션형 Outbox, 어댑터별 삭제 재시도 정책은 Infrastructure 단계에서 구현합니다.
 
-## 다음 구현 단계
+## 현재 구현 상태와 다음 결정
 
-DataSet 전용 메타데이터 DbContext와 Migration을 추가하고, Tenant 복합 필터·낙관적 동시성·스키마 revision 관계를 영속화합니다. 이후 DuckDB·Parquet·SQLite 어댑터를 별도 구현체로 연결합니다.
+DataSet 전용 메타데이터 DbContext와 Migration, Tenant 조건 조회, 스키마 revision 영속화와 SQLite 콘텐츠 어댑터가 구현되어 있습니다. API Host는 메타데이터와 콘텐츠를 별도 SQLite 데이터베이스로 연결하고, 저장소 할당 후 메타데이터 저장이 실패하면 콘텐츠 할당을 보상 해제합니다.
+
+현재 승인된 검증 v1 계약은 SQLite 콘텐츠 어댑터와 UTF-8 CSV·JSON 객체 배열만 포함합니다. DuckDB·Parquet 어댑터는 파일 포맷, 스키마 매핑, 용량 계산, 동시 쓰기, 복구와 Migration 호환성에 대한 별도 계약이 승인된 뒤 구현합니다. 계약이 없는 상태에서는 저장소 식별자만 허용하는 가짜 구현을 추가하지 않습니다.
