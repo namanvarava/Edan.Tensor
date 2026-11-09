@@ -11,8 +11,8 @@
 API 계약·공통 오류 처리, 고정된 Development Bypass Tenant·주체 경계, Worker Lease/Fencing·체크포인트·재시도·DLQ·재처리·종료 인계·강제 종료 복구·Tenant 격리·외부 전달 멱등성은 main에 반영되어 있습니다. PR #120 병합 후 Windows 자체 호스팅 Release CI에서 전체 231개 테스트가 통과했습니다. 따라서 다음 구현 단위는 새 Worker 기능을 중복 추가하는 것이 아니라 다음 순서로 진행합니다.
 
 1. API 계약·Tenant·인증 경계와 Worker 장애 증거는 문서·운영 가이드에 동기화되었고, 최신 main에서 실제 Host Smoke까지 확인되었습니다.
-2. 라이선스는 마지막에 승인된 발급 규칙과 별도 LicenseAuthority 솔루션이 준비된 뒤 구현합니다. 그 전에는 API에 라이선스 우회 경계를 추가하지 않습니다.
-3. DuckDB·Parquet·Commercial·WPF는 각각 공개 계약과 수용 기준이 승인된 뒤에만 구현합니다.
+2. DuckDB·Parquet·Commercial·WPF는 공개 계약과 수용 기준이 승인된 뒤 라이선스보다 먼저 구현합니다.
+3. 라이선스는 저장소 내부의 마지막 단계로 둡니다. 승인된 발급 규칙과 별도 LicenseAuthority 솔루션이 준비된 뒤에만 구현하며, 그 전에는 API에 라이선스 우회 경계를 추가하지 않습니다.
 
 개발 초기에는 별도 DB 서버를 설치하지 않습니다. 현재 구조의 로컬 SQLite 파일과 임시 SQLite 테스트 DB를 사용하며, 운영 DB 공급자는 0단계에서 결정한 뒤 별도 Migration 호환성 검증을 수행합니다.
 
@@ -77,9 +77,20 @@ Tenant 생성 및 활성화
 
 이 단계의 완료 기준은 새 DB에서 Swagger 수동 흐름, API 통합 테스트, Worker 실제 프로세스 테스트, Tenant 격리·권한·장애 복구 테스트가 모두 통과하는 상태입니다.
 
-### 4단계. 별도 LicenseAuthority와 개발 라이선스 1개를 구현합니다.
+### 4단계. DuckDB·Parquet·Commercial·WPF 기능을 구현합니다.
 
-이 단계에서는 기존 Licensing 모듈을 복제하지 않고 별도 솔루션에서 발급 Host를 구성합니다.
+- 이 단계에서는 승인된 포맷·데이터·화면 계약을 기준으로 라이선스가 없는 제품 기능을 먼저 완성합니다.
+- DuckDB·Parquet 분석 어댑터와 지원 타입·용량·복구 기준을 구현합니다.
+- 실제 WorkerHost와 외부 수신 시스템의 응답 유실·중복 전달·재시도 E2E를 검증합니다.
+- Commercial의 상품·요금·결제·Webhook·권리·Tenant별 entitlement를 구현합니다.
+- WPF 클라이언트의 승인된 화면과 업무 흐름을 구현합니다.
+- 역할 변경·폐기, 초대 위임, 작업별 CRUD, 동적 정책 등 승인된 고급 권한 기능을 구현합니다.
+
+이 단계의 완료 기준은 각 기능의 승인된 수용 기준, API·데이터·화면 테스트, 운영 장애 시나리오가 모두 통과하는 상태입니다.
+
+### 5단계. 별도 LicenseAuthority와 개발 라이선스 1개를 구현합니다.
+
+이 단계에서는 앞 단계의 비라이선스 제품 기능이 안정된 뒤 기존 Licensing 모듈을 복제하지 않고 별도 솔루션에서 발급 Host를 구성합니다.
 
 - `EDAN.Tensor.LicenseAuthority.sln`은 기존 Licensing Contracts·Domain·Application·Infrastructure 프로젝트를 공유합니다.
 - LicenseId, Site 또는 Tenant, 제품, 기능, 발급일, 시작일, 만료일, KeyId, 서명과 상태 규칙을 승인된 계약으로 확정합니다.
@@ -89,9 +100,9 @@ Tenant 생성 및 활성화
 
 이 단계의 완료 기준은 발급 프로그램의 정상·오류 테스트와 서명된 개발 라이선스 1개가 계약에 맞게 생성되는 상태입니다.
 
-### 5단계. 라이선스 적용 API를 검증합니다.
+### 6단계. 라이선스 적용 API를 검증하고 내부 범위를 닫습니다.
 
-이 단계에서는 4단계의 개발 라이선스를 API에 연결합니다.
+이 단계에서는 5단계의 개발 라이선스를 API에 연결합니다.
 
 - API는 공개키로 서명, 제품, Site 또는 Tenant, 기능, 유효 기간과 KeyId를 검증합니다.
 - 정상, 위조, 만료, 시작 전, 다른 Tenant, 폐기, 알 수 없는 KeyId를 각각 거부합니다.
@@ -100,18 +111,6 @@ Tenant 생성 및 활성화
 - 인증 Bypass와 라이선스 검증 Bypass를 서로 다른 경계로 유지합니다.
 
 이 단계의 완료 기준은 라이선스 적용 API의 통합·보안·회귀 테스트와 Swagger 실행 검증이 통과하는 상태입니다.
-
-### 6단계. 나머지 제품 기능을 구현합니다.
-
-앞 단계의 수직 흐름이 안정된 뒤 다음 기능을 순서대로 구현합니다.
-
-- DuckDB·Parquet 분석 어댑터와 지원 타입·용량·복구 기준을 구현합니다.
-- 실제 WorkerHost와 외부 수신 시스템의 응답 유실·중복 전달·재시도 E2E를 검증합니다.
-- Commercial의 상품·요금·결제·Webhook·권리·Tenant별 entitlement를 구현합니다.
-- WPF 클라이언트의 승인된 화면과 업무 흐름을 구현합니다.
-- 역할 변경·폐기, 초대 위임, 작업별 CRUD, 동적 정책 등 승인된 고급 권한 기능을 구현합니다.
-
-이 단계의 완료 기준은 각 기능의 승인된 수용 기준, API·데이터·화면 테스트, 운영 장애 시나리오가 모두 통과하는 상태입니다.
 
 ### 7단계. 운영 DB·실제 IdP·외부 시스템·배포를 검증합니다.
 
@@ -166,9 +165,9 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --lo
 
 다음 진행은 아래 순서를 유지합니다.
 
-1. 승인된 Licensing 발급 규칙이 제공되면 별도 `LicenseAuthority` 솔루션과 개발 라이선스 1개를 구현하고, 발급·서명·만료·폐기·Tenant 범위 테스트를 추가합니다.
-2. 개발 라이선스를 API에 연결하여 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 `KeyId`를 검증합니다.
-3. DuckDB·Parquet, Commercial, WPF와 실제 외부 수신 시스템은 각각 승인된 계약과 수용 기준이 제공된 뒤 구현합니다.
+1. DuckDB·Parquet·Commercial·WPF의 승인된 계약과 수용 기준이 제공되면 먼저 해당 비라이선스 기능을 구현하고 검증합니다.
+2. 앞 단계가 안정된 뒤 승인된 Licensing 발급 규칙으로 별도 `LicenseAuthority` 솔루션과 개발 라이선스 1개를 구현하고, 발급·서명·만료·폐기·Tenant 범위 테스트를 추가합니다.
+3. 개발 라이선스를 API에 연결하여 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 `KeyId`를 검증합니다. 이 단계로 저장소 내부 구현을 닫습니다.
 4. 운영 DB, 실제 비운영 IdP, 외부 시스템, 배포·백업·성능·보호 규칙은 해당 환경과 권한이 제공된 뒤 별도로 실행합니다.
 
 실제 비운영 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 상세 HTTP 403은 이 문서의 내부 성공 증거로 대체하지 않습니다. 이 외부 조건은 Issue #84와 Milestone #1에서 별도 추적하며, 제공되기 전에는 개발 완료로 판정하지 않습니다.
