@@ -87,6 +87,28 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects/{projectId}/memberships", document, StringComparison.Ordinal);
+        Assert.Contains("\"Bearer\"", document, StringComparison.Ordinal);
+        Assert.Contains("X-Tenant-Id", document, StringComparison.Ordinal);
+    }
+
+    /// <summary>Development 환경의 Swagger UI가 API OpenAPI 문서를 표시합니다.</summary>
+    [Fact]
+    public async Task DevelopmentSwaggerUiDisplaysOpenApiDocument()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/swagger/index.html");
+        var document = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("swagger-ui", document, StringComparison.OrdinalIgnoreCase);
+
+        using var scriptResponse = await client.GetAsync("/swagger/index.js");
+        var script = await scriptResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, scriptResponse.StatusCode);
+        Assert.Contains("/openapi/v1.json", script, StringComparison.Ordinal);
     }
 
     [Fact]
