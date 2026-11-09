@@ -233,6 +233,33 @@ public sealed class PlatformApiIntegrationTests
 
         client.DefaultRequestHeaders.Remove("X-Test-Role");
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "scoped-user");
+        using var memberOrganization = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations", new
+            {
+                code = $"MEMBER-ORG-{suffix}",
+                name = "구성원 조직 생성 시도"
+            });
+        Assert.Equal(HttpStatusCode.Forbidden, memberOrganization.StatusCode);
+
+        using var memberProject = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects", new
+            {
+                code = $"MEMBER-PRJ-{suffix}",
+                name = "구성원 프로젝트 생성 시도"
+            });
+        Assert.Equal(HttpStatusCode.Forbidden, memberProject.StatusCode);
+
+        using var memberInvitation = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/users/invitations", new
+            {
+                email = $"member-{suffix}@example.com",
+                displayName = "구성원 초대 시도"
+            });
+        Assert.Equal(HttpStatusCode.Forbidden, memberInvitation.StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "tenant-user");
         using var organizationGrant = await client.PostAsJsonAsync(
             $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/memberships", new

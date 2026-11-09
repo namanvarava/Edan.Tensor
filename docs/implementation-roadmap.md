@@ -4,7 +4,7 @@
 
 ## 기준 상태
 
-현재 기준 main은 `2a9430dbbb8211f1d6e75dfc3987cbd51b99dd8b`입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON을 제공합니다. Swagger UI와 LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+현재 기준 main은 `c982dbf7c4f01a0b0fc29fd333a304f493713188`입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 개발 초기에는 별도 DB 서버를 설치하지 않습니다. 현재 구조의 로컬 SQLite 파일과 임시 SQLite 테스트 DB를 사용하며, 운영 DB 공급자는 0단계에서 결정한 뒤 별도 Migration 호환성 검증을 수행합니다.
 

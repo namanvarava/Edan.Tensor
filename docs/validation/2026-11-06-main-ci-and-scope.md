@@ -621,3 +621,9 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 병합된 최신 main에서 실제 Windows 권한으로 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 원문 그대로 다시 실행했다. Restore는 성공했고 Build는 경고 0개·오류 0개, 전체 Test는 220개 통과·실패 0개·건너뜀 0개였다.
 - 별도 HTTP Smoke에서 Development API Host가 SQLite Migration과 Seeder를 완료한 뒤 `/health`, `/health/database`, `/swagger/index.html`, `/swagger/index.js`, `/openapi/v1.json`을 모두 200으로 응답했다. OpenAPI 응답에는 `Bearer`와 `X-Tenant-Id`가 포함되었고, 임시 SQLite 데이터는 검증 후 삭제했다.
 - 검증 완료 범위는 로컬 SQLite·Migration·Swagger UI와 Platform/DataSet/Worker API 흐름이다. Development Bypass는 명시적 Development 설정에서만 고정 프로필을 사용하고 경고 로그를 남기며, 운영·CI의 인증·인가 경계를 우회하지 않는다. 실제 비운영 외부 IdP, 운영 DB, LicenseAuthority, GitHub 보호 규칙 HTTP 403은 여전히 환경 미검증이며 Issue #84와 Milestone #1의 별도 후속 조건으로 남긴다.
+
+## 2026-11-09 Tenant API 관리자 경계 감사
+
+- API 계약과 권한 문서를 대조한 결과, 조직 생성·프로젝트 생성·사용자 초대 API가 활성 Tenant Member에도 열려 있어 Tenant Administrator만 구조 변경을 수행한다는 계약을 위반한 사실을 재현했다. 이 경계는 `platform-scoped-authorization.md`와 API 사용 안내의 관리자 규칙을 기준으로 판정했다.
+- 최소 안전 수정으로 세 엔드포인트에 기존 `TenantAdministratorAuthorizationFilter`를 적용했다. Tenant 경로·활성 소속 검증은 유지하고, Member가 조직·프로젝트·사용자를 변경하지 못하는 통합 회귀 테스트를 추가했다.
+- 수정 후 대상 회귀 테스트 1개와 API Host 통합 테스트 23개가 실패 0개·건너뜀 0개로 통과했다. 전체 Release Restore·Build·Test와 PR·main CI는 이 브랜치 병합 전 추가 검증한다.
