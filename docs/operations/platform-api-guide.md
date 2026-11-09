@@ -11,7 +11,7 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 
 ## OpenAPI 문서
 
-.NET 10 기본 OpenAPI 생성 기능을 사용하며, 개발 환경에서 `/openapi/v1.json` 문서를 제공합니다. 현재 API Host에는 Swagger UI 화면을 내장하지 않았으며, OpenAPI JSON을 Swagger UI 또는 호환 도구에 연결해 사용할 수 있습니다.
+.NET 10 기본 OpenAPI 생성 기능과 Swagger UI를 사용하며, Development 환경에서 `/openapi/v1.json`과 `/swagger/index.html`을 제공합니다. Swagger UI는 API 문서와 Bearer 인증·Tenant 헤더 입력을 함께 표시합니다. 운영 환경에서는 두 개발용 문서 경로를 제공하지 않습니다.
 
 ## 인증 및 Tenant 선택
 
@@ -57,11 +57,13 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 }
 ```
 
-지원 역할은 `Member`와 `Administrator`입니다. 현재 두 역할 모두 Tenant 기본 API에 접근할 수 있으며, 조직·프로젝트별 세부 권한은 후속 구현 대상입니다. 동일 Tenant에서 동일 주체의 중복 소속은 HTTP 409로 거부합니다.
+지원 역할은 `Member`와 `Administrator`입니다. 두 역할 모두 허용된 Tenant 구성원 API와 읽기 작업에 접근할 수 있지만, 조직·프로젝트 생성과 사용자 초대·소속 배정·정책 관리는 `Administrator`만 수행할 수 있습니다. 동일 Tenant에서 동일 주체의 중복 소속은 HTTP 409로 거부합니다.
 
 ## 조직 생성
 
 `POST /api/platform/tenants/{tenantId}/organizations`
+
+이 API는 선택한 Tenant의 `Administrator`만 호출할 수 있습니다. 일반 `Member`는 활성 소속이 있어도 Tenant 구조를 변경할 수 없습니다.
 
 ```json
 {
@@ -76,6 +78,8 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 
 `POST /api/platform/tenants/{tenantId}/organizations/{organizationId}/projects`
 
+이 API는 선택한 Tenant의 `Administrator`만 호출할 수 있습니다. 프로젝트가 소속될 조직은 선택한 Tenant에 속해야 합니다.
+
 ```json
 {
   "code": "CORE",
@@ -83,11 +87,11 @@ API Host를 실행한 뒤 다음 경로를 사용합니다.
 }
 ```
 
-프로젝트가 소속될 조직은 선택한 Tenant에 속해야 합니다.
-
 ## 사용자 초대
 
 `POST /api/platform/tenants/{tenantId}/users/invitations`
+
+이 API는 선택한 Tenant의 `Administrator`만 호출할 수 있습니다.
 
 ```json
 {
@@ -224,7 +228,7 @@ Authentication__RequireHttpsMetadata=true
 
 ## 현재 보안 경계와 후속 작업
 
-현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인, 로컬 JWKS 키 조회·회전 검증을 제공합니다. Tenant 내부의 Member와 Administrator 역할은 아직 기본 API 접근에서 동일하게 취급합니다. 사용자 초대 수락과 외부 계정 연결, 토큰 발급·갱신·폐기 및 실제 비운영 외부 IdP 경계 검증은 별도 운영 계약이 필요합니다.
+현재 구현은 외부 주체의 다중 Tenant 소속 저장, 요청별 Tenant 선택, 데이터베이스 기반 활성 소속 확인, 로컬 JWKS 키 조회·회전 검증을 제공합니다. Tenant 내부의 Member와 Administrator는 허용된 구성원·읽기 API를 함께 사용할 수 있지만, Tenant 구조 변경·사용자 초대·소속 배정·정책 관리는 Administrator로 제한합니다. 사용자 초대 수락과 외부 계정 연결, 토큰 발급·갱신·폐기 및 실제 비운영 외부 IdP 경계 검증은 별도 운영 계약이 필요합니다.
 
 완전한 운영 보안 검증 전까지 API의 외부 공개를 제한해야 합니다. 운영 환경에서는 배포 작업에서 승인된 EF Core Migration을 별도로 적용해야 합니다.
 

@@ -294,23 +294,26 @@ public static class PlatformEndpoints
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 조직 생성은 Tenant 관리자만 수행하여 일반 구성원의 Tenant 구조 변경을 차단합니다.
         tenantGroup.MapPost("/{tenantId:guid}/organizations", async (Guid tenantId, CreateOrganizationRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateOrganizationAsync(new TenantId(tenantId), request.Code, request.Name, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
-        });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 프로젝트 생성은 Tenant 관리자만 수행하여 조직 하위 구조 변경을 제한합니다.
         tenantGroup.MapPost("/{tenantId:guid}/organizations/{organizationId:guid}/projects", async (Guid tenantId, Guid organizationId, CreateProjectRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.CreateProjectAsync(new TenantId(tenantId), new OrganizationId(organizationId), request.Code, request.Name, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
-        });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        // 사용자 초대는 Tenant 관리자만 수행하여 외부 주체 연결을 임의로 생성하지 못하게 합니다.
         tenantGroup.MapPost("/{tenantId:guid}/users/invitations", async (Guid tenantId, InviteUserRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
             var result = await service.InviteUserAsync(new TenantId(tenantId), request.Email, request.DisplayName, token);
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
-        });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         // 자원과 정책의 Tenant 범위는 요청 본문이 아닌 선택된 Tenant 헤더와 데이터베이스 소속 검증으로 결정합니다.
         group.MapPost("/resources", async (CreateResourceRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
