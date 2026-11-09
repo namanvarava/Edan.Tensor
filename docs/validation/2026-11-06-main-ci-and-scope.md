@@ -836,10 +836,17 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 
 - 검증 대상은 PR #130 병합 후 main `cf18d0436710e4440ff9dc90d415e1bf6bd85bbd`이며, 병합 후 main CI [Actions Run #42670256154](https://github.com/namanvarava/Edan.Tensor/actions/runs/42670256154)은 Restore·Build·Test를 성공시켰다.
 - 요구된 `dotnet restore EDAN.Tensor.sln`은 현재 Work에서 종료 코드 0으로 완료했다.
-- 요구된 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 종료 코드 1로 끝났고, 출력에는 경고 0개·오류 0개만 표시되었다. 단일 노드와 공유 컴파일을 끈 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false`는 전체 프로젝트를 경고 0개·오류 0개, 종료 코드 0으로 완료했다. 따라서 이번 Build 실패는 제품 컴파일 오류가 아니라 OneDrive 작업 경로와 병렬 MSBuild 실행 경계로 분류한다.
+- 요구된 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 `EDAN.Tensor.SharedKernel` 출력 뒤 종료 코드 1로 끝났고, 출력에는 경고 0개·오류 0개만 표시되었다. 단일 노드와 공유 컴파일을 끈 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false`는 전체 프로젝트를 경고 0개·오류 0개, 종료 코드 0으로 완료했다. OneDrive 밖의 임시 checkout에서도 같은 병렬 빌드 실패가 재현되었으므로 제품 컴파일 오류가 아니라 현재 Work의 병렬 MSBuild 실행 경계로 분류한다.
 - 요구된 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 출력 없이 종료 코드 1로 끝났다. 같은 단일 노드·공유 컴파일 비활성화 조건에서도 첫 Testhost가 `vstest.console`의 90초 연결 시간 초과로 중단되었고 assertion·제품 예외 로그는 없었다. 잔류 dotnet·testhost·vstest 프로세스는 확인 후 남지 않도록 정리했다. 로컬 Release Test는 성공으로 표시하지 않으며, Windows 자체 호스팅 CI의 성공 결과로만 제품 회귀를 판정한다.
 - Release ApiHost를 임시 SQLite 네 개와 임시 DataProtection 키 경로로 실제 프로세스 기동했을 때 Migration, 고정 Development Bypass Tenant 초기화, `http://127.0.0.1:5197` 수신 대기와 stderr 0바이트를 확인했다. 같은 Work에서 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, 보호 API의 HTTP 상태는 소켓 접근 경계로 확인되지 않아 모두 환경 미검증으로 남겼다. HTTP 성공으로 확대하거나 운영 설정을 완화하지 않았다.
-- 동일 원인에 대해 원문 명령 무한 재시도, 캐시 삭제, CI 우회, 운영 인증·DataProtection 설정 완화는 수행하지 않았다. 재개 조건은 동기화 폴더 밖의 격리된 Windows checkout 또는 동일한 자체 호스팅 Runner에서 Testhost·loopback TCP 접근 권한을 확보한 뒤 원문 Test와 Host HTTP Smoke를 다시 실행하는 것이다. 이 기록은 제품 실패를 숨기지 않으면서 인프라 실패와 코드 실패를 구분한 증거다.
+- 동일 원인에 대해 원문 명령 무한 재시도, 캐시 삭제, CI 우회, 운영 인증·DataProtection 설정 완화는 수행하지 않았다. 재개 조건은 병렬 MSBuild·Testhost·loopback TCP 접근 권한이 보장된 Windows 자체 호스팅 Runner 또는 동일 수준의 격리 환경에서 원문 Restore·Build·Test와 Host HTTP Smoke를 다시 실행하는 것이다. 이 기록은 제품 실패를 숨기지 않으면서 인프라 실패와 코드 실패를 구분한 증거다.
+
+## 2026-11-10 PR #131 병합 후 main CI 인프라 실패
+
+- PR #131 `docs: 현재 Work 검증 경계와 테스트 기준 기록`의 head `6b861d09879de6fdb91934b534dd192b4134919a`는 main에 `a1d3ce19a43fcb6ac5012b25a4fbc1e9ccccab82`로 Squash Merge되었다. PR Check [Actions Run #42672505068](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672505068)은 Restore·Build·Test를 성공시켰다.
+- 병합 후 main [Actions Run #42672786178](https://github.com/namanvarava/Edan.Tensor/actions/runs/42672786178)은 51초 후 `Failure`로 종료되었다. GitHub Actions 화면의 유일한 Annotation은 `Internal server error. Correlation ID: f25b3d2b-471b-4b15-a2ff-110586259aa1`였고, Job 목록은 비어 있어 제품 단계·테스트 assertion·Runner 로그가 생성되지 않았다.
+- 실패 Job 재실행은 GitHub API에서 `403 This workflow run cannot be retried`로 거부되었다. 서비스 내부 오류와 재실행 권한 경계를 코드 실패로 분류하지 않았고, 캐시 삭제·무한 재시도·보호 정책 우회도 수행하지 않았다. 따라서 최신 main CI는 미검증이며, Run #880과 PR #131 Run #881의 성공을 Run #882 성공으로 대체하지 않는다.
+- 재개 조건은 GitHub Actions 서비스 오류가 해소되고 실패 Run 또는 새 main push에 대해 동일한 자체 호스팅 Restore·Build·Test가 성공하는 것이다. 그 성공 확인 전에는 전체 개발 완료를 선언하지 않는다.
 
 ## 2026-11-10 PR #128 API 계약·Tenant 선택·Worker 헤더 검증
 
@@ -849,3 +856,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 변경 브랜치에서 다음 요구 명령을 실제 실행했다. `dotnet restore EDAN.Tensor.sln`은 성공했고, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개로 성공했다. `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 전체 232개 통과·실패 0개·건너뜀 0개로 종료했다.
 - PR #128의 head `904669c545aee60823db8422d34bc83a09f2b814`에 대한 자체 호스팅 Windows CI Run #875는 Restore·Build·Test·정리를 모두 성공시켰다. PR은 `2341f0704d55ed30804e0b0bc653fcf03a5eadeb`로 Squash Merge되었고, 병합 후 main CI Run #876도 성공했다. 병합 후 로컬 `main`과 `origin/main`은 같은 SHA를 가리켰으며 `codex/api-contract-tenant-worker-20261110`은 로컬·원격에서 삭제했다.
 - 이 검증은 로컬 SQLite·Swagger/OpenAPI와 내부 Platform·DataSet·Worker 계약을 강화한 증거다. 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 검증하지 않았으며 Issue #84와 Milestone #1의 외부 조건으로 계속 추적한다.
+
+## 2026-11-10 동기화 경로 밖 임시 checkout 재검증
+
+- PR #132 검증을 위해 main `a1d3ce19a43fcb6ac5012b25a4fbc1e9ccccab82`을 OneDrive 밖의 명시적 임시 경로 `C:\Users\naman\AppData\Local\Temp\edan-tensor-isolated-20261110`에 detached checkout으로 만들고, 검증 뒤 worktree와 임시 경로가 삭제되었음을 확인했다. 제품 소스와 저장소 설정은 변경하지 않았다.
+- 해당 경로에서 원문 `dotnet restore EDAN.Tensor.sln`은 출력 없이 종료 코드 1을 반환했다. 진단 Restore는 `_FilterRestoreGraphProjectInputItems`의 병렬 MSBuild 작업 실패를 경고 0개·오류 0개 상태로 남겼고, `-m:1 -p:UseSharedCompilation=false`를 적용한 진단 Restore는 종료 코드 0으로 완료했다. 이때 NuGet 취약성 피드 `https://api.nuget.org/v3/index.json` 접근 실패에 따른 `NU1900` 경고가 기록되었다.
+- 같은 경로에서 원문 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`도 `EDAN.Tensor.SharedKernel` 출력 뒤 경고 0개·오류 0개로 종료 코드 1을 반환했다. 단일 노드와 공유 컴파일 비활성화 조건의 Release Build는 종료 코드 0, 오류 0개, `NU1900` 경고 19개로 전체 프로젝트를 완료했다. 따라서 OneDrive는 단독 근본 원인이 아니며 현재 Work의 병렬 MSBuild·NuGet 네트워크 환경 경계가 재현된 것으로 확정한다.
+- 원문 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 출력 없이 정체되었다. API 통합 테스트 프로젝트만 단일 노드로 실행해도 testhost 결과가 생성되지 않았고, 관찰 시점에 dotnet·MSBuild·vstest·testhost 프로세스가 존재하지 않았다. 안전한 제한 관찰 후 중단했으며, 제품 assertion·제품 예외·테스트 실패 로그는 확인되지 않았다. 이 결과를 테스트 성공으로 표시하지 않는다.
+- `dotnet --info`는 SDK 정보 출력 중 Windows Service Control Manager 접근 거부 예외를 기록했고, `dotnet --version` 자체는 성공했다. 따라서 현재 Work의 권한·프로세스 실행·NuGet 네트워크 상태를 저장소 코드 결함으로 추측하지 않는다.
+- 재개 조건은 병렬 MSBuild와 testhost가 실제로 실행되고 로그가 보존되는 자체 호스팅 Windows Runner 또는 동등한 격리 환경, NuGet 감사 피드 접근 또는 그 상태를 판정할 수 있는 네트워크, loopback TCP 접근 권한이다. 조건 충족 후 원문 Restore·Build·Test와 ApiHost/WorkerHost HTTP Smoke를 다시 실행한다.
