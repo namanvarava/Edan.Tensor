@@ -730,3 +730,10 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - 최초 대상 테스트는 새 테스트 파일의 `Xunit` using 누락으로 `FactAttribute` 컴파일 오류가 발생했다. 로그에서 테스트 코드 컴파일 단계의 네임스페이스 누락임을 확인하고 `using Xunit;`만 추가한 뒤 같은 테스트를 재실행했다. 제품 코드 결함으로 오인해 무관한 재시도나 인증·저장소 변경은 하지 않았다.
 - 수정 후 실제 Windows 권한에서 저장 용량 정책 도메인 테스트 2개, API 동시성 회귀 테스트 1개가 통과했다. 단일 노드 Release 전체 검증은 `dotnet restore EDAN.Tensor.sln -m:1` 성공, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1` 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release -m:1 --logger "console;verbosity=minimal"` 전체 227개 통과·실패 0개·건너뜀 0개로 종료 코드 0을 기록했다.
 - 이 변경은 저장 용량 정책의 내부 도메인 오류 계약만 안정화하며, PR Check·main 병합 후 CI 증거를 이 문서의 후속 기록에 추가해야 한다. DuckDB·Parquet·Commercial·LicenseAuthority·WPF와 실제 운영·외부 환경 조건은 계속 별도 범위다.
+
+## 2026-11-09 PR #105 병합 후 저장 용량 정책 오류 계약 최종 검증
+
+- PR #105의 head `d38218b1bee97289b4729ec2b67d231cdafc958e`는 `4022281098003a31ebafb60f9ae4839c84a97efa`로 Squash Merge되었다. PR Check [Actions Run #829](https://github.com/namanvarava/Edan.Tensor/actions/runs/42625496491)와 병합 후 main [Actions Run #830](https://github.com/namanvarava/Edan.Tensor/actions/runs/42625811019)은 자체 호스팅 Windows Runner의 `build-and-test` 작업에서 Restore·Build·Test·정리를 모두 성공시켰다.
+- 변경 브랜치에서 실제 Windows 권한으로 단일 노드 Release Restore·Build·Test를 실행해 Restore 성공, Build 경고 0개·오류 0개, 전체 227개 통과·실패 0개·건너뜀 0개를 확인했다. Platform Domain은 29개, API 통합은 27개이며 새 버전 충돌 도메인 테스트 2개와 API 회귀 테스트 1개가 포함된다.
+- PR #105의 병합된 작업 브랜치 `codex/typed-quota-version-conflict-20261109`는 원격·로컬에서 삭제했다. 병합 후 로컬 `main`과 `origin/main`은 `4022281098003a31ebafb60f9ae4839c84a97efa`로 일치하고, 원격 refs와 로컬 브랜치에는 `main`만 남았다. 열린 PR은 0개다.
+- 이 변경은 `quota_policy.version_conflict`의 내부 오류 계약과 저장 용량 정책 테스트를 안정화한 범위다. 실제 비운영 외부 IdP, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403, DuckDB·Parquet·Commercial·LicenseAuthority·WPF는 여전히 별도 외부 조건 또는 승인된 후속 계약 범위다.
