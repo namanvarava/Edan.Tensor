@@ -626,4 +626,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 
 - API 계약과 권한 문서를 대조한 결과, 조직 생성·프로젝트 생성·사용자 초대 API가 활성 Tenant Member에도 열려 있어 Tenant Administrator만 구조 변경을 수행한다는 계약을 위반한 사실을 재현했다. 이 경계는 `platform-scoped-authorization.md`와 API 사용 안내의 관리자 규칙을 기준으로 판정했다.
 - 최소 안전 수정으로 세 엔드포인트에 기존 `TenantAdministratorAuthorizationFilter`를 적용했다. Tenant 경로·활성 소속 검증은 유지하고, Member가 조직·프로젝트·사용자를 변경하지 못하는 통합 회귀 테스트를 추가했다.
-- 수정 후 대상 회귀 테스트 1개와 API Host 통합 테스트 23개가 실패 0개·건너뜀 0개로 통과했다. 전체 Release Restore·Build·Test와 PR·main CI는 이 브랜치 병합 전 추가 검증한다.
+- 수정 후 대상 회귀 테스트 1개와 API Host 통합 테스트 23개가 실패 0개·건너뜀 0개로 통과했다. PR #90의 head `f937166d61a7de25a0083765df8fef309355fac9`는 `46650d5ba300f73a4bd93f50334120f58f116c5b`로 Squash Merge되었고 PR Check [Actions Run #799](https://github.com/namanvarava/Edan.Tensor/actions/runs/42592249493)와 병합 후 main [Actions Run #800](https://github.com/namanvarava/Edan.Tensor/actions/runs/42592503861)이 성공했다.
+- 병합된 최신 main에서 실제 Windows 권한으로 Restore·Release Build·Release Test를 다시 실행했으며 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 220개 통과·실패 0개·건너뜀 0개를 확인했다. 병합된 작업 브랜치는 로컬·원격에서 삭제했고 최신 main만 남겼다.
+
+## 2026-11-09 Worker 장애 흐름 독립 검증
+
+- Worker Domain 상태 전이·Lease·재시도·DLQ 테스트 21개와 Worker Infrastructure의 프로세스 강제 종료 복구, Coordinator 성공·시작 실패·취소·Lease 갱신 거부·갱신 예외, 외부 전달 응답 유실·5xx·Timeout·종료 인계 테스트 15개를 실제 Windows 권한에서 다시 실행해 모두 통과했다.
+- 프로세스 장애 복구 시험은 저장된 체크포인트와 만료 Lease를 새 DbContext에서 복구하고, 새 Worker의 Fencing Token 증가·Tenant 외 작업 접근 차단·이전 Worker의 체크포인트·완료 쓰기 거부를 확인했다. 재시도 한도 초과는 DLQ로 전이되고, 외부 전달 Timeout은 원문 응답 없이 재시도 가능한 오류로 저장된다.
+- 최신 Release WorkerHost를 임시 SQLite Platform·DataSet·Worker DB 3개로 실제 기동했다. Migration과 Handler 카탈로그 동기화가 완료되고 `/health`가 HTTP 200을 반환했으며 표준 오류 출력은 0자였다. 검증 후 프로세스와 임시 DB 디렉터리를 삭제했고 `ExistsAfterCleanup=False`를 확인했다.
+- 이 단계에서 제품 코드의 추가 결함은 재현되지 않았다. 기존 Lease/Fencing·재시도·DLQ·Timeout·프로세스 복구 구현을 그대로 유지하고, 대상 테스트와 실제 Host Smoke를 재검증 증거로 기록한다. 실제 외부 수신 시스템의 운영 응답 유실 검증은 외부 환경 조건으로 별도 범위에 남긴다.
