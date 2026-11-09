@@ -223,3 +223,9 @@ GitHub API의 main 보호 규칙 조회는 HTTP 403 `Resource not accessible by 
 ## 2026-11-10 외부 전달 loopback 보안 경계 보강
 
 현재 Work의 내부 보안 감사에서 `ExternalDelivery:AllowLoopback=true`가 문서상 Development 전용이지만 운영 설정으로도 전달될 수 있는 경로를 확인했다. 두 Host가 공통 옵션 생성 검증을 사용하도록 수정하여 Development가 아닌 환경에서는 호스트 시작을 중단하고, Development의 격리된 로컬 수신기 장애 검증은 유지한다. 대상 테스트 7개와 전체 Release Test 235개가 통과했으며, PR Check와 main 병합 후 CI 성공 전에는 통합 완료로 판정하지 않는다.
+
+## 2026-11-10 PR #143 병합 후 완료 증거
+
+PR #143은 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`으로 main에 squash merge되었고, PR CI Run #906과 병합 후 main CI Run #907이 성공했다. 병합된 main에서 Release restore·build·test를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 235개 통과·실패 0개·건너뜀 0개를 확인했다. 실제 Development Smoke에서도 임시 SQLite와 Swagger/OpenAPI를 포함한 ApiHost·WorkerHost 흐름이 HTTP 200을 반환했고, Bypass는 격리된 개발 환경에서만 사용했다. Smoke 종료 후 stderr·프로세스·포트·임시 경로가 남지 않았다.
+
+PR #143 작업 브랜치는 원격 삭제와 GitHub API 404를 확인한 뒤 로컬에서도 삭제했으며, 로컬·원격 `main`은 동일한 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`을 가리킨다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거로 완료 처리하지 않고 Issue #84와 Milestone #1의 외부 조건으로 유지한다.

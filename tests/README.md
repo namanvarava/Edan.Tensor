@@ -52,3 +52,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 `ExternalDelivery:AllowLoopback=true`는 Development 환경에서만 허용하도록 두 Host의 옵션 생성 경계를 고정했다. 비개발 환경에서는 잘못된 운영 설정을 호스트 시작 단계에서 거부하고, Development에서는 격리된 로컬 수신기 테스트를 계속 허용한다.
 
 대상 외부 전달 테스트 7개와 솔루션 전체 Release 테스트 235개가 실패 0개·건너뜀 0개로 통과했다. PR Check와 병합 후 main CI 결과가 추가되기 전까지 이 결과는 작업 브랜치 검증으로만 판정한다.
+
+## 2026-11-10 main 최종 검증
+
+PR #143의 [PR CI Run #906](https://github.com/namanvarava/Edan.Tensor/actions/runs/42693768814)과 [main CI Run #907](https://github.com/namanvarava/Edan.Tensor/actions/runs/42694097462)이 성공했다. 병합된 main에서 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 235개 통과·실패 0개·건너뜀 0개를 다시 확인했다. 실제 Development Host Smoke는 ApiHost와 WorkerHost의 health·DB health·OpenAPI·Swagger·보호 Tenant API를 모두 HTTP 200으로 확인하고 자원을 정리했다.

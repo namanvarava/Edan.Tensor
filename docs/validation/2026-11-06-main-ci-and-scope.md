@@ -918,3 +918,12 @@ README와 일부 초기 설계 문서는 과거 기반 단계의 표현을 포�
 - `LoopbackAllowanceIsRejectedOutsideDevelopment`는 비개발 환경의 허용을 거부하고, `LoopbackAllowanceIsAcceptedInDevelopment`는 개발 환경의 격리 테스트만 허용하는 재발 방지 회귀다. 기존 외부 전달·Tenant·Worker·API 경계는 변경하지 않았다.
 - 수정 브랜치에서 대상 외부 전달 테스트 7개가 통과했고, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 235개 통과·실패 0개·건너뜀 0개로 완료했다. PR Check와 병합 후 main CI 결과는 후속 기록에 추가하며, 그 전에는 main 통합 완료로 판정하지 않는다.
 - 이 수정은 인증 Bypass가 아닌 외부 전달 loopback 허용 경계만 다룬다. 실제 외부 수신 시스템, 운영 DB, 외부 IdP Metadata/JWKS·Issuer·Audience·Tenant·사용자·안정적인 `sub`·키 회전, GitHub main 보호 규칙 HTTP 403은 기존 외부 조건으로 계속 미검증이다.
+
+## 2026-11-10 PR #143 병합 및 최종 main 재검증
+
+- PR #143 `fix: 운영 환경 loopback 외부 전달 허용 차단`의 head `ad3cd366f78466d945566570143b64fe97778493`는 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`으로 squash merge되었다. PR 자체 [Actions Run #906](https://github.com/namanvarava/Edan.Tensor/actions/runs/42693768814)과 병합 후 main [Actions Run #907](https://github.com/namanvarava/Edan.Tensor/actions/runs/42694097462)은 Restore·Release Build·Release Test를 성공시켰다.
+- 병합 후 로컬 `main`에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고, Release Build는 경고 0개·오류 0개, 전체 Release Test는 235개 통과·실패 0개·건너뜀 0개였다.
+- 병합된 Release 산출물의 실제 Development Smoke에서 임시 SQLite 4개로 ApiHost와 WorkerHost를 기동했다. ApiHost `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`와 WorkerHost `/health`가 모두 HTTP 200을 반환했다. 고정 Development Bypass는 이 격리 검증에서만 사용했으며 실제 외부 IdP 검증을 대체하지 않는다.
+- Smoke 종료 후 ApiHost·WorkerHost stderr는 각각 0바이트였고, 시작 프로세스 0개·5061/5062 포트 Listen 0개·임시 Smoke 디렉터리 삭제를 확인했다. 정리 하네스의 빈 stderr 처리 오류는 원인을 확인한 뒤 0바이트 처리로 수정하고 동일 Smoke를 재실행해 성공 결과를 확보했다.
+- 병합된 main의 HEAD와 `origin/main`은 모두 `9c6322dc4782b45d8eb7d25a1890d6aeceb08c33`이다. PR #143의 작업 브랜치 `codex/guard-loopback-development-only-20261110`은 원격 삭제 후 GitHub API에서 404를 확인했고, 로컬에서도 삭제하여 현재 로컬 브랜치는 `main`만 남았다.
+- 인증 Bypass, 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템, GitHub main 보호 규칙 HTTP 403의 외부 검증 범위는 변경하지 않았다. 이 항목들은 Issue #84와 Milestone #1의 재개 조건으로 남는다.
