@@ -60,9 +60,19 @@ public sealed class TenantMembershipAuthorizationFilter(
         if (string.IsNullOrWhiteSpace(subjectId))
             return Forbidden();
 
+        TenantId tenantId;
         try
         {
-            if (!await memberships.HasActiveMembershipAsync(tenantContext.TenantId, subjectId,
+            tenantId = tenantContext.TenantId;
+        }
+        catch (InvalidOperationException)
+        {
+            return TenantSelectionForbidden();
+        }
+
+        try
+        {
+            if (!await memberships.HasActiveMembershipAsync(tenantId, subjectId,
                     context.HttpContext.RequestAborted))
                 return Forbidden();
         }
@@ -70,6 +80,12 @@ public sealed class TenantMembershipAuthorizationFilter(
 
         return await next(context);
     }
+
+    /// <summary>Tenant 선택값이 없거나 유효하지 않을 때 사용할 거부 응답을 반환합니다.</summary>
+    /// <returns>Tenant 선택 오류를 나타내는 403 응답을 반환합니다.</returns>
+    private static IResult TenantSelectionForbidden() =>
+        Results.Json(new ApiError("platform.tenant.forbidden", "선택한 테넌트에 접근할 권한이 없습니다."),
+            statusCode: StatusCodes.Status403Forbidden);
 
     private static IResult Forbidden() =>
         Results.Json(new ApiError("platform.membership.forbidden", "선택한 테넌트의 활성 구성원이 아닙니다."),

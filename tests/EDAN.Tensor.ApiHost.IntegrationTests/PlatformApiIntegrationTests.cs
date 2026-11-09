@@ -100,7 +100,21 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("Replay-Request-Id", document, StringComparison.Ordinal);
 
         using var openApiJson = JsonDocument.Parse(document);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/{tenantId}/datasets/{dataSetId}", "get", requiredTenantHeader: true);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/resources", "post", requiredTenantHeader: true);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/mine", "get", requiredTenantHeader: false);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants", "post", requiredTenantHeader: false);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/{tenantId}/activate", "post", requiredTenantHeader: false);
+        AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
+            "/api/platform/tenants/{tenantId}/memberships", "post", requiredTenantHeader: false);
         AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/datasets/{dataSetId}/validations", "post", "Idempotency-Key");
+        AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/tasks", "post", "Idempotency-Key");
+        AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/deliveries", "post", "Idempotency-Key");
         AssertRequiredHeader(openApiJson.RootElement, "/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", "post", "Replay-Request-Id");
 
         static void AssertRequiredHeader(JsonElement document, string path, string method, string name)
@@ -110,6 +124,20 @@ public sealed class PlatformApiIntegrationTests
                 string.Equals(parameter.GetProperty("name").GetString(), name, StringComparison.Ordinal)
                 && parameter.GetProperty("in").GetString() == "header"
                 && parameter.GetProperty("required").GetBoolean());
+        }
+
+        static void AssertBearerSecurityAndTenantHeader(
+            JsonElement document, string path, string method, bool requiredTenantHeader)
+        {
+            var operation = document.GetProperty("paths").GetProperty(path).GetProperty(method);
+            Assert.Contains(operation.GetProperty("security").EnumerateArray(), requirement =>
+                requirement.TryGetProperty("Bearer", out _));
+            var tenantHeader = Assert.Single(operation.GetProperty("parameters").EnumerateArray(), parameter =>
+                string.Equals(parameter.GetProperty("name").GetString(), "X-Tenant-Id", StringComparison.Ordinal)
+                && parameter.GetProperty("in").GetString() == "header");
+            var actualRequired = tenantHeader.TryGetProperty("required", out var required)
+                && required.GetBoolean();
+            Assert.Equal(requiredTenantHeader, actualRequired);
         }
     }
 
@@ -1044,6 +1072,17 @@ public sealed class PlatformApiIntegrationTests
 
         client.DefaultRequestHeaders.Remove("X-Test-Subject");
         client.DefaultRequestHeaders.Add("X-Test-Subject", "worker-admin");
+        using var missingIdempotencyKey = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.enqueue", payloadReference = "private://payload/input", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.BadRequest, missingIdempotencyKey.StatusCode);
+        Assert.Equal("worker.enqueue.idempotency_key_required", await ReadErrorCodeAsync(missingIdempotencyKey));
+
+        using var missingReplayRequestId = await client.PostAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters/{Guid.NewGuid()}/replay", null);
+        Assert.Equal(HttpStatusCode.BadRequest, missingReplayRequestId.StatusCode);
+        Assert.Equal("worker.dead_letter.replay_request_id_required", await ReadErrorCodeAsync(missingReplayRequestId));
+
         // WorkerHost가 등록하지 않은 작업 유형은 작업 레코드를 만들지 않고 거부합니다.
         client.DefaultRequestHeaders.Add("Idempotency-Key", $"unknown:{Guid.NewGuid():N}");
         using var unknownTaskType = await client.PostAsJsonAsync(
@@ -1342,6 +1381,27 @@ public sealed class PlatformApiIntegrationTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>Tenant 선택 헤더가 없으면 보호 API가 업무 처리 전에 일관된 거부 오류를 반환합니다.</summary>
+    [Fact]
+    public async Task TenantScopedApiRequiresTenantSelectionHeader()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+
+        using var response = await client.PostAsJsonAsync("/api/platform/resources", new
+        {
+            organizationId = (Guid?)null,
+            projectId = (Guid?)null,
+            resourceType = "DataSet",
+            name = "Tenant 헤더 누락"
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("platform.tenant.forbidden", await ReadErrorCodeAsync(response));
     }
 
     /// <summary>저장 용량 정책 API가 Tenant 관리자·페이지·감사·낙관적 동시성 경계를 함께 적용합니다.</summary>

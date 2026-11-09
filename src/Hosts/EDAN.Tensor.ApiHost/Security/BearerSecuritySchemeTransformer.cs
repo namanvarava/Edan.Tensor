@@ -61,12 +61,15 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
                     parameter.In == ParameterLocation.Header
                     && string.Equals(parameter.Name, "X-Tenant-Id", StringComparison.OrdinalIgnoreCase)))
                 {
+                    var tenantHeaderRequired = RequiresTenantHeader(path.Key);
                     operation.Value.Parameters.Add(new OpenApiParameter
                     {
                         Name = "X-Tenant-Id",
                         In = ParameterLocation.Header,
-                        Required = false,
-                        Description = "Tenant 범위를 지정합니다. Tenant 소속과 요청 권한 검사는 서버에서 수행합니다."
+                        Required = tenantHeaderRequired,
+                        Description = tenantHeaderRequired
+                            ? "Tenant 범위를 지정합니다. Tenant 경로 API와 선택 Tenant 기반 API에서는 필수이며 소속과 요청 권한 검사는 서버에서 수행합니다."
+                            : "Tenant 범위를 선택할 때 지정합니다. Tenant 소속과 요청 권한 검사는 서버에서 수행합니다."
                     });
                 }
 
@@ -94,6 +97,23 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>요청 경로가 Tenant 선택 헤더를 반드시 요구하는지 판단합니다.</summary>
+    /// <param name="path">OpenAPI에 기록된 요청 경로를 지정합니다.</param>
+    /// <returns>경로의 Tenant 범위가 헤더를 요구하면 <c>true</c>를 반환합니다.</returns>
+    private static bool RequiresTenantHeader(string path)
+    {
+        if (string.Equals(path, "/api/platform/resources", StringComparison.Ordinal)
+            || string.Equals(path, "/api/platform/policies", StringComparison.Ordinal))
+            return true;
+
+        if (!path.StartsWith("/api/platform/tenants/{tenantId}", StringComparison.Ordinal))
+            return false;
+
+        // 플랫폼 관리자는 Tenant 선택 없이 생성 직후의 활성화·최초 소속 배정을 수행합니다.
+        return !string.Equals(path, "/api/platform/tenants/{tenantId}/activate", StringComparison.Ordinal)
+            && !string.Equals(path, "/api/platform/tenants/{tenantId}/memberships", StringComparison.Ordinal);
     }
 
     private static bool TryGetRequiredHeader(string path, out string name, out string description)
