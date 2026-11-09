@@ -4,7 +4,7 @@
 
 ## 기준 상태
 
-제품 코드 기준 main은 `abe0c5ad55928b7dd22121484c07cfcfc4f952a5`이며, 문서 포함 최신 main은 `319b61ee6b2523f0257908627748c48185f298df`입니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
+PR #111 병합 전 제품 코드 기준 main은 `abe0c5ad55928b7dd22121484c07cfcfc4f952a5`였고, PR #111 병합 결과는 `319b61ee6b2523f0257908627748c48185f298df`였습니다. 이 SHA는 검증 기록의 역사 기준이며 현재 main SHA는 GitHub와 검증 기록의 최신 항목에서 확인합니다. API Host는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠를 분리한 SQLite 연결과 EF Core Migration을 사용하고, Development 환경에서 OpenAPI JSON과 Swagger UI를 제공합니다. `/health`와 `/health/database`는 네 개 로컬 데이터베이스의 연결·기본 스키마 읽기를 확인하며, DataSet 검증 예약은 Tenant 범위 Idempotency-Key로 중복 실행을 수렴시킵니다. 공통 예외 처리기는 안정적인 API 오류 코드와 한국어 설명을 반환하고 내부 예외 상세를 외부 응답에서 숨깁니다. Worker 등록 실패 시 External Delivery와 DataSet Validation의 새 미실행 레코드는 내부 보상 조건으로 정리합니다. 저장 용량 정책은 Tenant 관리자 API에서 페이지·변경 이력·낙관적 동시성으로 관리하고, 버전 충돌은 안정적인 도메인 오류 코드로 반환합니다. Development Bypass는 코드에 고정된 비운영 Tenant와 안정적인 `sub`를 사용하며 외부 설정으로 재정의할 수 없습니다. LicenseAuthority의 실제 발급 업무는 아직 구현하지 않았습니다.
 
 ### 현재 이동 게이트
 
