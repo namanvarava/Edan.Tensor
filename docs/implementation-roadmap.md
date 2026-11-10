@@ -297,3 +297,9 @@ PR #162의 head `61483289fd4319aba1ad69c7f482d31b30aab9e7`에 대한 [PR CI Run 
 서버의 DataSet 검증 상세 `take` 상한 500과 Worker DLQ `pageSize` 상한 100을 typed Client의 선행 검증과 일치시켰다. `take=501`과 `pageSize=101`의 API HTTP 400 오류 코드, Client의 잘못된 입력 사전 차단, 한국어 XML·운영 가이드 설명을 회귀 검증했다.
 
 PR #164의 head `89a62cd526ab98667f4d75f4c340499b96bbdb21`에 대한 [PR CI Run #948](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733699062)와 Squash Merge 후 main 커밋 `f2d303c607b21b418e98f688000262441f48d837`의 [main CI Run #949](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733986905)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했고, 작업 브랜치는 로컬·원격에서 삭제했다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.
+
+## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
+
+Worker 서버의 checked 페이지 오프셋 계산과 typed Client의 입력 검증을 일치시켰다. `page=int.MaxValue`와 기본 `pageSize=50`처럼 서버가 `worker.dead_letter.invalid_page`로 거부할 조합을 Client가 HTTP 요청 전에 차단하며, XML 문서·운영 가이드와 회귀 테스트를 함께 갱신했다.
+
+PR #166의 head `c57952206fca5e161a8c392911f45cac82e1bc57`에 대한 [PR CI Run #952](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736302956)와 Squash Merge 후 main 커밋 `7be3d93fbfc56ed2767ea985ad5b59ece30af2e7`의 [main CI Run #953](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736549387)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. 이 증거는 승인된 내부 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.
