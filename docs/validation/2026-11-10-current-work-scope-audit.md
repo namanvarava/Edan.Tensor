@@ -135,3 +135,13 @@ WorkerHost의 기존 `/health`는 프로세스가 응답하는지만 확인하�
 WorkerHost health 통합 테스트의 `finally`가 임시 DB 디렉터리를 삭제할 때 `using var`로 선언한 WebApplicationFactory·HttpClient·응답이 아직 메서드 스코프에 남아 있을 수 있는 정리 순서 결함을 확인했다. Windows에서는 이 순서가 파일 핸들 잠금으로 임시 디렉터리 삭제 실패와 후속 테스트 오염을 만들 수 있다. 삭제 재시도나 지연을 추가하는 대안은 원인을 숨기므로 선택하지 않고, 테스트 블록 안에서 Host·Client·응답을 먼저 폐기하는 최소 수정으로 정리 순서를 고정했다.
 
 수정 후 정상·콘텐츠 DB 열기 실패 WorkerHost health 통합 테스트 2개가 통과했다. 이 변경은 제품 실행 경계를 바꾸지 않으며, 임시 자원 정리 실패가 재발하지 않도록 테스트 구조 자체를 고정한 것이다.
+
+## 2026-11-10 PR #177 병합 후 Release 재검증
+
+PR #177은 WorkerHost health 통합 테스트의 임시 자원 정리 순서를 고정하여 `9207f318b13b17a422f1dbd404aff7658b07d7ee` 변경을 검증했고, PR CI [Run #42750885076](https://github.com/namanvarava/Edan.Tensor/actions/runs/42750885076)이 성공한 뒤 `f4c54b8f294b0845dabf62f689a3a985c4b567af`로 `main`에 Squash Merge되었다. 병합 후 main CI [Run #42751232084](https://github.com/namanvarava/Edan.Tensor/actions/runs/42751232084)도 성공했다.
+
+병합 후 실제 호스트에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 다시 실행했다. Restore는 모든 프로젝트가 최신 상태였고, Build는 경고 0개·오류 0개, Test는 248개 통과·실패 0개·건너뜀 0개였다. `tools/host-smoke.ps1`는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고 양쪽 stderr 0바이트와 임시 디렉터리 삭제를 확인했다.
+
+제한된 Work 실행 경계에서는 병렬 솔루션 복원·빌드가 MSBuild 프로젝트 그래프 단계에서 오류·경고 없이 종료 코드 1을 반환했고, VSTest가 testhost에 연결하지 못하는 현상이 직접 `dotnet vstest`에서도 재현되었다. 동일 커밋을 외부 실행 경계에서 위 명령과 Smoke로 성공시켜 코드·테스트 실패와 실행 환경 제한을 분리했다. 이 환경 현상은 제품 결함으로 기록하지 않으며, 다음 로컬 재현에서는 외부 실행 경계 또는 직렬 MSBuild를 사용한다.
+
+이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위에 한정한다. 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, Licensing·Commercial·DuckDB/Parquet·WPF는 Issue #84 및 Milestone #1의 외부 조건 또는 별도 승인 계약이 필요하므로 완료로 판정하지 않는다.
