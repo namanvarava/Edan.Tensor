@@ -41,7 +41,7 @@ dotnet test EDAN.Tensor.LicenseAuthority.sln --configuration Release --no-build 
 
 별도 솔루션 테스트는 키 생성, 5년 기간, 단일 발급 재사용, 정상 Tenant·제품·기능, 위조 서명, 만료, 시작 전, 다른 Tenant, 기능 불일치, 폐기, 알 수 없는 KeyId, 운영 환경의 개발 라이선스 차단을 서비스 경계에서 확인합니다.
 
-전체 솔루션의 최종 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 12개 테스트 프로젝트에서 264개 통과·실패 0개·건너뜀 0개를 기록했습니다. 취약 패키지 감사도 모든 프로젝트에서 취약 패키지 없음으로 끝났습니다.
+전체 솔루션의 최종 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 12개 테스트 프로젝트에서 265개 통과·실패 0개·건너뜀 0개를 기록했습니다. 취약 패키지 감사도 모든 프로젝트에서 취약 패키지 없음으로 끝났습니다.
 
 권한이 허용된 실행 환경에서 `tools/license-authority-smoke.ps1`를 실행하여 Development health 200, 단일 개발 라이선스 발급·재사용과 5년 기간, 공개 JWK 200, 정상 검증 200, Production 개발 라이선스 차단 403, 폐기 라이선스 차단 403을 확인했습니다. 로그에는 토큰이 없었고 임시 디렉터리는 삭제되었습니다. 같은 환경에서 `tools/host-smoke.ps1`의 ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API가 모두 HTTP 200이고 양쪽 stderr 0바이트임을 재확인했습니다.
 
@@ -59,6 +59,10 @@ PR #202의 head `723e3eae74046ac7beaedfb56535fac974aeb45f`에 대한 [PR CI Run 
 ## 2026-11-10 로컬 SQLite 네 저장소 백업·복원 검증
 
 PR #204의 [PR CI Run #42834109348](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834109348)와 병합 후 main [CI Run #42834477918](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834477918)이 성공했고, 병합 main은 `95e7a8852ae548291bc1f29d83c5c1147c772921`이다. ApiHost 통합 회귀는 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 네 SQLite 파일에 대해 WAL 정리, `PRAGMA integrity_check`, `VACUUM INTO`, 별도 복원 경로, 콘텐츠 보존을 확인한다. 전체 Release Test는 264개 통과·실패 0개·건너뜀 0개이며, PR #204의 로컬·원격 작업 브랜치는 삭제되었다.
+
+## 2026-11-11 Worker Migration 스냅샷 검증
+
+PR #206은 현재 Worker 모델과 Migration 스냅샷의 관계형 모델 차이를 감지하는 회귀 테스트를 추가했다. PR CI [Run #42839417787](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839417787)와 병합 후 main [Run #42839791924](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839791924)이 성공했고, 병합 main은 `bad8ed628fa34823b776232c2d9bbb753e42ccc5`이다. 최신 main의 전체 Release Test는 265개 통과·실패 0개·건너뜀 0개, 별도 LicenseAuthority Test는 11개 통과·실패 0개·건너뜀 0개였다. 이 변경은 라이선스 계약과 제품 API 라이선스 강제 경계를 변경하지 않는다.
 
 ## 남은 조건
 
