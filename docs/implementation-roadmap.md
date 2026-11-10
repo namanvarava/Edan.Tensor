@@ -328,3 +328,11 @@ WorkerHost 전용 임시 SQLite 통합 테스트 2개는 정상 연결과 콘텐
 PR #175 자체 CI [Run #42748810618](https://github.com/namanvarava/Edan.Tensor/actions/runs/42748810618)와 병합 후 main CI [Run #42749039001](https://github.com/namanvarava/Edan.Tensor/actions/runs/42749039001)이 성공했고, main 병합 커밋은 `212f5b64a6d27ecd4ea21cb5f3597b1a461a5cf2`다. 병합 후 동일한 Release Restore·Build·Test와 Host Smoke를 재실행해 같은 결과를 확인했다.
 
 WorkerHost health 통합 테스트의 임시 DB 정리 순서도 보강했다. `using var` 자원이 `finally` 이후까지 살아 있을 수 있어 Windows 파일 잠금으로 삭제가 실패할 가능성이 있었으며, 지연·재시도 대신 테스트 블록 안에서 Host·Client·응답을 먼저 폐기하도록 수정했다. 정상·장애 경계 2개를 다시 통과시켜 중단 원인과 정리 경계를 고정했다.
+
+## 2026-11-10 PR #177 병합 후 최신 내부 검증 기준
+
+PR #177은 위 테스트 정리 순서를 보강한 변경이며, PR CI [Run #42750885076](https://github.com/namanvarava/Edan.Tensor/actions/runs/42750885076) 성공 후 `f4c54b8f294b0845dabf62f689a3a985c4b567af`로 `main`에 Squash Merge되었다. 병합 후 main CI [Run #42751232084](https://github.com/namanvarava/Edan.Tensor/actions/runs/42751232084)도 성공했다.
+
+실제 호스트의 Release Restore·Build·Test는 각각 성공, 경고 0개·오류 0개, 248개 통과·실패 0개·건너뜀 0개를 기록했다. Host Smoke는 임시 SQLite 네 개와 Development Bypass를 사용하여 ApiHost·WorkerHost의 health·database health, OpenAPI, Swagger UI, Tenant API를 HTTP 200으로 확인하고 stderr와 임시 데이터를 정리했다.
+
+제한된 Work 실행 경계의 병렬 MSBuild와 VSTest testhost 연결 실패는 외부 실행 경계에서 동일 커밋을 성공시켜 환경 문제로 분리했다. 이 현상은 제품 결함이 아니며, 복원·빌드가 같은 환경에서 중단되면 직렬 MSBuild 또는 외부 실행 경계에서 원인을 재확인한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403과 Licensing은 Issue #84 및 Milestone #1의 별도 외부 조건으로 남긴다.

@@ -75,3 +75,9 @@ DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작�
 ## 2026-11-10 WorkerHost 데이터베이스 health 경계
 
 `WorkerHostHealthIntegrationTests`는 임시 SQLite 네 개를 실제 WorkerHost에 연결하여 정상 상태의 `/health/database`가 `Connected/Green`으로 보고하는지, 콘텐츠 데이터베이스를 열 수 없을 때 HTTP 503과 `Disconnected/Red`를 반환하는지 확인한다. Release 전체 테스트는 이 회귀를 포함하여 248개 통과·실패 0개·건너뜀 0개이며, `tools/host-smoke.ps1`는 정상 경계를 실제 Host 기동으로 재확인한다. 이 검증은 Development Bypass와 로컬 SQLite만 사용하므로 실제 운영 DB·외부 IdP·외부 시스템 검증을 대체하지 않는다.
+
+## 2026-11-10 PR #177 병합 후 최신 검증
+
+PR #177의 [PR CI Run #42750885076](https://github.com/namanvarava/Edan.Tensor/actions/runs/42750885076)과 병합 후 [main CI Run #42751232084](https://github.com/namanvarava/Edan.Tensor/actions/runs/42751232084)이 성공했다. 병합된 main SHA는 `f4c54b8f294b0845dabf62f689a3a985c4b567af`이며, 실제 호스트에서 지정된 Release Restore·Build·Test를 성공시켜 Build 경고 0개·오류 0개, 전체 Test 248개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke도 ApiHost·WorkerHost의 필수 HTTP 경계를 모두 200으로 확인하고 stderr 0바이트와 임시 데이터 삭제를 확인했다.
+
+제한된 Work 실행 경계에서 발생한 병렬 MSBuild 종료 코드 1과 VSTest testhost 연결 실패는 외부 실행 경계의 동일 커밋 성공으로 환경 문제임을 확인했다. 이 내부 검증은 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403·Licensing을 포함하지 않는다.
