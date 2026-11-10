@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Data.Sqlite;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.Validation;
@@ -158,6 +159,120 @@ public sealed class PlatformApiIntegrationTests
                 && required.GetBoolean();
             Assert.Equal(requiredTenantHeader, actualRequired);
         }
+    }
+
+    /// <summary>API Host가 사용하는 네 개의 SQLite 데이터베이스를 백업하고 새 경로에서 복원할 수 있는지 검증합니다.</summary>
+    /// <remarks>
+    /// 개발 환경의 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 데이터베이스를 각각 백업합니다.
+    /// 백업 전 WAL을 정리하고 무결성을 확인한 다음, 백업 파일을 별도 복원 경로에 복사하여 다시 무결성과 테이블 존재를 확인합니다.
+    /// 이 검증은 운영 데이터베이스 공급자나 외부 백업 저장소의 계약을 대신하지 않습니다.
+    /// </remarks>
+    [Fact]
+    public async Task LocalSqliteBackupAndRestoreCoversAllHostDatabases()
+    {
+        var backupRoot = Path.Combine(Path.GetTempPath(), $"edan-tensor-backup-restore-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(backupRoot);
+
+        try
+        {
+            using (var factory = new ApiHostFactory())
+            using (var client = factory.CreateClient())
+            {
+                using var health = await client.GetAsync("/health/database");
+                Assert.Equal(HttpStatusCode.OK, health.StatusCode);
+
+                await using (var scope = factory.Services.CreateAsyncScope())
+                {
+                    var storageAdapter = scope.ServiceProvider.GetRequiredService<IDataSetStorageAdapter>();
+                    var allocation = new DataSetStorageAllocation(
+                        new EDAN.Tensor.DataSet.Domain.Model.DataSetId(Guid.NewGuid()),
+                        new EDAN.Tensor.DataSet.Domain.Model.DataSetScope(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
+                    var reference = await storageAdapter.AllocateAsync(allocation);
+                    await using var content = new MemoryStream("backup-restore-marker"u8.ToArray());
+                    await storageAdapter.WriteAsync(
+                        allocation,
+                        reference,
+                        content,
+                        new DataSetStorageQuotaPolicy(null, null, null, null));
+                }
+
+                var databases = new[]
+                {
+                    (Name: "platform", Path: factory.ConfiguredDatabases[0]),
+                    (Name: "worker", Path: factory.ConfiguredDatabases[1]),
+                    (Name: "dataset", Path: factory.ConfiguredDatabases[2]),
+                    (Name: "dataset-content", Path: factory.ConfiguredDatabases[3])
+                };
+
+                foreach (var database in databases)
+                {
+                    var backupPath = Path.Combine(backupRoot, database.Name + ".backup.db");
+                    var restoredPath = Path.Combine(backupRoot, database.Name + ".restored.db");
+                    await BackupSqliteAsync(database.Path, backupPath);
+                    File.Copy(backupPath, restoredPath, overwrite: true);
+
+                    Assert.True(File.Exists(backupPath));
+                    Assert.True(File.Exists(restoredPath));
+                    Assert.True(await IsHealthySqliteDatabaseAsync(restoredPath));
+                }
+
+                await using var restoredContent = new SqliteConnection(
+                    $"Data Source={Path.Combine(backupRoot, "dataset-content.restored.db")};Pooling=False");
+                await restoredContent.OpenAsync();
+                await using var contentCommand = restoredContent.CreateCommand();
+                contentCommand.CommandText = "SELECT COUNT(*) FROM DataSetContent WHERE Content = $content;";
+                contentCommand.Parameters.AddWithValue("$content", "backup-restore-marker"u8.ToArray());
+                Assert.Equal(1L, (long)(await contentCommand.ExecuteScalarAsync() ?? 0L));
+            }
+
+            Assert.Equal(8, Directory.GetFiles(backupRoot, "*.db").Length);
+        }
+        finally
+        {
+            if (Directory.Exists(backupRoot))
+                Directory.Delete(backupRoot, recursive: true);
+        }
+    }
+
+    /// <summary>SQLite 원본의 WAL 변경을 정리하고 무결성이 확인된 백업 파일을 생성합니다.</summary>
+    private static async Task BackupSqliteAsync(string sourcePath, string backupPath)
+    {
+        await using var connection = new SqliteConnection($"Data Source={sourcePath};Pooling=False");
+        await connection.OpenAsync();
+
+        await using (var checkpoint = connection.CreateCommand())
+        {
+            checkpoint.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+            await checkpoint.ExecuteNonQueryAsync();
+        }
+
+        Assert.True(await IsHealthySqliteDatabaseAsync(connection));
+
+        await using var backup = connection.CreateCommand();
+        backup.CommandText = "VACUUM INTO $backupPath;";
+        backup.Parameters.AddWithValue("$backupPath", backupPath);
+        await backup.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>열린 SQLite 연결이 무결성 검사에 통과하고 하나 이상의 테이블을 포함하는지 확인합니다.</summary>
+    private static async Task<bool> IsHealthySqliteDatabaseAsync(string path)
+    {
+        await using var connection = new SqliteConnection($"Data Source={path};Pooling=False");
+        await connection.OpenAsync();
+        return await IsHealthySqliteDatabaseAsync(connection);
+    }
+
+    /// <summary>열린 SQLite 연결의 무결성 결과와 테이블 수를 확인합니다.</summary>
+    private static async Task<bool> IsHealthySqliteDatabaseAsync(SqliteConnection connection)
+    {
+        await using var integrity = connection.CreateCommand();
+        integrity.CommandText = "PRAGMA integrity_check;";
+        var integrityResult = Convert.ToString(await integrity.ExecuteScalarAsync());
+
+        await using var tables = connection.CreateCommand();
+        tables.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table';";
+        var tableCount = Convert.ToInt64(await tables.ExecuteScalarAsync());
+        return string.Equals(integrityResult, "ok", StringComparison.OrdinalIgnoreCase) && tableCount > 0;
     }
 
     /// <summary>Development 환경의 Swagger UI가 API OpenAPI 문서를 표시합니다.</summary>
@@ -1783,6 +1898,15 @@ public sealed class PlatformApiIntegrationTests
             Path.GetTempPath(), $"edan-tensor-dataset-{Guid.NewGuid():N}.db");
         private readonly string _dataSetContentDatabasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-dataset-content-{Guid.NewGuid():N}.db");
+
+        /// <summary>Factory가 현재 호스트에 주입한 네 개의 SQLite 경로를 선언 순서대로 반환합니다.</summary>
+        public IReadOnlyList<string> ConfiguredDatabases =>
+        [
+            _databasePath,
+            _workerDatabasePath,
+            _dataSetDatabasePath,
+            _dataSetContentDatabasePath
+        ];
 
         protected override IHost CreateHost(IHostBuilder builder)
         {
