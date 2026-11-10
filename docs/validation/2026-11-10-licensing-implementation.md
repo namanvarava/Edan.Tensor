@@ -52,6 +52,9 @@ dotnet test EDAN.Tensor.LicenseAuthority.sln --configuration Release --no-build 
 서명 검증을 통과한 토큰이라도 `status`가 알 수 없는 값이거나 시간 Claim이 .NET 범위를 벗어나면 `Enum.Parse` 또는 Unix 시간 변환이 `ArgumentException`을 발생시킬 수 있었다. LicenseAuthority Host에는 전역 예외 변환기가 없으므로 이 입력은 안정적인 라이선스 오류 대신 HTTP 500으로 끝날 수 있었다. 토큰 해석기의 기존 예외 처리 범위를 인자·오버플로 오류까지 확장하여 `licensing.token.invalid`로 거부하는 최소 수정만 적용했다.
 
 서비스 단위 회귀와 실제 HTTP 회귀에서 손상된 상태 Claim을 HTTP 403과 `licensing.token.invalid`로 확인했다. 수정 후 별도 LicenseAuthority 솔루션은 Restore 성공, Release Build 경고 0개·오류 0개, Test 11개 통과·실패 0개·건너뜀 0개를 기록했고, 전체 솔루션은 Restore 성공, Release Build 경고 0개·오류 0개, Test 263개 통과·실패 0개·건너뜀 0개를 기록했다. Host Smoke와 LicenseAuthority Smoke도 성공했으며 토큰·개인키·임시 산출물은 로그와 저장소에 남지 않았다.
+서비스 단위 회귀와 실제 HTTP 회귀에서 손상된 상태 Claim을 HTTP 403과 `licensing.token.invalid`로 확인했다. 수정 후 별도 LicenseAuthority 솔루션은 Restore 성공, Release Build 경고 0개·오류 0개, Test 11개 통과·실패 0개·건너뜀 0개를 기록했고, 전체 솔루션은 Restore 성공, Release Build 경고 0개·오류 0개, Test 263개 통과·실패 0개·건너뜀 0개를 기록했다. Host Smoke와 LicenseAuthority Smoke도 성공했으며 토큰·개인키·임시 산출물은 로그와 저장소에 남지 않았다.
+
+PR #202의 head `723e3eae74046ac7beaedfb56535fac974aeb45f`에 대한 [PR CI Run #42829408127](https://github.com/namanvarava/Edan.Tensor/actions/runs/42829408127)과 병합 후 main [CI Run #42829784097](https://github.com/namanvarava/Edan.Tensor/actions/runs/42829784097)이 성공했다. 병합 main은 `fd26e599c8db76b3a9d0e4d580aa3a733e9c83b6`이며, 이 수정의 원격·로컬 작업 브랜치는 삭제되었다.
 
 ## 남은 조건
 
