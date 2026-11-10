@@ -38,7 +38,7 @@ dotnet test EDAN.Tensor.LicenseAuthority.sln --configuration Release --no-build 
 
 별도 솔루션 테스트는 키 생성, 5년 기간, 단일 발급 재사용, 정상 Tenant·제품·기능, 위조 서명, 만료, 시작 전, 다른 Tenant, 기능 불일치, 폐기, 알 수 없는 KeyId, 운영 환경의 개발 라이선스 차단을 서비스 경계에서 확인합니다.
 
-전체 솔루션의 최종 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 12개 테스트 프로젝트에서 261개 통과·실패 0개·건너뜀 0개를 기록했습니다. 취약 패키지 감사도 모든 프로젝트에서 취약 패키지 없음으로 끝났습니다.
+전체 솔루션의 최종 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 12개 테스트 프로젝트에서 262개 통과·실패 0개·건너뜀 0개를 기록했습니다. 취약 패키지 감사도 모든 프로젝트에서 취약 패키지 없음으로 끝났습니다.
 
 권한이 허용된 실행 환경에서 `tools/license-authority-smoke.ps1`를 실행하여 Development health 200, 단일 개발 라이선스 발급·재사용과 5년 기간, 공개 JWK 200, 정상 검증 200, Production 개발 라이선스 차단 403, 폐기 라이선스 차단 403을 확인했습니다. 로그에는 토큰이 없었고 임시 디렉터리는 삭제되었습니다. 같은 환경에서 `tools/host-smoke.ps1`의 ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API가 모두 HTTP 200이고 양쪽 stderr 0바이트임을 재확인했습니다.
 
