@@ -2,12 +2,47 @@ using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Xunit;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Tests;
 
 public sealed class WorkerTaskRepositoryTests
 {
+    /// <summary>현재 Worker 모델과 Migration 스냅샷이 동일한 저장 구조를 설명하는지 검증합니다.</summary>
+    /// <remarks>
+    /// 모델만 변경하고 Migration 또는 스냅샷을 갱신하지 않으면 새 환경과 기존 환경의 스키마가 달라집니다.
+    /// 이 검증은 실제 데이터베이스를 변경하지 않고 EF Core가 계산한 관계형 모델 차이를 확인합니다.
+    /// </remarks>
+    [Fact]
+    public void MigrationSnapshotMatchesCurrentWorkerModel()
+    {
+        var options = new DbContextOptionsBuilder<WorkerDbContext>()
+            .UseSqlite("Data Source=:memory:")
+            .Options;
+        using var db = new WorkerDbContext(options);
+        var differ = db.GetService<IMigrationsModelDiffer>();
+        var snapshot = new EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations.WorkerDbContextModelSnapshot().Model;
+        var initializedSnapshot = db.GetService<IModelRuntimeInitializer>().Initialize(snapshot, designTime: true);
+        var currentModel = db.GetService<IDesignTimeModel>().Model;
+        var differences = differ.GetDifferences(
+            initializedSnapshot.GetRelationalModel(), currentModel.GetRelationalModel());
+
+        var descriptions = differences.Select(operation => operation switch
+        {
+            Microsoft.EntityFrameworkCore.Migrations.Operations.AlterColumnOperation alter =>
+                $"열 변경: {alter.Table}.{alter.Name}, CLR={alter.ClrType.Name}, DB={alter.ColumnType}, Null={alter.IsNullable}, " +
+                $"이전 CLR={alter.OldColumn.ClrType.Name}, 이전 DB={alter.OldColumn.ColumnType}, 이전 Null={alter.OldColumn.IsNullable}",
+            Microsoft.EntityFrameworkCore.Migrations.Operations.CreateIndexOperation index =>
+                $"인덱스 추가: {index.Table}.{index.Name}, 열={string.Join(",", index.Columns)}, 고유={index.IsUnique}",
+            _ => operation.GetType().Name
+        });
+
+        Assert.True(differences.Count == 0, "Worker Migration Snapshot 차이: " + string.Join(" | ", descriptions));
+    }
+
     [Fact]
     public async Task ReadyTenantQueryReturnsOnlyTenantsWithDueWork()
     {
