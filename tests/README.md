@@ -20,7 +20,7 @@ Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬
 
 ## 현재 main 기준: 2026-11-10
 
-현재 `main`은 PR #168이 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`로 Squash Merge된 상태다. PR 자체 CI [Run #956](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738402094)와 병합 후 main CI [Run #957](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738642780)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답 경계를 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 `main`은 PR #169의 문서 변경이 `5033716067358350f3f86cc1910c8135f1c81951`로 Squash Merge된 상태다. PR 자체 CI [Run #958](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738870416)와 병합 후 main CI [Run #959](https://github.com/namanvarava/Edan.Tensor/actions/runs/42739089384)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health, DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 
