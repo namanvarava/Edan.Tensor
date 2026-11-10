@@ -291,3 +291,9 @@ PR #162는 저장량 스냅샷 이력과 quota 임계치 이벤트 API가 범위
 PR #162의 head `61483289fd4319aba1ad69c7f482d31b30aab9e7`에 대한 [PR CI Run #944](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730316819)와 Squash Merge 후 main 커밋 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`의 [main CI Run #945](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730617911)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 확인했다. PR #162 작업 브랜치는 병합 후 로컬·원격에서 삭제했다.
 
 이 변경은 승인된 로컬 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker API 계약의 입력 경계를 보강한 범위다. DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF 업무 기능은 승인된 계약과 수용 기준이 없으므로 구현 완료로 표시하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84의 외부 조건으로 유지한다.
+
+## 2026-11-10 PR #164 Client 페이지 계약 정합성 보강
+
+서버의 DataSet 검증 상세 `take` 상한 500과 Worker DLQ `pageSize` 상한 100을 typed Client의 선행 검증과 일치시켰다. `take=501`과 `pageSize=101`의 API HTTP 400 오류 코드, Client의 잘못된 입력 사전 차단, 한국어 XML·운영 가이드 설명을 회귀 검증했다.
+
+PR #164의 head `89a62cd526ab98667f4d75f4c340499b96bbdb21`에 대한 [PR CI Run #948](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733699062)와 Squash Merge 후 main 커밋 `f2d303c607b21b418e98f688000262441f48d837`의 [main CI Run #949](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733986905)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했고, 작업 브랜치는 로컬·원격에서 삭제했다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.

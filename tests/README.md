@@ -20,7 +20,7 @@ Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬
 
 ## 현재 main 기준: 2026-11-10
 
-현재 `main`은 PR #162가 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`로 Squash Merge된 상태다. PR 자체 CI [Run #944](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730316819)와 병합 후 main CI [Run #945](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730617911)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계와 저장량 이력·quota 이벤트 조회 개수 경계 회귀도 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 `main`은 PR #164가 `f2d303c607b21b418e98f688000262441f48d837`로 Squash Merge된 상태다. PR 자체 CI [Run #948](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733699062)와 병합 후 main CI [Run #949](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733986905)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트와 DataSet 검증 상세·Worker DLQ 페이지 경계 회귀도 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 

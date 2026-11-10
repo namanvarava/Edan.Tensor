@@ -1,6 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #162 기능 병합 커밋 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #164 기능 병합 커밋 `f2d303c607b21b418e98f688000262441f48d837`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+
+## 2026-11-10 PR #164 Client 페이지 계약 정합성 보강
+
+서버가 DataSet 검증 상세 `take`를 1~500, Worker DLQ `pageSize`를 1~100으로 제한하는데 typed Client가 각각 1000·200까지 허용하던 계약 불일치를 확인했다. Client의 선행 검증을 서버 범위와 일치시키고, 한국어 XML 문서와 API 운영 가이드에 입력 제약·HTTP 400 오류 코드를 기록했다. API Host 통합 테스트는 `take=501`과 `pageSize=101`을 각각 HTTP 400 및 안정적인 오류 코드로 확인하며, Client 단위 테스트는 서버에 요청하기 전에 잘못된 입력을 차단한다.
+
+PR #164의 head `89a62cd526ab98667f4d75f4c340499b96bbdb21`에 대한 [PR CI Run #948](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733699062)와 Squash Merge 후 main 커밋 `f2d303c607b21b418e98f688000262441f48d837`의 [main CI Run #949](https://github.com/namanvarava/Edan.Tensor/actions/runs/42733986905)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했고, 작업 브랜치는 로컬·원격에서 삭제했다. 이 변경은 승인된 로컬 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위만 보강하며, DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF와 실제 외부 환경 검증을 완료 처리하지 않는다.
 
 ## 감사 결과
 
