@@ -255,7 +255,7 @@ Tenant 관리자는 등록된 작업 유형만 불투명 Payload Reference로 �
 }
 ```
 
-`POST /api/platform/tenants/{tenantId}/worker/tasks`는 새 작업이면 HTTP 201, 동일 Tenant·Idempotency Key로 같은 내용을 재요청하면 HTTP 200, 다른 내용을 재사용하면 HTTP 409를 반환합니다. `GET /api/platform/tenants/{tenantId}/worker/tasks/{taskId}`로 작업 상태를 조회합니다. 작업은 Lease·Fencing Token·체크포인트를 사용하고, 만료 Lease는 재시도 또는 DLQ 경로로 복구합니다.
+`POST /api/platform/tenants/{tenantId}/worker/tasks`는 새 작업이면 HTTP 201, 동일 Tenant·Idempotency Key로 같은 내용을 재요청하면 HTTP 200, 다른 내용을 재사용하면 HTTP 409를 반환합니다. WorkerHost에 등록·활성화되지 않은 `taskType`은 작업을 만들지 않고 HTTP 422와 `worker.enqueue.task_type_unavailable` 오류를 반환합니다. `GET /api/platform/tenants/{tenantId}/worker/tasks/{taskId}`로 작업 상태를 조회합니다. 작업은 Lease·Fencing Token·체크포인트를 사용하고, 만료 Lease는 재시도 또는 DLQ 경로로 복구합니다.
 
 DLQ 작업은 다음 관리자 API로 조회·재처리합니다.
 
@@ -296,6 +296,7 @@ Tenant 관리자는 허용 목록에 등록된 대상 URI로 외부 전달을 �
 - 403: 관리자 역할 부족, Tenant 선택 불일치 또는 활성 소속 없음
 - 404: 대상 리소스 없음
 - 409: 중복·상태·소유권 충돌
+- 422: 요청 형식은 올바르지만 등록·활성화되지 않은 Worker 작업 유형
 - 503: 데이터베이스 상태 확인 실패
 
 ## 저장 용량 정책
