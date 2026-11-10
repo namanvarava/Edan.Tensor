@@ -68,7 +68,7 @@ PR #206은 현재 Worker 모델과 Migration 스냅샷의 관계형 모델 차�
 
 PR #208은 제품 API의 공통 입력·오류 계약만 보강했으며, 승인된 개발 라이선스의 발급 규칙·ES256 서명·개인키 보관·공개키 배포·운영 차단 경계는 변경하지 않았다. PR CI [Run #42846802391](https://github.com/namanvarava/Edan.Tensor/actions/runs/42846802391)와 병합 후 main [Run #42847454768](https://github.com/namanvarava/Edan.Tensor/actions/runs/42847454768)이 성공했다. 병합 main 커밋은 `e6b288246fe1745e927f703c0d98cd1ab30c8781`이다.
 
-병합 후 Release 전체 테스트는 270개 통과·실패 0개·건너뜀 0개였고, 별도 LicenseAuthority 테스트는 11개 통과·실패 0개·건너뜀 0개라는 기존 증거와 일치했다. 개발 라이선스는 계속 `EDAN-NONPROD` Tenant와 `Platform`·`DataSet`·`Worker` 기능에만 적용하며, 결제 공급자 미선정 상태에서 결제 완료나 유료 권한을 성공으로 처리하지 않는다.
+병합 후 Release 전체 테스트는 258개 통과·실패 0개·건너뜀 0개였고, 별도 LicenseAuthority 테스트는 11개 통과·실패 0개·건너뜀 0개라는 기존 증거와 일치했다. 개발 라이선스는 계속 `EDAN-NONPROD` Tenant와 `Platform`·`DataSet`·`Worker` 기능에만 적용하며, 결제 공급자 미선정 상태에서 결제 완료나 유료 권한을 성공으로 처리하지 않는다.
 
 ## 남은 조건
 

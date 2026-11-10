@@ -18,7 +18,7 @@
 - Licensing: 11개
 - Commercial: 2개
 
-현재 통합 솔루션의 Release 테스트는 총 270개이며 실패 0개·건너뜀 0개입니다.
+현재 통합 솔루션의 Release 테스트는 총 258개이며 실패 0개·건너뜀 0개입니다.
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
@@ -28,13 +28,13 @@ Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -
 
 위 단락은 PR #210 병합 직후의 Release 검증 증거를 보존한 역사 기록입니다. 현재 기준은 아래 최신 main 기록을 사용합니다.
 
-## 현재 main 기준: PR #211 병합 후
+## 제품 코드 검증 기준: PR #212 병합 후
 
-현재 Release 검증의 최신 main 기준은 PR #211 병합 커밋 `ec7d8ce5c50ea935c335dd7e7feb330ed5522bfa`이다. PR #211 [CI Run #42856973141](https://github.com/namanvarava/Edan.Tensor/actions/runs/42856973141)와 병합 후 main [CI Run #42857407194](https://github.com/namanvarava/Edan.Tensor/actions/runs/42857407194)이 Restore·Build·Test를 성공했다. 문서 변경 PR이므로 제품 코드 기준은 PR #210과 동일하며, 최신 main의 실제 Release·Smoke 증거와 외부 미검증 조건은 아래의 역사 기록 결과를 그대로 유지한다.
+제품 코드 Release 검증 기준은 PR #212 병합 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`이다. PR #212 [CI Run #42859604333](https://github.com/namanvarava/Edan.Tensor/actions/runs/42859604333)와 병합 후 main [CI Run #42860037294](https://github.com/namanvarava/Edan.Tensor/actions/runs/42860037294)이 Restore·Build·Test를 성공했다. 현재 main에서 직렬 Restore는 경고·오류 0개, Release Build는 경고 0개·오류 0개, 전체 Test는 258개 통과·실패 0개·건너뜀 0개였다. 별도 LicenseAuthority 솔루션은 Restore·Release Build(경고·오류 0개)·Test 11개를 성공했다. LicenseAuthority Smoke는 health·공개 JWK·정상 검증을 HTTP 200, Production 차단·폐기 검증을 HTTP 403으로 확인했고, Host Smoke는 두 Host의 health·DB health·OpenAPI·Swagger·Development Bypass Tenant API를 HTTP 200으로 확인했다. 두 Smoke의 stderr는 0바이트이고 임시 경로는 삭제되었다. 병렬 Restore의 종료 코드 1은 Work 실행 경계의 Named Pipe 문제이며 직렬 Restore 성공으로 코드 실패와 구분했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙은 별도 미검증 조건이다.
 
 ## PR #210 당시 상세 증거
 
-현재 Release 검증의 최신 main 기준은 PR #210 병합 커밋 `81281a7e014d6bd377dc911cd39b5eac3aa8e3ae`이다. PR #210 [CI Run #42853202736](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853202736)와 병합 후 main [CI Run #42853575636](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853575636)이 Restore·Build·Test를 성공했다. 이번 재검증에서 `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 동일 실행 경계에서 지정된 Release Build는 경고 0개·오류 0개, 전체 Test는 270개 통과·실패 0개·건너뜀 0개였다. API 통합 테스트는 43개가 통과했다. `tools/license-authority-smoke.ps1`는 5년 개발 라이선스·공개 JWK·정상 200·Production 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인하고 두 Host stderr 0바이트·임시 경로 삭제를 확인했다. 기존 API 계약 회귀는 `Idempotency-Key`의 공백·200자 상한을 서버에서도 적용하고, 잘못된 JSON·잘못된 요청을 공통 `ApiError`로 변환하며, OpenAPI에 길이·UUID 제약을 표시한다. Worker Infrastructure 테스트는 72개가 통과했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 등록되지 않은 Worker 작업 유형의 HTTP 422 오류 계약, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority HTTP·서비스 경계 및 Commercial 결제 경계를 포함한다. 취약 패키지 감사는 모든 프로젝트에서 알려진 취약 패키지 없음으로 끝났다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+PR #210 당시 Release 검증 기준은 PR #210 병합 커밋 `81281a7e014d6bd377dc911cd39b5eac3aa8e3ae`이다. PR #210 [CI Run #42853202736](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853202736)와 병합 후 main [CI Run #42853575636](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853575636)이 Restore·Build·Test를 성공했다. 이번 재검증에서 `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 동일 실행 경계에서 지정된 Release Build는 경고 0개·오류 0개, 전체 Test는 258개 통과·실패 0개·건너뜀 0개였다. API 통합 테스트는 43개가 통과했다. `tools/license-authority-smoke.ps1`는 5년 개발 라이선스·공개 JWK·정상 200·Production 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인하고 두 Host stderr 0바이트·임시 경로 삭제를 확인했다. 기존 API 계약 회귀는 `Idempotency-Key`의 공백·200자 상한을 서버에서도 적용하고, 잘못된 JSON·잘못된 요청을 공통 `ApiError`로 변환하며, OpenAPI에 길이·UUID 제약을 표시한다. Worker Infrastructure 테스트는 72개가 통과했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 등록되지 않은 Worker 작업 유형의 HTTP 422 오류 계약, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority HTTP·서비스 경계 및 Commercial 결제 경계를 포함한다. 취약 패키지 감사는 모든 프로젝트에서 알려진 취약 패키지 없음으로 끝났다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 현재 작업의 LicenseAuthority 입력 경계 재검증
 
