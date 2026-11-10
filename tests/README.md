@@ -14,7 +14,7 @@
 - Worker Domain: 21개
 - Worker Infrastructure: 71개
 - Client: 7개
-- API 통합: 35개
+- API 통합: 36개
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
@@ -22,7 +22,7 @@ Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -
 
 ## 현재 main 기준: 2026-11-10
 
-현재 Release 검증의 제품 코드 기준은 PR #173이 `a1fa0638e2bca4623645630bf7211371e9031782`로 병합한 상태다. PR #173 자체 CI [Run #42746252915](https://github.com/namanvarava/Edan.Tensor/actions/runs/42746252915)와 병합 후 main CI [Run #42746467609](https://github.com/namanvarava/Edan.Tensor/actions/runs/42746467609)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 247개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health·DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 Release 검증의 제품 코드 기준은 PR #173이 `a1fa0638e2bca4623645630bf7211371e9031782`로 병합한 상태다. PR #173 자체 CI [Run #42746252915](https://github.com/namanvarava/Edan.Tensor/actions/runs/42746252915)와 병합 후 main CI [Run #42746467609](https://github.com/namanvarava/Edan.Tensor/actions/runs/42746467609)이 성공했다. WorkerHost 콘텐츠 DB 열기 실패 회귀 테스트를 포함한 최신 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 248개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health·DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 
@@ -74,4 +74,4 @@ DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작�
 
 ## 2026-11-10 WorkerHost 데이터베이스 health 경계
 
-`WorkerHostHealthIntegrationTests.WorkerHostDatabaseHealthReportsAllConfiguredDatabases`는 임시 SQLite 네 개를 실제 WorkerHost에 연결하여 `/health/database`가 네 저장소를 `Connected/Green`으로 보고하는지 확인한다. Release 전체 테스트는 이 회귀를 포함하여 247개 통과·실패 0개·건너뜀 0개이며, `tools/host-smoke.ps1`는 동일한 경계를 실제 Host 기동으로 재확인한다. 이 검증은 Development Bypass와 로컬 SQLite만 사용하므로 실제 운영 DB·외부 IdP·외부 시스템 검증을 대체하지 않는다.
+`WorkerHostHealthIntegrationTests`는 임시 SQLite 네 개를 실제 WorkerHost에 연결하여 정상 상태의 `/health/database`가 `Connected/Green`으로 보고하는지, 콘텐츠 데이터베이스를 열 수 없을 때 HTTP 503과 `Disconnected/Red`를 반환하는지 확인한다. Release 전체 테스트는 이 회귀를 포함하여 248개 통과·실패 0개·건너뜀 0개이며, `tools/host-smoke.ps1`는 정상 경계를 실제 Host 기동으로 재확인한다. 이 검증은 Development Bypass와 로컬 SQLite만 사용하므로 실제 운영 DB·외부 IdP·외부 시스템 검증을 대체하지 않는다.

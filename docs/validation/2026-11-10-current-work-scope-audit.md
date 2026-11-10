@@ -126,6 +126,6 @@ PR #162의 head `61483289fd4319aba1ad69c7f482d31b30aab9e7`에 대한 [PR CI Run 
 
 WorkerHost의 기존 `/health`는 프로세스가 응답하는지만 확인하여, 네 개 로컬 SQLite의 연결 또는 기본 스키마 손상을 구분하지 못했다. API Host가 사용하는 데이터베이스 health 계약과 동일하게 WorkerHost에 `/health/database`를 추가하고, Platform·Worker·DataSet 메타데이터와 DataSet 콘텐츠 저장소를 각각 연결·간단한 읽기로 확인하도록 공통 SQLite probe를 HostServices로 이동했다. 하나라도 실패하면 `Disconnected/Red`, HTTP 503을 반환하며 취소 요청은 그대로 전파한다.
 
-실제 검증은 `WorkerHostHealthIntegrationTests.WorkerHostDatabaseHealthReportsAllConfiguredDatabases` 1개와 솔루션 전체 Release Test 247개에서 실패 0개·건너뜀 0개로 통과했다. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1`도 임시 SQLite 네 개로 ApiHost·WorkerHost의 health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고, 양쪽 stderr 0바이트와 임시 Smoke 디렉터리 삭제를 확인했다.
+실제 검증은 `WorkerHostHealthIntegrationTests`의 정상·콘텐츠 DB 열기 실패 2개와 솔루션 전체 Release Test 248개에서 실패 0개·건너뜀 0개로 통과했다. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1`도 임시 SQLite 네 개로 ApiHost·WorkerHost의 health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고, 양쪽 stderr 0바이트와 임시 Smoke 디렉터리 삭제를 확인했다.
 
 이 변경은 로컬 SQLite 운영 관찰성을 보강하지만 실제 운영 DB 장애 복구, 외부 IdP, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 완료 처리하지 않는다.
