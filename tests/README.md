@@ -15,10 +15,10 @@
 - Worker Infrastructure: 71개
 - Client: 7개
 - API 통합: 36개
-- Licensing: 9개
+- Licensing: 10개
 - Commercial: 2개
 
-현재 통합 솔루션의 Release 테스트는 총 260개이며 실패 0개·건너뜀 0개입니다.
+현재 통합 솔루션의 Release 테스트는 총 261개이며 실패 0개·건너뜀 0개입니다.
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
@@ -26,7 +26,7 @@ Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -
 
 ## 현재 main 기준: 2026-11-10
 
-현재 Release 검증의 최신 main 기준은 PR #185 병합 커밋 `338c3fa407963c4f5a5e5a6977477089f7e33c19`이다. PR #184 CI [Run #988](https://github.com/namanvarava/Edan.Tensor/actions/runs/42795841372), PR #184 병합 후 main CI [Run #989](https://github.com/namanvarava/Edan.Tensor/actions/runs/42796197588), PR #185 CI [Run #990](https://github.com/namanvarava/Edan.Tensor/actions/runs/42797228648), PR #185 병합 후 최신 main CI [Run #991](https://github.com/namanvarava/Edan.Tensor/actions/runs/42797601546)이 Restore·Build·Test를 성공했다. 최신 main에서 지정된 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 260개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority 및 Commercial 결제 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health·DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. LicenseAuthority Smoke는 개발 라이선스 발급·5년 기간·공개키·정상 검증 200, 운영 개발 라이선스와 폐기 라이선스 403, 토큰 로그 미노출과 임시 경계 삭제를 확인했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 Release 검증의 최신 main 기준은 PR #189 병합 커밋 `1135b7c4c0ce79da3c73b19c0d89b91fd56a13df`이다. PR #189 [CI Run #42804378414](https://github.com/namanvarava/Edan.Tensor/actions/runs/42804378414)와 병합 후 main [CI Run #42804659418](https://github.com/namanvarava/Edan.Tensor/actions/runs/42804659418)이 Restore·Build·Test를 성공했다. 최신 main에서 지정된 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 261개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority HTTP·서비스 경계 및 Commercial 결제 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health·DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. LicenseAuthority HTTP 테스트는 개발 라이선스 발급·재사용·공개키·정상·위조·만료·시작 전·Tenant 불일치·알 수 없는 KeyId·폐기·운영 차단을 확인했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 
