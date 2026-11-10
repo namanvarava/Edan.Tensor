@@ -142,6 +142,12 @@ try {
 
     $workerHealthResponse = Wait-ForHttpSuccess $workerProcess "http://127.0.0.1:$WorkerPort/health" "WorkerHost health"
     Write-Output "WorkerHost health: HTTP $($workerHealthResponse.StatusCode)"
+    $workerDatabaseResponse = Wait-ForHttpSuccess $workerProcess "http://127.0.0.1:$WorkerPort/health/database" "WorkerHost database health"
+    Write-Output "WorkerHost database health: HTTP $($workerDatabaseResponse.StatusCode)"
+    $workerDatabaseHealth = $workerDatabaseResponse.Content | ConvertFrom-Json
+    if ($workerDatabaseHealth.Status -ne "Connected" -or $workerDatabaseHealth.Indicator -ne "Green") {
+        throw "WorkerHost database health가 Connected/Green이 아닙니다."
+    }
     Write-Output "Host Smoke 결과: 성공"
 }
 finally {
