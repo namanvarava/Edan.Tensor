@@ -50,6 +50,14 @@
 - 최신 main의 LicenseAuthority Smoke는 Development 라이선스 단일 발급과 5년 기간, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스 검증 HTTP 403, 폐기 검증 HTTP 403을 확인했으며 stdout에 토큰을 기록하지 않고 임시 디렉터리를 삭제했다.
 - `rg -n "TODO|NotImplementedException" src tests tools`는 일치 항목을 반환하지 않았다. 로컬 `main`과 `origin/main`은 위 병합 SHA로 일치했고, 작업 트리·원격 작업 브랜치·열린 Pull Request를 최종 확인한 뒤 문서 브랜치를 삭제한다.
 
+## 2026-11-11 API 요청 관측성 보강과 최신 main 재검증
+
+- 성공 요청에는 호출자가 서버 로그를 찾을 식별자가 없고 오류 로그에만 `TraceIdentifier`가 남아 있던 것이 관측성 결함의 원인이었다. 요청 본문·Bearer 토큰·개인키를 추가 기록하는 방법은 보안 경계를 훼손하므로 선택하지 않고, 서버 생성 `X-Request-Id` 응답 헤더와 메서드·경로·상태 코드·처리 시간·요청 식별자의 구조화 로그를 추가했다. 기존 오류 본문과 인증·Tenant·Worker 공개 계약은 변경하지 않았다.
+- PR [#219](https://github.com/namanvarava/Edan.Tensor/pull/219)의 소스 커밋 `1248e2e4219df62f5cf1edf475250004381a811e`는 squash merge 커밋 `a85be5acfb945e4d235df7ad1d301f82f80cbe60`으로 main에 병합되었다. PR CI [Run #1060](https://github.com/namanvarava/Edan.Tensor/actions/runs/42880400782)와 병합 후 main push CI [Run #1061](https://github.com/namanvarava/Edan.Tensor/actions/runs/42880714052)는 Restore·Build·Test를 모두 성공했다.
+- 승인된 권한 환경에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실제 실행했다. Restore는 최신 상태, Build는 경고 0개·오류 0개, Test는 272개 통과·실패 0개·건너뜀 0개였으며 ApiHost 통합 테스트 44개를 포함한다. 변경 대상 요청 식별자 테스트 1개도 통과했다.
+- Host Smoke는 ApiHost와 WorkerHost의 health·database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 HTTP 200으로 확인했고 양쪽 표준 오류 출력은 0바이트이며 임시 Smoke 디렉터리는 삭제되었다. LicenseAuthority Smoke는 단일 `EDAN-NONPROD` 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스·폐기 라이선스 검증 HTTP 403, 토큰 미기록과 임시 디렉터리 삭제를 확인했다.
+- PR 병합 후 로컬 `main`과 `origin/main`은 `a85be5acfb945e4d235df7ad1d301f82f80cbe60`으로 일치했다. `codex/add-api-request-observability-20261111` 원격 브랜치는 삭제되었고 로컬 브랜치도 삭제되어 현재 로컬에는 `main`만 남았다.
+
 ## 인증 Bypass 경계
 
 Development Bypass는 `Development` 환경과 `Authentication:Mode=Bypass`에서만 활성화된다. 고정 프로필은 RFC 예약 Metadata/JWKS 주소, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, 개발 키 회전 권한 식별자를 사용한다. 이 값은 실제 외부 IdP의 증거가 아니며 운영·External·CI·배포 구성에서는 활성화되지 않는다. Bypass 사용과 실행 주체는 로그에 남기고 Tenant·조직·프로젝트 권한 검사는 유지한다.
