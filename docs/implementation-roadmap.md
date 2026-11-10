@@ -88,21 +88,21 @@ Tenant 생성 및 활성화
 
 이 단계의 완료 기준은 각 기능의 승인된 수용 기준, API·데이터·화면 테스트, 운영 장애 시나리오가 모두 통과하는 상태입니다.
 
-### 5단계. 별도 LicenseAuthority와 개발 라이선스 1개를 구현합니다.
+### 5단계. 승인된 계약으로 별도 LicenseAuthority와 개발 라이선스 1개를 구현합니다.
 
-이 단계에서는 앞 단계의 비라이선스 제품 기능이 안정된 뒤 기존 Licensing 모듈을 복제하지 않고 별도 솔루션에서 발급 Host를 구성합니다.
+이 단계에서는 승인된 라이선스 계약을 기준으로 기존 Licensing 모듈을 복제하지 않고 별도 솔루션에서 발급 Host를 구성합니다. Commercial 결제 공급자와 유료 권리는 이 단계에서 확정하지 않습니다.
 
 - `EDAN.Tensor.LicenseAuthority.sln`은 기존 Licensing Contracts·Domain·Application·Infrastructure 프로젝트를 공유합니다.
-- LicenseId, Site 또는 Tenant, 제품, 기능, 발급일, 시작일, 만료일, KeyId, 서명과 상태 규칙을 승인된 계약으로 확정합니다.
+- LicenseId, Site 또는 Tenant, 제품, 기능, 발급일, 시작일, 만료일, KeyId, 서명과 상태 규칙을 승인된 계약으로 적용합니다.
 - 개인키는 발급 프로그램에만 보관하고 API에는 공개키만 배포합니다.
-- 초기에는 규칙에 맞는 Development 라이선스 1개를 발급합니다.
+- `EDAN-NONPROD` 대상 Development 라이선스 1개를 발급하고 발급일 기준 5년 유효성을 확인합니다.
 - 발급 결과와 키 자료를 저장소·로그에 비밀값으로 기록하지 않습니다.
 
-이 단계의 완료 기준은 발급 프로그램의 정상·오류 테스트와 서명된 개발 라이선스 1개가 계약에 맞게 생성되는 상태입니다.
+이 단계의 내부 코드 완료 기준은 발급 프로그램의 정상·오류 테스트와 서명된 개발 라이선스 1개가 계약에 맞게 생성되는 상태입니다. 별도 프로세스 HTTP 스모크는 loopback 권한이 허용된 환경에서 추가 확인합니다.
 
 ### 6단계. 라이선스 적용 API를 검증하고 내부 범위를 닫습니다.
 
-이 단계에서는 5단계의 개발 라이선스를 API에 연결합니다.
+이 단계에서는 5단계의 개발 라이선스를 LicenseAuthority 검증 API에 연결하고 핵심 제품 API에 적용할 최종 경계를 확인합니다.
 
 - API는 공개키로 서명, 제품, Site 또는 Tenant, 기능, 유효 기간과 KeyId를 검증합니다.
 - 정상, 위조, 만료, 시작 전, 다른 Tenant, 폐기, 알 수 없는 KeyId를 각각 거부합니다.
@@ -110,7 +110,7 @@ Tenant 생성 및 활성화
 - External·운영 환경에서는 라이선스 검증 실패를 허용하지 않고 명확한 오류를 반환합니다.
 - 인증 Bypass와 라이선스 검증 Bypass를 서로 다른 경계로 유지합니다.
 
-이 단계의 완료 기준은 라이선스 적용 API의 통합·보안·회귀 테스트와 Swagger 실행 검증이 통과하는 상태입니다.
+이 단계의 완료 기준은 라이선스 적용 API의 통합·보안·회귀 테스트와 Swagger 실행 검증이 통과하는 상태입니다. 현재 Work 환경에서는 loopback 소켓 권한으로 HTTP 실행이 막혀 서비스·암호·상태 전이 테스트까지 확인했으며 HTTP·Swagger 증거는 환경 미검증으로 남깁니다.
 
 ### 7단계. 운영 DB·실제 IdP·외부 시스템·배포를 검증합니다.
 
@@ -348,3 +348,9 @@ PR #177은 위 테스트 정리 순서를 보강한 변경이며, PR CI [Run #42
 PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 main에 Squash Merge되었고, PR CI [Run #42756936154](https://github.com/namanvarava/Edan.Tensor/actions/runs/42756936154)와 병합 후 main CI [Run #42757143488](https://github.com/namanvarava/Edan.Tensor/actions/runs/42757143488)가 성공했다. 병합 후 최신 main에서 지정된 Release Restore·Build·Test를 실제 실행하여 Restore 성공, Build 경고 0개·오류 0개, Test 249개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost의 health·database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 반환했고 stderr 0바이트와 임시 DB 정리를 확인했다. 직접·전이 패키지 취약점 감사도 취약 패키지 없음으로 끝났다.
 
 현재 내부 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·장애 복구와 typed Client 기반까지 병합·검증되었다. PR #180은 동시 Idempotency-Key 충돌에서 실제 생성한 실행만 내부 보상 삭제하도록 저장소 결과 계약을 보강했다. DuckDB·Parquet·Commercial·WPF는 승인된 업무 계약이 없고, Licensing·LicenseAuthority는 사용자가 지정한 마지막 내부 단계이지만 발급 규칙·서명 포맷·키 보관·폐기 계약이 없어 아직 구현하지 않았다. 실제 비운영 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403도 Issue #84와 Milestone #1의 후속 조건으로 유지한다.
+
+## 2026-11-10 승인 라이선스 구현 재개 기준
+
+사용자가 개발·테스트 라이선스 계약을 승인하여 5단계와 6단계의 내부 구현을 진행했다. 별도 `EDAN.Tensor.LicenseAuthority.sln`은 `EDAN-NONPROD`·`EDAN.Tensor`·`Platform/DataSet/Worker`·5년·JWS ES256·RBAC·기본 거부·폐기 규칙을 적용한다. 운영 환경에서 개인키를 자동 생성하지 않고 개발 Tenant 라이선스를 검증하지 않도록 정책을 추가했다.
+
+별도 솔루션 Release Restore·Build·Test는 각각 성공, 경고 0개·오류 0개, 9개 통과·실패 0개·건너뜀 0개를 기록했다. 전체 솔루션의 최종 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 258개 통과·실패 0개·건너뜀 0개를 기록했다. 권한이 허용된 실행 환경에서 LicenseAuthority HTTP 스모크와 기존 Host Smoke도 성공했으며, 제한된 Work 실행 경계에서만 loopback·testhost 접근 제한이 재현되었다.

@@ -1,6 +1,10 @@
 **/bin/
 **/obj/
 .vs/
+.edan-license-smoke-*/
+**/App_Data/LicenseAuthority/
+**/development-license.json
+**/license-status.json
 .idea/
 *.user
 *.suo
