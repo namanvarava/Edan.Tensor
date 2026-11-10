@@ -17,6 +17,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 
 [검증 현황 문서](docs/validation/2026-11-10-licensing-implementation.md)는 승인된 LicenseAuthority 구현과 현재 HTTP 환경 미검증 조건을 기록합니다.
 [현재 범위 감사](docs/validation/2026-11-10-current-work-scope-audit.md)는 최신 main의 구현 범위·잔여 계약·검증 증거를 기록합니다.
+[2026-11-11 연속 개발 재검증 기록](docs/validation/2026-11-11-continuation-audit.md)은 현재 Work 실행 경계와 main 회귀 증거를 기록합니다.
 [전체 구현 진행 방향](docs/implementation-roadmap.md)은 이후 단계의 순서, 의존성, 수용 기준과 운영 검증 조건을 고정합니다.
 [DataSet 검증 v1 계약](docs/architecture/dataset-validation-v1-proposal.md)은 2026-11-07 승인된 구현 기준입니다.
 [외부 전달 설계](docs/architecture/external-delivery.md)는 로컬 수신기 장애 재현과 Idempotency 계약을 설명합니다.
