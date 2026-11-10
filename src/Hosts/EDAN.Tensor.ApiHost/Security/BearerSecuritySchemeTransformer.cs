@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using EDAN.Tensor.ApiHost.Endpoints;
+using EDAN.Tensor.ApiHost.Observability;
 
 namespace EDAN.Tensor.ApiHost.Security;
 
@@ -53,9 +54,14 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
             foreach (var operation in pathItem.Operations ?? [])
             {
                 if (PublicPaths.Contains(path.Key))
+                {
+                    AddRequestIdResponseHeader(operation.Value);
                     continue;
+                }
                 if (operation.Value is null)
                     continue;
+
+                AddRequestIdResponseHeader(operation.Value);
 
                 operation.Value.Parameters ??= [];
                 if (!operation.Value.Parameters.Any(parameter =>
@@ -99,6 +105,30 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>모든 API 응답에 요청 추적 헤더를 OpenAPI 계약으로 기록합니다.</summary>
+    /// <param name="operation">응답 헤더를 추가할 API 작업을 지정합니다.</param>
+    private static void AddRequestIdResponseHeader(OpenApiOperation? operation)
+    {
+        if (operation?.Responses is null)
+            return;
+
+        foreach (var response in operation.Responses.Values)
+        {
+            if (response is not OpenApiResponse openApiResponse)
+                continue;
+
+            openApiResponse.Headers ??= new Dictionary<string, IOpenApiHeader>(StringComparer.OrdinalIgnoreCase);
+            openApiResponse.Headers.TryAdd(RequestObservabilityMiddleware.RequestIdHeaderName, new OpenApiHeader
+            {
+                Description = "서버가 생성한 요청 식별자입니다. 장애 문의 시 서버 로그와 함께 전달합니다.",
+                Schema = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.String
+                }
+            });
+        }
     }
 
     /// <summary>필수 헤더의 실제 입력 형식과 길이 제약을 OpenAPI 스키마로 표현합니다.</summary>
