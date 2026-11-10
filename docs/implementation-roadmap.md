@@ -438,3 +438,9 @@ PR #210 병합 후 최신 `main` 커밋 `81281a7e014d6bd377dc911cd39b5eac3aa8e3a
 `tools/license-authority-smoke.ps1`는 `EDAN-NONPROD` 개발 라이선스의 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했다. `tools/host-smoke.ps1`는 임시 SQLite와 Development Bypass로 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다.
 
 병렬 실행 실패는 소스 오류가 아니라 Work 실행 경계의 Named Pipe 접근 권한 문제로 분리했으며, 직렬 복원과 권한이 허용된 Build·Test로 재발 방지 절차를 확인했다. 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 Issue #84의 외부 조건으로 계속 미검증이다. DuckDB·Parquet·Commercial 유료 업무·WPF와 제품 API 라이선스 자동 강제는 승인된 계약이 제공되기 전까지 구현 완료로 표시하지 않는다.
+
+## 2026-11-11 개발 라이선스 동시 발급 경쟁 보강
+
+개발 라이선스 발급은 조회와 최초 파일 저장 사이에 경쟁 구간이 있어, 동시에 발급을 요청한 두 번째 호출이 이미 저장된 라이선스를 재사용하지 못하고 `IOException`으로 끝날 수 있었다. 원인은 `GetAsync`와 `SaveAsync`가 분리된 저장소 계약에서 파일 저장 충돌을 정상적인 재사용 결과로 변환하지 않은 데 있었다. 저장 충돌 뒤 실제 저장소를 다시 읽어 승인된 라이선스인지 확인하고 재사용하는 최소 수정으로 기존 공개 계약과 단일 라이선스 규칙을 유지했다.
+
+서로 다른 `FileDevelopmentLicenseStore` 인스턴스가 같은 파일에 동시에 저장하는 경쟁을 장벽으로 재현하는 테스트를 추가했다. 대상 테스트 1개와 LicenseAuthority 전체 12개가 통과했으며, 수정 후 전체 Release Test는 프로젝트별 결과 합계 271개 통과·실패 0개·건너뜀 0개였다. 전체 Release Restore·Build도 경고 0개·오류 0개로 성공했다. 이 수정은 제품 API의 라이선스 자동 강제나 외부 운영 조건을 확장하지 않는다.

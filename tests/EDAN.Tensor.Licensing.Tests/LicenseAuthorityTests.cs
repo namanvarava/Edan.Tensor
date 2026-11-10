@@ -51,6 +51,27 @@ public sealed class LicenseAuthorityTests
         Assert.Equal(first.Value.Descriptor.LicenseId, second.Value.Descriptor.LicenseId);
     }
 
+    /// <summary>동시 발급 경쟁이 하나의 저장 라이선스 재사용으로 수렴합니다.</summary>
+    [Fact]
+    public async Task DevelopmentLicense_ConcurrentIssuanceReusesSingleStoredLicense()
+    {
+        using var fixture = CreateFixture();
+        var path = Path.Combine(fixture.DirectoryPath, "concurrent-license.json");
+        var barrier = new ConcurrentReadBarrier();
+        var services = new[]
+        {
+            new DevelopmentLicenseService(new CoordinatedFileDevelopmentLicenseStore(path, barrier), fixture.Codec),
+            new DevelopmentLicenseService(new CoordinatedFileDevelopmentLicenseStore(path, barrier), fixture.Codec)
+        };
+        var now = new DateTimeOffset(2030, 1, 2, 3, 4, 5, TimeSpan.Zero);
+
+        var results = await Task.WhenAll(services.Select(service => service.IssueOrGetAsync(now)));
+
+        Assert.All(results, result => Assert.True(result.IsSuccess));
+        Assert.Single(results.Select(result => result.Value.Descriptor.LicenseId).Distinct());
+        Assert.True(File.Exists(path));
+    }
+
     /// <summary>정상 토큰은 Tenant·제품·기능이 일치할 때 검증됩니다.</summary>
     [Fact]
     public async Task Validation_AcceptsMatchingTenantProductAndFeature()
@@ -287,6 +308,38 @@ public sealed class LicenseAuthorityTests
             if (Directory.Exists(DirectoryPath))
                 Directory.Delete(DirectoryPath, recursive: true);
         }
+    }
+
+    private sealed class ConcurrentReadBarrier
+    {
+        private readonly TaskCompletionSource<bool> bothReadsCompleted =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int readCount;
+
+        public Task WaitAsync(CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref readCount) == 2)
+                bothReadsCompleted.TrySetResult(true);
+
+            return bothReadsCompleted.Task.WaitAsync(cancellationToken);
+        }
+    }
+
+    private sealed class CoordinatedFileDevelopmentLicenseStore(
+        string path,
+        ConcurrentReadBarrier barrier) : IDevelopmentLicenseStore
+    {
+        private readonly FileDevelopmentLicenseStore inner = new(path);
+
+        public async Task<IssuedLicense?> GetAsync(CancellationToken cancellationToken = default)
+        {
+            var existing = await inner.GetAsync(cancellationToken);
+            await barrier.WaitAsync(cancellationToken);
+            return existing;
+        }
+
+        public Task SaveAsync(IssuedLicense license, CancellationToken cancellationToken = default) =>
+            inner.SaveAsync(license, cancellationToken);
     }
 }
 

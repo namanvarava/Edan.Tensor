@@ -15,22 +15,26 @@
 - Worker Infrastructure: 72개
 - Client: 7개
 - API 통합: 43개
-- Licensing: 11개
+- Licensing: 12개
 - Commercial: 2개
 
-현재 통합 솔루션의 Release 테스트는 총 258개이며 실패 0개·건너뜀 0개입니다.
+현재 통합 솔루션의 Release 테스트는 총 271개이며 실패 0개·건너뜀 0개입니다.
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
 Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -File tools/host-smoke.ps1`로 일회성 재현할 수 있습니다. 이 도구는 Development Bypass와 임시 SQLite만 사용하고, 운영 인증·CI·예약 실행을 변경하지 않습니다.
 
+## 현재 검증 기준: 개발 라이선스 동시 발급 경쟁
+
+개발 라이선스 발급에서 조회와 저장 사이의 경쟁으로 두 번째 동시 요청이 저장 충돌을 오류로 반환할 수 있던 결함을 확인했다. `DevelopmentLicenseService`는 저장 충돌 뒤 실제 파일 저장소에 기록된 승인 라이선스를 다시 읽어 재사용하도록 수정했고, 서로 다른 `FileDevelopmentLicenseStore` 인스턴스가 같은 파일에 동시에 저장하는 회귀 테스트를 추가했다. 대상 테스트 1개와 LicenseAuthority 전체 12개가 통과했으며, 수정 후 전체 Release Test는 271개 통과·실패 0개·건너뜀 0개였다.
+
 ## 과거 main 기준 기록: PR #210 병합 후
 
 위 단락은 PR #210 병합 직후의 Release 검증 증거를 보존한 역사 기록입니다. 현재 기준은 아래 최신 main 기록을 사용합니다.
 
-## 제품 코드 검증 기준: PR #212 병합 후
+## 과거 제품 코드 검증 기준: PR #212 병합 후
 
-제품 코드 Release 검증 기준은 PR #212 병합 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`이다. PR #212 [CI Run #42859604333](https://github.com/namanvarava/Edan.Tensor/actions/runs/42859604333)와 병합 후 main [CI Run #42860037294](https://github.com/namanvarava/Edan.Tensor/actions/runs/42860037294)이 Restore·Build·Test를 성공했다. 현재 main에서 직렬 Restore는 경고·오류 0개, Release Build는 경고 0개·오류 0개, 전체 Test는 258개 통과·실패 0개·건너뜀 0개였다. 별도 LicenseAuthority 솔루션은 Restore·Release Build(경고·오류 0개)·Test 11개를 성공했다. LicenseAuthority Smoke는 health·공개 JWK·정상 검증을 HTTP 200, Production 차단·폐기 검증을 HTTP 403으로 확인했고, Host Smoke는 두 Host의 health·DB health·OpenAPI·Swagger·Development Bypass Tenant API를 HTTP 200으로 확인했다. 두 Smoke의 stderr는 0바이트이고 임시 경로는 삭제되었다. 병렬 Restore의 종료 코드 1은 Work 실행 경계의 Named Pipe 문제이며 직렬 Restore 성공으로 코드 실패와 구분했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙은 별도 미검증 조건이다.
+제품 코드 Release 검증 기준은 PR #212 병합 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`이다. PR #212 [CI Run #42859604333](https://github.com/namanvarava/Edan.Tensor/actions/runs/42859604333)와 병합 후 main [CI Run #42860037294](https://github.com/namanvarava/Edan.Tensor/actions/runs/42860037294)이 Restore·Build·Test를 성공했다. 당시 main에서 직렬 Restore는 경고·오류 0개, Release Build는 경고 0개·오류 0개, 전체 Test는 258개 통과·실패 0개·건너뜀 0개였다. 별도 LicenseAuthority 솔루션은 Restore·Release Build(경고·오류 0개)·Test 11개를 성공했다. LicenseAuthority Smoke는 health·공개 JWK·정상 검증을 HTTP 200, Production 차단·폐기 검증을 HTTP 403으로 확인했고, Host Smoke는 두 Host의 health·DB health·OpenAPI·Swagger·Development Bypass Tenant API를 HTTP 200으로 확인했다. 두 Smoke의 stderr는 0바이트이고 임시 경로는 삭제되었다. 병렬 Restore의 종료 코드 1은 Work 실행 경계의 Named Pipe 문제이며 직렬 Restore 성공으로 코드 실패와 구분했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙은 별도 미검증 조건이다.
 
 ## PR #210 당시 상세 증거
 
