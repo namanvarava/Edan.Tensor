@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #168 기능 병합 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #173 병합 커밋 `a1fa0638e2bca4623645630bf7211371e9031782`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
@@ -10,7 +10,7 @@ PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run 
 
 ## 2026-11-10 최신 제품 코드 기준 Host Smoke·의존성·GitHub 상태 재검증
 
-PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81951`의 Release 바이너리를 임시 SQLite 네 개와 Development 환경의 고정 Bypass 프로필로 실제 기동했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`가 모두 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 각각 0바이트였고, 검증 후 임시 Smoke 디렉터리를 삭제했다. 이후 PR #170은 이 증거 문서만 변경하여 `8b96528c58be3b8fcbe0e3fc3abfcd1b4856e11c`로 병합했으며 제품 코드는 변경하지 않았다.
+PR #173이 병합한 최신 제품 코드 기준 `a1fa0638e2bca4623645630bf7211371e9031782`의 Release 바이너리를 임시 SQLite 네 개와 Development 환경의 고정 Bypass 프로필로 실제 기동했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`, `/health/database`가 모두 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 각각 0바이트였고, 검증 후 임시 Smoke 디렉터리를 삭제했다.
 
 같은 기준에서 `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 실행하여 모든 프로젝트에 알려진 취약 패키지가 없음을 확인했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남아 있다. GitHub Issue #84는 실제 비운영 외부 IdP와 main 보호 규칙 검증을 위한 Milestone #1에 열린 상태로 유지한다.
 
@@ -22,7 +22,7 @@ PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81
 
 첫 실행은 Windows PowerShell 5.1의 `ProcessStartInfo.ArgumentList` 부재로 시작 단계에서 중단되었다. PowerShell 7만 요구하는 대안은 개발 환경 제약을 늘리므로 단일 DLL 인수를 `ProcessStartInfo.Arguments`에 따옴표로 전달하는 호환 수정을 선택했다. 두 번째 실행에서는 Host 응답은 성공했지만 `Process.Kill(bool)` 오버로드가 없어 정리 단계가 중단되었다. Host DLL은 자식 프로세스를 만들지 않으므로 `Process.Kill()`과 `WaitForExit()`를 사용하는 최소 수정으로 정리 경계를 복구했다.
 
-구문 분석과 실제 재실행에서 ApiHost health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API·WorkerHost health가 모두 HTTP 200이었고, 두 Host stderr는 0바이트이며 임시 Smoke 디렉터리는 존재하지 않았다. 이후 Release Restore·Build·Test도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개로 통과했다. 이 기록은 재발 방지용 일회성 검증 도구의 증거이며 예약 실행이나 운영 인증 우회를 추가하지 않는다.
+구문 분석과 실제 재실행에서 ApiHost health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API·WorkerHost health·database health가 모두 HTTP 200이었고, 두 Host stderr는 0바이트이며 임시 Smoke 디렉터리는 존재하지 않았다. 이후 Release Restore·Build·Test도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 247개 통과·실패 0개·건너뜀 0개로 통과했다. 이 기록은 재발 방지용 일회성 검증 도구의 증거이며 예약 실행이나 운영 인증 우회를 추가하지 않는다.
 
 ## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
 
