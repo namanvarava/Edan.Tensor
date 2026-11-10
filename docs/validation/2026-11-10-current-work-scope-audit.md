@@ -129,3 +129,9 @@ WorkerHost의 기존 `/health`는 프로세스가 응답하는지만 확인하�
 실제 검증은 `WorkerHostHealthIntegrationTests`의 정상·콘텐츠 DB 열기 실패 2개와 솔루션 전체 Release Test 248개에서 실패 0개·건너뜀 0개로 통과했다. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1`도 임시 SQLite 네 개로 ApiHost·WorkerHost의 health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고, 양쪽 stderr 0바이트와 임시 Smoke 디렉터리 삭제를 확인했다.
 
 이 변경은 로컬 SQLite 운영 관찰성을 보강하지만 실제 운영 DB 장애 복구, 외부 IdP, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 완료 처리하지 않는다.
+
+## 2026-11-10 WorkerHost 테스트 임시 경계 정리 안정화
+
+WorkerHost health 통합 테스트의 `finally`가 임시 DB 디렉터리를 삭제할 때 `using var`로 선언한 WebApplicationFactory·HttpClient·응답이 아직 메서드 스코프에 남아 있을 수 있는 정리 순서 결함을 확인했다. Windows에서는 이 순서가 파일 핸들 잠금으로 임시 디렉터리 삭제 실패와 후속 테스트 오염을 만들 수 있다. 삭제 재시도나 지연을 추가하는 대안은 원인을 숨기므로 선택하지 않고, 테스트 블록 안에서 Host·Client·응답을 먼저 폐기하는 최소 수정으로 정리 순서를 고정했다.
+
+수정 후 정상·콘텐츠 DB 열기 실패 WorkerHost health 통합 테스트 2개가 통과했다. 이 변경은 제품 실행 경계를 바꾸지 않으며, 임시 자원 정리 실패가 재발하지 않도록 테스트 구조 자체를 고정한 것이다.

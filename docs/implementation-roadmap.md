@@ -326,3 +326,5 @@ PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81
 
 WorkerHost 전용 임시 SQLite 통합 테스트 2개는 정상 연결과 콘텐츠 DB 열기 실패를 각각 확인했고, 솔루션 Release Restore·Build·Test(전체 248개, 실패 0개·건너뜀 0개)와 실제 Host Smoke를 재실행했다. Smoke는 두 Host의 health·database health, OpenAPI, Swagger UI, Development Bypass Tenant API에서 HTTP 200을 반환했고 stderr 0바이트와 임시 디렉터리 정리를 확인했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403과 Licensing은 이 단계의 완료 범위에 포함하지 않는다.
 PR #175 자체 CI [Run #42748810618](https://github.com/namanvarava/Edan.Tensor/actions/runs/42748810618)와 병합 후 main CI [Run #42749039001](https://github.com/namanvarava/Edan.Tensor/actions/runs/42749039001)이 성공했고, main 병합 커밋은 `212f5b64a6d27ecd4ea21cb5f3597b1a461a5cf2`다. 병합 후 동일한 Release Restore·Build·Test와 Host Smoke를 재실행해 같은 결과를 확인했다.
+
+WorkerHost health 통합 테스트의 임시 DB 정리 순서도 보강했다. `using var` 자원이 `finally` 이후까지 살아 있을 수 있어 Windows 파일 잠금으로 삭제가 실패할 가능성이 있었으며, 지연·재시도 대신 테스트 블록 안에서 Host·Client·응답을 먼저 폐기하도록 수정했다. 정상·장애 경계 2개를 다시 통과시켜 중단 원인과 정리 경계를 고정했다.

@@ -24,20 +24,21 @@ public sealed class WorkerHostHealthIntegrationTests
 
         try
         {
-            using var factory = new WorkerHostFactory(root);
-            using var client = factory.CreateClient();
-            using var response = await client.GetAsync("/health/database");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-            Assert.Equal("Connected", document.RootElement.GetProperty("status").GetString());
-            Assert.Equal("Green", document.RootElement.GetProperty("indicator").GetString());
-            Assert.True(document.RootElement.GetProperty("canConnect").GetBoolean());
-            var databases = document.RootElement.GetProperty("databases");
-            Assert.True(databases.GetProperty("Platform").GetBoolean());
-            Assert.True(databases.GetProperty("Worker").GetBoolean());
-            Assert.True(databases.GetProperty("DataSet").GetBoolean());
-            Assert.True(databases.GetProperty("DataSetContent").GetBoolean());
+            using (var factory = new WorkerHostFactory(root))
+            using (var client = factory.CreateClient())
+            using (var response = await client.GetAsync("/health/database"))
+            {
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+                Assert.Equal("Connected", document.RootElement.GetProperty("status").GetString());
+                Assert.Equal("Green", document.RootElement.GetProperty("indicator").GetString());
+                Assert.True(document.RootElement.GetProperty("canConnect").GetBoolean());
+                var databases = document.RootElement.GetProperty("databases");
+                Assert.True(databases.GetProperty("Platform").GetBoolean());
+                Assert.True(databases.GetProperty("Worker").GetBoolean());
+                Assert.True(databases.GetProperty("DataSet").GetBoolean());
+                Assert.True(databases.GetProperty("DataSetContent").GetBoolean());
+            }
         }
         finally
         {
@@ -57,16 +58,17 @@ public sealed class WorkerHostHealthIntegrationTests
 
         try
         {
-            using var factory = new WorkerHostFactory(root, invalidContentPath);
-            using var client = factory.CreateClient();
-            using var response = await client.GetAsync("/health/database");
-
-            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-            Assert.Equal("Disconnected", document.RootElement.GetProperty("status").GetString());
-            Assert.Equal("Red", document.RootElement.GetProperty("indicator").GetString());
-            Assert.False(document.RootElement.GetProperty("canConnect").GetBoolean());
-            Assert.False(document.RootElement.GetProperty("databases").GetProperty("DataSetContent").GetBoolean());
+            using (var factory = new WorkerHostFactory(root, invalidContentPath))
+            using (var client = factory.CreateClient())
+            using (var response = await client.GetAsync("/health/database"))
+            {
+                Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+                using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+                Assert.Equal("Disconnected", document.RootElement.GetProperty("status").GetString());
+                Assert.Equal("Red", document.RootElement.GetProperty("indicator").GetString());
+                Assert.False(document.RootElement.GetProperty("canConnect").GetBoolean());
+                Assert.False(document.RootElement.GetProperty("databases").GetProperty("DataSetContent").GetBoolean());
+            }
         }
         finally
         {
