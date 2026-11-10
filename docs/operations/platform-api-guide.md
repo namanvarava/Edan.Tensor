@@ -259,7 +259,7 @@ Tenant 관리자는 등록된 작업 유형만 불투명 Payload Reference로 �
 
 DLQ 작업은 다음 관리자 API로 조회·재처리합니다.
 
-- `GET /api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=50` (page는 1 이상, pageSize는 1 이상 100 이하이며 범위를 벗어나면 HTTP 400과 `worker.dead_letter.invalid_query` 오류 코드를 반환합니다.)
+- `GET /api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=50` (page는 1 이상, pageSize는 1 이상 100 이하이며 `(page - 1) * pageSize`가 정수 범위를 넘지 않아야 합니다. 입력 범위를 벗어나면 HTTP 400과 `worker.dead_letter.invalid_query`, 페이지 오프셋이 정수 범위를 넘으면 `worker.dead_letter.invalid_page` 오류 코드를 반환합니다.)
 - `POST /api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay`
 
 재처리 요청에는 새로운 GUID 형식의 `Replay-Request-Id` 헤더가 필요합니다. 같은 재처리 식별자를 반복 사용해도 동일한 재처리 작업으로 수렴하며, 원본 작업과 Tenant 범위는 유지됩니다.

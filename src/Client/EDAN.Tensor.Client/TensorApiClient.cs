@@ -241,10 +241,10 @@ public sealed class TensorApiClient
 
     /// <summary>Tenant 관리자가 조회할 DLQ 작업을 1 이상인 페이지와 1~100 범위의 페이지 크기로 반환합니다.</summary>
     /// <param name="tenantId">DLQ 작업이 속한 Tenant 식별자입니다.</param>
-    /// <param name="page">조회할 페이지 번호입니다. 1 이상이어야 합니다.</param>
+    /// <param name="page">조회할 페이지 번호입니다. 1 이상이어야 하며 페이지 오프셋이 정수 범위를 넘지 않아야 합니다.</param>
     /// <param name="pageSize">페이지에 반환할 작업 수입니다. 1 이상 100 이하여야 합니다.</param>
     /// <param name="cancellationToken">요청 취소를 감시하는 토큰입니다.</param>
-    /// <exception cref="ArgumentOutOfRangeException">page 또는 pageSize가 허용 범위를 벗어나면 발생합니다.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">page 또는 pageSize가 허용 범위를 벗어나거나 페이지 오프셋이 정수 범위를 넘으면 발생합니다.</exception>
     /// <exception cref="TensorApiException">Tenant 관리자가 아니거나 API가 DLQ 조회를 거부하면 발생합니다.</exception>
     public Task<WorkerDeadLetterPageContract> GetWorkerDeadLettersAsync(
         Guid tenantId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
@@ -252,6 +252,8 @@ public sealed class TensorApiClient
         ValidateTenantId(tenantId);
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
         if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        if ((long)(page - 1) * pageSize > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(page), "페이지 오프셋이 정수 범위를 초과합니다.");
         return SendJsonAsync<WorkerDeadLetterPageContract>(
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/dead-letters?page={page}&pageSize={pageSize}"), tenantId),
             cancellationToken);
