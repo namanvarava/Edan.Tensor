@@ -19,9 +19,9 @@ dotnet run --project src/Hosts/EDAN.Tensor.ApiHost
 브라우저 또는 HTTP 클라이언트에서 다음 주소를 호출합니다.
 
 - `GET http://localhost:5000/health`: API 프로세스와 Platform·Worker·DataSet·DataSet 콘텐츠 SQLite 상태
-- `GET http://localhost:5000/health/database`: 네 개 데이터베이스의 연결·기본 스키마 상태
+- `GET http://localhost:5000/health/database`: 네 개 데이터베이스의 연결 상태와 Platform·Worker·DataSet 메타데이터 기본 스키마 상태
 
-실제 포트는 실행 시 출력되는 ASP.NET Core 주소를 사용합니다. 모든 데이터베이스가 연결되고 기본 테이블을 읽을 수 있으면 `/health`는 HTTP 200과 `Healthy`, `/health/database`는 `Connected`와 `Green`을 반환합니다. 하나라도 실패하면 두 경로 모두 HTTP 503을 반환하며, 응답에는 데이터베이스별 성공 여부만 포함하고 연결 문자열과 예외 상세는 포함하지 않습니다.
+실제 포트는 실행 시 출력되는 ASP.NET Core 주소를 사용합니다. Platform·Worker·DataSet 메타데이터의 기본 테이블을 읽고 DataSet 콘텐츠 데이터베이스에 연결할 수 있으면 `/health`는 HTTP 200과 `Healthy`, `/health/database`는 `Connected`와 `Green`을 반환합니다. 하나라도 실패하면 두 경로 모두 HTTP 503을 반환하며, 응답에는 데이터베이스별 성공 여부만 포함하고 연결 문자열과 예외 상세는 포함하지 않습니다. 콘텐츠 테이블은 SQLite 어댑터가 저장소 작업 전에 멱등적으로 준비하므로 health 경로는 콘텐츠 데이터베이스의 연결 자체를 확인합니다.
 
 ## 연결 문자열 변경
 
@@ -64,7 +64,7 @@ dotnet run --project src/Hosts/EDAN.Tensor.WorkerHost
 개발 환경 Migration 자동 적용을 사용하는 경우 두 Host가 동시에 Migration을 실행하지 않도록 순차적으로 시작합니다. 운영 환경에서는 두 Host 모두 자동 Migration을 비활성화하고 배포 파이프라인에서 각 데이터베이스 Migration을 승인·적용합니다.
 
 Worker Host의 `/health`는 Worker 프로세스 상태를 확인합니다. 실제 주기 작업 결과는 API의 Tenant 저장량 이력 및 Quota 이벤트 조회 API로 확인합니다.
-Worker Host의 `/health/database`는 API Host와 같은 네 개 데이터베이스의 연결과 기본 스키마 읽기를 확인하고 `Connected/Green` 또는 `Disconnected/Red`를 반환합니다. 이 경로가 실패하면 Worker 프로세스가 살아 있어도 작업 처리를 재개하지 않고 연결 설정과 데이터베이스 상태를 조사해야 합니다.
+Worker Host의 `/health/database`는 API Host와 같은 네 개 데이터베이스의 연결과 Platform·Worker·DataSet 메타데이터 기본 스키마 읽기를 확인하고 `Connected/Green` 또는 `Disconnected/Red`를 반환합니다. 이 경로가 실패하면 Worker 프로세스가 살아 있어도 작업 처리를 재개하지 않고 연결 설정과 데이터베이스 상태를 조사해야 합니다.
 
 ## 재현 가능한 Release Host Smoke
 

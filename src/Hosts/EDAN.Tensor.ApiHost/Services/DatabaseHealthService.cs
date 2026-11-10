@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.Services;
 
-/// <summary>API Host가 사용하는 모든 로컬 데이터베이스의 연결과 기본 스키마를 확인합니다.</summary>
+/// <summary>API Host가 사용하는 메타데이터 데이터베이스의 기본 스키마와 콘텐츠 데이터베이스 연결을 확인합니다.</summary>
 public sealed class DatabaseHealthService(
     IServiceScopeFactory scopeFactory,
     SqliteDatabaseHealthProbe contentDatabase)
 {
-    /// <summary>Platform·Worker·DataSet 메타데이터와 DataSet 콘텐츠 데이터베이스 상태를 반환합니다.</summary>
+    /// <summary>Platform·Worker·DataSet 메타데이터의 기본 스키마와 DataSet 콘텐츠 데이터베이스 연결 상태를 반환합니다.</summary>
     /// <param name="cancellationToken">상태 확인을 중단할 취소 토큰입니다.</param>
     /// <returns>각 데이터베이스의 연결 가능 여부와 전체 상태를 반환합니다.</returns>
     public async Task<DatabaseHealthSnapshot> CheckAsync(CancellationToken cancellationToken = default)

@@ -46,7 +46,36 @@ public sealed class WorkerHostHealthIntegrationTests
         }
     }
 
-    private sealed class WorkerHostFactory(string root) : WebApplicationFactory<WorkerHostProgram>
+    /// <summary>Worker Host가 열 수 없는 콘텐츠 데이터베이스를 HTTP 503으로 보고합니다.</summary>
+    [Fact]
+    public async Task WorkerHostDatabaseHealthReturnsServiceUnavailableWhenContentDatabaseCannotOpen()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"edan-worker-health-failure-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        var invalidContentPath = Path.Combine(root, "content-directory");
+        Directory.CreateDirectory(invalidContentPath);
+
+        try
+        {
+            using var factory = new WorkerHostFactory(root, invalidContentPath);
+            using var client = factory.CreateClient();
+            using var response = await client.GetAsync("/health/database");
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            Assert.Equal("Disconnected", document.RootElement.GetProperty("status").GetString());
+            Assert.Equal("Red", document.RootElement.GetProperty("indicator").GetString());
+            Assert.False(document.RootElement.GetProperty("canConnect").GetBoolean());
+            Assert.False(document.RootElement.GetProperty("databases").GetProperty("DataSetContent").GetBoolean());
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private sealed class WorkerHostFactory(string root, string? contentDatabasePath = null) : WebApplicationFactory<WorkerHostProgram>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.UseEnvironment("Development");
 
@@ -58,7 +87,7 @@ public sealed class WorkerHostHealthIntegrationTests
                     ["ConnectionStrings:PlatformDatabase"] = $"Data Source={Path.Combine(root, "platform.db")};Cache=Shared;Pooling=False",
                     ["ConnectionStrings:WorkerDatabase"] = $"Data Source={Path.Combine(root, "worker.db")};Cache=Shared;Pooling=False",
                     ["ConnectionStrings:DataSetDatabase"] = $"Data Source={Path.Combine(root, "dataset.db")};Cache=Shared;Pooling=False",
-                    ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={Path.Combine(root, "dataset-content.db")};Cache=Shared;Pooling=False",
+                    ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={contentDatabasePath ?? Path.Combine(root, "dataset-content.db")};Cache=Shared;Pooling=False",
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
                     ["ExternalDelivery:AllowLoopback"] = "true"
