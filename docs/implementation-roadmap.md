@@ -384,3 +384,11 @@ PR #198 병합 후 main 커밋 `908a0f303bf3bb73d9f53ffa72c86482bb9070e2`에서 
 이 재검증은 승인된 로컬 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 내부 범위만 증명한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, 승인되지 않은 DuckDB·Parquet·Commercial 유료 업무·WPF, 제품 API 라이선스 강제 계약은 완료로 표시하지 않는다.
 
 현재 저장소 내부에서 계약이 확정된 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·인증·인가·Development Bypass 경계, Worker 장애 복구, typed Client, 개발 LicenseAuthority의 서비스·HTTP 검증과 공급자 중립 Commercial 결제 경계다. DuckDB·Parquet의 포맷·스키마·quota·동시성·복구, Commercial 상품·가격·Webhook·환불·유료 권리, WPF 화면·업무 흐름, 제품 API의 라이선스 전달 헤더·검증 실패 응답 계약은 승인 전 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 별도 조건이다.
+
+## 2026-11-10 PR #199 병합 후 최종 재검증 및 로컬 실행 원인 분리
+
+PR #199는 `5f9b77121b0a2d1361ab745931a2d4ca558efd1b`로 main에 Squash Merge되었다. PR CI [Run #42822149060](https://github.com/namanvarava/Edan.Tensor/actions/runs/42822149060)와 병합 후 main CI [Run #42822647112](https://github.com/namanvarava/Edan.Tensor/actions/runs/42822647112)는 self-hosted Windows Runner에서 Restore·Build·Test·정리 단계를 성공했다. 병합된 main은 로컬에서도 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Release Test 262개 통과·실패 0개·건너뜀 0개를 권한이 허용된 실행 환경에서 재확인했다.
+
+같은 main에서 `tools/host-smoke.ps1`는 두 Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 HTTP 200으로 확인하고 stderr 0바이트와 임시 경로 삭제를 기록했다. `tools/license-authority-smoke.ps1`는 단일 5년 개발 라이선스·공개 JWK·정상 200·Production 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했다. 직접·전이 패키지 취약점 조회도 모든 프로젝트에서 알려진 취약 패키지 없음으로 끝났다.
+
+제한된 로컬 실행에서 Build가 종료 코드 1을 반환한 원인은 `MSB4276` SDK Workload resolver 오류와 compiler server 접근 거부였으며, 코드 컴파일 오류나 경고는 없었다. 동일 커밋을 권한이 허용된 외부 실행에서 성공시켜 인프라 실행 경계와 코드 실패를 분리했다. 이 해결은 저장소 코드·CI·보호 정책을 우회하지 않으며, 같은 증상 재발 시 실행 권한·SDK resolver·compiler server 상태를 먼저 조사한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, 승인되지 않은 DuckDB·Parquet·Commercial 유료 업무·WPF, 제품 API 라이선스 강제 계약은 계속 완료 범위에서 제외한다.
