@@ -16,6 +16,14 @@ PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81
 
 이 Smoke는 개발 전용 고정 Bypass와 loopback만 사용하므로 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 대체하지 않는다.
 
+## 2026-11-10 재현 가능한 Host Smoke 도구와 중단 복구
+
+실제 Host Smoke를 반복할 때 수동 PowerShell 하네스가 재현 절차와 정리 증거를 흩어지게 만드는 공백을 확인하여 `tools/host-smoke.ps1`을 추가했다. 도구는 Release 산출물과 임시 SQLite 네 개를 사용하고, `Development` 환경의 고정 Bypass에서만 ApiHost·WorkerHost의 health, database health, OpenAPI, Swagger UI와 Tenant API를 확인한다. 운영·External·CI 설정에는 Bypass를 주입하지 않는다.
+
+첫 실행은 Windows PowerShell 5.1의 `ProcessStartInfo.ArgumentList` 부재로 시작 단계에서 중단되었다. PowerShell 7만 요구하는 대안은 개발 환경 제약을 늘리므로 단일 DLL 인수를 `ProcessStartInfo.Arguments`에 따옴표로 전달하는 호환 수정을 선택했다. 두 번째 실행에서는 Host 응답은 성공했지만 `Process.Kill(bool)` 오버로드가 없어 정리 단계가 중단되었다. Host DLL은 자식 프로세스를 만들지 않으므로 `Process.Kill()`과 `WaitForExit()`를 사용하는 최소 수정으로 정리 경계를 복구했다.
+
+구문 분석과 실제 재실행에서 ApiHost health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API·WorkerHost health가 모두 HTTP 200이었고, 두 Host stderr는 0바이트이며 임시 Smoke 디렉터리는 존재하지 않았다. 이후 Release Restore·Build·Test도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개로 통과했다. 이 기록은 재발 방지용 일회성 검증 도구의 증거이며 예약 실행이나 운영 인증 우회를 추가하지 않는다.
+
 ## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
 
 Worker 서버는 `(page - 1) * pageSize`를 checked 계산하여 정수 오버플로를 `worker.dead_letter.invalid_page`로 거부하지만 typed Client가 양의 `page`를 모두 허용하던 계약 불일치를 확인했다. Client가 `page`·`pageSize` 조합의 오프셋을 정수 범위 안에서 선행 검증하도록 최소 수정하고, 한국어 XML 문서와 운영 가이드에 오버플로 조건을 기록했다. Client 단위 테스트는 `page=int.MaxValue`를 서버에 전송하지 않고 차단한다.

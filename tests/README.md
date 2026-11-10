@@ -18,6 +18,8 @@
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
+Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -File tools/host-smoke.ps1`로 일회성 재현할 수 있습니다. 이 도구는 Development Bypass와 임시 SQLite만 사용하고, 운영 인증·CI·예약 실행을 변경하지 않습니다.
+
 ## 현재 main 기준: 2026-11-10
 
 현재 Release 검증의 제품 코드 기준은 PR #169가 `5033716067358350f3f86cc1910c8135f1c81951`로 병합한 상태다. PR #169 자체 CI [Run #958](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738870416)와 병합 후 main CI [Run #959](https://github.com/namanvarava/Edan.Tensor/actions/runs/42739089384)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. 이후 PR #170은 이 테스트·Smoke 증거 문서만 변경하여 `8b96528c58be3b8fcbe0e3fc3abfcd1b4856e11c`로 병합했으며 제품 코드는 변경하지 않았다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답 경계를 포함한다. 최신 Release Host Smoke에서도 ApiHost·WorkerHost의 health, DB health, OpenAPI, Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
