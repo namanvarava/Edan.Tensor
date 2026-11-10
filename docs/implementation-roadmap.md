@@ -375,4 +375,12 @@ PR #197은 등록·활성화되지 않은 Worker `taskType`이 작업을 생성�
 
 이번 변경은 기존 공개 API·Tenant 격리·인증·Worker 실행 경계를 유지하는 문서·회귀 검증 보강이다. 제품 API 자체 라이선스 전달 헤더·공개키 공급·기능 매핑·장애 시 fail-closed 계약은 별도 승인 전까지 구현하지 않는다.
 
+## 2026-11-10 최신 main 저장소 내부 검증 재실행
+
+PR #198 병합 후 main 커밋 `908a0f303bf3bb73d9f53ffa72c86482bb9070e2`에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 순서대로 실행했다. Restore는 성공했고, Release Build는 경고 0개·오류 0개, 전체 Test는 262개 통과·실패 0개·건너뜀 0개였다. 별도 `EDAN.Tensor.LicenseAuthority.sln`도 Restore 성공, Release Build 경고 0개·오류 0개, Test 10개 통과를 기록했다.
+
+`tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인했고 양쪽 stderr 0바이트와 임시 경로 삭제를 확인했다. `tools/license-authority-smoke.ps1`는 개발 라이선스 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403을 확인했으며 토큰 로그와 임시 경로가 없었다. `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`에서도 취약 패키지가 없었다.
+
+이 재검증은 승인된 로컬 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 내부 범위만 증명한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, 승인되지 않은 DuckDB·Parquet·Commercial 유료 업무·WPF, 제품 API 라이선스 강제 계약은 완료로 표시하지 않는다.
+
 현재 저장소 내부에서 계약이 확정된 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·인증·인가·Development Bypass 경계, Worker 장애 복구, typed Client, 개발 LicenseAuthority의 서비스·HTTP 검증과 공급자 중립 Commercial 결제 경계다. DuckDB·Parquet의 포맷·스키마·quota·동시성·복구, Commercial 상품·가격·Webhook·환불·유료 권리, WPF 화면·업무 흐름, 제품 API의 라이선스 전달 헤더·검증 실패 응답 계약은 승인 전 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 별도 조건이다.
