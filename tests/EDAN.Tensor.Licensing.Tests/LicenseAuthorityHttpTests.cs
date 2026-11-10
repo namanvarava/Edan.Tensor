@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
+using System.Text.Json;
 
 namespace EDAN_Tensor_Licensing_Tests;
 
@@ -103,6 +104,20 @@ public sealed class LicenseAuthorityHttpTests
             Assert.False(unknownKeyId.IsValid);
             Assert.Equal("licensing.token.key_invalid", unknownKeyId.ErrorCode);
 
+            var keyMaterial = developmentFactory.Services.GetRequiredService<FileEs256KeyMaterial>();
+            var malformedSignedClaims = ReplacePayloadAndSign(
+                keyMaterial,
+                firstIssue.Token,
+                payload => payload.Replace("\"status\":\"Active\"", "\"status\":\"Unknown\"", StringComparison.Ordinal));
+            var malformed = await ValidateAsync(
+                developmentClient,
+                malformedSignedClaims,
+                DevelopmentLicenseConstants.TenantCode,
+                [DevelopmentLicenseConstants.PlatformFeature],
+                HttpStatusCode.Forbidden);
+            Assert.False(malformed.IsValid);
+            Assert.Equal("licensing.token.invalid", malformed.ErrorCode);
+
             using var productionFactory = new LicenseAuthorityFactory(root, "Production");
             using var productionClient = productionFactory.CreateClient();
             var productionIssuance = await productionClient.PostAsync("/api/licenses/development", content: null);
@@ -184,6 +199,24 @@ public sealed class LicenseAuthorityHttpTests
         var header = FileEs256KeyMaterial.Base64Url(
             Encoding.UTF8.GetBytes($"{{\"alg\":\"ES256\",\"kid\":\"{keyId}\",\"typ\":\"JWT\"}}"));
         return $"{header}.{parts[1]}.{parts[2]}";
+    }
+
+    /// <summary>기존 토큰의 Payload를 바꾸고 같은 개인키로 다시 서명합니다.</summary>
+    private static string ReplacePayloadAndSign(
+        FileEs256KeyMaterial keyMaterial,
+        string token,
+        Func<string, string> transform)
+    {
+        var parts = token.Split('.');
+        using var payload = JsonDocument.Parse(Encoding.UTF8.GetString(FileEs256KeyMaterial.FromBase64Url(parts[1])));
+        var payloadText = transform(payload.RootElement.GetRawText());
+        var encodedPayload = FileEs256KeyMaterial.Base64Url(Encoding.UTF8.GetBytes(payloadText));
+        var signingInput = $"{parts[0]}.{encodedPayload}";
+        var signature = keyMaterial.SigningKey.SignData(
+            Encoding.UTF8.GetBytes(signingInput),
+            System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        return $"{signingInput}.{FileEs256KeyMaterial.Base64Url(signature)}";
     }
 
     /// <summary>HTTP 검증에 사용할 공개 라이선스 정보를 생성합니다.</summary>

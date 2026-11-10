@@ -102,7 +102,7 @@ public sealed class Es256LicenseTokenCodec(
 
             return Result<LicenseDescriptor>.Success(descriptor);
         }
-        catch (Exception exception) when (exception is FormatException or JsonException or KeyNotFoundException or InvalidOperationException)
+        catch (Exception exception) when (exception is ArgumentException or FormatException or JsonException or KeyNotFoundException or InvalidOperationException or OverflowException)
         {
             return Failure("licensing.token.invalid", "라이선스 토큰을 해석할 수 없습니다.");
         }

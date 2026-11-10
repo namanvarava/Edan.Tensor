@@ -179,3 +179,9 @@ PR #180 병합 후 로컬·원격에는 `main`만 남았고 열린 Pull Request�
 RBAC, 기본 거부, 최소 권한, Tenant·Organization·Project 범위와 감사 경계는 기존 Platform 계약을 유지한다. 결제 공급자는 확정하지 않고 Paddle 1순위, Stripe 2순위, PayPal 대안 권고만 관리 문서에 기록했으며, 실제 결제·가격·환불·유료 entitlement는 구현하지 않았다.
 
 제한된 Work 실행 경계에서는 LicenseAuthority와 기존 Host를 별도 프로세스로 시작할 때 `Now listening`·`Application started` 로그까지 확인했으나 loopback HTTP 요청이 `액세스 권한에 의해 숨겨진 소켓을 시도했습니다`로 차단되었다. 권한이 허용된 실행 환경에서 동일 스모크를 재실행하여 LicenseAuthority의 Development 발급·공개키·정상 검증·Production 개발 라이선스 차단·폐기 검증과 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI를 성공 확인했다. 제한된 Work 경계의 실패는 실행 환경 제한으로 기록하고 제품 성공으로 대체하지 않는다.
+
+## 2026-11-10 LicenseAuthority 손상 Claim 입력 경계 재검증
+
+서명이 유효한 토큰의 `status` 또는 시간 Claim이 손상되면 `Enum.Parse`·Unix 시간 변환의 `ArgumentException`이 LicenseAuthority HTTP 경계 밖으로 나갈 수 있던 결함을 확인했다. 이 경우 전역 예외 변환기가 없는 별도 Host가 HTTP 500을 반환할 수 있으므로, JSON·형식 오류와 같은 안정적인 `licensing.token.invalid` 오류로 닫도록 최소 수정했다. 서비스 단위와 HTTP 통합 회귀 테스트가 손상된 상태 Claim을 HTTP 403과 해당 오류 코드로 확인한다.
+
+수정 브랜치 검증은 별도 LicenseAuthority Test 11개, 전체 Release Test 263개를 모두 통과했고 Release Build는 경고 0개·오류 0개였다. `tools/license-authority-smoke.ps1`와 `tools/host-smoke.ps1`도 각각 발급·공개키·정상·운영 차단·폐기와 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI를 성공 확인했다. 이 수정은 현재 main에 병합되기 전이므로 PR CI와 병합 후 main CI가 성공하기 전에는 최신 main 완료 증거로 표시하지 않는다.
