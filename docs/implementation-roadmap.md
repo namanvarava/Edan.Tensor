@@ -422,3 +422,11 @@ Worker 모델과 Migration 스냅샷을 비교하는 회귀 테스트가 없던 
 PR #206의 head `65a937b20cbf40195c0f854e449ec4e03c1a57de`에 대한 [PR CI Run #42839417787](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839417787)과 Squash Merge 후 main 커밋 `bad8ed628fa34823b776232c2d9bbb753e42ccc5`의 [main CI Run #42839791924](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839791924)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬에서도 필수 Release 명령과 별도 LicenseAuthority Restore·Build·Test를 다시 실행했으며, 작업 브랜치는 로컬·원격에서 삭제했고 원격 브랜치 검색에서도 확인되지 않았다.
 
 이 증거는 승인된 로컬 SQLite의 개발·테스트 백업 경계를 보강한다. 운영 DB 공급자, 보존 기간, RPO/RTO, 외부 백업 저장소와 실제 운영 복구는 아직 결정·제공되지 않았으므로 완료로 표시하지 않는다.
+
+## 2026-11-11 최신 main 내부 검증 재실행
+
+PR #209 병합 후 최신 `main` 커밋 `cfdb8d19cd827d380db60e8a5964b71f6a91cd32`에서 승인된 내부 범위를 다시 검증했다. `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 실행 경계에서 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 270개 통과·실패 0개·건너뜀 0개를 기록했다.
+
+`tools/license-authority-smoke.ps1`는 `EDAN-NONPROD` 개발 라이선스의 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했다. `tools/host-smoke.ps1`는 임시 SQLite와 Development Bypass로 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다.
+
+병렬 실행 실패는 소스 오류가 아니라 Work 실행 경계의 Named Pipe 접근 권한 문제로 분리했으며, 직렬 복원과 권한이 허용된 Build·Test로 재발 방지 절차를 확인했다. 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템, GitHub main 보호 규칙 HTTP 403은 Issue #84의 외부 조건으로 계속 미검증이다. DuckDB·Parquet·Commercial 유료 업무·WPF와 제품 API 라이선스 자동 강제는 승인된 계약이 제공되기 전까지 구현 완료로 표시하지 않는다.
