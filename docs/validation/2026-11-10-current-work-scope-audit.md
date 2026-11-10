@@ -8,6 +8,14 @@ typed Client의 페이지 오프셋 선행 검증에 더해 API Host 통합 테�
 
 PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run #956](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738402094)와 Squash Merge 후 main 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`의 [main CI Run #957](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738642780)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했다. 이 변경은 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위만 보강하며, DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF와 실제 외부 환경 검증을 완료 처리하지 않는다.
 
+## 2026-11-10 최신 main 직접 Host Smoke·의존성·GitHub 상태 재검증
+
+최신 `main` `5033716067358350f3f86cc1910c8135f1c81951`의 Release 바이너리를 임시 SQLite 네 개와 Development 환경의 고정 Bypass 프로필로 실제 기동했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`가 모두 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 각각 0바이트였고, 검증 후 임시 Smoke 디렉터리를 삭제했다.
+
+같은 기준에서 `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 실행하여 모든 프로젝트에 알려진 취약 패키지가 없음을 확인했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남아 있다. GitHub Issue #84는 실제 비운영 외부 IdP와 main 보호 규칙 검증을 위한 Milestone #1에 열린 상태로 유지한다.
+
+이 Smoke는 개발 전용 고정 Bypass와 loopback만 사용하므로 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 대체하지 않는다.
+
 ## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
 
 Worker 서버는 `(page - 1) * pageSize`를 checked 계산하여 정수 오버플로를 `worker.dead_letter.invalid_page`로 거부하지만 typed Client가 양의 `page`를 모두 허용하던 계약 불일치를 확인했다. Client가 `page`·`pageSize` 조합의 오프셋을 정수 범위 안에서 선행 검증하도록 최소 수정하고, 한국어 XML 문서와 운영 가이드에 오버플로 조건을 기록했다. Client 단위 테스트는 `page=int.MaxValue`를 서버에 전송하지 않고 차단한다.

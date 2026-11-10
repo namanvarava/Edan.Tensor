@@ -309,3 +309,9 @@ PR #166의 head `c57952206fca5e161a8c392911f45cac82e1bc57`에 대한 [PR CI Run 
 API Host 통합 테스트에서 `page=int.MaxValue&pageSize=100`을 호출하여 Worker 서버의 checked 페이지 오프셋 오버플로가 HTTP 400 `worker.dead_letter.invalid_page`로 반환되는지 확인했다. Client 단위 검증과 서버 통합 검증을 함께 유지하여 동일 입력이 어느 경계에서도 정상 데이터 조회로 처리되지 않도록 했다.
 
 PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run #956](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738402094)와 Squash Merge 후 main 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`의 [main CI Run #957](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738642780)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. 이 증거는 승인된 내부 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.
+
+## 2026-11-10 최신 main 직접 Host Smoke·의존성·GitHub 상태 재검증
+
+최신 `main` `5033716067358350f3f86cc1910c8135f1c81951`의 Release ApiHost와 WorkerHost를 임시 SQLite 네 개로 실제 기동했다. ApiHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 WorkerHost health는 모두 HTTP 200을 반환했고, 두 Host의 표준 오류 출력은 0바이트였다. 검증 후 임시 프로세스와 데이터 경계를 정리했다.
+
+`dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 모든 프로젝트에 알려진 취약 패키지가 없음을 반환했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남았다. Issue #84의 실제 외부 IdP·GitHub main 보호 규칙 HTTP 403은 외부 조건으로 계속 미검증이다.
