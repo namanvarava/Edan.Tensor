@@ -1,6 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #164 기능 병합 커밋 `f2d303c607b21b418e98f688000262441f48d837`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #166 기능 병합 커밋 `7be3d93fbfc56ed2767ea985ad5b59ece30af2e7`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+
+## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
+
+Worker 서버는 `(page - 1) * pageSize`를 checked 계산하여 정수 오버플로를 `worker.dead_letter.invalid_page`로 거부하지만 typed Client가 양의 `page`를 모두 허용하던 계약 불일치를 확인했다. Client가 `page`·`pageSize` 조합의 오프셋을 정수 범위 안에서 선행 검증하도록 최소 수정하고, 한국어 XML 문서와 운영 가이드에 오버플로 조건을 기록했다. Client 단위 테스트는 `page=int.MaxValue`를 서버에 전송하지 않고 차단한다.
+
+PR #166의 head `c57952206fca5e161a8c392911f45cac82e1bc57`에 대한 [PR CI Run #952](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736302956)와 Squash Merge 후 main 커밋 `7be3d93fbfc56ed2767ea985ad5b59ece30af2e7`의 [main CI Run #953](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736549387)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했다. 이 변경은 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위만 보강하며, DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF와 실제 외부 환경 검증을 완료 처리하지 않는다.
 
 ## 2026-11-10 PR #164 Client 페이지 계약 정합성 보강
 
