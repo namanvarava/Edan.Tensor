@@ -396,3 +396,9 @@ PR #199는 `5f9b77121b0a2d1361ab745931a2d4ca558efd1b`로 main에 Squash Merge되
 ## 2026-11-10 PR #200 최신 main 기준 갱신
 
 PR #200는 위 최종 검증 문서의 기준을 최신 main 커밋 `6e0a07dedf1e5b284cd883099bb746934d9950a6`로 갱신했다. PR CI [Run #42824930487](https://github.com/namanvarava/Edan.Tensor/actions/runs/42824930487)와 병합 후 main CI [Run #42825362715](https://github.com/namanvarava/Edan.Tensor/actions/runs/42825362715)가 self-hosted Windows Runner에서 Restore·Build·Test·정리 단계를 성공했다. 이 PR은 제품 코드를 변경하지 않았으며, 이전에 성공한 Release·Host Smoke·LicenseAuthority Smoke 증거의 기준 SHA와 링크만 최신화했다. PR 병합 후 원격·로컬 작업 브랜치는 삭제되었고 현재 main만 남았다.
+
+## 2026-11-10 승인 라이선스 입력 경계 유지보수
+
+현재 승인된 LicenseAuthority 검증 경계를 재감사하면서, 서명이 맞더라도 `status`·시간·Claim 형식이 손상된 토큰이 `ArgumentException`으로 API 전역 예외 경계 밖에 나갈 수 있는 결함을 확인했다. LicenseAuthority Host는 전역 예외 변환기를 사용하지 않으므로, 이 입력은 HTTP 500 대신 안정적인 `licensing.token.invalid`와 HTTP 403으로 닫혀야 한다. 토큰 해석기의 예외 필터를 인자·오버플로 오류까지 확장하고 손상된 상태 Claim을 서비스·HTTP 회귀 테스트로 고정했다.
+
+수정 브랜치에서 별도 LicenseAuthority Test 11개, 전체 Release Test 263개가 실패 0개·건너뜀 0개로 통과했고 Release Build는 경고 0개·오류 0개였다. 두 Host Smoke도 정상 HTTP 경계와 임시 자원 정리를 확인했다. 이 변경은 제품 API에 라이선스 강제를 추가하지 않으며, 기존 Platform·DataSet·Worker·Tenant·인증 계약을 유지한다. PR CI와 병합 후 main CI가 모두 성공한 뒤 최신 main SHA와 작업 브랜치 삭제 결과를 이 절에 추가한다.

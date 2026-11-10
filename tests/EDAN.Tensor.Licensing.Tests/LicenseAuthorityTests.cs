@@ -4,6 +4,7 @@ using EDAN_Tensor_Licensing_Contracts;
 using EDAN_Tensor_Licensing_Infrastructure.Cryptography;
 using EDAN_Tensor_Licensing_Infrastructure.Persistence;
 using System.Text;
+using System.Text.Json;
 using Xunit;
 
 namespace EDAN_Tensor_Licensing_Tests;
@@ -176,6 +177,32 @@ public sealed class LicenseAuthorityTests
         Assert.Equal("licensing.token.key_invalid", result.ErrorCode);
     }
 
+    /// <summary>서명된 토큰의 상태 Claim 형식이 깨져도 안정적인 입력 오류로 거부합니다.</summary>
+    [Fact]
+    public async Task Validation_RejectsMalformedSignedClaimsWithoutThrowing()
+    {
+        using var fixture = CreateFixture();
+        var service = new DevelopmentLicenseService(fixture.Store, fixture.Codec);
+        var validation = new LicenseValidationService(fixture.Codec, fixture.StatusStore);
+        var now = new DateTimeOffset(2030, 1, 2, 3, 4, 5, TimeSpan.Zero);
+        var issued = await service.IssueOrGetAsync(now);
+        var malformed = ReplacePayloadAndSign(
+            fixture.Key,
+            issued.Value.Token,
+            payload => payload.Replace("\"status\":\"Active\"", "\"status\":\"Unknown\"", StringComparison.Ordinal));
+
+        var result = await validation.ValidateAsync(
+            malformed,
+            new LicenseValidationRequest(
+                DevelopmentLicenseConstants.TenantCode,
+                DevelopmentLicenseConstants.Product,
+                [DevelopmentLicenseConstants.PlatformFeature]),
+            now);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("licensing.token.invalid", result.ErrorCode);
+    }
+
     /// <summary>개발 Tenant 라이선스는 운영 환경 정책에서 거부됩니다.</summary>
     [Fact]
     public void EnvironmentPolicy_RejectsDevelopmentLicenseInProduction()
@@ -227,6 +254,24 @@ public sealed class LicenseAuthorityTests
             new FileDevelopmentLicenseStore(Path.Combine(directory, "license.json")),
             new FileLicenseStatusStore(Path.Combine(directory, "status.json")),
             directory);
+    }
+
+    /// <summary>기존 토큰의 Payload를 바꾸고 같은 개인키로 다시 서명합니다.</summary>
+    private static string ReplacePayloadAndSign(
+        FileEs256KeyMaterial keyMaterial,
+        string token,
+        Func<string, string> transform)
+    {
+        var parts = token.Split('.');
+        using var payload = JsonDocument.Parse(Encoding.UTF8.GetString(FileEs256KeyMaterial.FromBase64Url(parts[1])));
+        var payloadText = transform(payload.RootElement.GetRawText());
+        var encodedPayload = FileEs256KeyMaterial.Base64Url(Encoding.UTF8.GetBytes(payloadText));
+        var signingInput = $"{parts[0]}.{encodedPayload}";
+        var signature = keyMaterial.SigningKey.SignData(
+            Encoding.UTF8.GetBytes(signingInput),
+            System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        return $"{signingInput}.{FileEs256KeyMaterial.Base64Url(signature)}";
     }
 
     private sealed record Fixture(

@@ -15,10 +15,10 @@
 - Worker Infrastructure: 71개
 - Client: 7개
 - API 통합: 37개
-- Licensing: 10개
+- Licensing: 11개
 - Commercial: 2개
 
-현재 통합 솔루션의 Release 테스트는 총 262개이며 실패 0개·건너뜀 0개입니다.
+현재 통합 솔루션의 Release 테스트는 총 263개이며 실패 0개·건너뜀 0개입니다.
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
@@ -26,7 +26,13 @@ Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -
 
 ## 현재 main 기준: 2026-11-10
 
-현재 Release 검증의 최신 main 기준은 PR #200 병합 커밋 `6e0a07dedf1e5b284cd883099bb746934d9950a6`이다. PR #200 [CI Run #42824930487](https://github.com/namanvarava/Edan.Tensor/actions/runs/42824930487)와 병합 후 main [CI Run #42825362715](https://github.com/namanvarava/Edan.Tensor/actions/runs/42825362715)이 Restore·Build·Test를 성공했다. 병합 후 main에서 지정된 Release Restore·Build·Test를 권한이 허용된 실행 환경에서 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 262개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 등록되지 않은 Worker 작업 유형의 HTTP 422 오류 계약, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority HTTP·서비스 경계 및 Commercial 결제 경계를 포함한다. 별도 LicenseAuthority 솔루션도 Restore·Release Build 경고 0개·오류 0개·Test 10개 통과를 기록했다. 최신 Release Host Smoke에서 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. LicenseAuthority HTTP Smoke는 5년 개발 라이선스·공개 JWK·정상 200·운영 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했다. 제한된 로컬 실행에서 발생한 SDK resolver·compiler server 접근 실패는 동일 커밋의 권한이 허용된 실행에서 성공하여 환경 원인으로 분리했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 Release 검증의 최신 main 기준은 PR #201 병합 커밋 `1a95698248fbd4dfbb471444241ecb354cdbab5d`이다. PR #201 [CI Run #42826684919](https://github.com/namanvarava/Edan.Tensor/actions/runs/42826684919)와 병합 후 main [CI Run #42827014207](https://github.com/namanvarava/Edan.Tensor/actions/runs/42827014207)이 Restore·Build·Test를 성공했다. 병합 후 main에서 지정된 Release Restore·Build·Test를 권한이 허용된 실행 환경에서 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 262개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 등록되지 않은 Worker 작업 유형의 HTTP 422 오류 계약, 외부 전달 취소 경계, 저장량 이력·quota 이벤트, DataSet 검증 상세·Worker DLQ 페이지·Client 선행 검증과 API 오버플로 응답, WorkerHost 네 저장소 database health 경계, LicenseAuthority HTTP·서비스 경계 및 Commercial 결제 경계를 포함한다. 별도 LicenseAuthority 솔루션도 Restore·Release Build 경고 0개·오류 0개·Test 10개 통과를 기록했다. 최신 Release Host Smoke에서 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI와 Development Bypass Tenant API가 HTTP 200을 반환했고 두 Host stderr는 0바이트였다. LicenseAuthority HTTP Smoke는 5년 개발 라이선스·공개 JWK·정상 200·운영 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했다. 제한된 로컬 실행에서 발생한 SDK resolver·compiler server 접근 실패는 동일 커밋의 권한이 허용된 실행에서 성공하여 환경 원인으로 분리했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+
+## 현재 작업의 LicenseAuthority 입력 경계 재검증
+
+서명이 유효해도 `status`·시간·Claim 형식이 손상된 라이선스 토큰이 `ArgumentException`으로 API 밖으로 누출될 수 있던 결함을 확인했다. 원인은 ES256 토큰 해석기의 예외 필터가 JSON·형식·속성 오류만 처리하고 `Enum.Parse`와 Unix 시간 변환에서 발생하는 인자 오류를 안정적인 라이선스 입력 오류로 변환하지 않은 것이었다. 예외를 `licensing.token.invalid`로 닫는 최소 수정과 서비스·HTTP 회귀 테스트를 추가했다.
+
+수정한 작업 기준에서 별도 LicenseAuthority Restore·Release Build는 경고 0개·오류 0개, 별도 테스트는 11개 통과·실패 0개·건너뜀 0개, 전체 Release Test는 263개 통과·실패 0개·건너뜀 0개였다. `tools/license-authority-smoke.ps1`는 발급·공개 JWK·정상 검증 200·운영 개발 라이선스 차단 403·폐기 차단 403을 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·DB health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 200으로 확인했다. 두 Smoke의 표준 오류 출력은 0바이트이고 임시 디렉터리는 삭제되었다. 이 절의 263개 결과는 수정 브랜치 검증이며, PR CI와 병합 후 main CI가 성공하기 전에는 main 완료 증거로 판정하지 않는다.
 
 ## 과거 단일 실행 기록
 
