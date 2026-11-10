@@ -101,6 +101,11 @@ public sealed record DataSetValidationExecutionSnapshot(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? CompletedAtUtc);
 
+/// <summary>검증 실행 저장 결과와 현재 요청이 실행을 새로 만들었는지를 나타냅니다.</summary>
+public sealed record DataSetValidationExecutionCreationResult(
+    DataSetValidationExecutionSnapshot Execution,
+    bool Created);
+
 /// <summary>API와 Worker가 공유하는 검증 실행 요청입니다.</summary>
 public sealed record DataSetValidationRequest(
     int ExpectedDataSetVersion,

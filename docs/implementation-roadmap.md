@@ -336,3 +336,9 @@ PR #177은 위 테스트 정리 순서를 보강한 변경이며, PR CI [Run #42
 실제 호스트의 Release Restore·Build·Test는 각각 성공, 경고 0개·오류 0개, 248개 통과·실패 0개·건너뜀 0개를 기록했다. Host Smoke는 임시 SQLite 네 개와 Development Bypass를 사용하여 ApiHost·WorkerHost의 health·database health, OpenAPI, Swagger UI, Tenant API를 HTTP 200으로 확인하고 stderr와 임시 데이터를 정리했다.
 
 제한된 Work 실행 경계의 병렬 MSBuild와 VSTest testhost 연결 실패는 외부 실행 경계에서 동일 커밋을 성공시켜 환경 문제로 분리했다. 이 현상은 제품 결함이 아니며, 복원·빌드가 같은 환경에서 중단되면 직렬 MSBuild 또는 외부 실행 경계에서 원인을 재확인한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403과 Licensing은 Issue #84 및 Milestone #1의 별도 외부 조건으로 남긴다.
+
+## 2026-11-10 DataSet 검증 Idempotency 보상 경계 보강
+
+동시 DataSet 검증 요청에서 저장 전 Idempotency-Key 조회가 비어 있어도 저장소가 유일 키 충돌을 기존 실행으로 수렴시킬 수 있다. 기존 API는 저장 전 조회 결과만 기준으로 새 실행을 표시했기 때문에 Worker 작업 등록이 실패하면 다른 요청이 생성한 실행을 내부 보상 삭제할 가능성이 있었다.
+
+저장소 생성 결과에 `Created` 여부를 추가하고 기존 Snapshot 메서드는 호환 래퍼로 유지했다. API는 실제 생성한 실행만 `DeleteUnqueuedExecutionAsync`의 보상 대상으로 지정한다. 대상 회귀 1개와 전체 Release Test 249개, Build 경고 0개·오류 0개, Host Smoke를 통과했다. 이 변경은 기존 Idempotency-Key·Tenant·Worker 계약을 유지하면서 동시 보상 삭제의 근본 원인을 제거한다.

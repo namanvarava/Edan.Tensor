@@ -88,8 +88,7 @@ public static class DataSetValidationEndpoints
                     Description = "검증 실행의 중복 예약을 막으려면 Idempotency-Key 헤더가 필요합니다."
                 });
 
-            var existingExecution = await service.GetExecutionByIdempotencyKeyAsync(tenantId, idempotencyKey, token);
-            var result = await service.CreateExecutionAsync(tenantId, dataSetId,
+            var result = await service.CreateExecutionWithStatusAsync(tenantId, dataSetId,
                 new DataSetValidationRequest(request.ExpectedDataSetVersion, request.SchemaVersion,
                     request.ProfileId, request.ProfileRevision), idempotencyKey, DateTimeOffset.UtcNow, token);
             if (!result.IsSuccess)
@@ -102,20 +101,20 @@ public static class DataSetValidationEndpoints
                 };
             }
 
-            var createdExecutionId = existingExecution is null ? result.Value.Id : (Guid?)null;
+            var createdExecutionId = result.Value.Created ? result.Value.Execution.Id : (Guid?)null;
             try
             {
                 var task = await enqueue.EnqueueAsync(tenantId, idempotencyKey,
                     DataSetValidationTaskContract.TaskType,
-                    DataSetValidationTaskContract.CreatePayloadReference(result.Value.Id), 5, token);
+                    DataSetValidationTaskContract.CreatePayloadReference(result.Value.Execution.Id), 5, token);
                 if (task.Conflict)
                 {
                     if (createdExecutionId.HasValue)
                         await service.DeleteUnqueuedExecutionAsync(tenantId, createdExecutionId.Value, CancellationToken.None);
                     return Results.Conflict(new { Code = "dataset.validation.idempotency_conflict", Description = "동일 Idempotency-Key가 다른 작업으로 이미 사용되었습니다." });
                 }
-                return Results.Accepted($"/api/platform/tenants/{tenantId}/datasets/validations/{result.Value.Id}",
-                    new { Execution = ToResponse(result.Value), WorkerTaskId = task.Task.Id, task.Created });
+                return Results.Accepted($"/api/platform/tenants/{tenantId}/datasets/validations/{result.Value.Execution.Id}",
+                    new { Execution = ToResponse(result.Value.Execution), WorkerTaskId = task.Task.Id, task.Created });
             }
             catch (WorkerTaskTypeNotAvailableException)
             {

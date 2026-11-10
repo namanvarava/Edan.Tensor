@@ -118,6 +118,30 @@ public sealed class DataSetRepositoryTests
     }
 
     [Fact]
+    public async Task ValidationRepository_ReportsExistingExecutionWhenIdempotencyKeyCollides()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<DataSetDbContext>().UseSqlite(connection).Options;
+        var tenantId = Guid.NewGuid();
+        var dataSetId = Guid.NewGuid();
+        var profileId = Guid.NewGuid();
+
+        await using var db = new DataSetDbContext(options);
+        await db.Database.MigrateAsync();
+        var repository = new EfDataSetValidationRepository(db);
+
+        var created = await repository.CreateExecutionWithStatusAsync(tenantId, dataSetId, 1, 1,
+            profileId, 1, DateTimeOffset.UtcNow, "validation-existing-result");
+        var reused = await repository.CreateExecutionWithStatusAsync(tenantId, dataSetId, 1, 1,
+            profileId, 1, DateTimeOffset.UtcNow, "validation-existing-result");
+
+        Assert.True(created.Created);
+        Assert.False(reused.Created);
+        Assert.Equal(created.Execution.Id, reused.Execution.Id);
+    }
+
+    [Fact]
     public async Task StaleFencingTokenCannotWriteValidationResultAfterRetryTakesOwnership()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

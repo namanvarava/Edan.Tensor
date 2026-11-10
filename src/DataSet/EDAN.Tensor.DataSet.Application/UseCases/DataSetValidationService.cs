@@ -69,17 +69,37 @@ public sealed class DataSetValidationService(
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
+        var result = await CreateExecutionWithStatusAsync(tenantId, dataSetId, request, idempotencyKey,
+            nowUtc, cancellationToken);
+        return result.IsSuccess
+            ? Result<DataSetValidationExecutionSnapshot>.Success(result.Value.Execution)
+            : Result<DataSetValidationExecutionSnapshot>.Failure(result.Error);
+    }
+
+    /// <summary>검증 실행을 예약하고 동시 요청이 기존 실행을 재사용했는지 반환합니다.</summary>
+    /// <param name="tenantId">검증 실행을 소유하는 Tenant 식별자입니다.</param>
+    /// <param name="dataSetId">검증할 DataSet 식별자입니다.</param>
+    /// <param name="request">기대 DataSet 버전과 스키마·프로필 revision을 지정하는 요청입니다.</param>
+    /// <param name="idempotencyKey">동일 Tenant에서 같은 검증 요청을 하나의 실행으로 수렴시키는 키입니다.</param>
+    /// <param name="nowUtc">검증 실행 생성 시각으로 사용할 UTC 시각입니다.</param>
+    /// <param name="cancellationToken">작업을 중단할 취소 토큰입니다.</param>
+    /// <returns>검증 실행과 새 실행 생성 여부 또는 입력·소유권 오류를 반환합니다.</returns>
+    public async Task<Result<DataSetValidationExecutionCreationResult>> CreateExecutionWithStatusAsync(
+        Guid tenantId, Guid dataSetId, DataSetValidationRequest request, string idempotencyKey,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
         try
         {
             EnsureTenant(tenantId);
             ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
             var normalizedIdempotencyKey = idempotencyKey.Trim();
             if (normalizedIdempotencyKey.Length > 200)
-                return Failure<DataSetValidationExecutionSnapshot>(
+                return Failure<DataSetValidationExecutionCreationResult>(
                     "dataset.validation.idempotency_key_invalid", "Idempotency-Key는 200자를 초과할 수 없습니다.");
             if (request.ExpectedDataSetVersion <= 0 || request.SchemaVersion <= 0
                 || request.ProfileId == Guid.Empty || request.ProfileRevision <= 0)
-                return Failure<DataSetValidationExecutionSnapshot>(
+                return Failure<DataSetValidationExecutionCreationResult>(
                     "dataset.validation.request_invalid", "검증 실행 요청의 버전과 식별자가 올바르지 않습니다.");
 
             var existing = await validations.GetExecutionByIdempotencyKeyAsync(
@@ -87,31 +107,32 @@ public sealed class DataSetValidationService(
             if (existing is not null)
             {
                 return IsSameRequest(existing, dataSetId, request)
-                    ? Result<DataSetValidationExecutionSnapshot>.Success(existing)
-                    : Failure<DataSetValidationExecutionSnapshot>(
+                    ? Result<DataSetValidationExecutionCreationResult>.Success(
+                        new DataSetValidationExecutionCreationResult(existing, false))
+                    : Failure<DataSetValidationExecutionCreationResult>(
                         "dataset.validation.idempotency_conflict",
                         "동일 Idempotency-Key가 다른 검증 요청으로 이미 사용되었습니다.");
             }
 
             var dataSet = await dataSets.GetAsync(new DataSetId(dataSetId), tenantId, cancellationToken);
             if (dataSet is null)
-                return Failure<DataSetValidationExecutionSnapshot>("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다.");
+                return Failure<DataSetValidationExecutionCreationResult>("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다.");
             if (dataSet.Status != DataSetStatus.Active)
-                return Failure<DataSetValidationExecutionSnapshot>("dataset.validation.dataset_inactive", "활성 상태의 DataSet만 검증할 수 있습니다.");
+                return Failure<DataSetValidationExecutionCreationResult>("dataset.validation.dataset_inactive", "활성 상태의 DataSet만 검증할 수 있습니다.");
             if (dataSet.Version != request.ExpectedDataSetVersion)
-                return Failure<DataSetValidationExecutionSnapshot>("dataset.validation.version_mismatch", "검증 대상 DataSet 버전이 현재 버전과 다릅니다.");
+                return Failure<DataSetValidationExecutionCreationResult>("dataset.validation.version_mismatch", "검증 대상 DataSet 버전이 현재 버전과 다릅니다.");
             if (!dataSet.SchemaRevisions.Any(x => x.Version == request.SchemaVersion))
-                return Failure<DataSetValidationExecutionSnapshot>("dataset.validation.schema_not_found", "검증 대상 스키마 revision을 찾을 수 없습니다.");
+                return Failure<DataSetValidationExecutionCreationResult>("dataset.validation.schema_not_found", "검증 대상 스키마 revision을 찾을 수 없습니다.");
             if (await validations.GetProfileAsync(tenantId, request.ProfileId, request.ProfileRevision, cancellationToken) is null)
-                return Failure<DataSetValidationExecutionSnapshot>("dataset.validation.profile_not_found", "Tenant 범위에서 검증 프로필 revision을 찾을 수 없습니다.");
+                return Failure<DataSetValidationExecutionCreationResult>("dataset.validation.profile_not_found", "Tenant 범위에서 검증 프로필 revision을 찾을 수 없습니다.");
 
-            return Result<DataSetValidationExecutionSnapshot>.Success(await validations.CreateExecutionAsync(
+            return Result<DataSetValidationExecutionCreationResult>.Success(await validations.CreateExecutionWithStatusAsync(
                 tenantId, dataSetId, request.ExpectedDataSetVersion, request.SchemaVersion,
                 request.ProfileId, request.ProfileRevision, nowUtc, normalizedIdempotencyKey, cancellationToken));
         }
         catch (ArgumentException exception)
         {
-            return Failure<DataSetValidationExecutionSnapshot>("dataset.validation.request_invalid", exception.Message);
+            return Failure<DataSetValidationExecutionCreationResult>("dataset.validation.request_invalid", exception.Message);
         }
     }
 
