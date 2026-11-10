@@ -28,6 +28,8 @@ Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -
 
 ApiHost는 모든 응답에 서버가 생성한 `X-Request-Id`를 추가하고 HTTP 메서드·경로·상태 코드·처리 시간을 구조화 로그로 기록합니다. 요청 본문·Bearer 토큰·개인키는 로그에 기록하지 않으며, 기존 오류 응답의 `Code`·`Description` 계약은 유지합니다. API 통합 회귀 테스트는 `/health` 성공 응답과 잘못된 JSON 오류 응답에서 서로 다른 요청 식별자가 반환되는지 확인합니다.
 
+typed Client는 오류 응답의 `X-Request-Id`를 `TensorApiException.RequestId`로 보존하여 호출자가 서버 로그와 장애 문의를 연결할 수 있게 합니다. 서버가 헤더를 반환하지 않는 외부 호환 응답에서는 이 값이 null이며 기존 상태 코드·오류 코드·설명은 그대로 유지합니다.
+
 관측성 변경 대상 테스트 1개와 전체 ApiHost 통합 테스트 44개가 통과했으며, 변경 후 전체 Release Test는 272개 통과·실패 0개·건너뜀 0개였습니다.
 
 ## 현재 검증 기준: 개발 라이선스 동시 발급 경쟁
