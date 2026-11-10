@@ -218,8 +218,8 @@ DataSet 초안 생성:
 - `GET /api/platform/tenants/{tenantId}/datasets/{dataSetId}/content`는 콘텐츠를 `application/octet-stream` 스트림으로 반환합니다.
 - `GET /api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage`는 Tenant·Organization·Project·DataSet별 사용량, 한도와 경고를 반환합니다.
 - `GET /api/platform/tenants/{tenantId}/storage-usage`는 Tenant 전체의 현재 사용량을 반환합니다.
-- `GET /api/platform/tenants/{tenantId}/storage-usage/history?take=168`은 저장량 스냅샷을 반환합니다.
-- `GET /api/platform/tenants/{tenantId}/storage-usage/quota-events?take=100`은 quota 임계치 이벤트를 Tenant 관리자에게 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/storage-usage/history?take=168`은 저장량 스냅샷을 반환합니다. `take`는 1~744 범위이며 기본값은 168입니다. 범위를 벗어나면 HTTP 400과 `api.invalid_request`를 반환합니다.
+- `GET /api/platform/tenants/{tenantId}/storage-usage/quota-events?take=100`은 quota 임계치 이벤트를 Tenant 관리자에게 반환합니다. `take`는 1~500 범위이며 기본값은 100입니다. 범위를 벗어나면 HTTP 400과 `api.invalid_request`를 반환합니다.
 
 ## DataSet Validation 프로필과 결과
 
