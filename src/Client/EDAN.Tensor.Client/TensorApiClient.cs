@@ -180,7 +180,14 @@ public sealed class TensorApiClient
             cancellationToken);
     }
 
-    /// <summary>검증 결과 상세를 페이지 단위로 조회합니다.</summary>
+    /// <summary>검증 결과 상세를 0 이상인 건너뛸 개수와 1~500 범위의 페이지 크기로 조회합니다.</summary>
+    /// <param name="tenantId">검증 실행이 속한 Tenant 식별자입니다.</param>
+    /// <param name="executionId">상세 결과를 조회할 검증 실행 식별자입니다.</param>
+    /// <param name="skip">앞에서 건너뛸 상세 결과 개수입니다. 0 이상이어야 합니다.</param>
+    /// <param name="take">반환할 상세 결과 개수입니다. 1 이상 500 이하여야 합니다.</param>
+    /// <param name="cancellationToken">요청 취소를 감시하는 토큰입니다.</param>
+    /// <exception cref="ArgumentOutOfRangeException">skip 또는 take가 허용 범위를 벗어나면 발생합니다.</exception>
+    /// <exception cref="TensorApiException">검증 실행이 없거나 API가 상세 조회를 거부하면 발생합니다.</exception>
     public Task<DataSetValidationDetailsPageContract> GetDataSetValidationDetailsAsync(
         Guid tenantId, Guid executionId, int skip = 0, int take = 100,
         CancellationToken cancellationToken = default)
@@ -188,7 +195,7 @@ public sealed class TensorApiClient
         ValidateTenantId(tenantId);
         ValidateId(executionId, nameof(executionId));
         if (skip < 0) throw new ArgumentOutOfRangeException(nameof(skip));
-        if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
+        if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
         var path = TenantPath(tenantId, $"datasets/validations/{executionId:D}/details?skip={skip}&take={take}");
         return SendJsonAsync<DataSetValidationDetailsPageContract>(CreateRequest(HttpMethod.Get, path, tenantId), cancellationToken);
     }
@@ -232,13 +239,19 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/tasks/{taskId:D}"), tenantId), cancellationToken);
     }
 
-    /// <summary>Tenant 관리자가 조회할 DLQ 작업을 페이지 단위로 반환합니다.</summary>
+    /// <summary>Tenant 관리자가 조회할 DLQ 작업을 1 이상인 페이지와 1~100 범위의 페이지 크기로 반환합니다.</summary>
+    /// <param name="tenantId">DLQ 작업이 속한 Tenant 식별자입니다.</param>
+    /// <param name="page">조회할 페이지 번호입니다. 1 이상이어야 합니다.</param>
+    /// <param name="pageSize">페이지에 반환할 작업 수입니다. 1 이상 100 이하여야 합니다.</param>
+    /// <param name="cancellationToken">요청 취소를 감시하는 토큰입니다.</param>
+    /// <exception cref="ArgumentOutOfRangeException">page 또는 pageSize가 허용 범위를 벗어나면 발생합니다.</exception>
+    /// <exception cref="TensorApiException">Tenant 관리자가 아니거나 API가 DLQ 조회를 거부하면 발생합니다.</exception>
     public Task<WorkerDeadLetterPageContract> GetWorkerDeadLettersAsync(
         Guid tenantId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         ValidateTenantId(tenantId);
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
-        if (pageSize is < 1 or > 200) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
         return SendJsonAsync<WorkerDeadLetterPageContract>(
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/dead-letters?page={page}&pageSize={pageSize}"), tenantId),
             cancellationToken);

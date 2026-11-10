@@ -154,6 +154,10 @@ public sealed class TensorApiClientTests
             client.GetWorkerTaskAsync(Guid.Empty, Guid.NewGuid()));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             client.GetDataSetValidationDetailsAsync(Guid.NewGuid(), Guid.NewGuid(), take: 1001));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            client.GetDataSetValidationDetailsAsync(Guid.NewGuid(), Guid.NewGuid(), take: 501));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            client.GetWorkerDeadLettersAsync(Guid.NewGuid(), pageSize: 101));
     }
 
     private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK) =>
