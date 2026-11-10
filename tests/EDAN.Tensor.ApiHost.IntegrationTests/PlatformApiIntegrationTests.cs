@@ -112,6 +112,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/health/database", document, StringComparison.Ordinal);
         Assert.Contains("\"Bearer\"", document, StringComparison.Ordinal);
         Assert.Contains("X-Tenant-Id", document, StringComparison.Ordinal);
+        Assert.Contains("X-Request-Id", document, StringComparison.Ordinal);
         Assert.Contains("Idempotency-Key", document, StringComparison.Ordinal);
         Assert.Contains("Replay-Request-Id", document, StringComparison.Ordinal);
 
@@ -136,6 +137,14 @@ public sealed class PlatformApiIntegrationTests
             "/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details", "get", requiredTenantHeader: true);
         AssertBearerSecurityAndTenantHeader(openApiJson.RootElement,
             "/api/platform/tenants/{tenantId}/worker/deliveries/{deliveryId}", "get", requiredTenantHeader: true);
+        var healthResponseHeaders = openApiJson.RootElement
+            .GetProperty("paths")
+            .GetProperty("/health")
+            .GetProperty("get")
+            .GetProperty("responses")
+            .GetProperty("200")
+            .GetProperty("headers");
+        Assert.True(healthResponseHeaders.TryGetProperty("X-Request-Id", out _));
 
         static void AssertRequiredHeader(JsonElement document, string path, string method, string name)
         {

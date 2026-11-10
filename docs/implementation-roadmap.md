@@ -451,6 +451,8 @@ API 오류 로그에는 기존에도 `TraceIdentifier`가 기록되었지만 성
 
 성공 `/health`와 인증된 잘못된 JSON 오류 응답에서 서로 다른 `X-Request-Id`를 확인하는 회귀 테스트를 추가했다. 대상 테스트 1개와 ApiHost 통합 테스트 44개, 전체 Release Test 272개가 실패 0개·건너뜀 0개로 통과했고, Host Smoke와 LicenseAuthority Smoke도 종료 코드 0으로 통과했다. 실제 운영 로그 수집기·분산 추적 백엔드 연동은 외부 운영 환경 조건으로 별도 검증한다.
 
+OpenAPI 응답 모델의 선택적 `Headers` 사전이 초기화되지 않아 실행 응답에는 존재하는 `X-Request-Id`가 문서에 표시되지 않던 원인을 확인했다. 사전을 안전하게 초기화하는 변환기를 추가하고 `/health` 200 응답의 OpenAPI 헤더와 전체 문서 문자열을 회귀 테스트로 고정했다. 기존 인증·Tenant·Worker·오류 본문 계약은 변경하지 않았다.
+
 ## 2026-11-11 typed Client 요청 식별자 보존
 
 서버가 `X-Request-Id`를 반환한 뒤에도 typed Client의 `TensorApiException`이 상태 코드·오류 코드·설명만 보존하고 요청 식별자를 버리고 있어, 호출자가 서버 로그와 오류를 연결할 수 없었다. 응답 본문·인증 토큰·Tenant 계약을 변경하지 않고 예외에 nullable `RequestId`를 추가했으며, 서버가 헤더를 주지 않는 외부 호환 응답은 null로 유지했다.
