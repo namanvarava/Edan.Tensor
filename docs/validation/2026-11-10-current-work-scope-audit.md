@@ -1,18 +1,18 @@
 # 2026-11-11 현재 Work 범위 감사
 
-이 문서는 PR #211까지 병합된 최신 main 커밋 `ec7d8ce5c50ea935c335dd7e7feb330ed5522bfa`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. PR #210은 제품 코드 기준이고 PR #211은 검증 문서의 기준을 정합화한 문서 변경입니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 제품 코드와 검증 판정에는 최신 main 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 제품 코드 기준 main 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`을 대상으로 현재 Work에서 실제 확인한 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. PR #212는 문서-only 변경이며 제품 코드는 PR #210 기준과 동일합니다. 이후 문서-only 병합으로 main SHA가 달라져도 제품 코드 검증 기준은 이 대상 SHA를 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
-## 최신 main 판정
+## 제품 코드 기준 판정
 
-PR #211은 최신 main 검증 기준을 `ec7d8ce5c50ea935c335dd7e7feb330ed5522bfa`로 정합화하여 Squash Merge되었다. PR CI [Run #42856973141](https://github.com/namanvarava/Edan.Tensor/actions/runs/42856973141)과 병합 후 main [CI Run #42857407194](https://github.com/namanvarava/Edan.Tensor/actions/runs/42857407194)이 Restore·Release Build·Release Test를 성공했다.
+PR #212 병합 후 제품 코드 기준 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`의 PR CI [Run #42859604333](https://github.com/namanvarava/Edan.Tensor/actions/runs/42859604333)와 병합 후 main [CI Run #42860037294](https://github.com/namanvarava/Edan.Tensor/actions/runs/42860037294)이 Restore·Release Build·Release Test를 성공했다.
 
-이번 재검증에서도 `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 동일 실행 경계에서 지정된 Release Build는 경고 0개·오류 0개, 전체 Test는 270개 통과·실패 0개·건너뜀 0개였다. `tools/license-authority-smoke.ps1`는 개발 라이선스 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다.
+이번 재검증에서도 `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 동일 실행 경계에서 지정된 Release Build는 경고 0개·오류 0개, 전체 Test는 258개 통과·실패 0개·건너뜀 0개였다. `tools/license-authority-smoke.ps1`는 개발 라이선스 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다.
 
-PR #211 최종 head `3e8c121f74c400959df277736163b297b58eb395`에서도 같은 Release 명령을 다시 실행했다. 병렬 Restore는 Work 실행 경계의 Named Pipe 권한 문제로 종료 코드 1을 반환했지만 `-m:1` 직렬 Restore, Release Build(경고 0개·오류 0개), 전체 Test(270개 통과·실패 0개·건너뜀 0개)는 성공했다. 이 결과는 문서 변경 브랜치의 코드 회귀가 없음을 보강하며, PR Check와 병합 후 main Check 성공을 확인한 뒤에만 최신 기준으로 기록했다.
+PR #211 최종 head `3e8c121f74c400959df277736163b297b58eb395`에서도 같은 Release 명령을 다시 실행했다. 병렬 Restore는 Work 실행 경계의 Named Pipe 권한 문제로 종료 코드 1을 반환했지만 `-m:1` 직렬 Restore, Release Build(경고 0개·오류 0개), 전체 Test(258개 통과·실패 0개·건너뜀 0개)는 성공했다. 이 결과는 문서 변경 브랜치의 코드 회귀가 없음을 보강하며, PR Check와 병합 후 main Check 성공을 확인한 뒤에만 최신 기준으로 기록했다.
 
 PR #208은 head `809ed1fb6d3b47f2355d53c8a978340c2309f390`에서 `e6b288246fe1745e927f703c0d98cd1ab30c8781`로 Squash Merge되었다. PR CI [Run #42846802391](https://github.com/namanvarava/Edan.Tensor/actions/runs/42846802391)과 병합 후 main [CI Run #42847454768](https://github.com/namanvarava/Edan.Tensor/actions/runs/42847454768)이 Restore·Release Build·Release Test를 모두 성공했다. 실행 상세는 [PR #208](https://github.com/namanvarava/Edan.Tensor/pull/208)과 병합 후 main CI에서 확인할 수 있다.
 
-최신 main에서 지정된 Release Restore·Build·Test를 권한이 허용된 실제 실행 환경으로 다시 수행하여 단일 노드 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 270개 통과·실패 0개·건너뜀 0개를 확인했다. 변경 대상 API 통합 테스트는 43개 모두 통과했다. API 계약 보강은 `Idempotency-Key`의 공백·200자 상한을 Host에서도 강제하고, 잘못된 JSON·잘못된 요청을 공통 `ApiError`로 변환하며, OpenAPI에 헤더의 길이·UUID 제약을 표시한다. 제한된 로컬 실행에서는 병렬 MSBuild와 VSTest가 Named Pipe 권한 거부로 시작하지 못했지만, 실제 실행 환경에서 동일한 필수 명령을 성공시켜 제품 코드 실패와 분리했다. Worker Infrastructure 테스트는 현재 모델과 Migration 스냅샷의 관계형 모델 차이를 감지하는 회귀 1개를 포함하여 72개가 통과했다. 최신 main에서 별도 LicenseAuthority 솔루션도 기존 검증 결과로 Restore 성공, Release Build 경고 0개·오류 0개, Test 11개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 반환하고 양쪽 stderr 0바이트와 임시 경로 삭제를 확인했다. LicenseAuthority HTTP Smoke는 개발 라이선스 단일 발급·5년 기간·공개 JWK·정상 검증 200·운영 환경 차단 403·폐기 검증 차단 403을 확인하고 토큰 로그와 임시 경로가 없음을 확인했다. 네 개의 로컬 SQLite를 백업하고 별도 경로로 복원한 뒤 무결성·테이블·DataSet 콘텐츠 보존을 확인하는 통합 회귀도 통과했다. Commercial 결제 경계는 공급자 미선정 시 fail-closed와 선정 공급자 위임을 2개 회귀 테스트로 확인했다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 범위와 Commercial 결제 경계의 현재 기준이다.
+제품 코드 기준 main `8c0c6ac5329935c5d4d4930ec2802d1db2070908`에서 지정된 Release Restore·Build·Test를 실제 실행하여 단일 노드 Restore 성공, Release Build 경고 0개·오류 0개, 전체 Test 258개 통과·실패 0개·건너뜀 0개를 확인했다. 변경 대상 API 통합 테스트는 43개 모두 통과했다. 별도 LicenseAuthority 솔루션도 Restore 성공, Release Build 경고 0개·오류 0개, Test 11개 통과·실패 0개·건너뜀 0개를 확인했다. `tools/license-authority-smoke.ps1`는 `EDAN-NONPROD` 개발 라이선스의 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했고, `tools/host-smoke.ps1`는 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다. 병렬 Restore의 종료 코드 1은 Work 실행 경계의 Named Pipe 문제이며 `-m:1` 직렬 Restore 성공으로 코드 실패와 구분했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 별도 환경 미검증 조건이다.
 
 제한된 로컬 Work 실행에서 같은 솔루션 Build가 종료 코드 1과 `MSB4276` Workload resolver 오류 및 C# compiler server 접근 거부를 반환했지만, 경고·코드 컴파일 오류는 출력하지 않았다. 프로세스 상태와 상세 로그로 SDK resolver·compiler server 접근 경계를 원인으로 분리했고, 동일 커밋을 권한이 허용된 외부 실행에서 성공시켜 제품 코드 실패가 아님을 확인했다. 이후 같은 외부 실행에서 Restore·Build·Test와 두 HTTP Smoke를 다시 성공시켰으며, 향후 같은 현상이 재현되면 무근거 재시도 대신 실행 권한·SDK 설치·compiler server 접근을 먼저 확인한다.
 
@@ -76,7 +76,7 @@ dotnet restore EDAN.Tensor.sln                         병렬 실행은 환경 �
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 270개·실패 0개·건너뜀 0개
+  통과 258개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
