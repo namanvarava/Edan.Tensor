@@ -342,3 +342,9 @@ PR #177은 위 테스트 정리 순서를 보강한 변경이며, PR CI [Run #42
 동시 DataSet 검증 요청에서 저장 전 Idempotency-Key 조회가 비어 있어도 저장소가 유일 키 충돌을 기존 실행으로 수렴시킬 수 있다. 기존 API는 저장 전 조회 결과만 기준으로 새 실행을 표시했기 때문에 Worker 작업 등록이 실패하면 다른 요청이 생성한 실행을 내부 보상 삭제할 가능성이 있었다.
 
 저장소 생성 결과에 `Created` 여부를 추가하고 기존 Snapshot 메서드는 호환 래퍼로 유지했다. API는 실제 생성한 실행만 `DeleteUnqueuedExecutionAsync`의 보상 대상으로 지정한다. 대상 회귀 1개와 전체 Release Test 249개, Build 경고 0개·오류 0개, Host Smoke를 통과했다. 이 변경은 기존 Idempotency-Key·Tenant·Worker 계약을 유지하면서 동시 보상 삭제의 근본 원인을 제거한다.
+
+## 2026-11-10 PR #180 병합 후 내부 범위 기준 갱신
+
+PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 main에 Squash Merge되었고, PR CI [Run #42756936154](https://github.com/namanvarava/Edan.Tensor/actions/runs/42756936154)와 병합 후 main CI [Run #42757143488](https://github.com/namanvarava/Edan.Tensor/actions/runs/42757143488)가 성공했다. 병합 후 최신 main에서 지정된 Release Restore·Build·Test를 실제 실행하여 Restore 성공, Build 경고 0개·오류 0개, Test 249개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost의 health·database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 반환했고 stderr 0바이트와 임시 DB 정리를 확인했다. 직접·전이 패키지 취약점 감사도 취약 패키지 없음으로 끝났다.
+
+현재 내부 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·장애 복구와 typed Client 기반까지 병합·검증되었다. PR #180은 동시 Idempotency-Key 충돌에서 실제 생성한 실행만 내부 보상 삭제하도록 저장소 결과 계약을 보강했다. DuckDB·Parquet·Commercial·WPF는 승인된 업무 계약이 없고, Licensing·LicenseAuthority는 사용자가 지정한 마지막 내부 단계이지만 발급 규칙·서명 포맷·키 보관·폐기 계약이 없어 아직 구현하지 않았다. 실제 비운영 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403도 Issue #84와 Milestone #1의 후속 조건으로 유지한다.

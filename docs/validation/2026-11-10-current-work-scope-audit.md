@@ -1,12 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 최신 `main` 커밋 `0104e486bc8b6021914349509d5b09216b04d9e9`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 판정에는 최신 main 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 최신 `main` 커밋 `da405a5b9874e2df57f88f829cd38c7c5e172fca`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 판정에는 최신 main 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 최신 main 판정
 
-PR #177의 제품·테스트 변경은 `f4c54b8f294b0845dabf62f689a3a985c4b567af`로 병합되었고, PR #178의 최신 검증 문서는 `0104e486bc8b6021914349509d5b09216b04d9e9`로 병합되었다. PR CI [Run #42750885076](https://github.com/namanvarava/Edan.Tensor/actions/runs/42750885076), 문서 PR CI [Run #42754068523](https://github.com/namanvarava/Edan.Tensor/actions/runs/42754068523), 최신 main CI [Run #42754304339](https://github.com/namanvarava/Edan.Tensor/actions/runs/42754304339)가 모두 성공했다.
+PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 Squash Merge되었다. PR CI [Run #42756936154](https://github.com/namanvarava/Edan.Tensor/actions/runs/42756936154)와 병합 후 main CI [Run #42757143488](https://github.com/namanvarava/Edan.Tensor/actions/runs/42757143488)가 모두 성공했다.
 
-최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 248개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 반환했고 두 Host stderr는 0바이트이며 임시 경계는 삭제되었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위의 현재 기준이다.
+최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 249개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 반환했고 두 Host stderr는 0바이트이며 임시 경계는 삭제되었다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위의 현재 기준이다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
@@ -159,3 +159,9 @@ DataSet 검증 API가 Idempotency-Key로 기존 실행을 저장소에서 재사
 근본 원인은 저장소의 `CreateExecutionAsync` 결과가 실행 Snapshot만 반환하여 현재 요청이 실제로 레코드를 만들었는지 호출자가 알 수 없었던 점이다. 삭제 재시도나 동시성 예외 무시는 원인을 숨기므로 선택하지 않았다. 저장소에 생성 여부를 함께 반환하는 `CreateExecutionWithStatusAsync`를 추가하고 기존 메서드는 Snapshot 호환 래퍼로 유지했으며, API는 `Created=true`일 때만 내부 보상 삭제 대상으로 등록하도록 최소 수정했다.
 
 Idempotency 유일 키 충돌에서 기존 실행을 재사용하고 `Created=false`를 반환하는 대상 회귀 테스트 1개, 솔루션 전체 Release Test 249개, Release Build 경고 0개·오류 0개와 실제 Host Smoke를 통과했다. 이 수정은 공개 HTTP 계약과 Tenant 경계를 변경하지 않으며, 동시 요청의 보상 삭제 재발을 저장소 결과 계약으로 방지한다.
+
+## 2026-11-10 최신 main 통합 상태와 잔여 범위
+
+PR #180 병합 후 로컬·원격에는 `main`만 남았고 열린 Pull Request는 없다. 열린 Issue #84는 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 HTTP 403을 별도로 검증하는 Milestone #1의 후속 조건으로 유지한다.
+
+현재 내부 구현·검증 완료 기준은 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·장애 복구, typed Client와 관련 회귀 테스트다. DuckDB·Parquet·Commercial·WPF는 승인된 계약이 없고, Licensing·LicenseAuthority는 발급 규칙·서명 포맷·키 보관·폐기 계약이 없어 구현하지 않았다. 따라서 이 감사는 내부 범위의 병합·검증 완료를 기록하지만 전체 제품 개발 완료를 선언하지 않는다.
