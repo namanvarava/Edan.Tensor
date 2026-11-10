@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.Commercial.Tests</AssemblyName>
+    <RootNamespace>EDAN_Tensor_Commercial_Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <ProjectReference Include="../../src/Commercial/EDAN.Tensor.Commercial.Application/EDAN.Tensor.Commercial.Application.csproj" />
+  </ItemGroup>
+</Project>

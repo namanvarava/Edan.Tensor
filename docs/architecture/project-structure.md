@@ -11,4 +11,4 @@
 | `tests` | 계층별 테스트, API 통합 테스트 및 Worker 프로세스 장애 검증 프로그램을 포함합니다. |
 
 개발자는 현재의 [검증 현황](../validation/2026-11-06-main-ci-and-scope.md)과 실제 소스를 함께 확인해야 합니다.
-Commercial·Licensing의 기반 프로젝트는 업무 기능 완료를 의미하지 않으며 WPF 클라이언트는 현재 소스에 없습니다.
+Commercial은 공급자 중립 결제 경계까지만 구현하고 상품·가격·Webhook·환불·유료 권리는 아직 확정하지 않았습니다. Licensing은 승인된 개발 라이선스 발급·검증·폐기 기능을 별도 LicenseAuthority로 구현했습니다. WPF 클라이언트는 현재 소스에 없습니다.

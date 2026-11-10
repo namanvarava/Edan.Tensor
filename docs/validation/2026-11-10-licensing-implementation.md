@@ -11,7 +11,7 @@
 - compact JWS ES256, LicenseAuthority 전용 개인키, API 공개 JWK
 - Development 환경과 명시적 플래그가 동시에 있어야 하는 개발 발급·폐기 경계
 - RBAC, 기본 거부, 최소 권한, Tenant·Organization·Project 범위, 기존 감사 경계 보존
-- 결제 공급자 미확정, Paddle·Stripe·PayPal 권고만 기록, 유료 권한 미부여
+- 결제 공급자 미확정, Paddle·Stripe·PayPal 권고만 기록, 공급자 중립 `IPaymentProvider` 경계와 미선정 시 fail-closed 처리, 유료 권한 미부여
 
 ## 변경 근거
 
@@ -23,6 +23,7 @@
 - LicenseAuthority Host에 개발 발급, 공개키, 검증, 폐기 경로를 추가했습니다.
 - 개인키·토큰을 로그와 저장소에 남기지 않는 경계를 유지했습니다.
 - 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 KeyId 회귀 테스트를 추가했습니다.
+- Commercial에는 공급자를 교체할 수 있는 `IPaymentProvider`·`PaymentProviderGateway`를 추가하고, 공급자 미선정 상태에서 결제 완료나 유료 권한을 성공으로 만들지 않는 회귀 테스트를 추가했습니다.
 
 ## 자동 검증
 
@@ -44,5 +45,5 @@ dotnet test EDAN.Tensor.LicenseAuthority.sln --configuration Release --no-build 
 
 ## 남은 조건
 
-실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403은 이 구현에 포함하지 않습니다. DuckDB·Parquet·Commercial 업무 흐름·WPF 화면도 별도 승인 계약이 필요합니다.
+실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403은 이 구현에 포함하지 않습니다. DuckDB·Parquet, Commercial 상품·가격·실제 결제·Webhook·환불·유료 권리 업무 흐름, WPF 화면도 별도 승인 계약이 필요합니다.
 

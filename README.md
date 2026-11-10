@@ -12,7 +12,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 | Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, 닫힌 JWT 인증 경계, 로컬 IdP/JWKS·키 회전 검증 | 비운영 외부 IdP 테스트 테넌트 경계 검증은 승인된 후속 Milestone #1에서 수행합니다. |
 | DataSet | Tenant 소유 메타데이터, 스키마 revision, SQLite 콘텐츠 어댑터, 계층형 저장 용량 quota·관리 API·임계치 이력, UTF-8 CSV·JSON 객체 배열 검증, 불변 프로필 revision, 결과 보존·명시적 삭제 | DuckDB·Parquet 어댑터는 다음 릴리스 범위 |
 | Worker | 전용 DB, 작업 유형 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, 종료 인계, DataSet Validation Handler, 외부 전달 Idempotency Key와 재시도, 로컬 수신기 장애 검증 | 실제 운영 수신 시스템은 이번 범위에서 제외하고, 비운영 외부 IdP는 외부 환경 제공 후 검증 |
-| Commercial / Licensing | 독립된 모듈 경계를 유지하며, 승인된 개발 라이선스 1개를 발급·검증하는 별도 LicenseAuthority를 제공합니다. RBAC·기본 거부·최소 권한·감사 경계를 유지합니다. | 결제·상품·유료 권리와 운영 라이선스는 공급자·업무 계약 승인 후 구현합니다. |
+| Commercial / Licensing | 독립된 모듈 경계를 유지하며, 승인된 개발 라이선스 1개를 발급·검증하는 별도 LicenseAuthority와 공급자 교체 가능한 결제 경계(`IPaymentProvider`)를 제공합니다. RBAC·기본 거부·최소 권한·감사 경계를 유지합니다. | 결제 공급자가 선정되기 전에는 결제 성공·상품 가격·유료 권리를 만들지 않으며, 실제 결제·Webhook·환불·운영 라이선스는 별도 업무 계약 승인 후 구현합니다. |
 | 클라이언트 | WPF 화면은 제외하지만 `EDAN.Tensor.Client.Contracts`와 `EDAN.Tensor.Client` typed API 연동 기반을 제공합니다. | 화면과 업무 흐름 승인 후 WPF를 추가합니다. |
 
 [검증 현황 문서](docs/validation/2026-11-10-licensing-implementation.md)는 승인된 LicenseAuthority 구현과 현재 HTTP 환경 미검증 조건을 기록합니다.

@@ -354,3 +354,11 @@ PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 main에 Squash Merge되
 사용자가 개발·테스트 라이선스 계약을 승인하여 5단계와 6단계의 내부 구현을 진행했다. 별도 `EDAN.Tensor.LicenseAuthority.sln`은 `EDAN-NONPROD`·`EDAN.Tensor`·`Platform/DataSet/Worker`·5년·JWS ES256·RBAC·기본 거부·폐기 규칙을 적용한다. 운영 환경에서 개인키를 자동 생성하지 않고 개발 Tenant 라이선스를 검증하지 않도록 정책을 추가했다.
 
 별도 솔루션 Release Restore·Build·Test는 각각 성공, 경고 0개·오류 0개, 9개 통과·실패 0개·건너뜀 0개를 기록했다. 전체 솔루션의 최종 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 258개 통과·실패 0개·건너뜀 0개를 기록했다. 권한이 허용된 실행 환경에서 LicenseAuthority HTTP 스모크와 기존 Host Smoke도 성공했으며, 제한된 Work 실행 경계에서만 loopback·testhost 접근 제한이 재현되었다.
+
+## 2026-11-10 Commercial 결제 경계 보강
+
+승인된 계약은 결제 공급자를 아직 선정하지 않았으므로 상품 가격, 실제 결제 호출, Webhook, 환불, 유료 권리를 성공으로 처리하는 업무 구현을 허용하지 않는다. 기존 Commercial 프로젝트가 AssemblyMarker만 제공하여 이 fail-closed 규칙을 코드로 보장하지 못하던 원인을 확인했다.
+
+`IPaymentProvider`와 `PaymentProviderGateway`를 추가하여 공급자를 교체 가능한 경계로 분리했다. 공급자가 없으면 `commercial.payment_provider_not_selected` 오류를 반환하고, 공급자가 선정된 경우에만 공급자 중립 요청을 전달한다. 미선정 거부와 선정 공급자 위임을 각각 회귀 테스트로 고정했으며, 가격·실제 결제·Webhook·환불·entitlement는 구현하지 않았다.
+
+현재 내부 개발 순서는 DuckDB·Parquet 계약 승인 및 구현, Commercial 업무 계약·공급자 선정 후 어댑터 연결, WPF 화면·업무 흐름 계약 후 클라이언트 구현, 마지막으로 실제 외부 IdP·운영 DB·외부 수신 시스템·배포·GitHub 보호 규칙 검증이다. LicenseAuthority 개발 라이선스와 내부 검증은 이미 별도 승인 계약에 따라 완료했지만, 운영 라이선스와 외부 환경 검증 완료를 의미하지 않는다.
