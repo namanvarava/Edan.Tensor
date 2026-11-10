@@ -21,6 +21,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 [DataSet 검증 v1 계약](docs/architecture/dataset-validation-v1-proposal.md)은 2026-11-07 승인된 구현 기준입니다.
 [외부 전달 설계](docs/architecture/external-delivery.md)는 로컬 수신기 장애 재현과 Idempotency 계약을 설명합니다.
 [라이선스 승인 계약](docs/architecture/licensing-v1-approved.md)은 개발 라이선스·RBAC·결제 경계를 기록하며, [결제 공급자 권고](docs/operations/commercial-payment-provider-recommendation.md)는 공급자 미확정 상태를 유지합니다.
+[제품 API 라이선스 적용 결정 대기](docs/architecture/licensing-api-enforcement-decision-pending.md)는 토큰 전달·공개키 공급·기능 매핑·오류 계약을 승인 전 상태로 기록합니다.
 
 ## 아키텍처 규칙
 
