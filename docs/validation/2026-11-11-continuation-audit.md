@@ -66,6 +66,14 @@
 - Client 변경 후 Host Smoke와 LicenseAuthority Smoke를 다시 실행했다. ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API는 HTTP 200이며 양쪽 표준 오류 출력은 0바이트였다. LicenseAuthority는 단일 `EDAN-NONPROD` 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스·폐기 라이선스 검증 HTTP 403, 토큰 미기록과 임시 디렉터리 삭제를 확인했다.
 - PR 병합 후 로컬 `main`과 `origin/main`은 `73bd8aac5da1d8277ac2c24b8ae46aa96e3beeed`로 일치했다. `codex/preserve-client-request-id-20261111` 원격·로컬 브랜치는 삭제되었고 현재 로컬에는 `main`만 남았다.
 
+## 2026-11-11 OpenAPI 요청 식별자 응답 계약 최신 검증
+
+- 실행 응답에 이미 추가되는 `X-Request-Id`가 OpenAPI 응답 문서에는 표시되지 않던 원인은 변환기가 선택적 `Headers` 사전을 초기화하지 않은 데 있었다. 사전을 안전하게 초기화하고 모든 응답에 헤더를 기록하도록 수정했으며, 기존 인증·Tenant·Worker·오류 본문 계약은 변경하지 않았다.
+- `/health` 200 응답의 OpenAPI `headers.X-Request-Id`와 전체 OpenAPI 문서 문자열을 회귀 테스트로 고정했다. 대상 테스트 `OpenApiDocumentContainsPlatformProvisioningRoutes` 1개가 통과했고, 변경 후 전체 Release 테스트는 272개 통과·실패 0개·건너뜀 0개였다.
+- 병합 전 실제 명령은 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`이며 Restore는 성공, Build는 경고 0개·오류 0개, Test는 272개 통과·실패 0개·건너뜀 0개였다. Host Smoke는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 HTTP 200으로 확인했고 양쪽 표준 오류 출력은 0바이트이며 임시 디렉터리는 삭제되었다. LicenseAuthority Smoke는 단일 `EDAN-NONPROD` 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스·폐기 검증 HTTP 403, 토큰 미기록과 임시 디렉터리 삭제를 확인했다.
+- PR [#223](https://github.com/namanvarava/Edan.Tensor/pull/223)의 소스 커밋 `7fb37964d9de87ad10d909045a55dfc3cc7b7d1a`는 squash merge 커밋 `b28aa38914351f7a1e3c3630a36e4ce93bcc380f`로 main에 병합되었다. PR CI [Run #1068](https://github.com/namanvarava/Edan.Tensor/actions/runs/42912131321)와 병합 후 main push CI [Run #1069](https://github.com/namanvarava/Edan.Tensor/actions/runs/42912694690)는 Restore·Build·Test·후처리를 모두 성공했다.
+- 병합 후 로컬 `main`과 `origin/main`은 `b28aa38914351f7a1e3c3630a36e4ce93bcc380f`로 일치했다. `codex/document-request-id-openapi-20261111` 원격 브랜치는 삭제했고, squash merge 특성상 일반 삭제가 거부된 뒤 병합 커밋과 CI를 확인하고 로컬 브랜치를 강제 삭제했다.
+
 ## 인증 Bypass 경계
 
 Development Bypass는 `Development` 환경과 `Authentication:Mode=Bypass`에서만 활성화된다. 고정 프로필은 RFC 예약 Metadata/JWKS 주소, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, 개발 키 회전 권한 식별자를 사용한다. 이 값은 실제 외부 IdP의 증거가 아니며 운영·External·CI·배포 구성에서는 활성화되지 않는다. Bypass 사용과 실행 주체는 로그에 남기고 Tenant·조직·프로젝트 권한 검사는 유지한다.
