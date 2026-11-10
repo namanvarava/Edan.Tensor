@@ -97,13 +97,11 @@ public static class WorkerEndpoints
         taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
             EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>
         {
-            var idempotencyKey = request.Headers["Idempotency-Key"].ToString().Trim();
-            if (string.IsNullOrWhiteSpace(idempotencyKey))
-                return Results.BadRequest(new
-                {
-                    Code = "worker.enqueue.idempotency_key_required",
-                    Description = "Idempotency-Key 헤더가 필요합니다."
-                });
+            if (!ApiRequestValidation.TryGetIdempotencyKey(request,
+                    "worker.enqueue.idempotency_key_required",
+                    "worker.enqueue.idempotency_key_too_long",
+                    out var idempotencyKey, out var headerError))
+                return Results.BadRequest(headerError);
 
             try
             {

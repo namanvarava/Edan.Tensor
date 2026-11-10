@@ -140,10 +140,20 @@ public sealed class PlatformApiIntegrationTests
         static void AssertRequiredHeader(JsonElement document, string path, string method, string name)
         {
             var operation = document.GetProperty("paths").GetProperty(path).GetProperty(method);
-            Assert.Contains(operation.GetProperty("parameters").EnumerateArray(), parameter =>
+            var header = Assert.Single(operation.GetProperty("parameters").EnumerateArray(), parameter =>
                 string.Equals(parameter.GetProperty("name").GetString(), name, StringComparison.Ordinal)
                 && parameter.GetProperty("in").GetString() == "header"
                 && parameter.GetProperty("required").GetBoolean());
+            if (name == "Idempotency-Key")
+            {
+                var schema = header.GetProperty("schema");
+                Assert.Equal(1, schema.GetProperty("minLength").GetInt32());
+                Assert.Equal(200, schema.GetProperty("maxLength").GetInt32());
+            }
+            else if (name == "Replay-Request-Id")
+            {
+                Assert.Equal("uuid", header.GetProperty("schema").GetProperty("format").GetString());
+            }
         }
 
         static void AssertBearerSecurityAndTenantHeader(
@@ -293,6 +303,22 @@ public sealed class PlatformApiIntegrationTests
 
         Assert.Equal(HttpStatusCode.OK, scriptResponse.StatusCode);
         Assert.Contains("/openapi/v1.json", script, StringComparison.Ordinal);
+    }
+
+    /// <summary>실제 API Host가 잘못된 JSON을 공통 오류 계약으로 반환합니다.</summary>
+    [Fact]
+    public async Task MalformedJsonReturnsCommonApiErrorContract()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+
+        using var content = new StringContent("{", Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync("/api/platform/tenants", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("api.invalid_json", await ReadErrorCodeAsync(response));
     }
 
     /// <summary>API와 데이터베이스 상태 확인 API가 모든 로컬 저장소의 상태를 반환합니다.</summary>
@@ -1348,6 +1374,14 @@ public sealed class PlatformApiIntegrationTests
             new { taskType = "integration.enqueue", payloadReference = "private://payload/input", maxAttempts = 3 });
         Assert.Equal(HttpStatusCode.BadRequest, missingIdempotencyKey.StatusCode);
         Assert.Equal("worker.enqueue.idempotency_key_required", await ReadErrorCodeAsync(missingIdempotencyKey));
+
+        client.DefaultRequestHeaders.Add("Idempotency-Key", new string('k', 201));
+        using var oversizedIdempotencyKey = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/worker/tasks",
+            new { taskType = "integration.enqueue", payloadReference = "private://payload/input", maxAttempts = 3 });
+        Assert.Equal(HttpStatusCode.BadRequest, oversizedIdempotencyKey.StatusCode);
+        Assert.Equal("worker.enqueue.idempotency_key_too_long", await ReadErrorCodeAsync(oversizedIdempotencyKey));
+        client.DefaultRequestHeaders.Remove("Idempotency-Key");
 
         using var missingReplayRequestId = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/worker/dead-letters/{Guid.NewGuid()}/replay", null);

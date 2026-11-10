@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
+using EDAN.Tensor.ApiHost.Endpoints;
 
 namespace EDAN.Tensor.ApiHost.Security;
 
@@ -84,7 +85,8 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
                         Name = requiredHeaderName,
                         In = ParameterLocation.Header,
                         Required = true,
-                        Description = requiredHeaderDescription
+                        Description = requiredHeaderDescription,
+                        Schema = CreateRequiredHeaderSchema(requiredHeaderName)
                     });
                 }
 
@@ -98,6 +100,23 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
 
         return Task.CompletedTask;
     }
+
+    /// <summary>필수 헤더의 실제 입력 형식과 길이 제약을 OpenAPI 스키마로 표현합니다.</summary>
+    /// <param name="headerName">스키마를 생성할 헤더 이름을 지정합니다.</param>
+    /// <returns>헤더 입력 계약을 설명하는 OpenAPI 스키마를 반환합니다.</returns>
+    private static OpenApiSchema CreateRequiredHeaderSchema(string headerName) =>
+        string.Equals(headerName, "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+            ? new OpenApiSchema
+            {
+                Type = JsonSchemaType.String,
+                MinLength = 1,
+                MaxLength = ApiRequestValidation.MaxIdempotencyKeyLength
+            }
+            : new OpenApiSchema
+            {
+                Type = JsonSchemaType.String,
+                Format = "uuid"
+            };
 
     /// <summary>요청 경로가 Tenant 선택 헤더를 반드시 요구하는지 판단합니다.</summary>
     /// <param name="path">OpenAPI에 기록된 요청 경로를 지정합니다.</param>

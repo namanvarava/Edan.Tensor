@@ -42,6 +42,18 @@ public sealed class ApiExceptionHandlerTests
         Assert.DoesNotContain("비밀 내부 예외", response.Error.Value.Description);
     }
 
+    [Fact]
+    public async Task MalformedJsonBadRequestPreservesCommonErrorContract()
+    {
+        var response = await HandleAsync(new BadHttpRequestException(
+            "내부 JSON 상세", new JsonException("비밀 JSON 상세")));
+
+        Assert.Equal(StatusCodes.Status400BadRequest, response.StatusCode);
+        Assert.Equal("api.invalid_json", response.Error!.Value.Code);
+        Assert.Equal("요청 본문이 올바른 JSON 형식이 아닙니다.", response.Error.Value.Description);
+        Assert.DoesNotContain("비밀", response.Error.Value.Description);
+    }
+
     private static async Task<(int StatusCode, (string Code, string Description)? Error)> HandleAsync(Exception exception)
     {
         var context = new DefaultHttpContext

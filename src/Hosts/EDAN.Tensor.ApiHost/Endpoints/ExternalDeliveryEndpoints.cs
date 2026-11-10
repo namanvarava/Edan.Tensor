@@ -38,9 +38,11 @@ public static class ExternalDeliveryEndpoints
             CreateExternalDeliveryRequest request, ExternalDeliveryService service,
             WorkerTaskEnqueueService enqueue, CancellationToken token) =>
         {
-            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString().Trim();
-            if (string.IsNullOrWhiteSpace(idempotencyKey))
-                return Results.BadRequest(new { Code = "external.delivery.idempotency_key_required", Description = "Idempotency-Key 헤더가 필요합니다." });
+            if (!ApiRequestValidation.TryGetIdempotencyKey(httpRequest,
+                    "external.delivery.idempotency_key_required",
+                    "external.delivery.idempotency_key_too_long",
+                    out var idempotencyKey, out var headerError))
+                return Results.BadRequest(headerError);
 
             Guid? createdDeliveryId = null;
             try
