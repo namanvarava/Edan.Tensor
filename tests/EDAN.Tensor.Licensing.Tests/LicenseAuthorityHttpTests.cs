@@ -35,14 +35,17 @@ public sealed class LicenseAuthorityHttpTests
 
             Assert.Equal(firstIssue.Token, secondIssue.Token);
             Assert.Equal(firstIssue.Descriptor.LicenseId, secondIssue.Descriptor.LicenseId);
+            Assert.NotEqual(Guid.Empty, firstIssue.Descriptor.LicenseId);
             Assert.Equal(DevelopmentLicenseConstants.TenantCode, firstIssue.Descriptor.SiteOrTenant);
             Assert.Equal(DevelopmentLicenseConstants.Product, firstIssue.Descriptor.Product);
+            Assert.Equal(DevelopmentLicenseConstants.Features, firstIssue.Descriptor.Features);
             Assert.Equal(firstIssue.Descriptor.StartsAtUtc.AddYears(5), firstIssue.Descriptor.ExpiresAtUtc);
 
             var publicKeyResponse = await developmentClient.GetAsync("/api/licenses/public-key");
             var publicKey = await ReadAsync<LicensePublicKeyResponse>(publicKeyResponse, HttpStatusCode.OK);
             Assert.Equal(firstIssue.Descriptor.KeyId, publicKey.KeyId);
             Assert.Contains("\"alg\":\"ES256\"", publicKey.Jwk, StringComparison.Ordinal);
+            Assert.DoesNotContain("\"d\"", publicKey.Jwk, StringComparison.Ordinal);
 
             var normal = await ValidateAsync(
                 developmentClient,
