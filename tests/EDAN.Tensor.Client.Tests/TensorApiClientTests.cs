@@ -158,6 +158,8 @@ public sealed class TensorApiClientTests
             client.GetDataSetValidationDetailsAsync(Guid.NewGuid(), Guid.NewGuid(), take: 501));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             client.GetWorkerDeadLettersAsync(Guid.NewGuid(), pageSize: 101));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            client.GetWorkerDeadLettersAsync(Guid.NewGuid(), page: int.MaxValue));
     }
 
     private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK) =>
