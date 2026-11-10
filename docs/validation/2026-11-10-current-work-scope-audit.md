@@ -1,6 +1,13 @@
 # 2026-11-11 현재 Work 범위 감사
 
-이 문서는 제품 코드 기준 main 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`을 대상으로 현재 Work에서 실제 확인한 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. PR #212는 문서-only 변경이며 제품 코드는 PR #210 기준과 동일합니다. 이후 문서-only 병합으로 main SHA가 달라져도 제품 코드 검증 기준은 이 대상 SHA를 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 제품 코드 기준 main 커밋 `8c0c6ac5329935c5d4d4930ec2802d1db2070908`을 대상으로 당시 Work에서 실제 확인한 제품 범위와 아직 구현·검증할 수 없는 조건을 구분한 역사 기록입니다. 최신 main의 현재 판정은 아래 최신 기준 절과 [2026-11-11 연속 개발 재검증 기록](2026-11-11-continuation-audit.md)을 우선합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+
+## 2026-11-11 최신 main 기준
+
+- 현재 main은 `aa60f4bff15173f018d156594b1603fc17277ce4`이며, PR [#215](https://github.com/namanvarava/Edan.Tensor/pull/215)의 개발 라이선스 동시 발급 경쟁 수정과 PR [#216](https://github.com/namanvarava/Edan.Tensor/pull/216)·[#217](https://github.com/namanvarava/Edan.Tensor/pull/217)의 검증 문서 보강이 병합되었다. 이 문서의 아래 시간순 수치와 커밋은 당시 상태를 보존한다.
+- 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 실행했다. Restore·Test는 종료 코드 0이고 Build는 경고 0개·오류 0개이며 전체 Release 테스트는 271개 통과·실패 0개·건너뜀 0개이다. 별도 LicenseAuthority 테스트는 12개 통과했다.
+- 최신 main의 Host Smoke와 LicenseAuthority Smoke도 종료 코드 0으로 통과했다. ApiHost·WorkerHost의 health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API는 HTTP 200이며 개발 라이선스 정상 검증은 200, Production·폐기 검증은 403이다. 토큰·개인키를 로그에 남기지 않았고 임시 경로를 삭제했다.
+- 현재 승인된 저장소 내부 범위는 SQLite·Swagger/OpenAPI, Platform·DataSet·Worker, Tenant·인증·인가, Worker 복구, typed Client, 공급자 중립 Commercial 경계와 개발 LicenseAuthority이다. DuckDB·Parquet·실제 결제·Webhook·환불·WPF·제품 API 라이선스 강제는 상세 계약이 없으므로 임의 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue [#84](https://github.com/namanvarava/Edan.Tensor/issues/84)의 별도 조건이다.
 
 ## 제품 코드 기준 판정
 
@@ -76,7 +83,7 @@ dotnet restore EDAN.Tensor.sln                         병렬 실행은 환경 �
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 258개·실패 0개·건너뜀 0개
+  통과 271개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
@@ -86,7 +93,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - DataSet SQLite·Tenant 격리·Quota·Fencing·백업/복구: 11개 통과
 - 알려진 취약 패키지 감사: `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`에서 취약 패키지 없음
 - 실제 Release Host Smoke: 임시 SQLite 네 개로 ApiHost·WorkerHost를 기동하여 health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API가 모두 HTTP 200; 양쪽 stderr 0바이트; 종료 후 프로세스·포트·임시 경로 없음
-- LicenseAuthority HTTP Smoke: Development 발급·단일 라이선스 재사용·5년 기간·공개 JWK·정상 검증·Production 개발 라이선스 차단·폐기 검증 차단을 확인하고 토큰 로그 없음·임시 경로 삭제
+- LicenseAuthority Release 테스트 12개와 HTTP Smoke: Development 발급·단일 라이선스 재사용·5년 기간·공개 JWK·정상 검증·Production 개발 라이선스 차단·폐기 검증 차단을 확인하고 토큰 로그 없음·임시 경로 삭제
 - Commercial 결제 경계: 공급자 미선정 거부와 선정 공급자 전달 2개 테스트 통과; 실제 결제 호출·가격·Webhook·환불·유료 권리는 실행하지 않음
 
 ## 인증 우회와 외부 경계
