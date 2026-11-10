@@ -425,7 +425,7 @@ PR #206의 head `65a937b20cbf40195c0f854e449ec4e03c1a57de`에 대한 [PR CI Run 
 
 ## 2026-11-11 최신 main 내부 검증 재실행
 
-PR #209 병합 후 최신 `main` 커밋 `cfdb8d19cd827d380db60e8a5964b71f6a91cd32`에서 승인된 내부 범위를 다시 검증했다. `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 실행 경계에서 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 270개 통과·실패 0개·건너뜀 0개를 기록했다.
+PR #210 병합 후 최신 `main` 커밋 `81281a7e014d6bd377dc911cd39b5eac3aa8e3ae`에서 승인된 내부 범위를 다시 검증했다. PR CI [Run #42853202736](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853202736)과 병합 후 main [CI Run #42853575636](https://github.com/namanvarava/Edan.Tensor/actions/runs/42853575636)이 성공했다. `dotnet restore EDAN.Tensor.sln`은 병렬 MSBuild IPC 권한으로 종료 코드 1을 반환했지만 `-m:1` 직렬 복원은 경고·오류 0개로 성공했다. 권한이 허용된 실행 경계에서 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`는 경고 0개·오류 0개, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`는 270개 통과·실패 0개·건너뜀 0개를 기록했다.
 
 `tools/license-authority-smoke.ps1`는 `EDAN-NONPROD` 개발 라이선스의 단일 발급·5년 기간·공개 JWK·정상 검증 200·Production 차단 403·폐기 차단 403·stderr 0바이트·임시 경로 삭제를 확인했다. `tools/host-smoke.ps1`는 임시 SQLite와 Development Bypass로 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI·Tenant API를 모두 HTTP 200으로 확인하고 stderr 0바이트·임시 경로 삭제를 확인했다.
 
