@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #173 병합 커밋 `a1fa0638e2bca4623645630bf7211371e9031782`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #175 병합 커밋 `212f5b64a6d27ecd4ea21cb5f3597b1a461a5cf2`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
@@ -10,9 +10,9 @@ PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run 
 
 ## 2026-11-10 최신 제품 코드 기준 Host Smoke·의존성·GitHub 상태 재검증
 
-PR #173이 병합한 최신 제품 코드 기준 `a1fa0638e2bca4623645630bf7211371e9031782`의 Release 바이너리를 임시 SQLite 네 개와 Development 환경의 고정 Bypass 프로필로 실제 기동했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`, `/health/database`가 모두 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 각각 0바이트였고, 검증 후 임시 Smoke 디렉터리를 삭제했다.
+PR #175가 병합한 최신 제품 코드 기준 `212f5b64a6d27ecd4ea21cb5f3597b1a461a5cf2`의 Release 바이너리를 임시 SQLite 네 개와 Development 환경의 고정 Bypass 프로필로 실제 기동했다. ApiHost의 `/health`, `/health/database`, `/openapi/v1.json`, `/swagger/index.html`, `/api/platform/tenants/mine`과 WorkerHost의 `/health`, `/health/database`가 모두 HTTP 200을 반환했다. 두 Host의 표준 오류 출력은 각각 0바이트였고, 검증 후 임시 Smoke 디렉터리를 삭제했다.
 
-같은 기준에서 `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`를 실행하여 모든 프로젝트에 알려진 취약 패키지가 없음을 확인했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남아 있다. GitHub Issue #84는 실제 비운영 외부 IdP와 main 보호 규칙 검증을 위한 Milestone #1에 열린 상태로 유지한다.
+PR #175 자체 CI [Run #42748810618](https://github.com/namanvarava/Edan.Tensor/actions/runs/42748810618)와 병합 후 main CI [Run #42749039001](https://github.com/namanvarava/Edan.Tensor/actions/runs/42749039001)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 전체 Release Test 248개 통과·실패 0개·건너뜀 0개와 Host Smoke를 재확인했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남아 있다. GitHub Issue #84는 실제 비운영 외부 IdP와 main 보호 규칙 검증을 위한 Milestone #1에 열린 상태로 유지한다.
 
 이 Smoke는 개발 전용 고정 Bypass와 loopback만 사용하므로 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 대체하지 않는다.
 
