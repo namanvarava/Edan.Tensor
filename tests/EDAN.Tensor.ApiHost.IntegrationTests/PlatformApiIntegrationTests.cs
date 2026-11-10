@@ -1634,6 +1634,51 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
     }
 
+    /// <summary>저장량 이력 API가 잘못된 조회 개수를 조용히 보정하지 않고 거부합니다.</summary>
+    [Fact]
+    public async Task StorageUsageHistoryAndQuotaEventApiRejectOutOfRangeTake()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"USAGE-{suffix}",
+            name = "저장량 이력 조회 개수 검증 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new
+            {
+                subjectId = "usage-history-admin",
+                role = "Administrator"
+            })).StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "usage-history-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        foreach (var query in new[]
+        {
+            "storage-usage/history?take=0",
+            "storage-usage/history?take=745",
+            "storage-usage/quota-events?take=0",
+            "storage-usage/quota-events?take=501"
+        })
+        {
+            using var response = await client.GetAsync($"/api/platform/tenants/{tenantId}/{query}");
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal("api.invalid_request", await ReadErrorCodeAsync(response));
+        }
+    }
+
     private static async Task<string?> ReadErrorCodeAsync(HttpResponseMessage response)
     {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());

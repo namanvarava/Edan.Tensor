@@ -238,20 +238,43 @@ public sealed class DataSetStorageUsageSnapshotService(
         });
     }
 
+    /// <summary>Tenant의 저장량 스냅샷을 최신 순서로 제한된 개수만 조회합니다.</summary>
+    /// <param name="tenantId">조회할 Tenant 식별자입니다.</param>
+    /// <param name="take">반환할 스냅샷 개수이며 1 이상 744 이하이어야 합니다.</param>
+    /// <param name="cancellationToken">저장소 조회를 취소하는 토큰입니다.</param>
+    /// <returns>Tenant에 속한 저장량 스냅샷 목록을 최신 순서로 반환합니다.</returns>
+    /// <exception cref="ArgumentException">Tenant 식별자가 비어 있으면 예외를 반환합니다.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">조회 개수가 1~744 범위를 벗어나면 예외를 반환합니다.</exception>
     public Task<List<DataSetStorageUsageSnapshot>> GetHistoryAsync(
         Guid tenantId, int take = 168, CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
+        ValidateTake(take, 744);
         return dataSetDb.StorageUsageSnapshots.AsNoTracking().Where(x => x.TenantId == tenantId)
-            .OrderByDescending(x => x.Id).Take(Math.Clamp(take, 1, 744)).ToListAsync(cancellationToken);
+            .OrderByDescending(x => x.Id).Take(take).ToListAsync(cancellationToken);
     }
 
+    /// <summary>Tenant의 quota 임계치 이벤트를 최신 순서로 제한된 개수만 조회합니다.</summary>
+    /// <param name="tenantId">조회할 Tenant 식별자입니다.</param>
+    /// <param name="take">반환할 이벤트 개수이며 1 이상 500 이하이어야 합니다.</param>
+    /// <param name="cancellationToken">저장소 조회를 취소하는 토큰입니다.</param>
+    /// <returns>Tenant에 속한 quota 임계치 이벤트 목록을 최신 순서로 반환합니다.</returns>
+    /// <exception cref="ArgumentException">Tenant 식별자가 비어 있으면 예외를 반환합니다.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">조회 개수가 1~500 범위를 벗어나면 예외를 반환합니다.</exception>
     public Task<List<DataSetQuotaThresholdEvent>> GetQuotaEventHistoryAsync(
         Guid tenantId, int take = 100, CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
+        ValidateTake(take, 500);
         return dataSetDb.QuotaThresholdEvents.AsNoTracking().Where(x => x.TenantId == tenantId)
             .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
-            .Take(Math.Clamp(take, 1, 500)).ToListAsync(cancellationToken);
+            .Take(take).ToListAsync(cancellationToken);
+    }
+
+    private static void ValidateTake(int take, int maximum)
+    {
+        if (take < 1 || take > maximum)
+            throw new ArgumentOutOfRangeException(nameof(take), take,
+                $"조회 개수는 1 이상 {maximum} 이하이어야 합니다.");
     }
 }
