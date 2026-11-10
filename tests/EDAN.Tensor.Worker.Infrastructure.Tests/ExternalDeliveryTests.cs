@@ -1,10 +1,15 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using EDAN.Tensor.Worker.Application.Abstractions;
+using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Application.ExternalDelivery;
+using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
+using EDAN.Tensor.WorkerHost.Handlers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Tests;
@@ -32,6 +37,60 @@ public sealed class ExternalDeliveryTests
             TimeSpan.FromSeconds(1), isDevelopment: true);
 
         Assert.True(options.AllowLoopback);
+    }
+
+    /// <summary>조정기가 이미 취소된 작업의 외부 전달 실행을 시작하지 않습니다.</summary>
+    [Fact]
+    public async Task HandlerRejectsCancellationBeforeStartingDelivery()
+    {
+        using var provider = new ServiceCollection().BuildServiceProvider();
+        var handler = new ExternalDeliveryTaskHandler(provider.GetRequiredService<IServiceScopeFactory>());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var task = WorkerTask.Create(Guid.NewGuid(), ExternalDeliveryTaskContract.TaskType,
+            "cancelled-delivery", ExternalDeliveryTaskContract.CreatePayloadReference(Guid.NewGuid()),
+            DateTimeOffset.UtcNow);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => handler.StartAsync(task, cancellation.Token));
+    }
+
+    /// <summary>조정기의 실행 취소가 진행 중인 외부 HTTP 호출까지 전파됩니다.</summary>
+    [Fact]
+    public async Task HandlerPropagatesCancellationToInFlightDelivery()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var dbOptions = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options;
+        await using var db = new WorkerDbContext(dbOptions);
+        await db.Database.MigrateAsync();
+        var tenantId = Guid.NewGuid();
+        var delivery = await new ExternalDeliveryRepository(db).CreateAsync(
+            tenantId, "http://localhost:4567/receiver", "{\"event\":\"cancel\"}",
+            "delivery-cancel", 3, DateTimeOffset.UtcNow);
+        var receiver = new CancellationObservingHandler();
+        using var client = new HttpClient(receiver) { Timeout = TimeSpan.FromSeconds(30) };
+
+        var services = new ServiceCollection();
+        services.AddScoped<IExternalDeliveryRepository>(_ => new ExternalDeliveryRepository(db));
+        services.AddSingleton(client);
+        services.AddSingleton(new ExternalDeliveryOptions(
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase), true, TimeSpan.FromSeconds(30)));
+        services.AddScoped<ExternalDeliveryService>();
+        using var provider = services.BuildServiceProvider();
+        var handler = new ExternalDeliveryTaskHandler(provider.GetRequiredService<IServiceScopeFactory>());
+        var task = WorkerTask.Create(tenantId, ExternalDeliveryTaskContract.TaskType,
+            "cancelled-delivery-in-flight", ExternalDeliveryTaskContract.CreatePayloadReference(delivery.Id),
+            DateTimeOffset.UtcNow);
+        using var cancellation = new CancellationTokenSource();
+
+        await using var execution = await handler.StartAsync(task, cancellation.Token);
+        await receiver.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        await receiver.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.Completion;
+        Assert.False(result.Succeeded);
+        Assert.Equal("external.delivery.execution_failed", result.ErrorCode);
     }
 
     [Fact]
@@ -205,6 +264,30 @@ public sealed class ExternalDeliveryTests
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    private sealed class CancellationObservingHandler : HttpMessageHandler
+    {
+        public TaskCompletionSource Started { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Cancelled { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Started.TrySetResult();
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (OperationCanceledException)
+            {
+                Cancelled.TrySetResult();
+                throw;
+            }
         }
     }
 
