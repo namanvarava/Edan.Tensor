@@ -1,12 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #189까지 병합된 최신 main 커밋 `1135b7c4c0ce79da3c73b19c0d89b91fd56a13df`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 제품 코드 판정에는 최신 main 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #190까지 병합된 최신 main 커밋 `c46b16e43eee8e7b94653329efbec41d44c2727e`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 제품 코드 판정에는 최신 main 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 최신 main 판정
 
-PR #189는 `1135b7c4c0ce79da3c73b19c0d89b91fd56a13df`로 Squash Merge되었다. PR CI Run #42804378414와 병합 후 main CI Run #42804659418이 Restore·Release Build·Release Test·정리 단계까지 모두 성공했다. 실행 상세는 [PR #189](https://github.com/namanvarava/Edan.Tensor/pull/189)과 [main CI Run #42804659418](https://github.com/namanvarava/Edan.Tensor/actions/runs/42804659418)에서 확인할 수 있다.
+PR #190은 `c46b16e43eee8e7b94653329efbec41d44c2727e`로 Squash Merge되었다. PR CI Run #42805377218와 병합 후 main CI Run #42805670430이 Restore·Release Build·Release Test·정리 단계까지 모두 성공했다. 실행 상세는 [PR #190](https://github.com/namanvarava/Edan.Tensor/pull/190)과 [main CI Run #42805670430](https://github.com/namanvarava/Edan.Tensor/actions/runs/42805670430)에서 확인할 수 있다.
 
-최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 261개 통과·실패 0개·건너뜀 0개를 확인했다. PR #189의 [CI Run #42804378414](https://github.com/namanvarava/Edan.Tensor/actions/runs/42804378414)와 병합 후 main의 [CI Run #42804659418](https://github.com/namanvarava/Edan.Tensor/actions/runs/42804659418)가 Restore·Build·Test·정리 단계까지 모두 성공했다. LicenseAuthority 별도 솔루션은 Restore·Release Build 경고 0개·오류 0개와 10개 테스트 통과를 확인했다. 병합 전 동일 제품 코드 기준의 Host Smoke와 LicenseAuthority HTTP Smoke도 권한이 허용된 실행 환경에서 성공했으며, Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 LicenseAuthority의 개발 발급·공개키·검증·폐기 경계를 확인하고 임시 경계를 삭제했다. Commercial 결제 경계는 공급자 미선정 시 fail-closed와 선정 공급자 위임을 2개 회귀 테스트로 확인했다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 범위와 Commercial 결제 경계의 현재 기준이다.
+최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 261개 통과·실패 0개·건너뜀 0개를 확인했다. PR #190의 [CI Run #42805377218](https://github.com/namanvarava/Edan.Tensor/actions/runs/42805377218)와 병합 후 main의 [CI Run #42805670430](https://github.com/namanvarava/Edan.Tensor/actions/runs/42805670430)가 Restore·Build·Test·정리 단계까지 모두 성공했다. LicenseAuthority 별도 솔루션은 Restore·Release Build 경고 0개·오류 0개와 10개 테스트 통과를 확인했다. 최신 main에서 Host Smoke와 LicenseAuthority HTTP Smoke도 권한이 허용된 실행 환경에서 성공했으며, Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 LicenseAuthority의 개발 발급·공개키·검증·폐기 경계를 확인하고 임시 경계를 삭제했다. Commercial 결제 경계는 공급자 미선정 시 fail-closed와 선정 공급자 위임을 2개 회귀 테스트로 확인했다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 범위와 Commercial 결제 경계의 현재 기준이다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
@@ -66,7 +66,7 @@ dotnet restore EDAN.Tensor.sln                         성공
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 260개·실패 0개·건너뜀 0개
+  통과 261개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
