@@ -1,12 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #183으로 병합된 제품 코드 기준 커밋 `47114c4e8b77857e547b1a4e16a99e6fea31b2d2`와 이후 검증 문서를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 제품 코드 판정에는 PR #183 이후 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #184로 병합된 제품 코드 기준 커밋 `ae70a1142cb1105bebc17585947b18045fbc93dc`와 이후 검증 문서를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 제품 코드 판정에는 PR #184 이후 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 최신 main 판정
 
 PR #183은 `47114c4e8b77857e547b1a4e16a99e6fea31b2d2`로 Squash Merge되었다. PR CI Run #986과 병합 후 main CI Run #987이 모두 성공했다. 실행 상세는 [GitHub Actions](https://github.com/namanvarava/Edan.Tensor/actions)에서 확인할 수 있다.
 
-최신 작업 브랜치에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 260개 통과·실패 0개·건너뜀 0개를 확인했다. LicenseAuthority 별도 솔루션은 9개 테스트를 통과했다. Host Smoke와 LicenseAuthority HTTP Smoke는 권한이 허용된 실행 환경에서 성공했으며, Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 LicenseAuthority의 개발 발급·공개키·검증·폐기 경계를 확인하고 임시 경계를 삭제했다. Commercial 결제 경계는 공급자 미선정 시 fail-closed와 선정 공급자 위임을 2개 회귀 테스트로 확인했다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 범위와 Commercial 결제 경계의 현재 기준이다. 병합 후에는 main CI와 main 기준 Release 재검증으로 이 수치를 다시 확정한다.
+최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 260개 통과·실패 0개·건너뜀 0개를 확인했다. PR #184의 [CI Run #988](https://github.com/namanvarava/Edan.Tensor/actions/runs/42795841372)과 병합 후 main의 [CI Run #989](https://github.com/namanvarava/Edan.Tensor/actions/runs/42796197588)가 Restore·Build·Test·정리 단계까지 모두 성공했다. LicenseAuthority 별도 솔루션은 9개 테스트를 통과했다. 병합 후 Host Smoke와 LicenseAuthority HTTP Smoke도 권한이 허용된 실행 환경에서 성공했으며, Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 LicenseAuthority의 개발 발급·공개키·검증·폐기 경계를 확인하고 임시 경계를 삭제했다. Commercial 결제 경계는 공급자 미선정 시 fail-closed와 선정 공급자 위임을 2개 회귀 테스트로 확인했다. 최신 패키지 취약점 감사에서도 취약 패키지가 없었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker·LicenseAuthority 범위와 Commercial 결제 경계의 현재 기준이다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
