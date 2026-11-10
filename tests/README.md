@@ -14,15 +14,21 @@
 - Worker Domain: 21개
 - Worker Infrastructure: 72개
 - Client: 7개
-- API 통합: 43개
+- API 통합: 44개
 - Licensing: 12개
 - Commercial: 2개
 
-현재 통합 솔루션의 Release 테스트는 총 271개이며 실패 0개·건너뜀 0개입니다.
+현재 통합 솔루션의 Release 테스트는 총 272개이며 실패 0개·건너뜀 0개입니다.
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
 Release Host 경계는 저장소 루트의 `powershell -ExecutionPolicy Bypass -File tools/host-smoke.ps1`로 일회성 재현할 수 있습니다. 이 도구는 Development Bypass와 임시 SQLite만 사용하고, 운영 인증·CI·예약 실행을 변경하지 않습니다.
+
+## 현재 검증 기준: API 요청 관측성
+
+ApiHost는 모든 응답에 서버가 생성한 `X-Request-Id`를 추가하고 HTTP 메서드·경로·상태 코드·처리 시간을 구조화 로그로 기록합니다. 요청 본문·Bearer 토큰·개인키는 로그에 기록하지 않으며, 기존 오류 응답의 `Code`·`Description` 계약은 유지합니다. API 통합 회귀 테스트는 `/health` 성공 응답과 잘못된 JSON 오류 응답에서 서로 다른 요청 식별자가 반환되는지 확인합니다.
+
+관측성 변경 대상 테스트 1개와 전체 ApiHost 통합 테스트 44개가 통과했으며, 변경 후 전체 Release Test는 272개 통과·실패 0개·건너뜀 0개였습니다.
 
 ## 현재 검증 기준: 개발 라이선스 동시 발급 경쟁
 

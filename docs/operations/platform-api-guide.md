@@ -25,7 +25,10 @@ Development Host는 사용자 프로필 권한과 분리된 `App_Data/DataProtec
 - 필수 JWT 클레임: `sub` (외부 인증 주체 식별자)
 - 플랫폼 관리자 역할: `role=platform_admin`
 - Tenant 선택 헤더: `X-Tenant-Id: {tenant-guid}`
+- 요청 추적 응답 헤더: `X-Request-Id: {server-generated-request-id}`
 - Tenant 소속 여부는 JWT의 Tenant 클레임이 아니라 데이터베이스의 활성 소속 레코드로 확인합니다.
+
+모든 API 응답은 서버가 생성한 `X-Request-Id`를 반환합니다. 오류 응답의 본문에는 기존 `Code`·`Description` 계약만 포함하고, 요청 식별자는 응답 헤더와 서버 로그에서 확인합니다. 서버는 요청 본문·Bearer 토큰·개인키를 기록하지 않으며 HTTP 메서드·경로·상태 코드·처리 시간을 구조화 로그로 남깁니다. 호출자는 장애 문의 시 응답 헤더의 값을 함께 전달해야 합니다.
 
 요청마다 `X-Tenant-Id`로 Tenant를 선택합니다. 한 외부 인증 주체는 여러 Tenant에 각각 소속될 수 있습니다. `GET /api/platform/tenants/mine`은 현재 인증 주체가 소속된 활성 Tenant와 역할 목록을 반환합니다. 선택한 Tenant에 활성 소속이 없으면 HTTP 403을 반환합니다.
 
