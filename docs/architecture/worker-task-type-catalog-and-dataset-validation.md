@@ -32,4 +32,4 @@ Lease 인계·취소 시 DataSet 검증 Handler는 자체 취소 토큰을 취�
 
 ## 이번 릴리스에서 제외하는 항목
 
-DuckDB·Parquet 어댑터, Commercial·Licensing 업무 흐름·결제·권리·만료, WPF 화면은 이번 릴리스의 승인 범위에 포함하지 않습니다. 해당 기능은 다음 릴리스의 계약과 수용 기준을 별도로 승인한 뒤 구현합니다.
+DuckDB·Parquet 어댑터, Commercial 상품·가격·결제·Webhook·권리 업무 흐름, WPF 화면은 이번 릴리스의 승인 범위에 포함하지 않습니다. 개발 라이선스 발급·검증·폐기는 Worker와 분리된 별도 LicenseAuthority 범위에서 이미 승인·구현했습니다. 나머지 기능은 계약과 수용 기준을 별도로 승인한 뒤 구현합니다.
