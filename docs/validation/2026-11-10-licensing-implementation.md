@@ -25,6 +25,9 @@
 - 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 KeyId 회귀 테스트를 추가했습니다.
 - WebApplicationFactory 기반 HTTP 통합 테스트로 발급·재사용·공개키·정상·위조·만료·시작 전·Tenant 불일치·알 수 없는 KeyId·폐기·운영 차단 응답을 추가로 확인했습니다.
 - Commercial에는 공급자를 교체할 수 있는 `IPaymentProvider`·`PaymentProviderGateway`를 추가하고, 공급자 미선정 상태에서 결제 완료나 유료 권한을 성공으로 만들지 않는 회귀 테스트를 추가했습니다.
+- 개인키 서명 구현은 LicenseAuthority Host만 참조하도록 WorkerHost의 불필요한 Licensing Infrastructure 참조를 제거했습니다. ApiHost는 공개 Contracts만 참조합니다.
+- 발급 회귀 테스트에서 자동 LicenseId·KeyId, 승인된 전체 기능 목록, 공개 JWK의 개인키 값(`d`) 부재를 확인합니다.
+- 이번 승인에서 “라이선스 적용 API”는 LicenseAuthority의 `/api/licenses/validate`로 한정합니다. 제품 ApiHost에 라이선스를 강제하는 헤더·기능 매핑·장애 계약은 별도 승인 전까지 구현하지 않습니다.
 
 ## 자동 검증
 

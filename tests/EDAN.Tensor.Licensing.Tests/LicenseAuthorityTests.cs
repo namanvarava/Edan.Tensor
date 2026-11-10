@@ -22,6 +22,9 @@ public sealed class LicenseAuthorityTests
         var result = await service.IssueOrGetAsync(now);
 
         Assert.True(result.IsSuccess);
+        Assert.NotEqual(Guid.Empty, result.Value.Descriptor.LicenseId);
+        Assert.Equal(fixture.Codec.KeyId, result.Value.Descriptor.KeyId);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.Descriptor.KeyId));
         Assert.Equal(DevelopmentLicenseConstants.TenantCode, result.Value.Descriptor.SiteOrTenant);
         Assert.Equal(DevelopmentLicenseConstants.Product, result.Value.Descriptor.Product);
         Assert.Equal(DevelopmentLicenseConstants.Features, result.Value.Descriptor.Features);

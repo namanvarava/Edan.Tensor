@@ -23,7 +23,9 @@ LicenseAuthority만 ES256 개인키를 보관합니다. 개인키는 저장소, 
 
 ## 검증 계약
 
-라이선스 적용 API는 공개키로 발급자, ES256 서명, KeyId, 제품, 대상 Tenant, 기능, 시작일, 만료일, 상태를 검증합니다. 폐기 목록은 LicenseAuthority의 상태 저장소에서 별도로 확인합니다. 기본 권한은 거부하고 라이선스에 없는 기능은 허용하지 않습니다.
+이번 승인에서 말하는 라이선스 적용 API는 별도 `LicenseAuthority`의 `/api/licenses/validate` 검증 API를 뜻합니다. 이 API는 공개키로 발급자, ES256 서명, KeyId, 제품, 대상 Tenant, 기능, 시작일, 만료일, 상태를 검증합니다. 폐기 목록은 LicenseAuthority의 상태 저장소에서 별도로 확인합니다. 기본 권한은 거부하고 라이선스에 없는 기능은 허용하지 않습니다.
+
+제품 `ApiHost`의 Platform·DataSet·Worker 요청에 라이선스를 자동으로 강제하는 전달 헤더, 공개키 공급 방식, 기능 매핑, 장애 시 fail-closed 계약은 이 승인에 포함되지 않습니다. 제품 API의 기존 공개 계약·Tenant 격리·인증·Worker 계약을 변경하지 않으며, 별도 계약이 승인되기 전에는 제품 API에 임의의 라이선스 미들웨어를 추가하지 않습니다.
 
 다음 사례를 각각 거부하는 회귀 테스트를 유지합니다.
 
@@ -36,6 +38,8 @@ LicenseAuthority만 ES256 개인키를 보관합니다. 개인키는 저장소, 
 - 공개키에 없는 KeyId는 거부합니다.
 
 현재 구현은 `EDAN.Tensor.LicenseAuthority.sln`에서 발급·공개키·검증·폐기 경계를 독립적으로 구성하며, `EDAN.Tensor.sln`에도 동일한 계약과 회귀 테스트를 포함합니다. 실제 HTTP 프로세스 스모크는 실행 환경의 loopback 소켓 권한을 허용한 환경에서 재실행해야 합니다.
+
+LicenseAuthority만 개인키를 포함한 서명 구현을 참조합니다. ApiHost는 Licensing Contracts만 참조하고 WorkerHost는 Licensing Infrastructure를 참조하지 않으므로, 제품 Host 산출물에 LicenseAuthority 개인키 처리 코드를 배포하지 않습니다.
 
 ## 권한 모델
 
