@@ -402,3 +402,9 @@ PR #200는 위 최종 검증 문서의 기준을 최신 main 커밋 `6e0a07dedf1
 현재 승인된 LicenseAuthority 검증 경계를 재감사하면서, 서명이 맞더라도 `status`·시간·Claim 형식이 손상된 토큰이 `ArgumentException`으로 API 전역 예외 경계 밖에 나갈 수 있는 결함을 확인했다. LicenseAuthority Host는 전역 예외 변환기를 사용하지 않으므로, 이 입력은 HTTP 500 대신 안정적인 `licensing.token.invalid`와 HTTP 403으로 닫혀야 한다. 토큰 해석기의 예외 필터를 인자·오버플로 오류까지 확장하고 손상된 상태 Claim을 서비스·HTTP 회귀 테스트로 고정했다.
 
 PR #202의 head `723e3eae74046ac7beaedfb56535fac974aeb45f`에서 별도 LicenseAuthority Test 11개, 전체 Release Test 263개가 실패 0개·건너뜀 0개로 통과했고 Release Build는 경고 0개·오류 0개였다. PR CI [Run #42829408127](https://github.com/namanvarava/Edan.Tensor/actions/runs/42829408127)와 병합 후 main CI [Run #42829784097](https://github.com/namanvarava/Edan.Tensor/actions/runs/42829784097)가 self-hosted Windows Runner에서 Restore·Build·Test를 성공했다. 병합 커밋은 `fd26e599c8db76b3a9d0e4d580aa3a733e9c83b6`이며, 두 Host Smoke도 정상 HTTP 경계와 임시 자원 정리를 확인했다. 이 변경은 제품 API에 라이선스 강제를 추가하지 않으며, 기존 Platform·DataSet·Worker·Tenant·인증 계약을 유지한다. PR #202의 원격·로컬 작업 브랜치는 삭제되었고 현재 main만 남았다.
+
+## 2026-11-10 PR #204 로컬 SQLite 네 저장소 백업·복원 증거
+
+PR #204는 ApiHost 통합 테스트에 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 SQLite 네 파일의 백업·복원 검증을 추가했다. 테스트는 백업 전에 WAL checkpoint와 `PRAGMA integrity_check`를 실행하고 `VACUUM INTO`로 백업한 뒤, 별도 복원 경로에서 무결성·테이블 존재·DataSet 콘텐츠 marker 보존을 확인한다. PR 자체 CI [Run #42834109348](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834109348)와 병합 후 main CI [Run #42834477918](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834477918)이 성공했고, 병합 main은 `95e7a8852ae548291bc1f29d83c5c1147c772921`이다. 병합 후 전체 Release Test는 264개 통과·실패 0개·건너뜀 0개, 별도 LicenseAuthority Test는 11개 통과·실패 0개·건너뜀 0개이며 작업 브랜치는 로컬·원격에서 삭제했다.
+
+이 증거는 승인된 로컬 SQLite의 개발·테스트 백업 경계를 보강한다. 운영 DB 공급자, 보존 기간, RPO/RTO, 외부 백업 저장소와 실제 운영 복구는 아직 결정·제공되지 않았으므로 완료로 표시하지 않는다.
