@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 `main` 커밋 `a379c6077b671e27f74dda267ae3715dfc374e0c`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #159 기능 병합 커밋 `52fa640cb833caff05947b35f3239ad71d11f4a4`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 감사 결과
 
@@ -75,3 +75,9 @@ PR #157의 [PR CI Run #934](https://github.com/namanvarava/Edan.Tensor/actions/r
 Worker 외부 전달 Handler가 조정기의 취소 토큰과 별도의 토큰으로 HTTP 호출을 시작하여 작업 취소·종료 중에도 외부 부작용이 계속될 수 있는 결함을 확인했다. 시작 전 취소를 즉시 거부하고, 조정기 취소와 종료 인계 취소를 동일한 외부 HTTP 실행에 연결하는 최소 수정으로 경계를 보강했다. 대상 회귀 테스트 9개와 Worker Infrastructure 전체 테스트 71개가 통과했으며, 시작 전 취소와 진행 중 HTTP 호출 취소 전파를 각각 확인했다.
 
 이 수정은 외부 수신 시스템의 실제 응답·중복 처리 검증을 대체하지 않는다. 실제 외부 수신기와 운영 환경 검증은 Issue #84 및 Milestone #1의 외부 조건이 제공될 때 별도로 수행한다.
+
+## 2026-11-10 PR #159 병합 후 Worker 취소 경계 증거
+
+PR #159는 외부 전달 Handler의 조정기 취소 토큰을 실제 HTTP 실행에 연결하고, 시작 전 취소와 진행 중 호출 취소 전파 회귀 테스트를 추가하여 `52fa640cb833caff05947b35f3239ad71d11f4a4`로 Squash Merge되었다. PR CI [Run #938](https://github.com/namanvarava/Edan.Tensor/actions/runs/42724689384)와 병합 후 main CI [Run #939](https://github.com/namanvarava/Edan.Tensor/actions/runs/42724934985)이 자체 호스팅 Runner에서 Restore·Release Build·Release Test를 성공시켰다.
+
+병합 후 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 245개 통과·실패 0개·건너뜀 0개를 확인했다. 이 증거는 외부 수신 시스템의 실제 중복 처리와 외부 IdP·운영 DB·GitHub 보호 규칙 검증을 포함하지 않는다.
