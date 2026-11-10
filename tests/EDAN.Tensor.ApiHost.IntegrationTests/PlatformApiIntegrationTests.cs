@@ -887,6 +887,11 @@ public sealed class PlatformApiIntegrationTests
             Assert.DoesNotContain("beta", message, StringComparison.Ordinal);
         });
 
+        using var invalidDetailsQuery = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details?skip=0&take=501");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidDetailsQuery.StatusCode);
+        Assert.Equal("dataset.validation.invalid_query", await ReadErrorCodeAsync(invalidDetailsQuery));
+
         using var delete = await client.DeleteAsync(
             $"/api/platform/tenants/{tenantId}/datasets/validations/{executionId}");
         Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
@@ -1261,6 +1266,11 @@ public sealed class PlatformApiIntegrationTests
         Assert.Single(items.EnumerateArray());
         Assert.Equal(task.Id, items[0].GetProperty("id").GetGuid());
         Assert.False(items[0].TryGetProperty("payloadReference", out _));
+
+        using var invalidDeadLetterQuery = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters?page=1&pageSize=101");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidDeadLetterQuery.StatusCode);
+        Assert.Equal("worker.dead_letter.invalid_query", await ReadErrorCodeAsync(invalidDeadLetterQuery));
 
         var replayRequestId = Guid.NewGuid();
         client.DefaultRequestHeaders.Add("Replay-Request-Id", replayRequestId.ToString());
