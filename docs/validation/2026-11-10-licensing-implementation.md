@@ -64,6 +64,12 @@ PR #204의 [PR CI Run #42834109348](https://github.com/namanvarava/Edan.Tensor/a
 
 PR #206은 현재 Worker 모델과 Migration 스냅샷의 관계형 모델 차이를 감지하는 회귀 테스트를 추가했다. PR CI [Run #42839417787](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839417787)와 병합 후 main [Run #42839791924](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839791924)이 성공했고, 병합 main은 `bad8ed628fa34823b776232c2d9bbb753e42ccc5`이다. 최신 main의 전체 Release Test는 265개 통과·실패 0개·건너뜀 0개, 별도 LicenseAuthority Test는 11개 통과·실패 0개·건너뜀 0개였다. 이 변경은 라이선스 계약과 제품 API 라이선스 강제 경계를 변경하지 않는다.
 
+## 2026-11-11 API 계약 보강 후 라이선스 회귀 재확인
+
+PR #208은 제품 API의 공통 입력·오류 계약만 보강했으며, 승인된 개발 라이선스의 발급 규칙·ES256 서명·개인키 보관·공개키 배포·운영 차단 경계는 변경하지 않았다. PR CI [Run #42846802391](https://github.com/namanvarava/Edan.Tensor/actions/runs/42846802391)와 병합 후 main [Run #42847454768](https://github.com/namanvarava/Edan.Tensor/actions/runs/42847454768)이 성공했다. 병합 main 커밋은 `e6b288246fe1745e927f703c0d98cd1ab30c8781`이다.
+
+병합 후 Release 전체 테스트는 270개 통과·실패 0개·건너뜀 0개였고, 별도 LicenseAuthority 테스트는 11개 통과·실패 0개·건너뜀 0개라는 기존 증거와 일치했다. 개발 라이선스는 계속 `EDAN-NONPROD` Tenant와 `Platform`·`DataSet`·`Worker` 기능에만 적용하며, 결제 공급자 미선정 상태에서 결제 완료나 유료 권한을 성공으로 처리하지 않는다.
+
 ## 남은 조건
 
 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403은 이 구현에 포함하지 않습니다. DuckDB·Parquet, Commercial 상품·가격·실제 결제·Webhook·환불·유료 권리 업무 흐름, WPF 화면도 별도 승인 계약이 필요합니다.

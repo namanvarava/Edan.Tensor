@@ -16,6 +16,14 @@ API 계약·공통 오류 처리, 고정된 Development Bypass Tenant·주체 �
 
 개발 초기에는 별도 DB 서버를 설치하지 않습니다. 현재 구조의 로컬 SQLite 파일과 임시 SQLite 테스트 DB를 사용하며, 운영 DB 공급자는 0단계에서 결정한 뒤 별도 Migration 호환성 검증을 수행합니다.
 
+## 2026-11-11 승인 계약 반영
+
+개발·테스트 전용 라이선스 1개는 `EDAN-NONPROD` Tenant와 `EDAN.Tensor` 제품의 `Platform`·`DataSet`·`Worker` 기능에 대해 발급일 기준 5년 동안 유효하게 합니다. LicenseId와 KeyId는 발급 시 자동 생성하고, 라이선스 상태는 `Active`·`Expired`·`Revoked`·`NotYetValid`를 사용합니다. 서명은 JWS ES256을 기본으로 하고 개인키는 LicenseAuthority에만 보관하며 API에는 공개키만 배포합니다. 이 라이선스는 운영 환경에서 사용할 수 없습니다.
+
+권한은 RBAC를 권고·적용하고 기본 거부와 최소 권한 원칙을 지킵니다. 권한 범위는 Tenant·Organization·Project로 분리하고 기존 관리자·조직·프로젝트 역할과 감사 기록을 유지합니다. 결제 공급자는 확정하지 않으며 Paddle·Stripe·PayPal 순서를 권고사항으로만 기록하고, 공급자 선정 전에는 결제 완료나 유료 권한을 성공으로 처리하지 않습니다.
+
+별도 LicenseAuthority 구성과 개발 라이선스의 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 KeyId 검증은 라이선스 단계의 필수 수용 기준입니다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 별도 환경 조건으로 유지하며, 해당 조건이 제공되기 전에는 내부 검증의 성공으로 대체하지 않습니다.
+
 ## 고정된 진행 순서
 
 ### 0단계. 전체 범위·수용 기준·운영 DB를 결정합니다.
