@@ -369,4 +369,10 @@ PR #193은 감사 아카이브가 없는 경우에도 API 공통 `{ code, descri
 
 PR #195는 승인된 LicenseAuthority 계약을 관리 문서에서 제품 API 적용 대기 범위와 분리하고, WorkerHost의 불필요한 Licensing Infrastructure 참조를 제거하여 개인키 서명 구현을 LicenseAuthority Host 경계에만 남겼다. 자동 LicenseId·KeyId, 승인 기능 목록과 공개 JWK의 개인키 값 부재를 회귀 테스트로 고정했으며 `2a0cdc1c9b7878e86e923d9adc925c9f40b736a7`로 main에 병합되었다. PR CI #42815055109와 병합 후 main CI #42815424524는 Restore·Build·Test를 성공했다.
 
+## 2026-11-10 Worker 작업 유형 오류 계약 최신 main 반영
+
+PR #197은 등록·활성화되지 않은 Worker `taskType`이 작업을 생성하지 않고 HTTP 422와 `worker.enqueue.task_type_unavailable` 오류를 반환한다는 계약을 운영 API 가이드와 통합 테스트에 반영했다. 대상 API 통합 테스트 37개, 전체 Release Test 262개가 실패 0개·건너뜀 0개로 통과했으며, PR CI [Run #42819077314](https://github.com/namanvarava/Edan.Tensor/actions/runs/42819077314)와 병합 후 main CI [Run #42819341718](https://github.com/namanvarava/Edan.Tensor/actions/runs/42819341718)이 성공했다. 병합 커밋은 `ac74286471fb551dbd7242b6bc10df065f91e91a`이고 작업 브랜치는 로컬·원격에서 삭제했다.
+
+이번 변경은 기존 공개 API·Tenant 격리·인증·Worker 실행 경계를 유지하는 문서·회귀 검증 보강이다. 제품 API 자체 라이선스 전달 헤더·공개키 공급·기능 매핑·장애 시 fail-closed 계약은 별도 승인 전까지 구현하지 않는다.
+
 현재 저장소 내부에서 계약이 확정된 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·인증·인가·Development Bypass 경계, Worker 장애 복구, typed Client, 개발 LicenseAuthority의 서비스·HTTP 검증과 공급자 중립 Commercial 결제 경계다. DuckDB·Parquet의 포맷·스키마·quota·동시성·복구, Commercial 상품·가격·Webhook·환불·유료 권리, WPF 화면·업무 흐름, 제품 API의 라이선스 전달 헤더·검증 실패 응답 계약은 승인 전 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 별도 조건이다.
