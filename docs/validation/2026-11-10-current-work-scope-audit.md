@@ -165,3 +165,11 @@ Idempotency 유일 키 충돌에서 기존 실행을 재사용하고 `Created=fa
 PR #180 병합 후 로컬·원격에는 `main`만 남았고 열린 Pull Request는 없다. 열린 Issue #84는 실제 비운영 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한과 GitHub main 보호 규칙 HTTP 403을 별도로 검증하는 Milestone #1의 후속 조건으로 유지한다.
 
 현재 내부 구현·검증 완료 기준은 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·개발 인증 경계, Worker Lease/Fencing·장애 복구, typed Client와 관련 회귀 테스트다. DuckDB·Parquet·Commercial·WPF는 승인된 계약이 없고, Licensing·LicenseAuthority는 발급 규칙·서명 포맷·키 보관·폐기 계약이 없어 구현하지 않았다. 따라서 이 감사는 내부 범위의 병합·검증 완료를 기록하지만 전체 제품 개발 완료를 선언하지 않는다.
+
+## 2026-11-10 승인 라이선스 계약 반영
+
+사용자가 개발·테스트 전용 라이선스 계약을 승인하여 별도 `EDAN.Tensor.LicenseAuthority.sln`에 LicenseAuthority 발급·공개키·검증·폐기 경계를 구현했다. 대상은 `EDAN-NONPROD` Tenant, `EDAN.Tensor` 제품, `Platform`·`DataSet`·`Worker` 기능이며 발급일 기준 5년, 자동 LicenseId·KeyId, JWS ES256과 개인키 비공개 보관을 적용했다. 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 KeyId 회귀 테스트는 별도 솔루션과 전체 솔루션에 포함한다.
+
+RBAC, 기본 거부, 최소 권한, Tenant·Organization·Project 범위와 감사 경계는 기존 Platform 계약을 유지한다. 결제 공급자는 확정하지 않고 Paddle 1순위, Stripe 2순위, PayPal 대안 권고만 관리 문서에 기록했으며, 실제 결제·가격·환불·유료 entitlement는 구현하지 않았다.
+
+제한된 Work 실행 경계에서는 LicenseAuthority와 기존 Host를 별도 프로세스로 시작할 때 `Now listening`·`Application started` 로그까지 확인했으나 loopback HTTP 요청이 `액세스 권한에 의해 숨겨진 소켓을 시도했습니다`로 차단되었다. 권한이 허용된 실행 환경에서 동일 스모크를 재실행하여 LicenseAuthority의 Development 발급·공개키·정상 검증·Production 개발 라이선스 차단·폐기 검증과 ApiHost·WorkerHost의 health·database health·OpenAPI·Swagger UI를 성공 확인했다. 제한된 Work 경계의 실패는 실행 환경 제한으로 기록하고 제품 성공으로 대체하지 않는다.
