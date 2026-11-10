@@ -1,6 +1,6 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #159 기능 병합 커밋 `52fa640cb833caff05947b35f3239ad71d11f4a4`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #162 기능 병합 커밋 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
 
 ## 감사 결과
 
@@ -26,7 +26,7 @@ dotnet restore EDAN.Tensor.sln                         성공
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 245개·실패 0개·건너뜀 0개
+  통과 246개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
@@ -80,4 +80,10 @@ Worker 외부 전달 Handler가 조정기의 취소 토큰과 별도의 토큰�
 
 PR #159는 외부 전달 Handler의 조정기 취소 토큰을 실제 HTTP 실행에 연결하고, 시작 전 취소와 진행 중 호출 취소 전파 회귀 테스트를 추가하여 `52fa640cb833caff05947b35f3239ad71d11f4a4`로 Squash Merge되었다. PR CI [Run #938](https://github.com/namanvarava/Edan.Tensor/actions/runs/42724689384)와 병합 후 main CI [Run #939](https://github.com/namanvarava/Edan.Tensor/actions/runs/42724934985)이 자체 호스팅 Runner에서 Restore·Release Build·Release Test를 성공시켰다.
 
-병합 후 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 245개 통과·실패 0개·건너뜀 0개를 확인했다. 이 증거는 외부 수신 시스템의 실제 중복 처리와 외부 IdP·운영 DB·GitHub 보호 규칙 검증을 포함하지 않는다.
+병합 후 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 확인했다. 이 증거는 외부 수신 시스템의 실제 중복 처리와 외부 IdP·운영 DB·GitHub 보호 규칙 검증을 포함하지 않는다.
+
+## 2026-11-10 PR #162 저장량 조회 개수 계약 보강
+
+저장량 스냅샷 이력과 quota 임계치 이벤트 API가 범위를 벗어난 `take` 값을 `Math.Clamp`로 조용히 보정하던 계약 불일치를 확인했다. 저장량 이력은 1~744, quota 이벤트는 1~500 범위로 명시적으로 검증하고, 범위를 벗어나면 HTTP 400 `api.invalid_request`를 반환하도록 최소 수정했다. Tenant 관리자 경계에서 네 가지 잘못된 입력을 확인하는 API 통합 회귀 테스트와 공개 API·운영 가이드를 추가했다.
+
+PR #162의 head `61483289fd4319aba1ad69c7f482d31b30aab9e7`에 대한 [PR CI Run #944](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730316819)와 Squash Merge 후 main 커밋 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`의 [main CI Run #945](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730617911)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 여전히 Issue #84의 외부 조건이다.
