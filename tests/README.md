@@ -14,13 +14,13 @@
 - Worker Domain: 21개
 - Worker Infrastructure: 71개
 - Client: 7개
-- API 통합: 33개
+- API 통합: 34개
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
 ## 현재 main 기준: 2026-11-10
 
-현재 `main`은 PR #160이 `b789c4740ec289fd4cf7ce404c222ae1e6cde8a1`로 Squash Merge된 상태다. PR 자체 CI [Run #940](https://github.com/namanvarava/Edan.Tensor/actions/runs/42725467593)와 병합 후 main CI [Run #941](https://github.com/namanvarava/Edan.Tensor/actions/runs/42725743165)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 245개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id와 외부 전달 취소 경계 회귀도 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
+현재 `main`은 PR #162가 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`로 Squash Merge된 상태다. PR 자체 CI [Run #944](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730316819)와 병합 후 main CI [Run #945](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730617911)이 성공했다. 병합 후 로컬 Release 검증은 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. OpenAPI 핵심 경로·Tenant 헤더·Idempotency-Key·Replay-Request-Id, 외부 전달 취소 경계와 저장량 이력·quota 이벤트 조회 개수 경계 회귀도 포함한다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 이 내부 증거에 포함하지 않는다.
 
 ## 과거 단일 실행 기록
 
@@ -68,4 +68,4 @@ PR #143의 [PR CI Run #906](https://github.com/namanvarava/Edan.Tensor/actions/r
 
 `EDAN.Tensor.Client.Tests`는 인증 헤더, 기본 Tenant 헤더, `Idempotency-Key`, 구조화 API 오류, 404 선택 조회, 다운로드 스트림 수명, 검증 결과 삭제, 입력·페이지 상한을 검증한다. 실제 임시 SQLite API Host에 typed Client를 연결하는 통합 테스트 1개도 추가했으며, 새 Client 테스트 7개를 포함한 솔루션 전체 Release Test는 243개 통과·실패 0개·건너뜀 0개다. PR #153의 [PR CI Run #926](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715584623)과 병합 후 [main CI Run #927](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715896376)도 Restore·Release Build·Release Test를 성공했다.
 
-DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작업을 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`에 전달하고, Lease/Fencing 실행 후 Worker 작업 성공과 Invalid 검증 결과·처리 행 수를 확인한다. API Host 통합 프로젝트는 이 경계를 포함하여 33개 테스트가 통과한다.
+DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작업을 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`에 전달하고, Lease/Fencing 실행 후 Worker 작업 성공과 Invalid 검증 결과·처리 행 수를 확인한다. API Host 통합 프로젝트는 이 경계를 포함하여 34개 테스트가 통과한다.
