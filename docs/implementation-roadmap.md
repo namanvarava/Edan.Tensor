@@ -315,3 +315,7 @@ PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run 
 PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81951`의 Release ApiHost와 WorkerHost를 임시 SQLite 네 개로 실제 기동했다. ApiHost의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 WorkerHost health는 모두 HTTP 200을 반환했고, 두 Host의 표준 오류 출력은 0바이트였다. 검증 후 임시 프로세스와 데이터 경계를 정리했다. 이후 PR #170은 이 증거 문서만 변경하여 `8b96528c58be3b8fcbe0e3fc3abfcd1b4856e11c`로 병합했으며 제품 코드는 변경하지 않았다.
 
 `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive`는 모든 프로젝트에 알려진 취약 패키지가 없음을 반환했다. 열린 Pull Request는 0개이고 원격 브랜치는 `main`만 남았다. Issue #84의 실제 외부 IdP·GitHub main 보호 규칙 HTTP 403은 외부 조건으로 계속 미검증이다.
+
+## 2026-11-10 재현 가능한 Host Smoke 도구와 중단 복구
+
+수동 Host Smoke 절차의 재현성과 정리 증거를 고정하기 위해 `tools/host-smoke.ps1`을 추가했다. Windows PowerShell 5.1에서 발생한 `ArgumentList` 부재와 `Kill(bool)` 오버로드 부재를 각각 `ProcessStartInfo.Arguments`와 `Process.Kill()`로 수정했으며, 구문 분석·실제 Host Smoke·Release 전체 검증으로 재확인했다. 최종 Smoke는 ApiHost·WorkerHost의 필수 HTTP 경계를 모두 200으로 확인하고 stderr 0바이트와 임시 경계 삭제를 확인한다.
