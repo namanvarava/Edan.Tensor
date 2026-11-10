@@ -392,3 +392,7 @@ PR #199는 `5f9b77121b0a2d1361ab745931a2d4ca558efd1b`로 main에 Squash Merge되
 같은 main에서 `tools/host-smoke.ps1`는 두 Host의 health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API를 HTTP 200으로 확인하고 stderr 0바이트와 임시 경로 삭제를 기록했다. `tools/license-authority-smoke.ps1`는 단일 5년 개발 라이선스·공개 JWK·정상 200·Production 차단 403·폐기 차단 403과 토큰 미기록·임시 경로 삭제를 확인했다. 직접·전이 패키지 취약점 조회도 모든 프로젝트에서 알려진 취약 패키지 없음으로 끝났다.
 
 제한된 로컬 실행에서 Build가 종료 코드 1을 반환한 원인은 `MSB4276` SDK Workload resolver 오류와 compiler server 접근 거부였으며, 코드 컴파일 오류나 경고는 없었다. 동일 커밋을 권한이 허용된 외부 실행에서 성공시켜 인프라 실행 경계와 코드 실패를 분리했다. 이 해결은 저장소 코드·CI·보호 정책을 우회하지 않으며, 같은 증상 재발 시 실행 권한·SDK resolver·compiler server 상태를 먼저 조사한다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, 승인되지 않은 DuckDB·Parquet·Commercial 유료 업무·WPF, 제품 API 라이선스 강제 계약은 계속 완료 범위에서 제외한다.
+
+## 2026-11-10 PR #200 최신 main 기준 갱신
+
+PR #200는 위 최종 검증 문서의 기준을 최신 main 커밋 `6e0a07dedf1e5b284cd883099bb746934d9950a6`로 갱신했다. PR CI [Run #42824930487](https://github.com/namanvarava/Edan.Tensor/actions/runs/42824930487)와 병합 후 main CI [Run #42825362715](https://github.com/namanvarava/Edan.Tensor/actions/runs/42825362715)가 self-hosted Windows Runner에서 Restore·Build·Test·정리 단계를 성공했다. 이 PR은 제품 코드를 변경하지 않았으며, 이전에 성공한 Release·Host Smoke·LicenseAuthority Smoke 증거의 기준 SHA와 링크만 최신화했다. PR 병합 후 원격·로컬 작업 브랜치는 삭제되었고 현재 main만 남았다.
