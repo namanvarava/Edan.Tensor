@@ -1,6 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #175 병합 커밋 `212f5b64a6d27ecd4ea21cb5f3597b1a461a5cf2`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 최신 `main` 커밋 `0104e486bc8b6021914349509d5b09216b04d9e9`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 아래의 과거 PR·CI 항목은 당시의 증거를 보존한 역사 기록이며, 최신 판정에는 최신 main 검증 항목을 사용합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+
+## 최신 main 판정
+
+PR #177의 제품·테스트 변경은 `f4c54b8f294b0845dabf62f689a3a985c4b567af`로 병합되었고, PR #178의 최신 검증 문서는 `0104e486bc8b6021914349509d5b09216b04d9e9`로 병합되었다. PR CI [Run #42750885076](https://github.com/namanvarava/Edan.Tensor/actions/runs/42750885076), 문서 PR CI [Run #42754068523](https://github.com/namanvarava/Edan.Tensor/actions/runs/42754068523), 최신 main CI [Run #42754304339](https://github.com/namanvarava/Edan.Tensor/actions/runs/42754304339)가 모두 성공했다.
+
+최신 main에서 정확한 Release Restore·Build·Test를 실제 호스트로 다시 실행하여 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 248개 통과·실패 0개·건너뜀 0개를 확인했다. Host Smoke는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 반환했고 두 Host stderr는 0바이트이며 임시 경계는 삭제되었다. 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위의 현재 기준이다.
 
 ## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
 
