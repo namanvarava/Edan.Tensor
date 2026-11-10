@@ -291,7 +291,9 @@ public static class PlatformEndpoints
             {
                 var result = await service.VerifyAsync(new TenantId(tenantId), archiveId, request.ExpectedSha256, token);
                 if (result.ReasonCode == "archive.not_found")
-                    return Results.NotFound(result);
+                    return Results.NotFound(new ApiError(
+                        "authorization.audit.archive.not_found",
+                        "Tenant 범위에서 감사 아카이브를 찾을 수 없습니다."));
                 return Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 

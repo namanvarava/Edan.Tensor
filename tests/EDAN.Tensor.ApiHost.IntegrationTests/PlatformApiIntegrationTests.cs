@@ -558,6 +558,49 @@ public sealed class PlatformApiIntegrationTests
 
     }
 
+    /// <summary>존재하지 않는 감사 아카이브 검증 요청이 공통 오류 계약을 반환하는지 확인합니다.</summary>
+    [Fact]
+    public async Task MissingAuthorizationAuditArchiveReturnsStandardNotFoundError()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "archive-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"ARCHIVE-{Guid.NewGuid():N}"[..14],
+            name = "감사 아카이브 오류 계약 테스트 Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", content: null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new
+            {
+                subjectId = "archive-admin",
+                role = "Administrator"
+            })).StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "archive-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        using var response = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/authorization-audit/archives/{Guid.NewGuid()}/verify",
+            new { expectedSha256 = (string?)null });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("authorization.audit.archive.not_found", document.RootElement.GetProperty("code").GetString());
+        Assert.False(document.RootElement.TryGetProperty("reasonCode", out _));
+        Assert.Equal("Tenant 범위에서 감사 아카이브를 찾을 수 없습니다.",
+            document.RootElement.GetProperty("description").GetString());
+    }
+
     [Fact]
     public async Task DataSetManagementApiEnforcesTenantScopeAndPersistsMetadata()
     {
