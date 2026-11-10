@@ -1169,6 +1169,7 @@ public sealed class PlatformApiIntegrationTests
             task => task.TenantId == tenantId && task.IdempotencyKey == idempotencyKey));
     }
 
+    /// <summary>Worker DLQ와 작업 등록 API가 관리자 경계·멱등성·알 수 없는 작업 유형의 오류 계약을 유지하는지 검증합니다.</summary>
     [Fact]
     public async Task WorkerDeadLetterOperationsRequireTenantAdministratorAndPreserveOriginalTask()
     {
@@ -1244,6 +1245,12 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/worker/tasks",
             new { taskType = "integration.unknown", payloadReference = "private://payload/input", maxAttempts = 3 });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, unknownTaskType.StatusCode);
+        using var unknownTaskTypeError = await JsonDocument.ParseAsync(
+            await unknownTaskType.Content.ReadAsStreamAsync());
+        Assert.Equal("worker.enqueue.task_type_unavailable",
+            unknownTaskTypeError.RootElement.GetProperty("code").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            unknownTaskTypeError.RootElement.GetProperty("description").GetString()));
         client.DefaultRequestHeaders.Remove("Idempotency-Key");
 
         // 테스트 WorkerHost가 등록한 유형을 카탈로그에 준비합니다.
