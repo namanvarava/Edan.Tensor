@@ -407,4 +407,10 @@ PR #202의 head `723e3eae74046ac7beaedfb56535fac974aeb45f`에서 별도 LicenseA
 
 PR #204는 ApiHost 통합 테스트에 Platform·Worker·DataSet 메타데이터·DataSet 콘텐츠 SQLite 네 파일의 백업·복원 검증을 추가했다. 테스트는 백업 전에 WAL checkpoint와 `PRAGMA integrity_check`를 실행하고 `VACUUM INTO`로 백업한 뒤, 별도 복원 경로에서 무결성·테이블 존재·DataSet 콘텐츠 marker 보존을 확인한다. PR 자체 CI [Run #42834109348](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834109348)와 병합 후 main CI [Run #42834477918](https://github.com/namanvarava/Edan.Tensor/actions/runs/42834477918)이 성공했고, 병합 main은 `95e7a8852ae548291bc1f29d83c5c1147c772921`이다. 병합 후 전체 Release Test는 264개 통과·실패 0개·건너뜀 0개, 별도 LicenseAuthority Test는 11개 통과·실패 0개·건너뜀 0개이며 작업 브랜치는 로컬·원격에서 삭제했다.
 
+## 2026-11-11 PR #206 Worker Migration 스냅샷 정합성 검증
+
+Worker 모델과 Migration 스냅샷을 비교하는 회귀 테스트가 없던 공백을 확인했다. 모델만 변경되고 Migration 또는 스냅샷이 갱신되지 않으면 새 환경과 기존 환경의 저장 구조가 달라질 수 있으므로, 현재 관계형 모델 차이를 테스트 단계에서 즉시 보고하도록 최소 검증을 추가했다. Worker Infrastructure 테스트는 72개, 전체 Release Test는 265개가 실패 0개·건너뜀 0개로 통과했다.
+
+PR #206의 head `65a937b20cbf40195c0f854e449ec4e03c1a57de`에 대한 [PR CI Run #42839417787](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839417787)과 Squash Merge 후 main 커밋 `bad8ed628fa34823b776232c2d9bbb753e42ccc5`의 [main CI Run #42839791924](https://github.com/namanvarava/Edan.Tensor/actions/runs/42839791924)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬에서도 필수 Release 명령과 별도 LicenseAuthority Restore·Build·Test를 다시 실행했으며, 작업 브랜치는 로컬·원격에서 삭제했고 원격 브랜치 검색에서도 확인되지 않았다.
+
 이 증거는 승인된 로컬 SQLite의 개발·테스트 백업 경계를 보강한다. 운영 DB 공급자, 보존 기간, RPO/RTO, 외부 백업 저장소와 실제 운영 복구는 아직 결정·제공되지 않았으므로 완료로 표시하지 않는다.
