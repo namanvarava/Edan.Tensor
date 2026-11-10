@@ -362,3 +362,9 @@ PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 main에 Squash Merge되
 `IPaymentProvider`와 `PaymentProviderGateway`를 추가하여 공급자를 교체 가능한 경계로 분리했다. 공급자가 없으면 `commercial.payment_provider_not_selected` 오류를 반환하고, 공급자가 선정된 경우에만 공급자 중립 요청을 전달한다. 미선정 거부와 선정 공급자 위임을 각각 회귀 테스트로 고정했으며, 가격·실제 결제·Webhook·환불·entitlement는 구현하지 않았다.
 
 현재 내부 개발 순서는 DuckDB·Parquet 계약 승인 및 구현, Commercial 업무 계약·공급자 선정 후 어댑터 연결, WPF 화면·업무 흐름 계약 후 클라이언트 구현, 마지막으로 실제 외부 IdP·운영 DB·외부 수신 시스템·배포·GitHub 보호 규칙 검증이다. LicenseAuthority 개발 라이선스와 내부 검증은 이미 별도 승인 계약에 따라 완료했지만, 운영 라이선스와 외부 환경 검증 완료를 의미하지 않는다.
+
+## 2026-11-10 최신 main 문서·테스트 기준
+
+PR #186은 테스트 구성과 최신 검증 링크를 `c2c4ab14512779a143d6d6a6c68193d3d21a3d80` 기준으로 갱신했고, PR CI #992와 병합 후 main CI #993이 Restore·Build·Test를 성공했다. 최신 main의 통합 Release Test는 260개 통과·실패 0개·건너뜀 0개이며, 별도 LicenseAuthority 테스트는 9개 통과·실패 0개·건너뜀 0개다.
+
+현재 저장소 내부에서 계약이 확정된 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·인증·인가·Development Bypass 경계, Worker 장애 복구, typed Client, 개발 LicenseAuthority와 공급자 중립 Commercial 결제 경계다. DuckDB·Parquet의 포맷·스키마·quota·동시성·복구, Commercial 상품·가격·Webhook·환불·유료 권리, WPF 화면·업무 흐름, 제품 API의 라이선스 전달 헤더·검증 실패 응답 계약은 승인 전 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 별도 조건이다.
