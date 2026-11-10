@@ -42,6 +42,14 @@
 - 최신 main에서 LicenseAuthority Smoke는 단일 `EDAN-NONPROD` 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production·폐기 검증 HTTP 403, 토큰 미기록과 임시 경로 삭제를 확인했다. Host Smoke는 ApiHost·WorkerHost의 health, database health, OpenAPI, Swagger UI와 Development Bypass Tenant API를 HTTP 200으로 확인했다.
 - 검증 종료 시 로컬 `main`과 `origin/main`은 `12aaf46924695768449a9886f5a601738963fb9c`로 일치했고, PR #215 작업 브랜치는 로컬·원격에서 삭제했다.
 
+## 2026-11-11 최신 main 문서 병합 후 재확인
+
+- 문서 검증 보강 PR [#216](https://github.com/namanvarava/Edan.Tensor/pull/216)은 `e480102a6d033f5d6fb96186568086bebc665201`로 squash merge되었다. PR CI [Run #1054](https://github.com/namanvarava/Edan.Tensor/actions/runs/42870682956)와 병합 후 main CI [Run #1055](https://github.com/namanvarava/Edan.Tensor/actions/runs/42871076194)는 Restore·Build·Test를 모두 성공했다.
+- 최신 main에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore와 Test는 종료 코드 0이었고, Build는 경고 0개·오류 0개였다. Test 프로젝트별 결과는 총 271개 통과·실패 0개·건너뜀 0개이며 ApiHost 통합 테스트 43개도 포함한다.
+- 최신 main의 Host Smoke는 ApiHost·WorkerHost health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고 양쪽 표준 오류 출력은 0바이트이며 임시 Smoke 디렉터리는 삭제되었다.
+- 최신 main의 LicenseAuthority Smoke는 Development 라이선스 단일 발급과 5년 기간, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스 검증 HTTP 403, 폐기 검증 HTTP 403을 확인했으며 stdout에 토큰을 기록하지 않고 임시 디렉터리를 삭제했다.
+- `rg -n "TODO|NotImplementedException" src tests tools`는 일치 항목을 반환하지 않았다. 로컬 `main`과 `origin/main`은 위 병합 SHA로 일치했고, 작업 트리·원격 작업 브랜치·열린 Pull Request를 최종 확인한 뒤 문서 브랜치를 삭제한다.
+
 ## 인증 Bypass 경계
 
 Development Bypass는 `Development` 환경과 `Authentication:Mode=Bypass`에서만 활성화된다. 고정 프로필은 RFC 예약 Metadata/JWKS 주소, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, 개발 키 회전 권한 식별자를 사용한다. 이 값은 실제 외부 IdP의 증거가 아니며 운영·External·CI·배포 구성에서는 활성화되지 않는다. Bypass 사용과 실행 주체는 로그에 남기고 Tenant·조직·프로젝트 권한 검사는 유지한다.
