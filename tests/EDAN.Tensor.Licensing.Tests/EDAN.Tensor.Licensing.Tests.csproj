@@ -4,11 +4,13 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/Hosts/EDAN.Tensor.LicenseAuthority.Host/EDAN.Tensor.LicenseAuthority.Host.csproj" />
     <ProjectReference Include="../../src/Licensing/EDAN.Tensor.Licensing.Application/EDAN.Tensor.Licensing.Application.csproj" />
     <ProjectReference Include="../../src/Licensing/EDAN.Tensor.Licensing.Infrastructure/EDAN.Tensor.Licensing.Infrastructure.csproj" />
   </ItemGroup>
