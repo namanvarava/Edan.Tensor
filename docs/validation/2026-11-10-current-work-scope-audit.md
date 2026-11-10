@@ -151,3 +151,11 @@ PR #177은 WorkerHost health 통합 테스트의 임시 자원 정리 순서를 
 제한된 Work 실행 경계에서는 병렬 솔루션 복원·빌드가 MSBuild 프로젝트 그래프 단계에서 오류·경고 없이 종료 코드 1을 반환했고, VSTest가 testhost에 연결하지 못하는 현상이 직접 `dotnet vstest`에서도 재현되었다. 동일 커밋을 외부 실행 경계에서 위 명령과 Smoke로 성공시켜 코드·테스트 실패와 실행 환경 제한을 분리했다. 이 환경 현상은 제품 결함으로 기록하지 않으며, 다음 로컬 재현에서는 외부 실행 경계 또는 직렬 MSBuild를 사용한다.
 
 이 증거는 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위에 한정한다. 실제 외부 IdP Metadata/JWKS·Issuer·Audience·테스트 Tenant·사용자·안정적인 `sub`·키 회전 권한, 운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403, Licensing·Commercial·DuckDB/Parquet·WPF는 Issue #84 및 Milestone #1의 외부 조건 또는 별도 승인 계약이 필요하므로 완료로 판정하지 않는다.
+
+## 2026-11-10 DataSet 검증 Idempotency 보상 경계 보강
+
+DataSet 검증 API가 Idempotency-Key로 기존 실행을 저장소에서 재사용하는 동시 경로를 재감사했다. API가 저장 전 조회에서 실행을 찾지 못한 뒤 다른 요청이 먼저 생성한 실행을 저장소의 유일 키 충돌 처리로 돌려받을 수 있는데도, 저장 전 조회 결과만으로 새 실행이라고 판단하고 Worker 등록 실패 시 `DeleteUnqueuedExecutionAsync`를 호출할 수 있었다. 이 경로에서는 다른 요청이 만든 검증 실행을 삭제할 가능성이 있었다.
+
+근본 원인은 저장소의 `CreateExecutionAsync` 결과가 실행 Snapshot만 반환하여 현재 요청이 실제로 레코드를 만들었는지 호출자가 알 수 없었던 점이다. 삭제 재시도나 동시성 예외 무시는 원인을 숨기므로 선택하지 않았다. 저장소에 생성 여부를 함께 반환하는 `CreateExecutionWithStatusAsync`를 추가하고 기존 메서드는 Snapshot 호환 래퍼로 유지했으며, API는 `Created=true`일 때만 내부 보상 삭제 대상으로 등록하도록 최소 수정했다.
+
+Idempotency 유일 키 충돌에서 기존 실행을 재사용하고 `Created=false`를 반환하는 대상 회귀 테스트 1개, 솔루션 전체 Release Test 249개, Release Build 경고 0개·오류 0개와 실제 Host Smoke를 통과했다. 이 수정은 공개 HTTP 계약과 Tenant 경계를 변경하지 않으며, 동시 요청의 보상 삭제 재발을 저장소 결과 계약으로 방지한다.

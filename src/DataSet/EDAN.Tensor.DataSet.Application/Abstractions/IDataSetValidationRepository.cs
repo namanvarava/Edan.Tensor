@@ -23,6 +23,13 @@ public interface IDataSetValidationRepository
         string? idempotencyKey = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>검증 실행을 저장하고 새 실행 생성 여부를 함께 반환합니다.</summary>
+    Task<DataSetValidationExecutionCreationResult> CreateExecutionWithStatusAsync(
+        Guid tenantId, Guid dataSetId, int expectedDataSetVersion, int schemaVersion,
+        Guid profileId, int profileRevision, DateTimeOffset nowUtc,
+        string? idempotencyKey = null,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Tenant와 Idempotency-Key로 기존 검증 실행을 조회합니다.</summary>
     Task<DataSetValidationExecutionSnapshot?> GetExecutionByIdempotencyKeyAsync(
         Guid tenantId, string idempotencyKey, CancellationToken cancellationToken = default);

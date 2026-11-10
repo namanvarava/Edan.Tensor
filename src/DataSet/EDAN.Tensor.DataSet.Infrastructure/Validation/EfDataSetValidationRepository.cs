@@ -61,6 +61,15 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         Guid profileId, int profileRevision, DateTimeOffset nowUtc,
         string? idempotencyKey = null,
         CancellationToken cancellationToken = default)
+        => (await CreateExecutionWithStatusAsync(tenantId, dataSetId, expectedDataSetVersion, schemaVersion,
+            profileId, profileRevision, nowUtc, idempotencyKey, cancellationToken)).Execution;
+
+    /// <summary>검증 실행을 저장하고 유일 키 충돌으로 기존 실행을 반환했는지 구분합니다.</summary>
+    public async Task<DataSetValidationExecutionCreationResult> CreateExecutionWithStatusAsync(
+        Guid tenantId, Guid dataSetId, int expectedDataSetVersion, int schemaVersion,
+        Guid profileId, int profileRevision, DateTimeOffset nowUtc,
+        string? idempotencyKey = null,
+        CancellationToken cancellationToken = default)
     {
         var execution = new DataSetValidationExecution(Guid.NewGuid(), tenantId, dataSetId,
             expectedDataSetVersion, schemaVersion, profileId, profileRevision,
@@ -69,7 +78,7 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
-            return ToSnapshot(execution);
+            return new DataSetValidationExecutionCreationResult(ToSnapshot(execution), true);
         }
         catch (DbUpdateException)
         {
@@ -80,7 +89,7 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
             var existing = await GetExecutionByIdempotencyKeyAsync(tenantId, idempotencyKey, cancellationToken);
             if (existing is null)
                 throw;
-            return existing;
+            return new DataSetValidationExecutionCreationResult(existing, false);
         }
     }
 
