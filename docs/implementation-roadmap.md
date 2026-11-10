@@ -367,4 +367,6 @@ PR #180은 `da405a5b9874e2df57f88f829cd38c7c5e172fca`로 main에 Squash Merge되
 
 PR #193은 감사 아카이브가 없는 경우에도 API 공통 `{ code, description }` 오류 계약을 반환하도록 수정하고 통합 회귀 테스트를 추가했으며 `46309e08928b474f343a16ae838719d46cccdf55`로 main에 병합되었다. PR CI #42811050896와 병합 후 main CI #42811372911은 Restore·Build·Test를 성공했다. 최신 main의 통합 Release Test는 262개 통과·실패 0개·건너뜀 0개이며, 별도 LicenseAuthority 테스트는 10개 통과·실패 0개·건너뜀 0개다.
 
+PR #195는 승인된 LicenseAuthority 계약을 관리 문서에서 제품 API 적용 대기 범위와 분리하고, WorkerHost의 불필요한 Licensing Infrastructure 참조를 제거하여 개인키 서명 구현을 LicenseAuthority Host 경계에만 남겼다. 자동 LicenseId·KeyId, 승인 기능 목록과 공개 JWK의 개인키 값 부재를 회귀 테스트로 고정했으며 `2a0cdc1c9b7878e86e923d9adc925c9f40b736a7`로 main에 병합되었다. PR CI #42815055109와 병합 후 main CI #42815424524는 Restore·Build·Test를 성공했다.
+
 현재 저장소 내부에서 계약이 확정된 범위는 로컬 SQLite·Migration·Swagger/OpenAPI, Platform·DataSet·Worker API 흐름, Tenant·인증·인가·Development Bypass 경계, Worker 장애 복구, typed Client, 개발 LicenseAuthority의 서비스·HTTP 검증과 공급자 중립 Commercial 결제 경계다. DuckDB·Parquet의 포맷·스키마·quota·동시성·복구, Commercial 상품·가격·Webhook·환불·유료 권리, WPF 화면·업무 흐름, 제품 API의 라이선스 전달 헤더·검증 실패 응답 계약은 승인 전 구현하지 않는다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 Issue #84와 Milestone #1의 별도 조건이다.
