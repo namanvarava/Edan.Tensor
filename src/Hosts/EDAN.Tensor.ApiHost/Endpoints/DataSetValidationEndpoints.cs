@@ -80,13 +80,11 @@ public static class DataSetValidationEndpoints
             CreateDataSetValidationRequest request, DataSetValidationService service,
             WorkerTaskEnqueueService enqueue, CancellationToken token) =>
         {
-            var idempotencyKey = httpRequest.Headers["Idempotency-Key"].ToString().Trim();
-            if (string.IsNullOrWhiteSpace(idempotencyKey))
-                return Results.BadRequest(new
-                {
-                    Code = "dataset.validation.idempotency_key_required",
-                    Description = "검증 실행의 중복 예약을 막으려면 Idempotency-Key 헤더가 필요합니다."
-                });
+            if (!ApiRequestValidation.TryGetIdempotencyKey(httpRequest,
+                    "dataset.validation.idempotency_key_required",
+                    "dataset.validation.idempotency_key_too_long",
+                    out var idempotencyKey, out var headerError))
+                return Results.BadRequest(headerError);
 
             var result = await service.CreateExecutionWithStatusAsync(tenantId, dataSetId,
                 new DataSetValidationRequest(request.ExpectedDataSetVersion, request.SchemaVersion,

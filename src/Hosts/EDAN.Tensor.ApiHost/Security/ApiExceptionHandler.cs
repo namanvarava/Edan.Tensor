@@ -53,6 +53,12 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         DbUpdateConcurrencyException =>
             (StatusCodes.Status409Conflict,
                 new ApiError("api.concurrency_conflict", "동시에 변경된 데이터를 다시 조회한 뒤 재시도해야 합니다.")),
+        BadHttpRequestException badRequest when badRequest.InnerException is JsonException =>
+            (badRequest.StatusCode,
+                new ApiError("api.invalid_json", "요청 본문이 올바른 JSON 형식이 아닙니다.")),
+        BadHttpRequestException badRequest =>
+            (badRequest.StatusCode,
+                new ApiError("api.invalid_request", "요청 형식이 올바르지 않습니다.")),
         JsonException =>
             (StatusCodes.Status400BadRequest,
                 new ApiError("api.invalid_json", "요청 본문이 올바른 JSON 형식이 아닙니다.")),
