@@ -24,6 +24,8 @@ API 계약·공통 오류 처리, 고정된 Development Bypass Tenant·주체 �
 
 별도 LicenseAuthority 구성과 개발 라이선스의 정상·위조·만료·시작 전·다른 Tenant·폐기·알 수 없는 KeyId 검증은 라이선스 단계의 필수 수용 기준입니다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 별도 환경 조건으로 유지하며, 해당 조건이 제공되기 전에는 내부 검증의 성공으로 대체하지 않습니다.
 
+현재 main `ec7d8ce5c50ea935c335dd7e7feb330ed5522bfa`에서는 위 LicenseAuthority 계약을 구현·검증했습니다. PR #211의 [PR Check](https://github.com/namanvarava/Edan.Tensor/actions/runs/42856973141)와 병합 후 [main Check](https://github.com/namanvarava/Edan.Tensor/actions/runs/42857407194)는 Restore·Release Build·Release Test를 성공했습니다. 제품 API에 라이선스를 자동 강제하는 별도 계약은 여전히 승인 대기 범위입니다.
+
 ## 고정된 진행 순서
 
 ### 0단계. 전체 범위·수용 기준·운영 DB를 결정합니다.
