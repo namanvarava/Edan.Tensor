@@ -74,6 +74,13 @@
 - PR [#223](https://github.com/namanvarava/Edan.Tensor/pull/223)의 소스 커밋 `7fb37964d9de87ad10d909045a55dfc3cc7b7d1a`는 squash merge 커밋 `b28aa38914351f7a1e3c3630a36e4ce93bcc380f`로 main에 병합되었다. PR CI [Run #1068](https://github.com/namanvarava/Edan.Tensor/actions/runs/42912131321)와 병합 후 main push CI [Run #1069](https://github.com/namanvarava/Edan.Tensor/actions/runs/42912694690)는 Restore·Build·Test·후처리를 모두 성공했다.
 - 병합 후 로컬 `main`과 `origin/main`은 `b28aa38914351f7a1e3c3630a36e4ce93bcc380f`로 일치했다. `codex/document-request-id-openapi-20261111` 원격 브랜치는 삭제했고, squash merge 특성상 일반 삭제가 거부된 뒤 병합 커밋과 CI를 확인하고 로컬 브랜치를 강제 삭제했다.
 
+## 2026-11-11 최종 저장소 내부 범위 감사
+
+- 문서 PR #224 병합 후 최신 main은 `9e85bd83f6660e49c11535de0aa925d2ea659b4c`이며, 이 커밋에서 `dotnet restore EDAN.Tensor.sln`, `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`, `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`를 다시 실행했다. Restore는 성공했고, Build는 경고 0개·오류 0개, Test는 272개 통과·실패 0개·건너뜀 0개였다. 병합 후 main CI [Run #1071](https://github.com/namanvarava/Edan.Tensor/actions/runs/42913613494)도 성공했다.
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive --no-restore --format json`은 모든 프로젝트를 조회했으며 알려진 취약 패키지 항목을 반환하지 않았다. `src`, `tests`, `tools`의 `TODO`, `FIXME`, `NotImplementedException` 검색도 일치 항목이 없었다. Client의 읽기 전용 스트림과 테스트용 저장소에서 사용하는 `NotSupportedException`은 의도적으로 지원하지 않는 동작을 명시하는 경계이며 미구현 제품 흐름으로 판정하지 않았다.
+- 현재 승인된 저장소 내부 범위는 Platform·DataSet SQLite 대체 저장소·Worker·typed Client·RBAC·Development Bypass 운영 차단·Commercial 공급자 추상화·LicenseAuthority 개발 라이선스 업무와 관측성·백업/복구 회귀 증거까지 포함한다. DuckDB·Parquet, 실제 결제·Webhook·환불·유료 권리, WPF 화면, 제품 API 라이선스 강제는 승인 계약이 없으므로 임의 구현하지 않고 별도 결정 대기로 유지한다.
+- 최종 확인 시 열린 PR은 0건이고, 외부 IdP·운영 DB·외부 수신 시스템·GitHub main 보호 규칙은 Issue [#84](https://github.com/namanvarava/Edan.Tensor/issues/84)의 외부 조건으로만 남아 있다. 로컬 브랜치는 `main`만 존재하고 원격 `codex/*` 브랜치는 없으며, 최종 작업 트리는 깨끗하다.
+
 ## 인증 Bypass 경계
 
 Development Bypass는 `Development` 환경과 `Authentication:Mode=Bypass`에서만 활성화된다. 고정 프로필은 RFC 예약 Metadata/JWKS 주소, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, 개발 키 회전 권한 식별자를 사용한다. 이 값은 실제 외부 IdP의 증거가 아니며 운영·External·CI·배포 구성에서는 활성화되지 않는다. Bypass 사용과 실행 주체는 로그에 남기고 Tenant·조직·프로젝트 권한 검사는 유지한다.
