@@ -14,7 +14,7 @@
 - Worker Domain: 21개
 - Worker Infrastructure: 71개
 - Client: 7개
-- API 통합: 34개
+- API 통합: 35개
 
 Development Bypass는 Development 환경에서만 고정된 비운영 IdP 시뮬레이션 프로필을 등록합니다. 프로필은 RFC 예약 도메인, `EDAN-NONPROD` 테스트 Tenant, `edan-nonprod-test-user`, 안정적인 `edan-nonprod-test-subject`를 사용하고 실제 외부 IdP에 연결하지 않으며, 첫 Bypass 인증 요청에 시뮬레이션 사용 경고를 기록합니다. Tenant와 안정적인 `sub`는 설정값으로 재정의할 수 없습니다. 운영·External 인증과 실제 비운영 IdP 검증의 완료 근거로 사용하지 않습니다.
 
@@ -70,4 +70,8 @@ PR #143의 [PR CI Run #906](https://github.com/namanvarava/Edan.Tensor/actions/r
 
 `EDAN.Tensor.Client.Tests`는 인증 헤더, 기본 Tenant 헤더, `Idempotency-Key`, 구조화 API 오류, 404 선택 조회, 다운로드 스트림 수명, 검증 결과 삭제, 입력·페이지 상한을 검증한다. 실제 임시 SQLite API Host에 typed Client를 연결하는 통합 테스트 1개도 추가했으며, 새 Client 테스트 7개를 포함한 솔루션 전체 Release Test는 243개 통과·실패 0개·건너뜀 0개다. PR #153의 [PR CI Run #926](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715584623)과 병합 후 [main CI Run #927](https://github.com/namanvarava/Edan.Tensor/actions/runs/42715896376)도 Restore·Release Build·Release Test를 성공했다.
 
-DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작업을 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`에 전달하고, Lease/Fencing 실행 후 Worker 작업 성공과 Invalid 검증 결과·처리 행 수를 확인한다. API Host 통합 프로젝트는 이 경계를 포함하여 34개 테스트가 통과한다.
+DataSet 검증 통합 테스트는 API가 예약한 `dataset.validation.v1` 작업을 실제 `WorkerTaskExecutionCoordinator`와 `DataSetValidationTaskHandler`에 전달하고, Lease/Fencing 실행 후 Worker 작업 성공과 Invalid 검증 결과·처리 행 수를 확인한다. API Host 통합 프로젝트는 이 경계를 포함하여 35개 테스트가 통과한다.
+
+## 2026-11-10 WorkerHost 데이터베이스 health 경계
+
+`WorkerHostHealthIntegrationTests.WorkerHostDatabaseHealthReportsAllConfiguredDatabases`는 임시 SQLite 네 개를 실제 WorkerHost에 연결하여 `/health/database`가 네 저장소를 `Connected/Green`으로 보고하는지 확인한다. Release 전체 테스트는 이 회귀를 포함하여 247개 통과·실패 0개·건너뜀 0개이며, `tools/host-smoke.ps1`는 동일한 경계를 실제 Host 기동으로 재확인한다. 이 검증은 Development Bypass와 로컬 SQLite만 사용하므로 실제 운영 DB·외부 IdP·외부 시스템 검증을 대체하지 않는다.

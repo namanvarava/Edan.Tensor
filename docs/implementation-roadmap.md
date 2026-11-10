@@ -319,3 +319,9 @@ PR #169가 병합한 제품 코드 기준 `5033716067358350f3f86cc1910c8135f1c81
 ## 2026-11-10 재현 가능한 Host Smoke 도구와 중단 복구
 
 수동 Host Smoke 절차의 재현성과 정리 증거를 고정하기 위해 `tools/host-smoke.ps1`을 추가했다. Windows PowerShell 5.1에서 발생한 `ArgumentList` 부재와 `Kill(bool)` 오버로드 부재를 각각 `ProcessStartInfo.Arguments`와 `Process.Kill()`로 수정했으며, 구문 분석·실제 Host Smoke·Release 전체 검증으로 재확인했다. 최종 Smoke는 ApiHost·WorkerHost의 필수 HTTP 경계를 모두 200으로 확인하고 stderr 0바이트와 임시 경계 삭제를 확인한다.
+
+## 2026-11-10 WorkerHost 데이터베이스 health 경계 보강
+
+기존 WorkerHost `/health`가 프로세스 생존만 보고하던 공백을 확인했다. 공통 `SqliteDatabaseHealthProbe`를 HostServices로 이동하고 WorkerHost에 `/health/database`를 추가하여 Platform·Worker·DataSet·DataSetContent 네 저장소의 연결과 기본 스키마 읽기를 함께 확인한다. 하나라도 실패하면 `Disconnected/Red`와 HTTP 503을 반환하며, 작업 재개 전에 저장소 상태를 조사할 수 있도록 운영 가이드와 Host Smoke에 이 경계를 연결했다.
+
+WorkerHost 전용 임시 SQLite 통합 테스트 1개, 솔루션 Release Restore·Build·Test(전체 247개, 실패 0개·건너뜀 0개), 실제 Host Smoke를 재실행했다. Smoke는 두 Host의 health·database health, OpenAPI, Swagger UI, Development Bypass Tenant API에서 HTTP 200을 반환했고 stderr 0바이트와 임시 디렉터리 정리를 확인했다. 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403과 Licensing은 이 단계의 완료 범위에 포함하지 않는다.

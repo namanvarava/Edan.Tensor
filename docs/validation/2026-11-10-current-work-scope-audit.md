@@ -121,3 +121,11 @@ PR #159는 외부 전달 Handler의 조정기 취소 토큰을 실제 HTTP 실�
 저장량 스냅샷 이력과 quota 임계치 이벤트 API가 범위를 벗어난 `take` 값을 `Math.Clamp`로 조용히 보정하던 계약 불일치를 확인했다. 저장량 이력은 1~744, quota 이벤트는 1~500 범위로 명시적으로 검증하고, 범위를 벗어나면 HTTP 400 `api.invalid_request`를 반환하도록 최소 수정했다. Tenant 관리자 경계에서 네 가지 잘못된 입력을 확인하는 API 통합 회귀 테스트와 공개 API·운영 가이드를 추가했다.
 
 PR #162의 head `61483289fd4319aba1ad69c7f482d31b30aab9e7`에 대한 [PR CI Run #944](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730316819)와 Squash Merge 후 main 커밋 `21ecd234e2dda4e34ab896bd36f3b96be2e07085`의 [main CI Run #945](https://github.com/namanvarava/Edan.Tensor/actions/runs/42730617911)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했다. 실제 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 HTTP 403은 여전히 Issue #84의 외부 조건이다.
+
+## 2026-11-10 WorkerHost 데이터베이스 health 경계 보강
+
+WorkerHost의 기존 `/health`는 프로세스가 응답하는지만 확인하여, 네 개 로컬 SQLite의 연결 또는 기본 스키마 손상을 구분하지 못했다. API Host가 사용하는 데이터베이스 health 계약과 동일하게 WorkerHost에 `/health/database`를 추가하고, Platform·Worker·DataSet 메타데이터와 DataSet 콘텐츠 저장소를 각각 연결·간단한 읽기로 확인하도록 공통 SQLite probe를 HostServices로 이동했다. 하나라도 실패하면 `Disconnected/Red`, HTTP 503을 반환하며 취소 요청은 그대로 전파한다.
+
+실제 검증은 `WorkerHostHealthIntegrationTests.WorkerHostDatabaseHealthReportsAllConfiguredDatabases` 1개와 솔루션 전체 Release Test 247개에서 실패 0개·건너뜀 0개로 통과했다. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1`도 임시 SQLite 네 개로 ApiHost·WorkerHost의 health와 database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 모두 HTTP 200으로 확인했고, 양쪽 stderr 0바이트와 임시 Smoke 디렉터리 삭제를 확인했다.
+
+이 변경은 로컬 SQLite 운영 관찰성을 보강하지만 실제 운영 DB 장애 복구, 외부 IdP, 외부 수신 시스템, GitHub 보호 규칙 HTTP 403 검증을 완료 처리하지 않는다.

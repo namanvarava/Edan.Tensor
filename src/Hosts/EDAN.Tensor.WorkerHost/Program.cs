@@ -45,6 +45,8 @@ var contentConnectionString = builder.Configuration.GetConnectionString("DataSet
 var contentSqlite = ResolveSqliteConnection(contentConnectionString, builder.Environment.ContentRootPath);
 var maxContentBytes = builder.Configuration.GetValue<long?>("DataSetContent:MaxUploadBytes") ?? 67_108_864;
 builder.Services.AddDataSetSqliteStorage(contentSqlite, maxContentBytes);
+builder.Services.AddSingleton(new SqliteDatabaseHealthProbe(contentSqlite));
+builder.Services.AddSingleton<WorkerDatabaseHealthService>();
 
 var workerConnectionString = builder.Configuration.GetConnectionString("WorkerDatabase")
     ?? builder.Configuration.GetConnectionString("Worker")
@@ -99,6 +101,17 @@ await using (var catalogScope = app.Services.CreateAsyncScope())
         catalogScope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow());
 }
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Service = "WorkerHost" }));
+app.MapGet("/health/database", async (WorkerDatabaseHealthService health, CancellationToken cancellationToken) =>
+{
+    var snapshot = await health.CheckAsync(cancellationToken);
+    return Results.Json(new
+    {
+        snapshot.Status,
+        snapshot.Indicator,
+        snapshot.CanConnect,
+        snapshot.Databases
+    }, statusCode: snapshot.CanConnect ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+});
 app.Run();
 
 static string ResolveSqliteConnection(string connectionString, string contentRoot)
