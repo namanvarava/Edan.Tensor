@@ -1,6 +1,12 @@
 # 2026-11-10 현재 Work 범위 감사
 
-이 문서는 PR #166 기능 병합 커밋 `7be3d93fbfc56ed2767ea985ad5b59ece30af2e7`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+이 문서는 PR #168 기능 병합 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`를 기준으로 현재 Work에서 실제 확인할 수 있는 제품 범위와 아직 구현·검증할 수 없는 조건을 구분합니다. 테스트 통과나 프로젝트 존재만으로 미구현 업무를 완료로 판정하지 않습니다.
+
+## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
+
+typed Client의 페이지 오프셋 선행 검증에 더해 API Host 통합 테스트에서 `page=int.MaxValue&pageSize=100` 요청을 실제로 수행했다. 서버는 checked 오프셋 계산의 오버플로를 HTTP 400과 `worker.dead_letter.invalid_page` 오류 코드로 반환했으며, 이 검사는 서버·Client 양쪽 경계를 함께 고정한다.
+
+PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run #956](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738402094)와 Squash Merge 후 main 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`의 [main CI Run #957](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738642780)이 Restore·Release Build·Release Test를 성공시켰다. 병합 후 로컬에서도 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 재확인했다. 이 변경은 승인된 내부 SQLite·Swagger/OpenAPI·Platform·DataSet·Worker 범위만 보강하며, DuckDB·Parquet·Commercial·Licensing·LicenseAuthority·WPF와 실제 외부 환경 검증을 완료 처리하지 않는다.
 
 ## 2026-11-10 PR #166 DLQ 페이지 오프셋 정합성 보강
 

@@ -303,3 +303,9 @@ PR #164의 head `89a62cd526ab98667f4d75f4c340499b96bbdb21`에 대한 [PR CI Run 
 Worker 서버의 checked 페이지 오프셋 계산과 typed Client의 입력 검증을 일치시켰다. `page=int.MaxValue`와 기본 `pageSize=50`처럼 서버가 `worker.dead_letter.invalid_page`로 거부할 조합을 Client가 HTTP 요청 전에 차단하며, XML 문서·운영 가이드와 회귀 테스트를 함께 갱신했다.
 
 PR #166의 head `c57952206fca5e161a8c392911f45cac82e1bc57`에 대한 [PR CI Run #952](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736302956)와 Squash Merge 후 main 커밋 `7be3d93fbfc56ed2767ea985ad5b59ece30af2e7`의 [main CI Run #953](https://github.com/namanvarava/Edan.Tensor/actions/runs/42736549387)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. 이 증거는 승인된 내부 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.
+
+## 2026-11-10 PR #168 DLQ 페이지 오버플로 API 회귀
+
+API Host 통합 테스트에서 `page=int.MaxValue&pageSize=100`을 호출하여 Worker 서버의 checked 페이지 오프셋 오버플로가 HTTP 400 `worker.dead_letter.invalid_page`로 반환되는지 확인했다. Client 단위 검증과 서버 통합 검증을 함께 유지하여 동일 입력이 어느 경계에서도 정상 데이터 조회로 처리되지 않도록 했다.
+
+PR #168의 head `cdf1d7f34b8af7679bd1fd62b81d8f3c8d8a3639`에 대한 [PR CI Run #956](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738402094)와 Squash Merge 후 main 커밋 `bd4753f0c4ba41d906d6ca8556257eb3765db04d`의 [main CI Run #957](https://github.com/namanvarava/Edan.Tensor/actions/runs/42738642780)이 Restore·Release Build·Release Test를 성공했다. 병합 후 로컬 Release Restore·Build·Test는 Restore 성공, Build 경고 0개·오류 0개, 전체 Test 246개 통과·실패 0개·건너뜀 0개를 기록했다. 이 증거는 승인된 내부 범위에 한정하며 외부 IdP·운영 DB·외부 수신 시스템·GitHub 보호 규칙 검증을 포함하지 않는다.
