@@ -26,7 +26,7 @@ dotnet restore EDAN.Tensor.sln                         성공
 dotnet build EDAN.Tensor.sln --no-restore --configuration Release
   경고 0개·오류 0개
 dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
-  통과 243개·실패 0개·건너뜀 0개
+  통과 245개·실패 0개·건너뜀 0개
 ```
 
 추가 경계 테스트도 다음과 같이 통과했습니다.
