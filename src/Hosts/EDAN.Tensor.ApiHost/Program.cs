@@ -14,6 +14,7 @@ using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.ApiHost.Services;
+using EDAN.Tensor.ApiHost.Observability;
 using EDAN.Tensor.HostServices.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -155,6 +156,7 @@ var app = builder.Build();
 
 // 처리되지 않은 예외는 공통 오류 계약으로 변환하고 내부 상세정보는 로그에만 남깁니다.
 app.UseExceptionHandler();
+app.UseMiddleware<RequestObservabilityMiddleware>();
 
 // 개발 환경에서는 버전이 관리되는 EF Core Migration을 적용하고 운영 환경의 스키마 변경은 배포 절차에서 수행합니다.
 if (app.Environment.IsDevelopment()

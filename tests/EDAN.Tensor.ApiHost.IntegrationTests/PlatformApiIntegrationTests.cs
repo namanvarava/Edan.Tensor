@@ -354,6 +354,35 @@ public sealed class PlatformApiIntegrationTests
         }
     }
 
+    /// <summary>성공 응답과 공통 오류 응답이 서버 요청 식별자를 반환합니다.</summary>
+    [Fact]
+    public async Task ResponsesExposeServerGeneratedRequestIdForSuccessAndError()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+
+        using var healthResponse = await client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+        var healthRequestId = ReadRequestId(healthResponse);
+
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        using var malformedContent = new StringContent("{", Encoding.UTF8, "application/json");
+        using var errorResponse = await client.PostAsync("/api/platform/tenants", malformedContent);
+        Assert.Equal(HttpStatusCode.BadRequest, errorResponse.StatusCode);
+        var errorRequestId = ReadRequestId(errorResponse);
+
+        Assert.NotEqual(healthRequestId, errorRequestId);
+
+        static string ReadRequestId(HttpResponseMessage response)
+        {
+            Assert.True(response.Headers.TryGetValues("X-Request-Id", out var values));
+            var requestId = Assert.Single(values);
+            Assert.False(string.IsNullOrWhiteSpace(requestId));
+            return requestId;
+        }
+    }
+
     [Fact]
     public async Task TenantProvisioningUsesPersistedMembershipForTenantAuthorization()
     {
