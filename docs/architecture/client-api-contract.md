@@ -7,7 +7,7 @@
 - `EDAN.Tensor.Client.Contracts`는 Tenant 소속, DataSet, 검증 실행, Worker 작업·DLQ의 요청·응답 계약을 제공합니다.
 - `EDAN.Tensor.Client`는 `HttpClient` 기반 `TensorApiClient`를 제공하며, 인증 토큰·Tenant 헤더·Idempotency 헤더·Replay 헤더를 요청 경계에서 일관되게 구성합니다.
 - Client는 API Host의 Tenant 경로와 `X-Tenant-Id`를 같은 식별자로 설정하여 경로와 선택 헤더가 어긋나는 요청을 만들지 않습니다.
-- Client는 API의 `{ Code, Description }` 오류 계약을 `TensorApiException`의 상태 코드·오류 코드·설명으로 보존합니다. 토큰과 응답 본문을 로그로 남기지 않습니다.
+- Client는 API의 `{ Code, Description }` 오류 계약을 `TensorApiException`의 상태 코드·오류 코드·설명으로 보존하고, 응답의 `X-Request-Id`가 있으면 `RequestId`로 전달합니다. 토큰과 응답 본문을 로그로 남기지 않습니다.
 
 ## 사용 예시
 

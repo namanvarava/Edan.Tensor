@@ -19,12 +19,15 @@ public sealed class TensorApiClientOptions
 /// <summary>EDAN Tensor API의 비성공 응답을 나타냅니다.</summary>
 public sealed class TensorApiException : HttpRequestException
 {
-    private TensorApiException(HttpStatusCode statusCode, string code, string description)
+    private const string RequestIdHeaderName = "X-Request-Id";
+
+    private TensorApiException(HttpStatusCode statusCode, string code, string description, string? requestId)
         : base($"EDAN Tensor API 요청이 실패했습니다. Status={(int)statusCode}, Code={code}, Description={description}")
     {
         StatusCodeValue = statusCode;
         Code = code;
         Description = description;
+        RequestId = requestId;
     }
 
     /// <summary>HTTP 응답 상태 코드입니다.</summary>
@@ -35,6 +38,9 @@ public sealed class TensorApiException : HttpRequestException
 
     /// <summary>API가 반환한 한국어 오류 설명입니다.</summary>
     public string Description { get; }
+
+    /// <summary>서버 로그와 장애 문의를 연결하는 응답 요청 식별자입니다. 서버가 헤더를 반환하지 않으면 null입니다.</summary>
+    public string? RequestId { get; }
 
     private static async Task<TensorApiException> CreateAsync(
         HttpResponseMessage response, JsonSerializerOptions jsonOptions, CancellationToken cancellationToken)
@@ -49,10 +55,24 @@ public sealed class TensorApiException : HttpRequestException
             // 외부 시스템이 오류 계약을 지키지 않아도 상태 코드와 일반 오류 코드로 안전하게 전달합니다.
         }
 
+        string? requestId = null;
+        if (response.Headers.TryGetValues(RequestIdHeaderName, out var requestIds))
+        {
+            foreach (var candidate in requestIds)
+            {
+                if (!string.IsNullOrWhiteSpace(candidate))
+                {
+                    requestId = candidate;
+                    break;
+                }
+            }
+        }
+
         return new TensorApiException(
             response.StatusCode,
             string.IsNullOrWhiteSpace(error?.Code) ? "api.http_error" : error.Code,
-            string.IsNullOrWhiteSpace(error?.Description) ? "API 요청을 처리하지 못했습니다." : error.Description);
+            string.IsNullOrWhiteSpace(error?.Description) ? "API 요청을 처리하지 못했습니다." : error.Description,
+            requestId);
     }
 
     internal static Task<TensorApiException> FromResponseAsync(

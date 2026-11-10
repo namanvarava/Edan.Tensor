@@ -450,3 +450,9 @@ PR #210 병합 후 최신 `main` 커밋 `81281a7e014d6bd377dc911cd39b5eac3aa8e3a
 API 오류 로그에는 기존에도 `TraceIdentifier`가 기록되었지만 성공 요청과 오류 응답을 호출자가 같은 로그로 연결할 응답 헤더가 없었다. 요청 본문·Bearer 토큰·개인키를 기록하는 대안은 보안 경계를 훼손하므로 선택하지 않고, 서버가 생성한 `X-Request-Id`를 모든 응답에 추가하며 HTTP 메서드·경로·상태 코드·처리 시간을 구조화 로그에 기록하는 최소 미들웨어를 추가했다. 기존 공개 오류 본문과 인증·Tenant·Worker 계약은 변경하지 않았다.
 
 성공 `/health`와 인증된 잘못된 JSON 오류 응답에서 서로 다른 `X-Request-Id`를 확인하는 회귀 테스트를 추가했다. 대상 테스트 1개와 ApiHost 통합 테스트 44개, 전체 Release Test 272개가 실패 0개·건너뜀 0개로 통과했고, Host Smoke와 LicenseAuthority Smoke도 종료 코드 0으로 통과했다. 실제 운영 로그 수집기·분산 추적 백엔드 연동은 외부 운영 환경 조건으로 별도 검증한다.
+
+## 2026-11-11 typed Client 요청 식별자 보존
+
+서버가 `X-Request-Id`를 반환한 뒤에도 typed Client의 `TensorApiException`이 상태 코드·오류 코드·설명만 보존하고 요청 식별자를 버리고 있어, 호출자가 서버 로그와 오류를 연결할 수 없었다. 응답 본문·인증 토큰·Tenant 계약을 변경하지 않고 예외에 nullable `RequestId`를 추가했으며, 서버가 헤더를 주지 않는 외부 호환 응답은 null로 유지했다.
+
+오류 응답에 `X-Request-Id`를 포함한 Client 회귀 테스트와 문서를 추가했다. 대상 테스트, Client 프로젝트 테스트 7개, ApiHost 통합 테스트 44개, 전체 Release Test 272개가 실패 0개·건너뜀 0개로 통과했으며 Release Restore·Build도 경고 0개·오류 0개로 성공했다.

@@ -71,9 +71,14 @@ public sealed class TensorApiClientTests
     [Fact]
     public async Task CreateDataSetAsync_ThrowsStructuredApiException()
     {
-        var handler = new RecordingHandler((_, _) => JsonResponse(
-            "{\"code\":\"dataset.invalid_request\",\"description\":\"DataSet 요청이 올바르지 않습니다.\"}",
-            HttpStatusCode.BadRequest));
+        var handler = new RecordingHandler((_, _) =>
+        {
+            var response = JsonResponse(
+                "{\"code\":\"dataset.invalid_request\",\"description\":\"DataSet 요청이 올바르지 않습니다.\"}",
+                HttpStatusCode.BadRequest);
+            response.Headers.Add("X-Request-Id", "client-error-request-id");
+            return response;
+        });
         using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
         var client = new TensorApiClient(httpClient);
 
@@ -85,6 +90,7 @@ public sealed class TensorApiClientTests
         Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCodeValue);
         Assert.Equal("dataset.invalid_request", exception.Code);
         Assert.Equal("DataSet 요청이 올바르지 않습니다.", exception.Description);
+        Assert.Equal("client-error-request-id", exception.RequestId);
     }
 
     /// <summary>Tenant 범위의 선택 조회는 404를 null로 변환합니다.</summary>
