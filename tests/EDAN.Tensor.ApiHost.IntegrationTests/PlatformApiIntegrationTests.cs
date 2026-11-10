@@ -1272,6 +1272,11 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.BadRequest, invalidDeadLetterQuery.StatusCode);
         Assert.Equal("worker.dead_letter.invalid_query", await ReadErrorCodeAsync(invalidDeadLetterQuery));
 
+        using var invalidDeadLetterPage = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/worker/dead-letters?page={int.MaxValue}&pageSize=100");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidDeadLetterPage.StatusCode);
+        Assert.Equal("worker.dead_letter.invalid_page", await ReadErrorCodeAsync(invalidDeadLetterPage));
+
         var replayRequestId = Guid.NewGuid();
         client.DefaultRequestHeaders.Add("Replay-Request-Id", replayRequestId.ToString());
         using var replayResponse = await client.PostAsync(
