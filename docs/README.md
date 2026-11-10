@@ -4,6 +4,7 @@
 승인된 정책과 제안을 구분하고 설계 검토와 실제 실행 증거를 별도로 판단해야 합니다.
 
 - [프로젝트 구조](architecture/project-structure.md)
+- [현재 Work 범위 감사](validation/2026-11-10-current-work-scope-audit.md)
 - [구현 및 CI 검증 현황](validation/2026-11-06-main-ci-and-scope.md)
 - [전체 구현 진행 방향](implementation-roadmap.md)
 - [비운영 외부 IdP 경계 수동 검증 런북](validation/external-idp-boundary-test-runbook.md)
