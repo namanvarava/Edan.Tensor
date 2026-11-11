@@ -89,6 +89,25 @@ function Get-ErrorResponse {
         throw $ErrorRecord
     }
 
+    if ($response -is [Net.Http.HttpResponseMessage]) {
+        # PowerShell 7은 예외를 만든 뒤 Content를 폐기할 수 있으므로 ErrorDetails를 먼저 읽습니다.
+        $body = $ErrorRecord.ErrorDetails.Message
+        if ([string]::IsNullOrWhiteSpace($body)) {
+            try {
+                $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+            }
+            catch {
+                $body = $ErrorRecord.Exception.Message
+            }
+        }
+
+        return [pscustomobject]@{
+            StatusCode = [int]$response.StatusCode
+            Body = $body
+        }
+    }
+
+    # Windows PowerShell 5.1의 WebException 응답은 스트림으로 본문을 제공합니다.
     $reader = [IO.StreamReader]::new($response.GetResponseStream())
     try {
         return [pscustomobject]@{
