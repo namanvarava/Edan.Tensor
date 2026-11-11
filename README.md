@@ -56,8 +56,8 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - WorkerHost는 등록된 Handler를 실행하고 작업 카탈로그와 저장량 스냅샷을 관리합니다.
 - HostServices는 API와 Worker의 공통 조합 서비스를 제공합니다.
 - LicenseAuthority.Host는 Development 환경의 명시적 플래그에서만 개발 라이선스를 발급·폐기하며, 공개키·검증 API를 제공합니다. 개인키와 개발 라이선스 저장 파일은 저장소·로그·API 응답의 비밀 경계를 지킵니다.
-- 개인 개발은 Development 환경의 `Authentication:Mode=Bypass`로 외부 IdP 없이 실행할 수 있습니다. Bypass에서는 실제 Metadata/JWKS·Issuer·Audience 검증을 수행하지 않고 고정된 개발용 비운영 IdP 시뮬레이션 프로필과 `edan-nonprod-test-subject`를 사용하지만, Tenant 소속·조직 범위·관리자 권한 검사는 유지합니다. 서비스 연결 시에는 `External` 모드와 실제 Metadata·Issuer·Audience·HTTPS 설정을 사용합니다.
-- `appsettings.Development.json`은 Development Bypass의 초기화와 개발 역할만 활성화합니다. Bypass가 사용하는 `EDAN-NONPROD` Tenant, `edan-nonprod-test-user`, 안정적인 `sub`인 `edan-nonprod-test-subject`는 코드의 고정 비운영 프로필에서 제공하며 설정값으로 바꿀 수 없습니다. 같은 Tenant·소속이 있으면 역할이나 상태를 덮어쓰지 않으며, 초기화는 `Authentication:Mode=Bypass`와 Development 환경에서만 실행됩니다.
+- 개인 개발의 기본 `appsettings.Development.json`은 로컬 Keycloak `EDAN-NONPROD` Realm을 사용하는 `External` 모드입니다. Metadata·JWKS·Issuer·Audience·서명과 만료를 실제 JWT Bearer Handler가 검증하고, `DevelopmentData:ExternalTestSubject`는 개발 Tenant 멤버십 초기화에만 사용합니다. `sub`는 토큰에서 읽으며 인증 허용 목록으로 사용하지 않습니다.
+- 외부 IdP를 준비하지 못한 격리된 개발 환경은 명시적으로 `Authentication:Mode=Bypass`를 선택할 수 있습니다. Bypass는 실제 Metadata/JWKS·Issuer·Audience 검증을 수행하지 않고 고정된 개발용 시뮬레이션 프로필을 사용하지만, Tenant 소속·조직 범위·관리자 권한 검사는 유지합니다. Bypass는 운영 구성과 CI 기본 설정에 포함하지 않습니다.
 - 개발 연속성 정책에 따라 외부 IdP Metadata·JWKS·Tenant·키 회전 정보가 아직 없거나 GitHub main 보호 규칙 API가 비공개 저장소 요금제 제한으로 HTTP 403을 반환해도 개발 작업을 중지하지 않습니다. Development Bypass, 로컬 IdP/JWKS 테스트, Windows 자체 호스팅 CI를 계속 사용하고 해당 외부 경계만 미검증으로 기록합니다.
 - `External` 및 운영 환경에서는 위 조건을 Bypass하지 않습니다. 외부 정보가 없으면 Issuer·Audience·Metadata·JWKS·HTTPS 검증을 유지한 채 보호 API를 닫힌 상태로 두며, 실제 외부 검증이 끝나기 전에는 외부 경계 검증 완료로 판정하지 않습니다. 현재 개발 범위의 구현·문서·Release·CI 검증과 소스 병합은 후속 Milestone #1과 별도로 종료할 수 있습니다.
 

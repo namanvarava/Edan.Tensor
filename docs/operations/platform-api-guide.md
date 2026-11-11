@@ -17,9 +17,9 @@ Development Host는 사용자 프로필 권한과 분리된 `App_Data/DataProtec
 
 ## 인증 및 Tenant 선택
 
-모든 Platform 관리 API는 기본적으로 JWT Bearer 인증을 사용합니다. 개인 개발의 Development `Authentication:Mode=Bypass`에서는 외부 IdP와 Bearer 토큰이 없어도 모든 요청을 고정된 개발 주체로 인증합니다. 이 경우에도 Tenant 소속과 리소스 권한 검사는 수행합니다. Bypass는 `auth-test.example.com`을 사용하는 고정 시뮬레이션 프로필을 기록하지만 실제 외부 IdP에 연결하거나 외부 JWT를 검증하지 않습니다.
+모든 Platform 관리 API는 기본적으로 JWT Bearer 인증을 사용합니다. 저장소의 기본 Development 설정은 로컬 Keycloak `EDAN-NONPROD` Realm을 사용하는 `External` 모드이며, 외부 IdP가 발급한 Bearer 토큰의 Metadata·JWKS·Issuer·Audience·서명·만료를 검증합니다. 외부 IdP가 없는 격리된 개발 환경에서만 명시적으로 Bypass를 선택할 수 있으며, Bypass에서도 Tenant 소속과 리소스 권한 검사는 수행합니다.
 
-기본 Development 설정은 시작할 때 `EDAN-NONPROD` Tenant와 `edan-nonprod-test-subject`의 Administrator 소속을 멱등적으로 준비합니다. 이미 같은 Tenant나 소속이 있으면 기존 역할과 상태를 덮어쓰지 않습니다. 이 동작은 `DevelopmentData:SeedBypassTenant=true`와 `Authentication:Mode=Bypass`가 함께 설정된 Development 환경에서만 실행됩니다.
+기본 Development 설정은 시작할 때 `EDAN-NONPROD` Tenant와 Keycloak 테스트 사용자의 설정된 `sub`에 해당하는 Administrator 소속을 멱등적으로 준비합니다. 이미 같은 Tenant나 소속이 있으면 기존 역할과 상태를 덮어쓰지 않습니다. 이 동작은 `DevelopmentData:SeedExternalTenant=true`와 `Authentication:Mode=External`이 함께 설정된 Development 환경에서만 실행됩니다. Bypass를 선택하면 별도의 고정 Bypass 주체 초기화가 실행됩니다.
 
 - 인증 헤더: `Authorization: Bearer {access-token}`
 - 필수 JWT 클레임: `sub` (외부 인증 주체 식별자)
@@ -352,7 +352,7 @@ Tenant Administrator는 Tenant·Organization·Project·DataSet 범위의 저장 
 
 ### 개인 개발용 Bypass 모드
 
-개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 `appsettings.Development.json`은 이 모드를 명시적으로 선택하며, 고정된 `sub`와 기본 `platform_admin` 역할을 가진 로컬 개발 주체를 사용합니다. Bypass에서는 Metadata/JWKS, Issuer, Audience와 키 회전 설정을 입력하지 않아도 되며, 해당 값이 있더라도 외부 인증 검증에 사용하지 않습니다.
+개인 PC에서 도메인이나 외부 IdP를 아직 준비하지 못한 경우 개발 환경에서만 Bypass 모드를 사용할 수 있습니다. 저장소의 기본 `appsettings.Development.json`은 로컬 Keycloak External 모드를 선택하며, 외부 IdP가 없는 격리된 개발에서만 Bypass를 명시적으로 선택합니다. Bypass에서는 Metadata/JWKS, Issuer, Audience와 키 회전 설정을 입력하지 않아도 되며, 해당 값이 있더라도 외부 인증 검증에 사용하지 않습니다.
 
 Bypass 프로필의 Metadata 주소, JWKS 주소, Issuer, Audience, 테스트 Tenant, 테스트 사용자, 안정적인 `sub`와 키 회전 권한 식별자는 코드에 고정되어 설정값으로 변경할 수 없습니다. 현재 고정값은 `https://auth-test.example.com/.well-known/openid-configuration`, `https://auth-test.example.com/jwks`, `https://auth-test.example.com`, `edan-tensor-api`, `EDAN-NONPROD`, `edan-nonprod-test-user`, `edan-nonprod-test-subject`, `nonprod-idp-test-key-rotation`입니다. 이 값은 실제 외부 IdP의 Metadata·JWKS·Issuer·Audience·권한을 검증했다는 뜻이 아니라, 외부 IdP가 없는 Development 테스트에서 사용할 시뮬레이션 식별자입니다.
 
@@ -365,11 +365,29 @@ Authentication__BypassRole=platform_admin
 
 Bypass는 외부 JWT 검증만 생략하고 Tenant 소속·조직 범위·관리자 권한 검사는 생략하지 않습니다. Bypass 주체를 Tenant Administrator로 등록해야 Tenant 업무 API를 사용할 수 있습니다. 운영 또는 비개발 환경에서 Bypass를 선택하면 API가 시작되지 않습니다.
 
-개발 연속성 정책에 따라 실제 비운영 IdP의 Metadata·JWKS·Issuer·Audience·테스트 Tenant·opaque `sub`·키 회전 권한이 아직 없더라도 개인 개발을 중지하지 않습니다. Development 환경에서는 이 Bypass 설정과 로컬 IdP/JWKS 테스트를 사용하고, 외부 경계 검증만 미완료로 기록합니다. GitHub main 보호 규칙 API의 HTTP 403도 저장소 요금제에 따른 형상 관리 제약으로 취급하며 제품 개발이나 자체 호스팅 CI를 중지하는 원인으로 사용하지 않습니다.
+개발 연속성 정책에 따라 실제 비운영 IdP가 아직 없으면 Development Bypass와 로컬 JWKS 테스트를 사용하고, 외부 경계 검증만 미완료로 기록합니다. 현재 로컬 Keycloak을 사용하는 기본 External 설정은 실제 비운영 IdP 경계를 구성하는 개발 설정이지만, 운영 외부 IdP 검증 완료의 증거로 기록하지 않습니다. GitHub main 보호 규칙 API의 HTTP 403도 저장소 요금제에 따른 형상 관리 제약으로 취급하며 제품 개발이나 자체 호스팅 CI를 중지하는 원인으로 사용하지 않습니다.
 
 이 연속성 정책은 `External` 또는 운영 환경의 인증 우회를 허용하지 않습니다. 해당 환경에서는 실제 Metadata·Issuer·Audience·JWKS·HTTPS 검증을 계속 적용하고, 외부 정보가 없으면 보호 API를 닫힌 상태로 유지합니다.
 
 ### 비운영 외부 IdP 권장 설정
+
+#### 로컬 Keycloak 개발 설정
+
+현재 로컬 VirtualBox Keycloak 검증은 다음 설정을 사용합니다.
+
+```text
+Authentication__Mode=External
+Authentication__MetadataAddress=http://192.168.56.101:8080/realms/EDAN-NONPROD/.well-known/openid-configuration
+Authentication__Issuer=http://192.168.56.101:8080/realms/EDAN-NONPROD
+Authentication__Audience=edan-tensor-api
+Authentication__RequireHttpsMetadata=false
+DevelopmentData__SeedExternalTenant=true
+DevelopmentData__TenantCode=EDAN-NONPROD
+DevelopmentData__ExternalTestUser=edan-nonprod-test-user
+DevelopmentData__ExternalTestSubject=622f6f2a-2f18-4e7c-897e-5ee03b22ea8a
+```
+
+`DevelopmentData__ExternalTestSubject`는 Development 시작 시 `EDAN-NONPROD` Tenant에 테스트 주체의 Administrator 소속을 준비하기 위한 값입니다. API는 이 값을 신뢰하여 인증하지 않고, 서명 검증이 끝난 JWT의 `sub` Claim을 요청 주체로 사용합니다. 사용자를 삭제하고 다시 만들면 `sub`가 바뀔 수 있으므로 새 값을 Development 설정에 반영해야 합니다. HTTP Metadata는 로컬 격리 환경에서만 사용하며 운영 구성에는 복사하지 않습니다.
 
 유지보수자는 외부 인증 경계를 시험할 때 운영 IdP 대신 API와 분리된 `Edan.Identity` 비운영 서비스를 사용해야 합니다. 실제 소유 도메인이 `example.com`인 경우 권장 환경 변수는 다음과 같습니다.
 

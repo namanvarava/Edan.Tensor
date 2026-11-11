@@ -57,6 +57,7 @@ public sealed class ClientApiIntegrationTests
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
                     ["Authentication:Mode"] = "Bypass",
+                    ["Authentication:BypassRole"] = "platform_admin",
                     ["DevelopmentData:SeedBypassTenant"] = "true",
                     ["DataProtection:DevelopmentKeyPath"] = Path.Combine(root, "keys")
                 }));

@@ -87,7 +87,9 @@ public sealed class DevelopmentBypassDataSeederTests
                     ["Database:ApplyMigrationsInDevelopment"] = "true",
                     ["AuthorizationAuditArchive:RootPath"] = Path.Combine(root, "archives"),
                     ["Authentication:Mode"] = "Bypass",
+                    ["Authentication:BypassRole"] = "platform_admin",
                     ["Authentication:BypassSubject"] = "untrusted-subject-override",
+                    ["DevelopmentData:SeedBypassTenant"] = "true",
                     ["DevelopmentData:TenantCode"] = "UNTRUSTED-TENANT-OVERRIDE",
                     ["DataProtection:DevelopmentKeyPath"] = dataProtectionKeyPath ?? Path.Combine(root, "data-protection-keys")
                 });
