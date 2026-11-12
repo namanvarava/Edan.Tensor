@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `62c6d51584a0fb442d72ed71ca155013d8682b9b`
+- 검증 기준 원격 main SHA: `421a96c3780848868e313de20085263b4331088d`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -76,6 +76,8 @@ Codex Windows 실행 환경에서 외부 검증 경계를 읽기 전용으로 �
 - 이전 실행에서 같은 실행 환경의 API `/health` 요청이 HTTP 200을 반환했습니다. 이번 재개 시점에는 API가 HTTP 503을 반환했고, 응답 본문에서 `Worker=false`, `DataSet=false`로 확인되었습니다. 이는 현재 개발 VM의 DB 연결 상태이며, 보호 API의 만료 토큰 판정과는 별개입니다.
 - 초기 읽기 전용 재확인에서는 비대화식 SSH 인증이 `Permission denied (publickey,password)`로 실패했습니다. 이후 사용자가 별도 SSH 공개키 인증을 설정했으며, 사용자 수동 검증에서만 Keycloak이 발급한 토큰을 이용한 잘못된 issuer와 audience 결과를 확인했습니다. Codex 실행 환경은 여전히 사용자 비밀번호·Access Token·개인키를 수집하지 않았습니다.
 
+재개 시점에 Codex 실행 환경에서 외부 VM을 읽기 전용으로 다시 확인했지만, `192.168.56.101`에 대한 ICMP·SSH(22)·Keycloak HTTPS(8443) 연결이 모두 실패했고 `idp.edan.test`도 연결할 수 없었습니다. 호스트의 hosts 파일 항목은 존재했으므로 이름 설정 문제가 아니라 VirtualBox Host-Only 네트워크 또는 VM 실행 상태를 확인해야 하는 인프라 차단으로 분류했습니다. 이 확인에서는 재시도를 반복하지 않았고, 사용자 비밀번호·Access Token·개인키를 수집하지 않았습니다.
+
 이 결과는 외부 HTTPS·Metadata·JWKS 연결 가능성을 갱신하는 증거입니다. 잘못된 issuer·audience·만료·서명 실패·알 수 없는 `kid` 검증은 실제 HTTP 결과로 보강되었으며, 키 폐기·미소속 주체 검증은 별도 수용 기준으로 유지합니다.
 
 ## 키 회전 중간 증거
@@ -115,7 +117,7 @@ Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 - 전이 NuGet 취약점 조회: 알려진 취약 패키지 항목 없음
 - GitHub main의 `build-and-test`: 성공
 
-## 2026-11-13 검증 문서 병합 후 main 재검증
+## 2026-11-13 PR #242 병합 후 main 재검증
 
 외부 JWKS 서명 실패·알 수 없는 `kid` 검증 증거를 PR #242로 제출했고, 필수 `build-and-test` Check 성공 후 squash merge했습니다.
 
@@ -127,6 +129,18 @@ Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 - 작업 브랜치 `codex/issue-84-signature-kid-20261113`: 로컬·원격 삭제 확인
 
 병합 후 재검증에서도 인증 Bypass를 사용하지 않았고, 저장소에는 Access Token·비밀번호·개인키를 기록하지 않았습니다.
+
+## 2026-11-13 PR #243 병합 후 main 재검증
+
+PR #243에서 위 검증 문서의 기준 SHA와 병합 후 증거를 최신 `main`에 맞게 갱신했습니다.
+
+- PR: `https://github.com/namanvarava/Edan.Tensor/pull/243`
+- 필수 `build-and-test` Check: 성공
+- squash 병합 커밋: `421a96c3780848868e313de20085263b4331088d`
+- 병합 후 `main` 기준 Release 복원·빌드·전체 회귀 테스트: 성공
+- 작업 브랜치 `codex/update-main-validation-20261113`: 로컬·원격 삭제 확인
+
+PR #243에서도 Issue #84의 키 중첩·구 키 폐기·미소속 subject 검증과 GitHub 상세 보호 API 403을 완료로 표시하지 않았습니다.
 
 기본 실행 경계에서 .NET workload resolver가 Windows Service Control Manager 접근 거부를 반환한 적이 있습니다. 이는 소스 오류가 아니라 실행 환경 권한 문제였으며, 허용된 실행 경계에서 같은 Release 검증을 성공시켜 결과를 확인했습니다.
 
