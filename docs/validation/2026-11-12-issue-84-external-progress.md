@@ -6,7 +6,7 @@
 
 - 검증 일시(UTC): 2026-11-12T06:38:42Z
 - 검증 당시 기준 main SHA: `77ab6cdd941e33092d45797bb1b91aaca9fe2fa0`
-- 이 기록을 병합한 최신 main SHA: `e26008290785074193230b86d6de209d4a2b9b0c`
+- 문서 정정 PR의 base main SHA: `e26008290785074193230b86d6de209d4a2b9b0c`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
