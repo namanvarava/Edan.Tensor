@@ -35,6 +35,53 @@ Authentication__RequireHttpsMetadata=true
 4. **Authentication__Mode=Bypass**를 설정하지 않습니다. Bypass 경고 로그가 나타나거나 비개발 환경에서 Bypass가 선택되면 검증을 중단하고 실패로 기록합니다. Development Bypass의 주체·Tenant·IdP 시뮬레이션 값은 코드의 고정 프로필에서만 제공되며, 이 런북의 External 검증에는 사용하지 않습니다.
 5. API 로그와 IdP 감사 로그의 보존 위치를 확인하되, 토큰 원문과 개인키가 로그에 남지 않는지 먼저 확인합니다.
 
+### 보호 API와 판정 기준
+
+외부 IdP 검증에서 사용하는 보호 경로는 `GET /api/platform/tenants/{tenantId}/storage-usage`입니다. 이 경로는 `TenantMember` 권한과 Tenant 경로·소속 검사를 모두 적용하므로, 다음 결과를 판정 기준으로 사용합니다.
+
+| 주체 상태 | 요청 | 기대 결과 |
+| --- | --- | --- |
+| 테스트 Tenant에 소속된 유효 주체 | 올바른 `tenantId`로 `storage-usage` 호출 | HTTP 200 |
+| 유효하지만 해당 Tenant에 소속되지 않은 주체 | 같은 `tenantId`로 `storage-usage` 호출 | HTTP 403 |
+| 유효한 주체가 다른 Tenant를 선택 | 다른 `tenantId`로 `storage-usage` 호출 | HTTP 403 |
+| 토큰이 없거나 검증에 실패한 주체 | 같은 경로 호출 | HTTP 401 |
+
+`GET /api/platform/tenants/mine`은 주체의 소속 목록 조회 경로입니다. 미가입 주체가 빈 목록으로 HTTP 200을 받을 수 있으므로, 미가입 주체의 403 수용 기준을 확인할 때 이 경로를 사용하지 않습니다.
+
+### 토큰 발급과 안전한 전달 예시
+
+다음 예시는 Ubuntu VM의 SSH 터미널에서 실행합니다. `<...>` 부분만 비운영 환경의 값으로 바꾸고, 비밀번호를 명령줄에 직접 입력하지 않습니다. 토큰 파일은 검증이 끝난 뒤 삭제합니다.
+
+```text
+umask 077
+T='https://<idp-host>:<https-port>/realms/<realm>/protocol/openid-connect/token'
+C='<client-id>'
+U='<test-username>'
+read -r -s -p 'Keycloak 테스트 사용자 비밀번호: ' P
+echo
+curl -k -sS "$T" \
+  -d "client_id=$C" \
+  -d 'grant_type=password' \
+  -d "username=$U" \
+  --data-urlencode "password=$P" \
+  -d 'scope=openid' > /tmp/edan-external-token.json
+unset P
+jq '{ok:(.access_token != null),token_type,expires_in,error,error_description}' /tmp/edan-external-token.json
+```
+
+정상 결과의 `ok`가 `true`인지 확인한 후, 토큰 원문을 문서나 로그에 복사하지 않습니다. Windows PowerShell에서 API를 호출해야 하면 SSH로 토큰을 한 번만 읽어 메모리에 보관하고, 응답 상태만 기록합니다.
+
+```text
+$Token = (ssh -T <ssh-user>@<vm-ip> "jq -r '.access_token' /tmp/edan-external-token.json").Trim()
+$Headers = @{ Authorization = "Bearer $Token" }
+Invoke-RestMethod -UseBasicParsing `
+  -Uri "http://localhost:5000/api/platform/tenants/<tenant-id>/storage-usage" `
+  -Headers $Headers
+Remove-Variable Token -ErrorAction SilentlyContinue
+```
+
+검증이 끝난 뒤 VM에서 `rm -f /tmp/edan-external-token.json`을 실행하고 PowerShell의 토큰 변수도 삭제합니다. 화면 캡처에는 토큰, 비밀번호, 개인키가 보이지 않아야 합니다.
+
 ## 검증 순서
 
 ### 1. Metadata와 JWKS 경계
@@ -50,7 +97,9 @@ Authentication__RequireHttpsMetadata=true
 - 테스트 사용자의 안정적인 **sub**를 테스트 Tenant의 Member 또는 Administrator 소속에 등록합니다.
 - 유효한 토큰과 올바른 Tenant 선택으로 보호 API를 호출하여 예상된 성공 응답을 확인합니다.
 - 같은 토큰으로 다른 Tenant를 선택하면 HTTP 403이 반환되고, 다른 Tenant의 데이터가 반환되지 않는지 확인합니다.
-- Tenant 소속이 없는 유효한 주체가 보호 API에 접근하면 HTTP 403이 반환되는지 확인합니다.
+- Tenant 소속이 없는 유효한 주체가 `storage-usage` 보호 API에 접근하면 HTTP 403이 반환되는지 확인합니다.
+
+미가입 주체를 확인하려면 테스트 Tenant에 소속되지 않은 별도 테스트 사용자를 만들고, 그 사용자의 안정적인 `sub`를 기록합니다. 그 주체에게 Tenant 멤버십을 부여하지 않은 상태로 동일한 보호 API를 호출합니다. `/mine`의 빈 목록 여부만으로 403을 판정하지 않습니다.
 
 ### 3. 실패 토큰 경계
 
@@ -67,13 +116,23 @@ Authentication__RequireHttpsMetadata=true
 
 상태 확인 경로의 공개 응답과 보호 API의 401·403 응답을 혼동하지 않고 각각 기록합니다.
 
+잘못된 Issuer 또는 Audience 검증은 JWT의 Payload 문자열만 수정해서 만들 수 없습니다. Payload를 수정하면 기존 서명이 깨지므로 결과는 단순한 서명 오류가 됩니다. 이 두 수용 기준을 실제 외부 IdP에서 충족하려면 다음 중 하나를 사용해야 합니다.
+
+1. 신뢰하지 않는 별도 비운영 Realm/Issuer에서 동일한 테스트용 키로 정상 서명한 토큰을 발급합니다.
+2. 외부 IdP 관리자가 제공하는 별도 비운영 서명 도구로 정상 서명한 테스트 토큰을 발급합니다.
+
+그 토큰의 서명 키가 검증 대상 API의 신뢰 JWKS에 포함되지 않는 경우에는 먼저 `kid`와 JWKS 관계를 기록하고, 결과가 401인지 확인합니다. 토큰을 임의로 조작하여 “유효한 서명”으로 기록하지 않습니다.
+
 ### 4. 키 회전 경계
 
-1. 기존 키와 새 키가 동시에 JWKS에 게시된 회전 구간을 시작하고 회전 시각을 기록합니다.
-2. 기존 키로 서명한 유효 토큰과 새 키로 서명한 유효 토큰이 모두 허용되는지 확인합니다.
-3. 새 **kid**를 API가 조회할 때 Metadata·JWKS 재조회가 발생하고, 새 키 토큰이 성공하는지 확인합니다.
-4. 기존 키를 JWKS에서 제거한 뒤 기존 키 토큰은 거부되고 새 키 토큰은 계속 성공하는지 확인합니다.
-5. 회전 전후의 키 회전 권한 로그와 API 결과를 대조합니다. 개인키 자체는 증거에 포함하지 않습니다.
+1. 회전 전에 현재 JWKS의 서명용 `kid`와 각 키 공급자의 `priority`, `enabled`, `active` 상태만 기록합니다. 개인키와 인증서 내용은 기록하지 않습니다.
+2. 새 키를 생성하고 기존 키와 새 키가 동시에 JWKS에 게시된 회전 구간을 시작한 뒤 회전 시각을 기록합니다.
+3. 기존 키 토큰을 하나 발급하고, 새 키가 선택되도록 한 뒤 새 키 토큰을 하나 발급합니다. 각 토큰의 `kid`만 디코드하여 기록합니다.
+4. 두 키가 모두 게시되고 검증 가능한 겹침 구간에서는 기존 토큰과 새 토큰을 각각 보호 API에 보내 HTTP 200이 되는지 확인합니다.
+5. 새 **kid**를 API가 조회할 때 Metadata·JWKS 재조회가 발생하고, 새 키 토큰이 계속 HTTP 200인지 확인합니다.
+6. 기존 키 공급자를 먼저 `Active=Off`, `Enabled=On`으로 전환하여 신규 발급에서 제외하고, 새 토큰이 HTTP 200인지 다시 확인합니다. 기존 토큰은 아직 JWKS에 남아 있으므로 이 단계의 결과를 “폐기 완료”로 기록하지 않습니다.
+7. 기존 키를 JWKS에서 제거하거나 공급자를 비활성화한 뒤 기존 키 토큰은 HTTP 401, 새 키 토큰은 HTTP 200인지 확인합니다. 이때 API가 새 JWKS를 다시 읽을 수 있도록 필요하면 새 요청을 보내고 결과를 기록합니다.
+8. 회전 전후의 키 회전 권한 로그와 API 결과를 대조합니다. 개인키 자체는 증거에 포함하지 않습니다.
 
 ## 증거 기록 양식
 
@@ -106,3 +165,4 @@ Bypass 로그 발생 여부:
 ## 정리와 재현 방지
 
 검증 후 테스트 사용자의 권한과 키 회전 권한을 회수하고, 임시 토큰·로그·환경 변수를 삭제합니다. API 설정을 운영 구성에 복사하지 않으며, CI에 외부 IdP 비밀값을 추가하지 않습니다. 검증 중 Bypass를 사용한 경우 결과를 통과로 기록하지 않고 External 모드로 다시 실행합니다.
+
