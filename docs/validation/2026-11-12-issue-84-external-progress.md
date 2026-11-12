@@ -6,7 +6,7 @@
 
 - 검증 일시: 2026-11-12 사용자 수동 검증 결과를 반영합니다. 정확한 UTC 시각은 별도 기록하지 않았습니다.
 - 외부 검증 당시 기준 main SHA: `57dc2a080cebddc7a2dcdd2b089c78700f41f829`
-- 이 검증 기록을 병합한 최신 main SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
+- 기존 외부 검증 기록이 main에 병합된 기준 SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -36,7 +36,7 @@
 | 실제 IdP 키 중첩 | 진행 중 통과 | `EDAN-NONPROD`의 `rsa-generated` Provider Priority 200·100과 JWKS의 RS256·SIG 공개키 2개 확인 |
 | 새 키 토큰 서명 | 통과 | 새 토큰의 RS256 `kid`가 JWKS에 존재하고 API Tenant 조회가 HTTP 200 |
 | GitHub main 보호 규칙 | 통과 | `main` 보호와 `build-and-test` 필수 Check를 UI에서 설정하고 API에서 `protected=true`, enforcement `everyone`, required check를 확인 |
-| 병합·CI·브랜치 상태 | 통과 | main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
+| 병합·CI·브랜치 상태 | 검증 당시 통과 | 검증 당시 main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
 
 토큰 원문, 비밀번호, 개인키는 증거 문서·로그·저장소에 기록하지 않았습니다.
 
