@@ -9,7 +9,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 
 | 영역 | 현재 구현 | 남은 주요 조건 |
 | --- | --- | --- |
-| Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, 닫힌 JWT 인증 경계, 로컬 IdP/JWKS·키 회전 검증 | 비운영 외부 IdP 테스트 테넌트 경계 검증은 승인된 후속 Milestone #1에서 수행합니다. |
+| Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, 닫힌 JWT 인증 경계, 로컬 IdP/JWKS·키 회전 검증 | 실제 비운영 IdP의 HTTPS Metadata·JWKS·Issuer·Audience·Tenant 경계는 Issue #84 검증 기록을 기준으로 확인하며, 키 회전·폐기와 GitHub 보호 규칙은 수용 기준 완료 전까지 남은 조건으로 유지합니다. |
 | DataSet | Tenant 소유 메타데이터, 스키마 revision, SQLite 콘텐츠 어댑터, 계층형 저장 용량 quota·관리 API·임계치 이력, UTF-8 CSV·JSON 객체 배열 검증, 불변 프로필 revision, 결과 보존·명시적 삭제 | DuckDB·Parquet 어댑터는 다음 릴리스 범위 |
 | Worker | 전용 DB, 작업 유형 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, 종료 인계, DataSet Validation Handler, 외부 전달 Idempotency Key와 재시도, 로컬 수신기 장애 검증 | 실제 운영 수신 시스템은 이번 범위에서 제외하고, 비운영 외부 IdP는 외부 환경 제공 후 검증 |
 | Commercial / Licensing | 독립된 모듈 경계를 유지하며, 승인된 개발 라이선스 1개를 발급·검증하는 별도 LicenseAuthority와 공급자 교체 가능한 결제 경계(`IPaymentProvider`)를 제공합니다. RBAC·기본 거부·최소 권한·감사 경계를 유지합니다. | 결제 공급자가 선정되기 전에는 결제 성공·상품 가격·유료 권리를 만들지 않으며, 실제 결제·Webhook·환불·운영 라이선스는 별도 업무 계약 승인 후 구현합니다. |
@@ -18,6 +18,7 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 [검증 현황 문서](docs/validation/2026-11-10-licensing-implementation.md)는 승인된 LicenseAuthority 구현과 현재 HTTP 환경 미검증 조건을 기록합니다.
 [현재 범위 감사](docs/validation/2026-11-10-current-work-scope-audit.md)는 최신 main의 구현 범위·잔여 계약·검증 증거를 기록합니다.
 [2026-11-11 연속 개발 재검증 기록](docs/validation/2026-11-11-continuation-audit.md)은 현재 Work 실행 경계와 main 회귀 증거를 기록합니다.
+[Issue #84 외부 IdP HTTPS 진행 검증 기록](docs/validation/2026-11-12-issue-84-external-progress.md)은 실제 비운영 Keycloak의 HTTPS Metadata·JWKS와 API Tenant 경계의 현재 증거 및 남은 수용 기준을 기록합니다.
 [전체 구현 진행 방향](docs/implementation-roadmap.md)은 이후 단계의 순서, 의존성, 수용 기준과 운영 검증 조건을 고정합니다.
 [DataSet 검증 v1 계약](docs/architecture/dataset-validation-v1-proposal.md)은 2026-11-07 승인된 구현 기준입니다.
 [외부 전달 설계](docs/architecture/external-delivery.md)는 로컬 수신기 장애 재현과 Idempotency 계약을 설명합니다.
@@ -56,7 +57,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - WorkerHost는 등록된 Handler를 실행하고 작업 카탈로그와 저장량 스냅샷을 관리합니다.
 - HostServices는 API와 Worker의 공통 조합 서비스를 제공합니다.
 - LicenseAuthority.Host는 Development 환경의 명시적 플래그에서만 개발 라이선스를 발급·폐기하며, 공개키·검증 API를 제공합니다. 개인키와 개발 라이선스 저장 파일은 저장소·로그·API 응답의 비밀 경계를 지킵니다.
-- 개인 개발의 기본 `appsettings.Development.json`은 로컬 Keycloak `EDAN-NONPROD` Realm을 사용하는 `External` 모드입니다. Metadata·JWKS·Issuer·Audience·서명과 만료를 실제 JWT Bearer Handler가 검증하고, `DevelopmentData:ExternalTestSubject`는 개발 Tenant 멤버십 초기화에만 사용합니다. `sub`는 토큰에서 읽으며 인증 허용 목록으로 사용하지 않습니다.
+- 개인 개발의 기본 `appsettings.Development.json`은 `https://idp.edan.test:8443/realms/EDAN-NONPROD`의 HTTPS Metadata와 Issuer를 사용하는 `External` 모드입니다. Windows hosts 항목과 비운영 인증서가 준비되지 않으면 API는 보호 경로를 닫힌 상태로 유지합니다. Metadata·JWKS·Issuer·Audience·서명과 만료를 실제 JWT Bearer Handler가 검증하고, `DevelopmentData:ExternalTestSubject`는 개발 Tenant 멤버십 초기화에만 사용합니다. `sub`는 토큰에서 읽으며 인증 허용 목록으로 사용하지 않습니다.
 - 외부 IdP를 준비하지 못한 격리된 개발 환경은 명시적으로 `Authentication:Mode=Bypass`를 선택할 수 있습니다. Bypass는 실제 Metadata/JWKS·Issuer·Audience 검증을 수행하지 않고 고정된 개발용 시뮬레이션 프로필을 사용하지만, Tenant 소속·조직 범위·관리자 권한 검사는 유지합니다. Bypass는 운영 구성과 CI 기본 설정에 포함하지 않습니다.
 - 개발 연속성 정책에 따라 외부 IdP Metadata·JWKS·Tenant·키 회전 정보가 아직 없거나 GitHub main 보호 규칙 API가 비공개 저장소 요금제 제한으로 HTTP 403을 반환해도 개발 작업을 중지하지 않습니다. Development Bypass, 로컬 IdP/JWKS 테스트, Windows 자체 호스팅 CI를 계속 사용하고 해당 외부 경계만 미검증으로 기록합니다.
 - `External` 및 운영 환경에서는 위 조건을 Bypass하지 않습니다. 외부 정보가 없으면 Issuer·Audience·Metadata·JWKS·HTTPS 검증을 유지한 채 보호 API를 닫힌 상태로 두며, 실제 외부 검증이 끝나기 전에는 외부 경계 검증 완료로 판정하지 않습니다. 현재 개발 범위의 구현·문서·Release·CI 검증과 소스 병합은 후속 Milestone #1과 별도로 종료할 수 있습니다.
