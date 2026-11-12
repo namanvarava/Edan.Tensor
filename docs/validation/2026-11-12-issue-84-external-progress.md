@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `dbc76ae6e486f406f02e80b335abb130f4c04919`
+- 검증 기준 원격 main SHA: `62c6d51584a0fb442d72ed71ca155013d8682b9b`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -114,6 +114,19 @@ Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 - LicenseAuthority Smoke: 5년 개발 라이선스 발급, 공개 JWK, 정상 검증 HTTP 200, 운영 환경 개발 라이선스 거부 HTTP 403, 폐기 라이선스 거부 HTTP 403
 - 전이 NuGet 취약점 조회: 알려진 취약 패키지 항목 없음
 - GitHub main의 `build-and-test`: 성공
+
+## 2026-11-13 검증 문서 병합 후 main 재검증
+
+외부 JWKS 서명 실패·알 수 없는 `kid` 검증 증거를 PR #242로 제출했고, 필수 `build-and-test` Check 성공 후 squash merge했습니다.
+
+- PR: `https://github.com/namanvarava/Edan.Tensor/pull/242`
+- 병합 커밋: `62c6d51584a0fb442d72ed71ca155013d8682b9b`
+- 병합 후 `dotnet restore EDAN.Tensor.sln`: 성공
+- 병합 후 `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
+- 병합 후 `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
+- 작업 브랜치 `codex/issue-84-signature-kid-20261113`: 로컬·원격 삭제 확인
+
+병합 후 재검증에서도 인증 Bypass를 사용하지 않았고, 저장소에는 Access Token·비밀번호·개인키를 기록하지 않았습니다.
 
 기본 실행 경계에서 .NET workload resolver가 Windows Service Control Manager 접근 거부를 반환한 적이 있습니다. 이는 소스 오류가 아니라 실행 환경 권한 문제였으며, 허용된 실행 경계에서 같은 Release 검증을 성공시켜 결과를 확인했습니다.
 
