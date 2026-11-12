@@ -5,7 +5,8 @@
 이 문서는 Issue #84의 외부 IdP 경계 검증을 시작한 뒤 실제로 확인된 항목과 아직 수행하지 못한 항목을 분리하여 기록합니다. 이 기록은 완료 판정이나 Issue 종료 근거가 아니며, 남은 수용 기준을 수행하기 위한 중간 증거입니다.
 
 - 검증 일시: 2026-11-12 사용자 수동 검증 결과를 반영합니다. 정확한 UTC 시각은 별도 기록하지 않았습니다.
-- 현재 기준 main SHA: `57dc2a080cebddc7a2dcdd2b089c78700f41f829`
+- 외부 검증 당시 기준 main SHA: `57dc2a080cebddc7a2dcdd2b089c78700f41f829`
+- 이 검증 기록을 병합한 최신 main SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
