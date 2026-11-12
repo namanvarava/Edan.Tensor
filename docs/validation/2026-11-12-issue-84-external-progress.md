@@ -1,91 +1,87 @@
-# Issue #84 비운영 IdP HTTPS·키 회전 진행 검증 기록
+# Issue #84 비운영 IdP HTTPS·키 회전·GitHub 보호 검증 기록
 
-## 검증 범위
+## 판정
 
-이 문서는 Issue #84의 외부 IdP 경계 검증을 시작한 뒤 실제로 확인된 항목과 아직 수행하지 못한 항목을 분리하여 기록합니다. 이 기록은 완료 판정이나 Issue 종료 근거가 아니며, 남은 수용 기준을 수행하기 위한 중간 증거입니다.
+이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
-- 검증 일시: 2026-11-12 사용자 수동 검증 결과를 반영합니다. 정확한 UTC 시각은 별도 기록하지 않았습니다.
-- 외부 검증 당시 기준 main SHA: `57dc2a080cebddc7a2dcdd2b089c78700f41f829`
-- 이 검증 기록을 병합한 최신 main SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
+- 기록일: 2026-11-12
+- 검증 기준 원격 main SHA: `ee72aa3b22958da0ec9303479ae7168b518f023a`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
-- Bypass 사용 여부: 사용하지 않음
+- 개발 Bypass: 외부 IdP 검증에서는 사용하지 않음
 
-## 실제 확인 결과
+## 사용자 수동 검증으로 확인된 항목
 
 | 항목 | 결과 | 증거 |
 | --- | --- | --- |
-| OIDC Metadata HTTPS | 통과 | HTTP 200 |
+| OIDC Metadata HTTPS | 통과 | Metadata 요청 HTTP 200 |
 | Metadata issuer | 통과 | `https://idp.edan.test:8443/realms/EDAN-NONPROD` |
-| JWKS HTTPS | 통과 | Metadata의 `jwks_uri`에 HTTP 200 |
-| JWKS 공개키 | 통과 | 공개키 2개와 RS256·RSA-OAEP 알고리즘 확인 |
-| JWKS 개인키 노출 | 통과 | `d`, `p`, `q`, `dp`, `dq`, `qi` 필드가 없음 |
-| External API Host 기동 | 통과 | 임시 격리 SQLite와 포트에서 `/health` HTTP 200 |
-| 토큰 발급 | 통과 | 실제 Keycloak 토큰 발급 성공, 유효기간 300초 |
-| 토큰 issuer | 통과 | Metadata issuer와 일치 |
-| 토큰 audience | 통과 | `edan-tensor-api` 포함 |
-| 안정적인 subject | 통과 | 허용된 비운영 테스트 subject 확인 |
+| JWKS HTTPS | 통과 | Metadata의 `jwks_uri` 요청 HTTP 200 |
+| JWKS 공개키 | 통과 | RS256·SIG 공개키 2개 확인 |
+| JWKS 개인키 비노출 | 통과 | JWKS에 개인키 필드가 없음 |
+| 실제 토큰 발급 | 통과 | Keycloak에서 Bearer 토큰 발급 성공 |
+| 토큰 issuer·audience | 통과 | issuer가 Metadata와 일치하고 `edan-tensor-api` audience 포함 |
+| 안정적인 subject | 통과 | 테스트 사용자의 고정 subject 확인 |
+| 정상 Tenant 조회 | 통과 | API가 HTTP 200과 Administrator 역할을 반환 |
+| 다른 Tenant 경계 | 통과 | 다른 Tenant 접근이 HTTP 403 |
 | 토큰 없는 보호 요청 | 통과 | HTTP 401 |
-| 정상 Tenant 조회 | 통과 | HTTP 200 |
-| 다른 Tenant 접근 | 통과 | HTTP 403 |
-| Bypass 로그 | 통과 | Bypass 경고 미발생 |
-| API 로그의 토큰 원문 | 통과 | 토큰 형식 미검출 |
-| 저장소 Release 회귀 | 통과 | 전체 273개 테스트 성공, 실패 0개, 건너뜀 0개 |
-| JWT 로컬 경계 회귀 | 통과 | Issuer·Audience·만료·서명·`kid`·키 회전 테스트 1개 성공 |
-| 실제 IdP 키 중첩 | 진행 중 통과 | `EDAN-NONPROD`의 `rsa-generated` Provider Priority 200·100과 JWKS의 RS256·SIG 공개키 2개 확인 |
-| 새 키 토큰 서명 | 통과 | 새 토큰의 RS256 `kid`가 JWKS에 존재하고 API Tenant 조회가 HTTP 200 |
-| GitHub main 보호 규칙 | 부분 확인 | UI에서 `main` 보호와 `build-and-test` 필수 Check 설정을 확인했지만, 현재 연결의 보호 규칙 상세 API 재조회는 HTTP 403으로 실패하여 enforcement 세부값을 독립 검증하지 못함 |
-| 병합·CI·브랜치 상태 | 통과 | main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
+| API의 토큰 원문 기록 | 통과 | 토큰 원문을 로그와 증거 문서에 기록하지 않음 |
+| 개발 Bypass 경고 | 통과 | 외부 모드 실행에서 Bypass 경고가 발생하지 않음 |
 
-토큰 원문, 비밀번호, 개인키는 증거 문서·로그·저장소에 기록하지 않았습니다.
+비밀번호, Access Token 원문, 개인키는 문서·로그·저장소에 기록하지 않았습니다.
 
-## 아직 완료하지 못한 수용 기준
+## 키 회전 중간 증거
 
-다음 항목은 현재 기록만으로 통과 처리하지 않습니다.
+Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 
-1. 실제 IdP가 발급한 유효 서명을 유지한 잘못된 Issuer 토큰의 HTTP 401 확인
-2. 실제 IdP가 발급한 유효 서명을 유지한 잘못된 Audience 토큰의 HTTP 401 확인
-3. 실제 서명 기반 만료 토큰의 HTTP 401 확인
-4. 실제 서명 변경 토큰과 알 수 없는 `kid` 토큰의 HTTP 401 확인
-5. 기존 키와 신규 서명을 동시에 게시한 키 회전 구간에서 기존 토큰과 신규 토큰을 각각 확인
-6. 기존 키 폐기 후 기존 토큰 거부와 신규 토큰 허용 확인
-7. Tenant 미소속 주체의 HTTP 403 확인
+- `rsa-generated` 서명 Provider가 Priority 200과 100으로 2개 존재합니다.
+- JWKS에 RS256·SIG 공개키 2개가 게시되었습니다.
+- 신규 발급 토큰의 `kid`가 JWKS에 게시된 서명 키와 일치했습니다.
+- 신규 토큰을 사용한 API Tenant 조회가 HTTP 200이었습니다.
 
-현재 JWKS의 키 2개와 Priority 200 신규 토큰 확인은 키 중첩과 신규 서명 전환의 증거입니다. 그러나 기존 토큰을 보존한 상태의 검증과 기존 키 폐기 후 거부 결과가 아직 없으므로 키 회전 전체 완료의 증거로 사용하지 않습니다.
+이 결과는 새 키 게시와 새 서명 검증의 중간 통과 증거입니다. 기존 토큰을 보존한 중첩 구간과 기존 키 폐기 후 거부 결과가 없으므로 키 회전 전체 완료로 판정하지 않습니다.
 
-현재 판정은 `External IdP·신규 키 서명·GitHub main 보호는 부분 또는 통과`, 전체 Issue #84는 `미완료`입니다.
+## GitHub main 보호 증거
 
-## 다음 검증 조건
+현재 원격 저장소는 공개 저장소입니다. GitHub branch API의 main 응답에서 다음을 확인했습니다.
 
-- Keycloak에서 Priority 100 기존 Provider의 `Active`를 `Off`로 바꾸고 `Enabled`는 `On`으로 유지합니다.
-- Passive 전환 후 신규 토큰의 `kid`와 API HTTP 200을 다시 확인합니다.
-- 회전 전후에 발급한 토큰의 `kid`를 비밀값 없이 기록합니다.
-- 기존 키 제거 후 기존 토큰과 신규 토큰의 HTTP 결과를 각각 확인합니다.
-- 테스트 Tenant에 소속되지 않은 별도 테스트 주체를 사용하여 HTTP 403을 확인합니다.
-- 모든 결과와 검증 시점의 main SHA를 Issue #84에 기록한 뒤 수용 기준을 재판정합니다.
+- `protected: true`
+- 보호 기능 활성화
+- required status checks enforcement: `everyone`
+- 필수 Check: `build-and-test`
 
-예약 작업이나 자동화는 생성하지 않았습니다.
+사용자가 제공한 GitHub UI에서도 main 보호와 `build-and-test` 필수 Check 설정을 확인했습니다. 다만 현재 GitHub 연결에서는 상세 보호 API인 `/branches/main/protection` 요청이 HTTP 403 `Resource not accessible by integration`을 반환했고, rulesets 조회 결과는 비어 있습니다. 따라서 main 보호의 요약 상태와 필수 Check 등록은 확인했지만, 모든 세부 보호 옵션을 API로 독립 확인했다고 기록하지 않습니다.
 
-## 최신 내부 재검증 및 병합 상태
+## 내부 검증 증거
 
-- 문서 갱신 기준 원격 main SHA: `729e47a10e9908d35ed7c12a3af670be8591b732`입니다.
-- PR #235(`docs: Issue #84 외부 IdP 경계 검증 런북 보강`)는 필수 `build-and-test` 성공 후 Squash Merge되었고, 원격 작업 브랜치는 삭제를 확인했습니다.
-- 최신 로컬 Release 재검증은 `dotnet restore EDAN.Tensor.sln`, Release Build 경고 0·오류 0, 전체 Test 273 통과·실패 0·건너뜀 0으로 끝났습니다.
-- Host Smoke는 ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 HTTP 200으로 확인했고 stderr 0바이트와 임시 자원 정리를 확인했습니다.
-- LicenseAuthority Smoke는 단일 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스 HTTP 403, 폐기 라이선스 HTTP 403을 확인했고 stderr 0바이트와 임시 자원 정리를 확인했습니다.
-- 직접·전이 NuGet 취약점 조회는 알려진 취약 패키지 항목 없이 종료되었습니다.
-- 이 내부 재검증은 외부 IdP의 잘못된 Issuer·Audience·만료·위조·알 수 없는 `kid`, 기존 키 폐기, 미소속 주체 403을 대신하지 않으며 Issue #84는 계속 열어 둡니다.
-- 제품 API 라이선스 강제는 별도 승인 대기 계약이므로 이번 문서 갱신에서 임의로 추가하지 않습니다.
+다음 검증은 허용된 실행 경계에서 실제 수행했습니다.
 
+- `dotnet restore EDAN.Tensor.sln`: 성공
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
+- `dotnet restore EDAN.Tensor.LicenseAuthority.sln`: 성공
+- `dotnet build EDAN.Tensor.LicenseAuthority.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
+- `dotnet test EDAN.Tensor.LicenseAuthority.sln --no-build --no-restore --configuration Release`: 성공, 12 통과·0 실패·0 건너뜀
+- Host Smoke: ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Bypass Tenant API HTTP 200; stderr 0바이트
+- LicenseAuthority Smoke: 5년 개발 라이선스 발급, 공개 JWK, 정상 검증 HTTP 200, 운영 환경 개발 라이선스 거부 HTTP 403, 폐기 라이선스 거부 HTTP 403
+- 전이 NuGet 취약점 조회: 알려진 취약 패키지 항목 없음
+- GitHub main의 `build-and-test`: 성공
 
-## 최신 main과 현재 실행 환경 재확인
+기본 실행 경계에서 .NET workload resolver가 Windows Service Control Manager 접근 거부를 반환한 적이 있습니다. 이는 소스 오류가 아니라 실행 환경 권한 문제였으며, 허용된 실행 경계에서 같은 Release 검증을 성공시켜 결과를 확인했습니다.
 
-- 최신 main SHA는 `cb60f233364e87771ddcbe95841f2c5210ebe3fe`입니다.
-- PR #236의 문서 갱신은 필수 `build-and-test` 성공 후 main에 Squash Merge되었습니다.
-- 병합 후 main의 `build-and-test`도 성공했습니다.
-- PR #236의 원격 작업 브랜치는 병합 후 삭제했고, 원격 브랜치가 남아 있지 않음을 확인했습니다.
-- Issue #84는 외부 수용 기준이 남아 있으므로 열린 상태로 유지합니다.
-- 이 실행 환경에서 `192.168.56.101:8443` TCP 연결과 HTTPS OIDC Metadata 요청은 실패했습니다. 따라서 이번 실행에서는 외부 IdP의 실패 토큰·기존 키 폐기·미소속 주체 403을 새로 검증하지 않았습니다.
-- GitHub main 보호 규칙 상세 API는 현재 연결에서 HTTP 403 `Resource not accessible by integration`을 반환했습니다. 사용자가 제공한 UI 설정 화면과 main Check 성공은 기록하되, API 세부 조회 성공으로 표시하지 않습니다.
-- 현재 Issue #84 판정은 외부 IdP 경계 일부 통과·일부 미완료, GitHub 보호 규칙 UI 설정 확인·API 세부 미검증이며 전체적으로 `미완료`입니다.
+## 아직 완료하지 못한 Issue #84 수용 기준
+
+다음 항목은 실제 비운영 IdP에서 추가로 확인해야 합니다.
+
+1. 유효한 서명을 유지한 잘못된 issuer 토큰이 HTTP 401인지 확인합니다.
+2. 유효한 서명을 유지한 잘못된 audience 토큰이 HTTP 401인지 확인합니다.
+3. 실제 서명 기반 만료 토큰이 HTTP 401인지 확인합니다.
+4. 서명이 변조된 토큰과 알 수 없는 `kid` 토큰이 HTTP 401인지 확인합니다.
+5. 기존 키와 신규 키가 동시에 게시된 동안 기존 토큰과 신규 토큰이 모두 HTTP 200인지 확인합니다.
+6. 기존 키를 폐기한 뒤 기존 토큰은 HTTP 401, 신규 토큰은 HTTP 200인지 확인합니다.
+7. Tenant에 소속되지 않은 subject가 보호된 Tenant 경로에서 HTTP 403인지 확인합니다.
+
+현재 Codex 실행 환경에서는 사용자의 VirtualBox VM `192.168.56.101:8443`에 직접 연결할 수 없으므로 위 외부 실패·폐기 시나리오를 대신 수행하지 않았습니다. 사용자가 VM에서 결과를 확인하면 이 문서와 Issue #84에 결과와 검증 당시 main SHA를 추가할 수 있습니다.
+
+Issue #84는 위 7개 기준이 실제 응답 증거로 채워질 때까지 열린 상태로 유지합니다. 예약 작업이나 자동화는 생성하지 않았습니다.
