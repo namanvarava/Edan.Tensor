@@ -4,8 +4,8 @@
 
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
-- 기록일: 2026-11-12
-- 검증 기준 원격 main SHA: `ee72aa3b22958da0ec9303479ae7168b518f023a`
+- 기록일: 2026-11-13
+- 검증 기준 원격 main SHA: `668b01e296eadbd901575e86c0337b2ceecb729d`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -30,6 +30,19 @@
 | 개발 Bypass 경고 | 통과 | 외부 모드 실행에서 Bypass 경고가 발생하지 않음 |
 
 비밀번호, Access Token 원문, 개인키는 문서·로그·저장소에 기록하지 않았습니다.
+
+## 2026-11-13 실행 환경 재확인
+
+Codex Windows 실행 환경에서 외부 검증 경계를 읽기 전용으로 다시 확인했습니다.
+
+- Keycloak HTTPS 포트의 TCP 연결이 성공했습니다.
+- OIDC Metadata HTTPS 요청이 HTTP 200을 반환했습니다.
+- Metadata의 issuer와 jwks_uri가 예상한 `EDAN-NONPROD` 외부 IdP 주소를 가리켰습니다.
+- JWKS 응답에서 RS256·SIG 공개키 2개를 확인했고, 개인키 필드는 발견하지 못했습니다.
+- 같은 실행 환경의 API `/health` 요청이 HTTP 200을 반환했습니다.
+- 비대화식 SSH 접속은 `Permission denied (publickey,password)`로 실패했습니다. 따라서 이번 실행에서는 사용자 비밀번호나 Access Token을 수집하지 않았고, 토큰 기반 부정 시나리오를 임의로 성공 처리하지 않았습니다.
+
+이 결과는 외부 HTTPS·Metadata·JWKS 연결 가능성을 갱신하는 증거입니다. SSH 인증 또는 안전한 토큰 발급 경로가 제공되기 전까지 Issue #84의 토큰 부정 시나리오와 키 폐기 시나리오는 미완료로 유지합니다.
 
 ## 키 회전 중간 증거
 
@@ -82,6 +95,6 @@ Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 6. 기존 키를 폐기한 뒤 기존 토큰은 HTTP 401, 신규 토큰은 HTTP 200인지 확인합니다.
 7. Tenant에 소속되지 않은 subject가 보호된 Tenant 경로에서 HTTP 403인지 확인합니다.
 
-현재 Codex 실행 환경에서는 사용자의 VirtualBox VM `192.168.56.101:8443`에 직접 연결할 수 없으므로 위 외부 실패·폐기 시나리오를 대신 수행하지 않았습니다. 사용자가 VM에서 결과를 확인하면 이 문서와 Issue #84에 결과와 검증 당시 main SHA를 추가할 수 있습니다.
+2026-11-13 재확인에서는 외부 HTTPS·Metadata·JWKS 연결이 가능했지만, 비대화식 SSH 인증이 거부되어 위 외부 실패·폐기 시나리오를 실행하지 않았습니다. 안전한 토큰 발급 경로가 제공되면 이 문서와 Issue #84에 각 HTTP 결과와 검증 당시 main SHA를 추가할 수 있습니다.
 
 Issue #84는 위 7개 기준이 실제 응답 증거로 채워질 때까지 열린 상태로 유지합니다. 예약 작업이나 자동화는 생성하지 않았습니다.
