@@ -89,8 +89,9 @@ function Get-ErrorResponse {
         throw $ErrorRecord
     }
 
-    if ($response -is [Net.Http.HttpResponseMessage]) {
-        # PowerShell 7은 예외를 만든 뒤 Content를 폐기할 수 있으므로 ErrorDetails를 먼저 읽습니다.
+    if ($null -ne $response.PSObject.Properties['Content']) {
+        # 응답에 Content 속성이 있으면 PowerShell 7의 HttpResponseMessage 경로로 처리합니다.
+        # 명시적인 .NET 타입 비교를 사용하지 않아 Windows PowerShell 5.1에서도 실행됩니다.
         $body = $ErrorRecord.ErrorDetails.Message
         if ([string]::IsNullOrWhiteSpace($body)) {
             try {

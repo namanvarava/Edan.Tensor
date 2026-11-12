@@ -56,3 +56,24 @@ Issue #84는 현재 열린 상태이며, 저장소 내부 구현·문서·회귀
 3. External 모드로 API를 시작하고 런북의 모든 정상·실패·Tenant·키 회전 검증을 실행합니다.
 4. GitHub main 보호 규칙을 실제 설정하고 필수 Check 적용 결과를 확인합니다.
 5. 결과와 실행 당시 main SHA를 Issue #84에 기록한 뒤에만 수용 기준을 판정합니다.
+
+## 2026-11-12 추가 재검증과 검증 도구 수정
+
+추가 검증 시작 당시 로컬 `main`과 `origin/main`은 `518e6f3c808b6d952d14aa4e8ec3fc709d9c2d70`으로 일치했습니다. 저장소에는 실행 중 생성된 `api-startup.log`, `src/Hosts/EDAN.Tensor.ApiHost/App_Data/`, `src/Hosts/EDAN.Tensor.ApiHost/edan-worker.db`만 추적되지 않은 상태로 남아 있으며, 이 파일들은 사용자 로컬 실행 산출물이므로 커밋하지 않습니다.
+
+처음 `tools/license-authority-smoke.ps1`를 Windows PowerShell 5.1에서 실행했을 때 개발 라이선스 발급·정상 검증까지 통과한 뒤 운영 환경 차단 응답을 읽는 과정에서 `[Net.Http.HttpResponseMessage]` 타입을 찾지 못해 종료되었습니다. PowerShell 5.1에는 해당 .NET 타입이 현재 세션에 로드되지 않는 것이 원인이며, 제품 API나 LicenseAuthority의 실패가 아닙니다.
+
+대안으로 타입을 강제 로드하거나 PowerShell 버전을 제한하는 방법을 검토했지만, 개발 환경의 실행 조건을 불필요하게 늘립니다. 최소 수정으로 응답 객체에 `Content` 속성이 있는지 확인해 `HttpResponseMessage` 경로와 Windows PowerShell 5.1 `WebException` 스트림 경로를 분리했습니다. 이 방식은 특정 런타임 타입 이름에 의존하지 않으며 오류 응답 본문을 생략하지 않습니다.
+
+수정 후 다음 검증을 완료했습니다.
+
+- `dotnet restore EDAN.Tensor.sln`: 성공
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 경고 0개·오류 0개
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 273개 통과·실패 0개·건너뜀 0개
+- `dotnet restore`, `build`, `test EDAN.Tensor.LicenseAuthority.sln`: 12개 통과·실패 0개·건너뜀 0개
+- `tools/host-smoke.ps1`: ApiHost·WorkerHost Health, Database Health, OpenAPI, Swagger UI, Tenant API HTTP 200
+- `tools/license-authority-smoke.ps1`: Windows PowerShell 5.1과 PowerShell 7.6.9에서 개발 발급, 공개 JWK, 정상 검증, 운영 개발 라이선스 차단 HTTP 403, 폐기 라이선스 차단 HTTP 403 성공
+- `dotnet list EDAN.Tensor.sln package --vulnerable --include-transitive --format json`: 취약성 항목 없음
+- `.github/workflows/ci.yml`: `push`와 `pull_request`만 사용하며 예약 실행 트리거가 없음
+
+Issue #84의 실제 외부 IdP 실패 변형·키 중첩·폐기·미소속 주체와 GitHub `main` 보호 규칙은 이 재검증으로 대체하지 않습니다.
