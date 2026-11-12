@@ -35,7 +35,7 @@
 | JWT 로컬 경계 회귀 | 통과 | Issuer·Audience·만료·서명·`kid`·키 회전 테스트 1개 성공 |
 | 실제 IdP 키 중첩 | 진행 중 통과 | `EDAN-NONPROD`의 `rsa-generated` Provider Priority 200·100과 JWKS의 RS256·SIG 공개키 2개 확인 |
 | 새 키 토큰 서명 | 통과 | 새 토큰의 RS256 `kid`가 JWKS에 존재하고 API Tenant 조회가 HTTP 200 |
-| GitHub main 보호 규칙 | 통과 | `main` 보호와 `build-and-test` 필수 Check를 UI에서 설정하고 API에서 `protected=true`, enforcement `everyone`, required check를 확인 |
+| GitHub main 보호 규칙 | 부분 확인 | UI에서 `main` 보호와 `build-and-test` 필수 Check 설정을 확인했지만, 현재 연결의 보호 규칙 상세 API 재조회는 HTTP 403으로 실패하여 enforcement 세부값을 독립 검증하지 못함 |
 | 병합·CI·브랜치 상태 | 통과 | main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
 
 토큰 원문, 비밀번호, 개인키는 증거 문서·로그·저장소에 기록하지 않았습니다.
@@ -77,3 +77,15 @@
 - 직접·전이 NuGet 취약점 조회는 알려진 취약 패키지 항목 없이 종료되었습니다.
 - 이 내부 재검증은 외부 IdP의 잘못된 Issuer·Audience·만료·위조·알 수 없는 `kid`, 기존 키 폐기, 미소속 주체 403을 대신하지 않으며 Issue #84는 계속 열어 둡니다.
 - 제품 API 라이선스 강제는 별도 승인 대기 계약이므로 이번 문서 갱신에서 임의로 추가하지 않습니다.
+
+
+## 최신 main과 현재 실행 환경 재확인
+
+- 최신 main SHA는 `cb60f233364e87771ddcbe95841f2c5210ebe3fe`입니다.
+- PR #236의 문서 갱신은 필수 `build-and-test` 성공 후 main에 Squash Merge되었습니다.
+- 병합 후 main의 `build-and-test`도 성공했습니다.
+- PR #236의 원격 작업 브랜치는 병합 후 삭제했고, 원격 브랜치가 남아 있지 않음을 확인했습니다.
+- Issue #84는 외부 수용 기준이 남아 있으므로 열린 상태로 유지합니다.
+- 이 실행 환경에서 `192.168.56.101:8443` TCP 연결과 HTTPS OIDC Metadata 요청은 실패했습니다. 따라서 이번 실행에서는 외부 IdP의 실패 토큰·기존 키 폐기·미소속 주체 403을 새로 검증하지 않았습니다.
+- GitHub main 보호 규칙 상세 API는 현재 연결에서 HTTP 403 `Resource not accessible by integration`을 반환했습니다. 사용자가 제공한 UI 설정 화면과 main Check 성공은 기록하되, API 세부 조회 성공으로 표시하지 않습니다.
+- 현재 Issue #84 판정은 외부 IdP 경계 일부 통과·일부 미완료, GitHub 보호 규칙 UI 설정 확인·API 세부 미검증이며 전체적으로 `미완료`입니다.
