@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `668b01e296eadbd901575e86c0337b2ceecb729d`
+- 검증 기준 원격 main SHA: `231f4e5984fb15204e4972b818ead0a5ae8f12a1`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -31,6 +31,17 @@
 
 비밀번호, Access Token 원문, 개인키는 문서·로그·저장소에 기록하지 않았습니다.
 
+## 2026-11-13 사용자 수동 부정 토큰 검증
+
+사용자는 비운영 Keycloak에서 정상적으로 서명된 별도 테스트 토큰을 발급하고, 같은 Tenant 보호 경로에 전송하여 다음 결과를 확인했습니다. 토큰 원문과 비밀번호는 기록하지 않았습니다.
+
+| 시나리오 | 실행 조건 | 실제 결과 | 판정 |
+| --- | --- | --- | --- |
+| 잘못된 issuer | `EDAN-WRONG-ISSUER` Realm의 `edan-wrong-issuer-client`와 테스트 사용자로 발급한 토큰을 `GET /api/platform/tenants/{tenantId}/storage-usage`에 전송 | HTTP 401, `The issuer 'https://idp.edan.test:8443/realms/EDAN-WRONG-ISSUER' is invalid` | 통과 |
+| 잘못된 audience | `edan-wrong-audience` 클라이언트로 발급한 토큰을 같은 보호 경로에 전송 | HTTP 401 | 통과 |
+
+위 두 결과는 Payload 문자열만 임의로 바꾼 토큰이 아니라 Keycloak이 발급한 서명 토큰으로 확인했습니다. 따라서 잘못된 issuer와 audience에 대한 API의 fail-closed 동작을 증명하지만, Issue #84 전체 완료를 의미하지는 않습니다.
+
 ## 2026-11-13 실행 환경 재확인
 
 Codex Windows 실행 환경에서 외부 검증 경계를 읽기 전용으로 다시 확인했습니다.
@@ -40,9 +51,9 @@ Codex Windows 실행 환경에서 외부 검증 경계를 읽기 전용으로 �
 - Metadata의 issuer와 jwks_uri가 예상한 `EDAN-NONPROD` 외부 IdP 주소를 가리켰습니다.
 - JWKS 응답에서 RS256·SIG 공개키 2개를 확인했고, 개인키 필드는 발견하지 못했습니다.
 - 같은 실행 환경의 API `/health` 요청이 HTTP 200을 반환했습니다.
-- 비대화식 SSH 접속은 `Permission denied (publickey,password)`로 실패했습니다. 따라서 이번 실행에서는 사용자 비밀번호나 Access Token을 수집하지 않았고, 토큰 기반 부정 시나리오를 임의로 성공 처리하지 않았습니다.
+- 초기 읽기 전용 재확인에서는 비대화식 SSH 인증이 `Permission denied (publickey,password)`로 실패했습니다. 이후 사용자가 별도 SSH 공개키 인증을 설정했으며, 사용자 수동 검증에서만 Keycloak이 발급한 토큰을 이용한 잘못된 issuer와 audience 결과를 확인했습니다. Codex 실행 환경은 여전히 사용자 비밀번호·Access Token·개인키를 수집하지 않았습니다.
 
-이 결과는 외부 HTTPS·Metadata·JWKS 연결 가능성을 갱신하는 증거입니다. SSH 인증 또는 안전한 토큰 발급 경로가 제공되기 전까지 Issue #84의 토큰 부정 시나리오와 키 폐기 시나리오는 미완료로 유지합니다.
+이 결과는 외부 HTTPS·Metadata·JWKS 연결 가능성을 갱신하는 증거입니다. 잘못된 issuer와 audience 검증은 아래 수동 검증 기록으로 보강되었으며, 만료·서명 변조·알 수 없는 `kid`·키 폐기·미소속 주체 검증은 별도 수용 기준으로 유지합니다.
 
 ## 키 회전 중간 증거
 
@@ -87,14 +98,12 @@ Keycloak `EDAN-NONPROD`에서 다음 상태를 확인했습니다.
 
 다음 항목은 실제 비운영 IdP에서 추가로 확인해야 합니다.
 
-1. 유효한 서명을 유지한 잘못된 issuer 토큰이 HTTP 401인지 확인합니다.
-2. 유효한 서명을 유지한 잘못된 audience 토큰이 HTTP 401인지 확인합니다.
-3. 실제 서명 기반 만료 토큰이 HTTP 401인지 확인합니다.
-4. 서명이 변조된 토큰과 알 수 없는 `kid` 토큰이 HTTP 401인지 확인합니다.
-5. 기존 키와 신규 키가 동시에 게시된 동안 기존 토큰과 신규 토큰이 모두 HTTP 200인지 확인합니다.
-6. 기존 키를 폐기한 뒤 기존 토큰은 HTTP 401, 신규 토큰은 HTTP 200인지 확인합니다.
-7. Tenant에 소속되지 않은 subject가 보호된 Tenant 경로에서 HTTP 403인지 확인합니다.
+1. 실제 서명 기반 만료 토큰이 HTTP 401인지 확인합니다.
+2. 서명이 변조된 토큰과 알 수 없는 `kid` 토큰이 HTTP 401인지 확인합니다.
+3. 기존 키와 신규 키가 동시에 게시된 동안 기존 토큰과 신규 토큰이 모두 HTTP 200인지 확인합니다.
+4. 기존 키를 폐기한 뒤 기존 토큰은 HTTP 401, 신규 토큰은 HTTP 200인지 확인합니다.
+5. Tenant에 소속되지 않은 subject가 보호된 Tenant 경로에서 HTTP 403인지 확인합니다.
 
-2026-11-13 재확인에서는 외부 HTTPS·Metadata·JWKS 연결이 가능했지만, 비대화식 SSH 인증이 거부되어 위 외부 실패·폐기 시나리오를 실행하지 않았습니다. 안전한 토큰 발급 경로가 제공되면 이 문서와 Issue #84에 각 HTTP 결과와 검증 당시 main SHA를 추가할 수 있습니다.
+2026-11-13 재확인에서는 외부 HTTPS·Metadata·JWKS 연결과 잘못된 issuer·audience 거부를 확인했습니다. 만료·서명 변조·알 수 없는 `kid`·키 중첩·키 폐기·미소속 subject 시나리오는 아직 실제 HTTP 결과가 없으므로 완료로 기록하지 않습니다.
 
-Issue #84는 위 7개 기준이 실제 응답 증거로 채워질 때까지 열린 상태로 유지합니다. 예약 작업이나 자동화는 생성하지 않았습니다.
+Issue #84는 위 5개 기준이 실제 응답 증거로 채워질 때까지 열린 상태로 유지합니다. 예약 작업이나 자동화는 생성하지 않았습니다.
