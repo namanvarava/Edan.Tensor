@@ -6,7 +6,7 @@
 
 - 검증 일시: 2026-11-12 사용자 수동 검증 결과를 반영합니다. 정확한 UTC 시각은 별도 기록하지 않았습니다.
 - 외부 검증 당시 기준 main SHA: `57dc2a080cebddc7a2dcdd2b089c78700f41f829`
-- 기존 외부 검증 기록이 main에 병합된 기준 SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
+- 이 검증 기록을 병합한 최신 main SHA: `1fd05ecdeb9920d9bde62c36743af26b53cdbae5`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -36,7 +36,7 @@
 | 실제 IdP 키 중첩 | 진행 중 통과 | `EDAN-NONPROD`의 `rsa-generated` Provider Priority 200·100과 JWKS의 RS256·SIG 공개키 2개 확인 |
 | 새 키 토큰 서명 | 통과 | 새 토큰의 RS256 `kid`가 JWKS에 존재하고 API Tenant 조회가 HTTP 200 |
 | GitHub main 보호 규칙 | 통과 | `main` 보호와 `build-and-test` 필수 Check를 UI에서 설정하고 API에서 `protected=true`, enforcement `everyone`, required check를 확인 |
-| 병합·CI·브랜치 상태 | 검증 당시 통과 | 검증 당시 main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
+| 병합·CI·브랜치 상태 | 통과 | main SHA의 `build-and-test` 성공, 열린 PR 없음, 로컬·원격 작업 브랜치 없음 |
 
 토큰 원문, 비밀번호, 개인키는 증거 문서·로그·저장소에 기록하지 않았습니다.
 
@@ -67,3 +67,13 @@
 
 예약 작업이나 자동화는 생성하지 않았습니다.
 
+## 최신 내부 재검증 및 병합 상태
+
+- 문서 갱신 기준 원격 main SHA: `729e47a10e9908d35ed7c12a3af670be8591b732`입니다.
+- PR #235(`docs: Issue #84 외부 IdP 경계 검증 런북 보강`)는 필수 `build-and-test` 성공 후 Squash Merge되었고, 원격 작업 브랜치는 삭제를 확인했습니다.
+- 최신 로컬 Release 재검증은 `dotnet restore EDAN.Tensor.sln`, Release Build 경고 0·오류 0, 전체 Test 273 통과·실패 0·건너뜀 0으로 끝났습니다.
+- Host Smoke는 ApiHost·WorkerHost health, database health, OpenAPI, Swagger UI, Development Bypass Tenant API를 HTTP 200으로 확인했고 stderr 0바이트와 임시 자원 정리를 확인했습니다.
+- LicenseAuthority Smoke는 단일 5년 개발 라이선스, 공개 JWK, 정상 검증 HTTP 200, Production 개발 라이선스 HTTP 403, 폐기 라이선스 HTTP 403을 확인했고 stderr 0바이트와 임시 자원 정리를 확인했습니다.
+- 직접·전이 NuGet 취약점 조회는 알려진 취약 패키지 항목 없이 종료되었습니다.
+- 이 내부 재검증은 외부 IdP의 잘못된 Issuer·Audience·만료·위조·알 수 없는 `kid`, 기존 키 폐기, 미소속 주체 403을 대신하지 않으며 Issue #84는 계속 열어 둡니다.
+- 제품 API 라이선스 강제는 별도 승인 대기 계약이므로 이번 문서 갱신에서 임의로 추가하지 않습니다.
