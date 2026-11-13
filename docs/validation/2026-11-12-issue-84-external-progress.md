@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `7e66cfe0a4eb03e56677efed1388ccfb19171c97`
+- 현재 main SHA: `2c960599a4c317c844fcb7efa860d090ab636596`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -195,7 +195,7 @@ Issue #84는 위 3개 기준이 실제 응답 증거로 채워질 때까지 열�
 
 최신 `main` 기준으로 로컬 Release 검증을 다시 수행했습니다. 외부 VM은 이 실행 환경의 Host-Only 네트워크 경계에서 접근할 수 없어, 외부 시나리오를 추측하거나 반복 실행하지 않았습니다.
 
-- 현재 `main` SHA: `7e66cfe0a4eb03e56677efed1388ccfb19171c97`
+- 외부 재확인 당시 `main` SHA: `7e66cfe0a4eb03e56677efed1388ccfb19171c97`
 - `dotnet restore EDAN.Tensor.sln`: 성공, 복원할 모든 프로젝트가 최신 상태
 - `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
 - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
@@ -204,3 +204,16 @@ Issue #84는 위 3개 기준이 실제 응답 증거로 채워질 때까지 열�
 - 이 실행에서 확인하지 못한 항목: 키 중첩 중 기존·신규 토큰 동시 HTTP 200, 기존 키 제거 후 기존 토큰 HTTP 401·신규 토큰 HTTP 200, 미소속 subject HTTP 403
 
 위 외부 실패는 저장소 코드가 반환한 인증 오류가 아니라 현재 실행 환경의 Host-Only 네트워크 접근 권한 문제입니다. 외부 검증은 사용자의 일반 Windows 세션에서 `192.168.56.1`을 출발 주소로 VM에 연결할 수 있고, Keycloak HTTPS·API 프로세스가 실행 중인 상태에서 재개해야 합니다.
+
+## 2026-11-13 PR #247 병합 후 main 재검증
+
+PR #247에서 외부 검증 재개 조건과 실행 환경 차단 증거를 갱신한 뒤 필수 Check 성공을 확인하고 squash merge했습니다.
+
+- PR: `https://github.com/namanvarava/Edan.Tensor/pull/247`
+- 필수 `build-and-test` Check: 성공
+- squash 병합 커밋: `2c960599a4c317c844fcb7efa860d090ab636596`
+- 병합 후 `main` Release 복원: 성공
+- 병합 후 `main` Release 빌드: 성공, 경고 0·오류 0
+- 병합 후 `main` 전체 Release 테스트: 성공, 273 통과·0 실패·0 건너뜀
+
+PR #247은 문서 변경만 포함하므로 제품 코드의 동작은 병합 전 검증 기준과 동일합니다. Issue #84의 키 중첩·구 키 폐기·미소속 subject 결과는 여전히 실제 외부 HTTP 증거가 필요합니다.
