@@ -2,7 +2,7 @@
 
 ## 판정
 
-이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
+이 문서는 Issue #84의 누적 증거를 기록합니다. 중간 섹션의 미완료 판정은 각 기록 시점의 상태이며, 문서 마지막의 최신 검증 섹션이 현재 판정을 결정합니다. 최신 검증에서는 실제 비운영 IdP의 HTTPS 경계, Tenant 권한 경계, 키 중첩·폐기와 GitHub main 보호 규칙을 확인했습니다.
 
 - 기록일: 2026-11-13
 - 검증 기준 main SHA: `6da27e228fee19299c6f24a00ec374d443b3f3ad`
@@ -239,3 +239,30 @@ PR #247에서 외부 검증 재개 조건과 실행 환경 차단 증거를 갱�
 - 병합 후 `main` 전체 Release 테스트: 성공, 273 통과·0 실패·0 건너뜀
 
 PR #247은 문서 변경만 포함하므로 제품 코드의 동작은 병합 전 검증 기준과 동일합니다. Issue #84의 키 중첩·구 키 폐기·미소속 subject 결과는 여전히 실제 외부 HTTP 증거가 필요합니다.
+
+## 2026-11-13 최신 수동 검증 최종 판정
+
+앞선 기록 이후 사용자가 구성한 VirtualBox Ubuntu 비운영 VM과 Windows 호스트에서 Issue #84의 남은 수용 기준을 실제 HTTP 응답으로 확인했습니다. API는 `Authentication:Mode=External`, `Authentication:RequireHttpsMetadata=true`, `DevelopmentData:SeedBypassTenant=false`로 실행했으며 개발 Bypass는 사용하지 않았습니다.
+
+| 검증 항목 | 실제 증거 | 판정 |
+| --- | --- | --- |
+| HTTPS OIDC Metadata | `https://idp.edan.test:8443/realms/EDAN-NONPROD/.well-known/openid-configuration` HTTP 200 | 통과 |
+| HTTPS JWKS | Metadata가 가리키는 JWKS URI HTTP 200, RS256·SIG 공개키 확인 | 통과 |
+| 정상 외부 사용자 | `edan-tensor-api` audience와 `EDAN-NONPROD` issuer를 가진 새 토큰으로 보호 API HTTP 200, Tenant 역할 `Administrator` 반환 | 통과 |
+| 미소속 외부 사용자 | 유효한 토큰을 발급했지만 대상 Tenant membership이 없는 별도 테스트 사용자로 같은 보호 API 호출 | HTTP 403, 통과 |
+| 키 중첩 | 구 키와 신 키가 JWKS에 함께 게시된 상태에서 구 키 토큰과 신 키 토큰이 각각 HTTP 200 | 통과 |
+| 구 키 폐기 | 구 키 Provider 비활성화와 API JWT 키 캐시 초기화 후 JWKS에서 구 `kid`가 사라지고 신 `kid`가 유지됨 | 통과 |
+| 폐기된 구 키 토큰 | 구 키 폐기 후 새로 발급한 구 키 토큰으로 보호 API 호출 | HTTP 401, 통과 |
+| 신 키 토큰 | 같은 시점의 신 키 토큰으로 보호 API 호출 | HTTP 200, 통과 |
+| GitHub `main` 보호 | 관리자 적용 강제, 최신 상태 브랜치 요구, 필수 Check `build-and-test`를 GitHub API로 확인 | 통과 |
+
+키 회전에서 확인한 공개 `kid`는 다음과 같습니다. 이 값은 공개 JWKS의 식별자이며 개인키가 아닙니다.
+
+- 구 키 `kid`: `pVq-3lYp3OY3IUCIjZvxOrEBW2V7FIHdi5VXjgU1Q0A`
+- 신 키 `kid`: `_qvqDkA6epQjCvZWqJTp6Yh2zOgr8CUhnuCk0pfcSfk`
+- 구 키 Provider를 중첩 토큰 발급에 사용한 뒤 검증을 마치고 비활성화했습니다.
+- 구 키 토큰은 HTTP 401, 신 키 토큰은 HTTP 200이었고 JWKS에서는 구 키가 제거되고 신 키가 유지되었습니다.
+
+토큰 원문, 사용자 비밀번호, Keycloak 개인키는 로그·문서·저장소에 기록하지 않았습니다. `sub`는 토큰에서 읽어 검증했으며 고정 허용 목록으로 사용하지 않았습니다.
+
+이 최신 결과로 Issue #84의 비운영 외부 IdP 수용 기준은 완료 판정할 수 있습니다. 운영 IdP·운영 데이터베이스·운영 배포 및 실제 외부 수신 시스템은 별도 운영 환경의 검증 조건이며 이번 Issue #84 완료 판정에 포함하지 않습니다. 예약 작업이나 자동화는 생성하지 않았습니다.
