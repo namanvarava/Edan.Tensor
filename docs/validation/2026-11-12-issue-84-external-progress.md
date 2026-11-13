@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `9097e8e67ec69d365318a053973e36703bcf6495`
+- 검증 기준 원격 main SHA: `7e66cfe0a4eb03e56677efed1388ccfb19171c97`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -190,3 +190,17 @@ Issue #84는 위 3개 기준이 실제 응답 증거로 채워질 때까지 열�
 - `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
 
 일반 권한에서 `dotnet --info`가 Windows Service Control Manager 액세스 거부로 종료했던 현상은 관리자 권한 복원에서 재현되지 않았습니다. 이는 소스 결함이 아니라 실행 권한 차이였으며, 권한 상승으로 테스트를 우회하거나 실패를 무시하지 않았습니다.
+
+## 2026-11-13 Codex 재개 실행 환경 재확인
+
+최신 `main` 기준으로 로컬 Release 검증을 다시 수행했습니다. 외부 VM은 이 실행 환경의 Host-Only 네트워크 경계에서 접근할 수 없어, 외부 시나리오를 추측하거나 반복 실행하지 않았습니다.
+
+- 현재 `main` SHA: `7e66cfe0a4eb03e56677efed1388ccfb19171c97`
+- `dotnet restore EDAN.Tensor.sln`: 성공, 복원할 모든 프로젝트가 최신 상태
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
+- 외부 VM SSH `192.168.56.101:22`: TCP 연결 실패, Windows SSH 진단에서 `async io completed with error: 10013` 및 `Permission denied` 확인
+- 외부 Keycloak HTTPS `192.168.56.101:8443`: TCP 연결 실패, 같은 네트워크 경계에서 접근할 수 없음
+- 이 실행에서 확인하지 못한 항목: 키 중첩 중 기존·신규 토큰 동시 HTTP 200, 기존 키 제거 후 기존 토큰 HTTP 401·신규 토큰 HTTP 200, 미소속 subject HTTP 403
+
+위 외부 실패는 저장소 코드가 반환한 인증 오류가 아니라 현재 실행 환경의 Host-Only 네트워크 접근 권한 문제입니다. 외부 검증은 사용자의 일반 Windows 세션에서 `192.168.56.1`을 출발 주소로 VM에 연결할 수 있고, Keycloak HTTPS·API 프로세스가 실행 중인 상태에서 재개해야 합니다.
