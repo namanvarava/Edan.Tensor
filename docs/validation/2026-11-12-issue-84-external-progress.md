@@ -5,7 +5,7 @@
 이 문서는 Issue #84의 현재 증거를 갱신합니다. 내부 구현과 로컬·Release 검증은 통과했지만, 실제 비운영 IdP에서 수행해야 하는 부정 시나리오와 키 폐기 시나리오가 남아 있으므로 Issue #84와 전체 개발 목표를 완료로 판정하지 않습니다.
 
 - 기록일: 2026-11-13
-- 검증 기준 원격 main SHA: `421a96c3780848868e313de20085263b4331088d`
+- 검증 기준 원격 main SHA: `9097e8e67ec69d365318a053973e36703bcf6495`
 - 검증 환경: Windows 호스트와 VirtualBox Ubuntu 비운영 VM
 - 외부 IdP: Keycloak, `idp.edan.test:8443`
 - 인증 모드: `External`
@@ -144,6 +144,19 @@ PR #243에서도 Issue #84의 키 중첩·구 키 폐기·미소속 subject 검�
 
 기본 실행 경계에서 .NET workload resolver가 Windows Service Control Manager 접근 거부를 반환한 적이 있습니다. 이는 소스 오류가 아니라 실행 환경 권한 문제였으며, 허용된 실행 경계에서 같은 Release 검증을 성공시켜 결과를 확인했습니다.
 
+## 2026-11-13 PR #244 병합 후 main 재검증
+
+PR #244 병합 후 기준 커밋은 `9097e8e67ec69d365318a053973e36703bcf6495`입니다. 이번 실행에서는 코드 변경 없이 Release 검증을 다시 수행했습니다.
+
+- `dotnet restore EDAN.Tensor.sln`: 상세 출력 기준 성공, 경고 0·오류 0
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 기본 병렬 실행은 종료 코드 1을 반환했지만 경고 0·컴파일 오류 0이었고, VBCSCompiler named pipe에 `UnauthorizedAccessException`이 발생했습니다.
+- 원인 분리 실행: `dotnet build EDAN.Tensor.sln --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false`가 전체 프로젝트를 경고 0·오류 0으로 통과했습니다.
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: VSTest가 첫 테스트host에 연결하지 못해 90초 후 중단되었습니다. 동일 현상이 여러 테스트 어셈블리에서 재현되었고, 단일 프로젝트에 연결 제한을 180초로 늘린 실행에서도 testhost 연결 실패가 재현되었습니다.
+
+이 결과는 소스 assertion 실패가 아니라 현재 Windows 실행 환경의 Roslyn named pipe와 VSTest testhost 프로세스 연결 장애로 분류합니다. 테스트 우회나 실패 무시는 하지 않았으며, PR #243 병합 전 동일 코드 기준 전체 273개 테스트 통과 증거는 보존합니다. 이 재검증에서는 소스 수정이 필요하다는 근거가 발견되지 않았습니다.
+
+이번 재개 시점의 Codex Windows 환경에서는 `192.168.56.101`의 SSH 22번 포트와 Keycloak HTTPS 8443번 포트가 모두 TCP 연결 실패였습니다. 따라서 외부 VM에 대한 키 중첩·키 폐기·미소속 subject 재검증은 실행하지 않았습니다.
+
 ## 아직 완료하지 못한 Issue #84 수용 기준
 
 다음 항목은 실제 비운영 IdP에서 추가로 확인해야 합니다.
@@ -155,3 +168,25 @@ PR #243에서도 Issue #84의 키 중첩·구 키 폐기·미소속 subject 검�
 2026-11-13 재확인에서는 외부 HTTPS·Metadata·JWKS 연결과 잘못된 issuer·audience·만료·서명 실패·알 수 없는 `kid` 토큰 거부를 확인했습니다. 키 중첩·키 폐기·미소속 subject 시나리오는 아직 실제 HTTP 결과가 없으므로 완료로 기록하지 않습니다.
 
 Issue #84는 위 3개 기준이 실제 응답 증거로 채워질 때까지 열린 상태로 유지합니다. 예약 작업이나 자동화는 생성하지 않았습니다.
+
+## 2026-11-13 최신 재개 검증
+
+사용자 설정이 반영된 현재 실행 환경에서 읽기 전용 재검증을 수행했습니다.
+
+- VirtualBox Host-Only 경계에서 `192.168.56.101:22` SSH 연결이 성공했습니다.
+- Keycloak HTTPS 경계에서 `192.168.56.101:8443` TCP 연결이 성공했습니다.
+- VM의 Keycloak 컨테이너가 `192.168.56.101:8443`에 게시되어 실행 중이고, PostgreSQL·SQL Server·Oracle 컨테이너도 실행 중임을 확인했습니다.
+- `https://192.168.56.101:8443/realms/EDAN-NONPROD/.well-known/openid-configuration` 요청이 HTTP 200을 반환했습니다.
+- 현재 API `/health` 요청이 HTTP 200을 반환했고 Platform·Worker·DataSet·DataSetContent 연결 상태가 모두 `true`였습니다.
+- 기존 테스트 세션의 Access Token은 만료되어 HTTP 401을 반환했습니다. 응답에 포함된 refresh token으로 새 Access Token을 갱신한 뒤 보호 경로 `GET /api/platform/tenants/{tenantId}/storage-usage`가 HTTP 200을 반환했습니다.
+- 갱신된 토큰은 원문을 출력하지 않고 검증했으며, issuer·audience는 `EDAN-NONPROD` 외부 IdP와 `edan-tensor-api` 계약에 맞는지 확인했습니다.
+
+이 재검증은 외부 네트워크·Metadata·정상 토큰·보호 경로의 현재 연결성을 보강합니다. 키 중첩 구간의 기존·신규 토큰 동시 200, 기존 키 제거 후 기존 토큰 401 및 신규 토큰 200, 미소속 subject의 보호 경로 403은 아직 별도 실제 응답 증거가 없으므로 Issue #84 완료 조건으로 남겨 둡니다.
+
+같은 재개 시점에 관리자 권한으로 다음 Release 검증도 수행했습니다.
+
+- `dotnet restore EDAN.Tensor.sln`: 성공, 경고 0·오류 0
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 성공, 경고 0·오류 0
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 성공, 273 통과·0 실패·0 건너뜀
+
+일반 권한에서 `dotnet --info`가 Windows Service Control Manager 액세스 거부로 종료했던 현상은 관리자 권한 복원에서 재현되지 않았습니다. 이는 소스 결함이 아니라 실행 권한 차이였으며, 권한 상승으로 테스트를 우회하거나 실패를 무시하지 않았습니다.
