@@ -416,7 +416,7 @@
 | Policy | plcy | 정책 | IAM, 모든 모듈 | 결정·통제의 원칙과 적용 범위 | 기존 개념 통합 |
 | Rule | rul | 규칙 | 모든 모듈 | 구체적인 조건·결과를 정의하는 개별 규칙 | 기존 26개 후보 통합 |
 | Identity | idn | 신원 | IAM | 인증 주체를 나타내는 속성·주장 집합 | 기존 26개 후보 통합 |
-| Identifier | ide | 식별자 | 모든 모듈 | 특정 객체를 식별하기 위한 값 | 신규 후보 · 약어 배정 |
+| Identifier | idr | 식별자 | 모든 모듈 | 특정 객체를 식별하기 위한 값 | 기존 개념 통합 · 기존 약어 전환 |
 | Actor | actr | 행위 주체 | 모든 모듈 | 행위를 수행한 사용자·시스템·서비스 | 기존 26개 후보 통합 |
 | Action | act | 행위 | 모든 모듈 | 수행된 행위 자체. 행위주체와 구분 | 기존 개념 통합 |
 | Signature | sign | 서명 | DOC, QMS, IAM | 무결성·승인·책임을 증명하는 서명 데이터 | 신규 후보 · 약어 배정 |
@@ -455,3 +455,122 @@
 
 - [기존 확장 사전](enterprise-business-term-dictionary.md)
 - [전역 DB 명명 규칙](database-naming-conventions.md)
+
+## 9. 기존 110개 전자사전 항목 전체 정규화 대조표
+
+기존 116행에서 영문명 기준 중복을 통합한 110개 항목이다. Role은 rol을 대표로 선택하고 role은 레거시 별칭으로 보존했다. Creator·Updater 및 시간·여부·정렬 복합 항목은 독립 약어가 아니라 조합 규칙으로 분류했다.
+
+| 영문 풀네임 | 기존 약어 | 정규화 약어·조합 | 한글명 | 분류 | 판정 |
+|---|---|---|---|---|---|
+| Action | act / act | act | 행위·행위자 | 공통 | 중복 통합 |
+| Adapter | adp | adp | 어댑터 | 공통 | 기존 약어 유지 |
+| After | aft | aft | 이후 |  | 기존 약어 유지 |
+| Allowed | alw | alw | 허용 여부 | 권한 | 기존 약어 유지 |
+| Archive | arc / arc | arc | 아카이브 | 보존 | 중복 통합 |
+| Attempt | attm | attm | 시도 | 수량 | 기존 약어 유지 |
+| Audit | aud | aud | 감사 | 권한 | 기존 약어 유지 |
+| Authorization | auth | auth | 권한 부여 |  | 기존 약어 유지 |
+| Before | bef | bef | 이전 |  | 기존 약어 유지 |
+| Bytes | byt | byt | 바이트 | 공통 | 기존 약어 유지 |
+| Change | chg | chg | 변경 | 권한 | 기존 약어 유지 |
+| Checkpoint | ckpt | ckpt | 체크포인트 | 공통 | 기존 약어 유지 |
+| Code | cd | cod | 코드 | 공통 | 표준 약어 전환 |
+| Completed | cmp | cmp | 완료 | 공통 | 기존 약어 유지 |
+| Content | ctt | ctt | 콘텐츠 | 콘텐츠 | 기존 약어 유지 |
+| Count | cnt | cnt | 개수 | 공통 | 기존 약어 유지 |
+| Created | crt | crt | 생성, 추가 | 공통 | 기존 약어 유지 |
+| Created DateTime | crtdt | crt_dtt | 최초 등록일시 | 공통 | 복합 조합 규칙 |
+| Creator | crtmer | crt_by | 최초 등록자 | 공통 | 복합 조합 규칙 |
+| DataSet | dset | dset | 데이터셋 | 데이터 | 기존 약어 유지 |
+| Date | date | date | 일자 | 공통 | 기존 약어 유지 |
+| DateTime | dt | dtt | 일시 | 공통 | 표준 약어 전환 |
+| Delete | del | del | 삭제 | 공통 | 기존 약어 유지 |
+| Delete Yes/No | delyn | del_ynf | 삭제여부 | 공통 | 복합 조합 규칙 |
+| Delivery | dlv | dlv | 외부 전달 | 작업 | 기존 약어 유지 |
+| Description | desc | desc | 설명 | 작업 | 기존 약어 유지 |
+| Detail | dtl | dtl | 상세 | 데이터 | 기존 약어 유지 |
+| Display | dsp | dsp | 표시 | 공통 | 기존 약어 유지 |
+| Effect | eff / eff | eff | 효과 | 공통 | 중복 통합 |
+| Email | eml | eml | 전자우편 | 공통 | 기존 약어 유지 |
+| Enabled | ena / ena | ena | 활성 | 공통 | 중복 통합 |
+| End Date and Time | edt | edt | 종료일시, 종료일자, 완료일시, 완료일자, |  | 기존 약어 유지 |
+| Error | err | err | 오류 | 공통 | 기존 약어 유지 |
+| Event | evt | evt | 이벤트 | 공통 | 기존 약어 유지 |
+| Execution | exc | exc | 실행 | 데이터 | 기존 약어 유지 |
+| Expected | exp | exp | 예상·기대 | 공통 | 기존 약어 유지 |
+| Failure | fail | fail | 실패 | 오류 | 기존 약어 유지 |
+| Fencing | fence | fcn | 펜싱 | 공통 | 표준 약어 전환 |
+| Field | fld | fld | 필드 | 공통 | 기존 약어 유지 |
+| Format | fmt | fmt | 형식 | 공통 | 기존 약어 유지 |
+| Hold | hld | hld | 보류 | 보류 | 기존 약어 유지 |
+| Hour | hr | hou | 시간 | 시간 | 표준 약어 전환 |
+| Idempotency | idem | idem | 멱등성 | 공통 | 기존 약어 유지 |
+| Identifier | id | idr | 식별자 | 공통 | 표준 약어 전환 |
+| Interval | intv | intv | 간격 | 시간 | 기존 약어 유지 |
+| JSON | json | json | JSON | 공통 | 기존 약어 유지 |
+| Key | key | key | 키 | 공통 | 기존 약어 유지 |
+| Lease | lease | lse | 임대·Lease | 공통 | 표준 약어 전환 |
+| Legal | lgl | lgl | 법적 | 법무 | 기존 약어 유지 |
+| Limit | lmt | lmt | 한도 | 공통 | 기존 약어 유지 |
+| Master | mst | mst | 마스터 | 공통 | 기존 약어 유지 |
+| Maximum | max | max | 최대 | 수량 | 기존 약어 유지 |
+| Membership | mbr | mbr | 소속·멤버십 | 업무 | 기존 약어 유지 |
+| Message | msg | msg | 메시지 | 공통 | 기존 약어 유지 |
+| Name | nm | nam | 이름 | 공통 | 표준 약어 전환 |
+| Number | num | num | 번호 | 공통 | 기존 약어 유지 |
+| Occurred | occ | occ | 발생 | 공통 | 기존 약어 유지 |
+| Operation | op | opr | 작업 동작 | 공통 | 표준 약어 전환 |
+| Organization | org | org | 조직 | 업무 | 기존 약어 유지 |
+| Original | orig | orig | 원본 | 공통 | 기존 약어 유지 |
+| Payload | pld | pld | 페이로드 | 공통 | 기존 약어 유지 |
+| Percent | pct | pct | 백분율 | 공통 | 기존 약어 유지 |
+| Policy | plcy | plcy | 정책 | 권한 | 기존 약어 유지 |
+| Priority | pri / pri | pri | 우선순위 | 공통 | 중복 통합 |
+| Processed | prc | prc | 처리됨 | 처리 | 기존 약어 유지 |
+| Profile | prf | prf | 프로파일 | 검증 | 기존 약어 유지 |
+| Progress | prgrs | prg | 진행률 | 공통 | 표준 약어 전환 |
+| Project | pjt | pjt | 프로젝트 | 업무 | 기존 약어 유지 |
+| Quota | qta | qta | 할당량 | 운영 | 기존 약어 유지 |
+| Reason | rsn | rsn | 사유 | 사유 | 기존 약어 유지 |
+| Record | rec | rec | 레코드 | 수량 | 기존 약어 유지 |
+| Reference | ref | ref | 참조 | 공통 | 기존 약어 유지 |
+| Replay | rpl | rpl | 재실행 | 작업 | 기존 약어 유지 |
+| Request | req | req | 요청 | 공통 | 기존 약어 유지 |
+| Resource | rsrc | rsrc | 리소스 | 권한 | 기존 약어 유지 |
+| Result | rslt | rslt | 결과 | 공통 | 기존 약어 유지 |
+| Retention | rtn | rtn | 보존 | 보존 | 기존 약어 유지 |
+| Revision | rev | rev | 개정 버전 | 버전 | 기존 약어 유지 |
+| Role | role / rol | rol | 역할 | 권한 | 중복 통합 |
+| Schedule | schd | schd | 스케줄 | 운영 | 기존 약어 유지 |
+| Schema | schm | schm | 스키마 | 데이터 | 기존 약어 유지 |
+| Scope | scp | scp | 범위 | 공통 | 기존 약어 유지 |
+| Sequence | seq | seq | 일련번호 | 공통 | 기존 약어 유지 |
+| Severity | sev | sev | 심각도 | 공통 | 기존 약어 유지 |
+| SHA-256 | sha | sha | SHA-256 해시 | 공통 | 기존 약어 유지 |
+| Sort Number | sortnum | srt_num | 정렬번호 | 공통 | 복합 조합 규칙 |
+| Start   Date and Time | sdt | sdt | 시작일시, 시작일시 |  | 기존 약어 유지 |
+| Status | sta | sta | 상태 | 공통 | 기존 약어 유지 |
+| Storage | str | str | 저장소 | 공통 | 기존 약어 유지 |
+| Subject | sub | sub | 인증 주체 | 인증 | 기존 약어 유지 |
+| Successful | succ | succ | 성공 여부 | 결과 | 기존 약어 유지 |
+| Target | tgt | tgt | 대상 | 공통 | 기존 약어 유지 |
+| Task | tsk | tsk | 작업 | 작업 | 기존 약어 유지 |
+| Tenant | tnt | tnt | 테넌트 | 업무 | 기존 약어 유지 |
+| Threshold | thr | thr | 임계값 | 공통 | 기존 약어 유지 |
+| Total | tot | tot | 전체 | 수량 | 기존 약어 유지 |
+| Type | typ | typ | 타입, 유형 |  | 기존 약어 유지 |
+| Updated | upd | upd | 수정 | 공통 | 기존 약어 유지 |
+| Updated DateTime | upddt | upd_dtt | 마지막 등록일시 | 공통 | 복합 조합 규칙 |
+| Updater | updmer | upd_by | 마지막 등록자 | 공통 | 복합 조합 규칙 |
+| URI | uri | uri | URI | 공통 | 기존 약어 유지 |
+| Use Yes/No | useyn | use_ynf | 사용여부 | 공통 | 복합 조합 규칙 |
+| User | usr | usr | 사용자 | 업무 | 기존 약어 유지 |
+| UTC | utc | utc | UTC 시각 | 공통 | 기존 약어 유지 |
+| Validation | vld | vld | 검증 | 데이터 | 기존 약어 유지 |
+| Value | val | val | 값 | 공통 | 기존 약어 유지 |
+| Version | ver | ver | 버전 | 공통 | 기존 약어 유지 |
+| Warning | warn | warn | 경고 | 공통 | 기존 약어 유지 |
+| Worker | wkr | wkr | 워커 | 작업 | 기존 약어 유지 |
+| Yes/No | yn | ynf | 여부 | 공통 | 표준 약어 전환 |
+
+기존 110개 항목 중 대표 약어로 남는 3자·4자 항목은 103개이며, 그 내부 중복은 0건이다. 복합 조합 규칙 7건은 대표 약어 유일성 검사 대상에서 제외했다.
