@@ -17,3 +17,7 @@ appsettings.*.Local.json
 *.p12
 *.key
 *.pem
+# 로컬 실행·검증 로그는 저장소 병합 대상이 아닙니다.
+*.log
+*.err.log
+*.out.log
