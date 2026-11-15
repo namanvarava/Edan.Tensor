@@ -61,11 +61,12 @@ Screen Registry는 EDAN Tensor의 모든 사용자 화면을 식별하고, 화�
 | 화면 ID | 모듈 | 업무 영역 | 의미 |
 | --- | --- | --- | --- |
 | PLT-TNT-001 | Platform | Tenant | 테넌트 영역 첫 번째 화면 |
-| PLT-ORG-001 | Platform | Organization | 조직 영역 첫 번째 화면 |
-| LIC-LIC-001 | Licensing | License | 라이선스 영역 첫 번째 화면 |
-| COM-PRD-001 | Commercial | Product | 제품 영역 첫 번째 화면 |
+| DSET-DSM-001 | DataSet | DataSet Management | 데이터셋 관리 영역 첫 번째 화면 |
+| WRK-TSK-001 | Worker | Worker Task | 작업 관리 영역 첫 번째 화면 |
+| COML-PAY-001 | Commercial | Payment | 결제 영역 첫 번째 화면 |
+| LIC-LCM-001 | Licensing | License Lifecycle | 라이선스 수명주기 영역 첫 번째 화면 |
 
-위 코드는 규칙 설명용 예시다. 코드 사전에 등록되기 전까지 실제 발급된 코드로 간주하지 않는다.
+위 예시는 코드 Registry에 등록된 MODULE·AREA 조합을 사용하는 형식 예시다. 화면 구현이 확인되기 전까지 실제 화면이 등록된 것으로 간주하지 않는다.
 
 ### 3.2 구성 규칙
 
@@ -94,14 +95,37 @@ Screen Registry는 EDAN Tensor의 모든 사용자 화면을 식별하고, 화�
 
 ### 3.4 코드 사전 관리
 
-- MODULE 코드는 제품의 모듈 경계를 나타낸다.
-- AREA 코드는 해당 모듈 안의 업무 영역을 나타낸다.
-- 한 코드가 여러 의미로 사용되지 않도록 한다.
+- MODULE 코드는 실제 업무 모듈의 소유 경계를 나타낸다.
+- AREA 코드는 해당 모듈이 소유하는 화면 업무 영역을 나타낸다.
+- MODULE 코드는 제품 전체에서 유일해야 한다.
+- AREA 코드는 모듈 간에도 제품 전체에서 유일해야 하며 MODULE 코드와 중복될 수 없다.
+- 코드는 대문자 영문 2~4자로 구성하고 하이픈을 포함하지 않는다.
 - 코드 폐기 후 다른 의미로 재사용하지 않는다.
-- 프로젝트 디렉터리명이나 DB 약어를 검토 없이 화면 ID 코드로 전용하지 않는다.
-- 실제 모듈 및 업무 영역 코드 목록은 별도 검토 후 등록한다.
+- 프로젝트 디렉터리명, DB 약어 또는 기술 계층명을 검토 없이 화면 코드로 전용하지 않는다.
+- 코드의 정식 명칭·소유 모듈·상태·근거는 [Screen Module·Area Code Registry](../registry/screen-module-area-codes.csv)를 단일 기준으로 관리한다.
+- Registry에 없는 코드는 화면 ID에 사용할 수 없다.
 
-코드 사전이 확정되기 전에는 PLT, LIC, COM, TNT, ORG, PRD를 설명용 예시로만 사용한다.
+### 3.5 실제 저장소 대조 결과
+
+현재 소스 모듈은 Platform(PLT), DataSet(DSET), Worker(WRK), Commercial(COML), Licensing(LIC)으로 구분한다.
+
+- Commercial은 전역 업무 모듈 분류의 COM(Common Master)과 충돌하지 않도록 COML을 사용한다.
+- COM은 공통 마스터 업무 모듈의 미래 사용을 위해 예약하며 현재 구현 모듈로 간주하지 않는다.
+- Client, Hosts, SharedKernel은 API Client·실행 진입점·공통 기술 기반이므로 독립적인 업무 화면 소유 MODULE로 등록하지 않는다.
+- 실제 구현 소스가 없는 ERP·MES·MOM·QMS·PLM·EAM·IIoT·TAG 등 확장 업무 모듈은 현재 MODULE 코드로 발급하지 않는다.
+- 업무 용어 사전의 적용 모듈 표기와 실제 소스 프로젝트 경계가 다르면 실제 소스 소유권을 우선하고 차이는 Registry 비고에 남긴다.
+
+AREA 코드는 실제 소스 책임과 전역 업무 용어를 대조해 등록한다. 현재 등록된 코드는 다음 영역을 포함한다.
+
+| MODULE | AREA 코드 | 관리 영역 |
+| --- | --- | --- |
+| PLT | TNT, ORG, PJT, USR, MBR, AUTH, AUD, QTA | 테넌트·조직·프로젝트·사용자·소속·권한·감사·할당량 |
+| DSET | DSM, SCHM, STO, VLD | 데이터셋 관리·스키마·저장소·검증 |
+| WRK | TSK, DSP, WLS, DLQ, XDL | 작업·디스패치·Lease·실패 격리·외부 전달 |
+| COML | PAY | 결제 및 결제 공급자 경계 |
+| LIC | LCM, KEY | 라이선스 수명주기·서명키 |
+
+이 목록의 상세 영문명, 구현 근거 및 코드 상태는 CSV Registry를 기준으로 한다. 화면 ID 발급 전에 해당 조합이 승인 상태인지 확인한다.
 
 ## 4. 화면명 표준
 
@@ -223,6 +247,7 @@ Registry 파일은 다음 위치에서 관리한다.
       registry/
         screens.csv
         screen-service-bindings.csv
+        screen-module-area-codes.csv
 
 CSV는 UTF-8 인코딩, 첫 행 헤더, 쉼표 구분을 사용한다. Excel 호환성을 위해 RFC 4180 방식의 필드 인용 규칙을 따른다.
 
@@ -372,7 +397,7 @@ Registry 변경은 관련 소스 변경과 동일한 작업 단위에서 커밋�
 
 ## 14. 현재 저장소 기준 적용 상태
 
-2026-11-15 기준 main-auto 저장소의 전체 Git 트리(440개 경로)를 확인한 결과, .xaml, .xaml.cs, ViewModel 또는 Screen Registry로 식별되는 화면 구현 파일은 확인되지 않았다. src/Client에는 Client Contracts와 API Client가 존재한다.
+2026-11-15 기준 main-auto 저장소의 전체 Git 트리(444개 경로)를 확인한 결과, .xaml, .xaml.cs, ViewModel 또는 Screen Registry로 식별되는 화면 구현 파일은 확인되지 않았다. src/Client에는 Client Contracts와 API Client가 존재한다. 업무 화면 소유 모듈은 Platform, DataSet, Worker, Commercial, Licensing으로 구분하며 코드 정의는 screen-module-area-codes.csv에서 관리한다.
 
 따라서 최초 Registry는 헤더만 포함한 빈 데이터 파일로 시작한다. 실제 화면이 확인되기 전까지 예시 ID를 실제 화면으로 등록하거나 View·ViewModel·Service 연결을 추정하지 않는다.
 
