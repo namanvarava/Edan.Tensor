@@ -395,23 +395,14 @@ View와 ViewModel은 대응 관계를 유지하고, 화면명은 실제 업무 �
 
 **상태: 확정. Screen Registry 별도 관리와 소스 파일 기록을 병행한다.**
 
-Screen Registry는 화면 단위의 통합 목록으로 관리한다.
+Screen Registry는 화면 단위의 공식 목록으로 관리한다. 상세한 ID 발급, 화면명, View·ViewModel·Service 연결, 상태, CSV 구조, 변경 절차 및 검증 규칙은 [EDAN Screen Registry 관리 표준](EDAN-SCREEN-REGISTRY-STANDARD.md)을 따른다.
 
-| 항목 | 설명 |
-| --- | --- |
-| 화면 ID | 전역 고유 화면 식별자 |
-| 화면명 | 한국어 화면명 |
-| 영문 화면명 | 소스 파일·기술 문서에서 사용하는 이름 |
-| 모듈·업무 영역 | 화면 소유 모듈과 업무 영역 |
-| 목적 | 화면이 제공하는 업무 목적 |
-| 주요 기능 | 조회·검색·등록·수정 등 주요 기능 |
-| 구성 영역 | 검색·목록·상세 등 주요 화면 영역 |
-| View 경로 | 화면 파일 경로 |
-| ViewModel | 연결 ViewModel |
-| Service | 연결 서비스 계약 |
-| 상태 | 계획·개발·사용·폐기 등 관리 상태 |
+Registry 데이터는 다음 파일에서 관리한다.
 
-Screen Registry의 실제 파일 경로와 상태값 목록은 별도 관리 문서에서 정한다. 본 문서는 등록 필드와 ID 원칙만 정의한다.
+- 화면 기본 정보: ../registry/screens.csv
+- 화면과 Service 계약 관계: ../registry/screen-service-bindings.csv
+
+파일 상단 개요에는 화면명과 화면 ID 등 해당 파일의 핵심 정보를 기록한다. 화면 Registry의 필드 정의와 생명주기 규칙은 본 절에서 중복 정의하지 않고 전용 표준 문서에서 관리한다.
 
 ## 14. C# 파일 상단 개요
 
