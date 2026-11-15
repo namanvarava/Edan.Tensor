@@ -3,6 +3,7 @@
 개발자는 아키텍처 결정, 사용 가이드, 운영 절차 및 검증 기록을 이 폴더에서 확인할 수 있습니다.
 승인된 정책과 제안을 구분하고 설계 검토와 실제 실행 증거를 별도로 판단해야 합니다.
 
+- [EDAN 소스 개발 표준](standards/EDAN-SOURCE-DEVELOPMENT-STANDARD.md)
 - [프로젝트 구조](architecture/project-structure.md)
 - [데이터베이스 테이블명·컬럼명 표준 명명 규칙](database-naming-conventions.md)
 - [현재 Work 범위 감사](validation/2026-11-10-current-work-scope-audit.md)
