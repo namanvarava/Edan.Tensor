@@ -153,12 +153,17 @@ public abstract class RegistryScreenViewModel : ObservableObject
             case "PLT-MBR-001":
                 Add("조직 멤버십 부여", "organization-membership-grant");
                 Add("프로젝트 멤버십 부여", "project-membership-grant");
+                Add("Tenant 멤버십 역할·회수", "tenant-membership-update");
                 break;
-            case "PLT-AUTH-001": Add("정책 활성화 변경", "policy-enabled"); break;
+            case "PLT-AUTH-001":
+                Add("정책 활성화 변경", "policy-enabled");
+                Add("권한 평가", "policy-evaluate");
+                break;
             case "PLT-AUD-001":
                 Add("감사 아카이브 생성", "audit-archive");
                 Add("아카이브 작업 생성", "audit-archive-job");
                 Add("아카이브 작업 조회", "audit-archive-job-get");
+                Add("아카이브 작업 목록", "audit-archive-job-list");
                 Add("아카이브 작업 재시도", "audit-archive-job-retry");
                 Add("아카이브 작업 검증", "audit-archive-job-verify");
                 Add("보관 스케줄 조회·수정", "audit-schedule");
@@ -175,10 +180,13 @@ public abstract class RegistryScreenViewModel : ObservableObject
                 Add("Quota 이벤트 조회", "quota-events");
                 break;
             case "DSET-VLD-001":
+                Add("검증 프로필·실행 목록", "validation-list");
                 Add("검증 프로필 생성", "validation-profile");
                 Add("프로필 revision 추가", "validation-profile-revision");
                 Add("검증 실행 삭제", "validation-delete");
                 break;
+            case "WRK-DLQ-001": Add("Replay 이력 조회", "replay-history"); break;
+            case "WRK-XDL-001": Add("외부 전달 수동 재시도", "delivery-retry"); break;
         }
     }
 

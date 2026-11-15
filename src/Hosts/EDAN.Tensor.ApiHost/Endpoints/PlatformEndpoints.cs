@@ -107,23 +107,41 @@ public static class PlatformEndpoints
             return result is null ? Results.NotFound(new ApiError("platform.user.not_found", "사용자를 찾을 수 없습니다.")) : Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        tenantGroup.MapGet("/{tenantId:guid}/memberships", async (Guid tenantId,
-            PlatformDirectoryService service, CancellationToken token) =>
+        tenantGroup.MapGet("/{tenantId:guid}/memberships", async (Guid tenantId, string? subjectId,
+            TenantMembershipStatus? status, int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
         {
+            if (subjectId is not null || status.HasValue || page.HasValue || pageSize.HasValue)
+            {
+                var paged = await service.GetTenantMembershipsPageAsync(new TenantId(tenantId), subjectId, status,
+                    page ?? 1, pageSize ?? 50, token);
+                return Results.Ok(paged);
+            }
             var result = await service.GetTenantMembershipsAsync(new TenantId(tenantId), token);
             return Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/organizations/{organizationId:guid}/memberships", async (Guid tenantId, Guid organizationId,
-            PlatformDirectoryService service, CancellationToken token) =>
+            string? subjectId, ScopedMembershipStatus? status, int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
         {
+            if (subjectId is not null || status.HasValue || page.HasValue || pageSize.HasValue)
+            {
+                var paged = await service.GetOrganizationMembershipsPageAsync(new TenantId(tenantId), new OrganizationId(organizationId),
+                    subjectId, status, page ?? 1, pageSize ?? 50, token);
+                return Results.Ok(paged);
+            }
             var result = await service.GetOrganizationMembershipsAsync(new TenantId(tenantId), new OrganizationId(organizationId), token);
             return Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/organizations/{organizationId:guid}/projects/{projectId:guid}/memberships", async (Guid tenantId, Guid organizationId, Guid projectId,
-            PlatformDirectoryService service, CancellationToken token) =>
+            string? subjectId, ScopedMembershipStatus? status, int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
         {
+            if (subjectId is not null || status.HasValue || page.HasValue || pageSize.HasValue)
+            {
+                var paged = await service.GetProjectMembershipsPageAsync(new TenantId(tenantId), new OrganizationId(organizationId),
+                    new ProjectId(projectId), subjectId, status, page ?? 1, pageSize ?? 50, token);
+                return Results.Ok(paged);
+            }
             var result = await service.GetProjectMembershipsAsync(new TenantId(tenantId), new OrganizationId(organizationId), new ProjectId(projectId), token);
             return Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
@@ -197,32 +215,69 @@ public static class PlatformEndpoints
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/authorization-policies",
-            async (Guid tenantId, AuthorizationPolicyService service, CancellationToken token) =>
+            async (Guid tenantId, Guid? organizationId, Guid? projectId, string? subjectId, string? action,
+                AuthorizationPolicyEffect? effect, bool? isEnabled, int page, int pageSize,
+                AuthorizationPolicyService service, CancellationToken token) =>
             {
-                var policies = await service.GetByTenantAsync(new TenantId(tenantId), token);
-                return Results.Ok(policies.Select(x => new
+                try
                 {
-                    Id = x.Id.Value,
-                    OrganizationId = x.OrganizationId?.Value,
-                    ProjectId = x.ProjectId?.Value,
-                    x.SubjectId,
-                    x.Action,
-                    x.ResourceType,
-                    Effect = x.Effect.ToString(),
-                    x.Priority,
-                    x.IsEnabled,
-                    x.CreatedAtUtc
-                }));
+                    var result = await service.GetPageAsync(new TenantId(tenantId),
+                        organizationId is Guid organization ? new OrganizationId(organization) : null,
+                        projectId is Guid project ? new ProjectId(project) : null,
+                        subjectId, action, effect, isEnabled, page == 0 ? 1 : page,
+                        pageSize == 0 ? 50 : pageSize, token);
+                    return Results.Ok(new
+                    {
+                        result.TotalCount,
+                        result.Page,
+                        result.PageSize,
+                        Items = result.Items.Select(x => new
+                        {
+                            Id = x.Id.Value,
+                            OrganizationId = x.OrganizationId?.Value,
+                            ProjectId = x.ProjectId?.Value,
+                            x.SubjectId,
+                            x.Action,
+                            x.ResourceType,
+                            Effect = x.Effect.ToString(),
+                            x.Priority,
+                            x.IsEnabled,
+                            x.CreatedAtUtc
+                        })
+                    });
+                }
+                catch (ArgumentOutOfRangeException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/authorization-policies/evaluate",
+            async (Guid tenantId, EvaluateAuthorizationPolicyRequest request, HttpContext context,
+                PlatformAuthorizationService service, CancellationToken token) =>
+            {
+                var subjectId = string.IsNullOrWhiteSpace(request.SubjectId)
+                    ? context.User.FindFirst("sub")?.Value
+                    : request.SubjectId;
+                if (string.IsNullOrWhiteSpace(subjectId)) return Results.Unauthorized();
+                try
+                {
+                    var result = await service.EvaluateAsync(new TenantId(tenantId),
+                        request.OrganizationId is Guid organization ? new OrganizationId(organization) : null,
+                        request.ProjectId is Guid project ? new ProjectId(project) : null,
+                        subjectId, request.Action, request.ResourceType, token);
+                    return Results.Ok(new { result.IsAllowed, result.ReasonCode, result.MatchedPolicyId });
+                }
+                catch (ArgumentException ex) { return ValidationError(ex.Message); }
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         // 저장 용량 정책은 Tenant 관리자만 변경하며 조회도 제한된 페이지로 반환합니다.
         tenantGroup.MapGet("/{tenantId:guid}/storage-quota-policies",
             async (Guid tenantId, StorageQuotaPolicyManagementService service, CancellationToken token,
+                StorageQuotaPolicyScope? scope = null, bool? isEnabled = null,
                 int page = 1, int pageSize = 50) =>
             {
                 try
                 {
-                    var result = await service.GetPoliciesAsync(new TenantId(tenantId), page, pageSize, token);
+                    var result = await service.GetPoliciesAsync(new TenantId(tenantId), scope, isEnabled,
+                        page, pageSize, token);
                     return Results.Ok(new
                     {
                         result.TotalCount,
@@ -474,6 +529,19 @@ public static class PlatformEndpoints
                     : Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/archive-jobs",
+            async (Guid tenantId, string? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+                int page, int pageSize, AuthorizationAuditArchiveJobService service, CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetPageAsync(new TenantId(tenantId), status, fromUtc, toUtc,
+                        page == 0 ? 1 : page, pageSize == 0 ? 50 : pageSize, token);
+                    return Results.Ok(result);
+                }
+                catch (ArgumentOutOfRangeException ex) { return ValidationError(ex.Message); }
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/authorization-audit/archive-jobs/{jobId:guid}/retry",
             async (Guid tenantId, Guid jobId, AuthorizationAuditArchiveJobService service, CancellationToken token) =>
             {
@@ -568,6 +636,50 @@ public static class PlatformEndpoints
                     return ValidationError("지원하지 않는 프로젝트 역할입니다.");
                 var result = await service.GrantProjectAsync(new TenantId(tenantId), new OrganizationId(organizationId), new ProjectId(projectId), request.SubjectId, role, token);
                 return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPatch("/{tenantId:guid}/memberships/{membershipId:guid}",
+            async (Guid tenantId, Guid membershipId, UpdateMembershipRequest request, TenantMembershipService service, CancellationToken token) =>
+            {
+                TenantRole? role = null;
+                if (!string.IsNullOrWhiteSpace(request.Role))
+                {
+                    if (!Enum.TryParse(request.Role, true, out TenantRole parsed))
+                        return ValidationError("지원하지 않는 테넌트 역할입니다.");
+                    role = parsed;
+                }
+                var result = await service.UpdateAsync(new TenantId(tenantId), new TenantMembershipId(membershipId), role, request.Revoke, token);
+                return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPatch("/{tenantId:guid}/organizations/{organizationId:guid}/memberships/{membershipId:guid}",
+            async (Guid tenantId, Guid organizationId, Guid membershipId, UpdateMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
+            {
+                OrganizationRole? role = null;
+                if (!string.IsNullOrWhiteSpace(request.Role))
+                {
+                    if (!Enum.TryParse(request.Role, true, out OrganizationRole parsed))
+                        return ValidationError("지원하지 않는 조직 역할입니다.");
+                    role = parsed;
+                }
+                var result = await service.UpdateOrganizationAsync(new TenantId(tenantId), new OrganizationId(organizationId),
+                    new OrganizationMembershipId(membershipId), role, request.Revoke, token);
+                return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPatch("/{tenantId:guid}/organizations/{organizationId:guid}/projects/{projectId:guid}/memberships/{membershipId:guid}",
+            async (Guid tenantId, Guid organizationId, Guid projectId, Guid membershipId, UpdateMembershipRequest request, ScopedMembershipService service, CancellationToken token) =>
+            {
+                ProjectRole? role = null;
+                if (!string.IsNullOrWhiteSpace(request.Role))
+                {
+                    if (!Enum.TryParse(request.Role, true, out ProjectRole parsed))
+                        return ValidationError("지원하지 않는 프로젝트 역할입니다.");
+                    role = parsed;
+                }
+                var result = await service.UpdateProjectAsync(new TenantId(tenantId), new OrganizationId(organizationId), new ProjectId(projectId),
+                    new ProjectMembershipId(membershipId), role, request.Revoke, token);
+                return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         // 조직 생성은 Tenant 관리자만 수행하여 일반 구성원의 Tenant 구조 변경을 차단합니다.
@@ -671,9 +783,12 @@ public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
+public sealed record UpdateMembershipRequest(string? Role, bool Revoke = false);
 public sealed record CreateAuthorizationPolicyRequest(Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action, string ResourceType, string Effect, int Priority);
 public sealed record UpdateAuthorizationPolicyRequest(string Effect, int Priority);
 public sealed record SetAuthorizationPolicyEnabledRequest(bool IsEnabled);
+public sealed record EvaluateAuthorizationPolicyRequest(Guid? OrganizationId, Guid? ProjectId,
+    string? SubjectId, string Action, string ResourceType);
 public sealed record VerifyAuthorizationAuditIntegrityRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
 public sealed record CreateAuthorizationAuditArchiveRequest(DateTimeOffset FromUtc, DateTimeOffset ToUtc);
 public sealed record VerifyAuthorizationAuditArchiveRequest(string? ExpectedSha256);

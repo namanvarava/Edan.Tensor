@@ -11,5 +11,7 @@ public interface ITenantMembershipRepository
     Task<IReadOnlyList<TenantMembership>> GetActiveForSubjectAsync(string subjectId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TenantMembership>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<TenantMembership>>([]);
+    Task<TenantMembership?> GetByIdAsync(TenantId tenantId, TenantMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<TenantMembership?>(null);
     void Add(TenantMembership membership);
 }

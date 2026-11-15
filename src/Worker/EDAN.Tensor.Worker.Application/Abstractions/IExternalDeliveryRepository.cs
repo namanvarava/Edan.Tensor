@@ -5,6 +5,10 @@ namespace EDAN.Tensor.Worker.Application.Abstractions;
 /// <summary>외부 전달 상태를 Tenant 범위로 영속화하는 계약입니다.</summary>
 public interface IExternalDeliveryRepository
 {
+    Task<ExternalDeliveryPage> GetPageAsync(Guid tenantId, ExternalDeliveryStatus? status,
+        string? targetHost, string? errorCode, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("외부 전달 목록 조회가 구현되지 않았습니다.");
     /// <summary>외부 전달을 저장하거나 동일한 Tenant·Idempotency Key의 기존 전달을 원자적으로 반환합니다.</summary>
     /// <param name="tenantId">외부 전달을 소유하는 Tenant 식별자입니다.</param>
     /// <param name="targetUri">호출할 허용 대상 URI입니다.</param>
@@ -25,6 +29,9 @@ public interface IExternalDeliveryRepository
         CancellationToken cancellationToken = default);
     Task<ExternalDeliverySnapshot?> GetByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey,
         CancellationToken cancellationToken = default);
+    Task<ExternalDeliverySnapshot?> PrepareRetryAsync(Guid tenantId, Guid deliveryId,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("외부 전달 수동 재시도가 구현되지 않았습니다.");
     /// <summary>아직 실행되지 않은 외부 전달을 Worker 등록 실패 보상으로 제거합니다.</summary>
     Task<bool> DeleteUnqueuedAsync(Guid tenantId, Guid deliveryId, string idempotencyKey,
         CancellationToken cancellationToken = default);
@@ -56,3 +63,7 @@ public sealed record ExternalDeliverySnapshot(
 /// <param name="Delivery">새로 저장했거나 기존 멱등 요청에서 찾은 전달입니다.</param>
 /// <param name="Created">이번 호출이 전달 레코드를 새로 저장했으면 <c>true</c>입니다.</param>
 public sealed record ExternalDeliveryCreateResult(ExternalDeliverySnapshot Delivery, bool Created);
+
+/// <summary>외부 전달의 필터·페이징 결과입니다.</summary>
+public sealed record ExternalDeliveryPage(
+    IReadOnlyList<ExternalDeliverySnapshot> Items, int TotalCount, int Page, int PageSize);

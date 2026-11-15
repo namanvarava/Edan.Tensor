@@ -101,6 +101,18 @@ public sealed class ExternalDeliveryService(
     public Task<ExternalDeliverySnapshot?> GetAsync(Guid tenantId, Guid deliveryId,
         CancellationToken cancellationToken = default) => repository.GetAsync(tenantId, deliveryId, cancellationToken);
 
+    /// <summary>Tenant 범위 전달을 상태·호스트·오류·생성 기간으로 필터링해 페이지 조회합니다.</summary>
+    public Task<ExternalDeliveryPage> GetPageAsync(Guid tenantId, ExternalDeliveryStatus? status,
+        string? targetHost, string? errorCode, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        int page, int pageSize, CancellationToken cancellationToken = default) =>
+        repository.GetPageAsync(tenantId, status, targetHost, errorCode, fromUtc, toUtc,
+            page, pageSize, cancellationToken);
+
+    /// <summary>성공하지 않은 전달을 대기 상태로 되돌려 운영자 재시도를 준비합니다.</summary>
+    public Task<ExternalDeliverySnapshot?> PrepareRetryAsync(Guid tenantId, Guid deliveryId,
+        CancellationToken cancellationToken = default) =>
+        repository.PrepareRetryAsync(tenantId, deliveryId, cancellationToken);
+
     /// <summary>Tenant 범위에서 Idempotency Key로 기존 전달을 찾습니다.</summary>
     public Task<ExternalDeliverySnapshot?> GetByIdempotencyKeyAsync(Guid tenantId, string idempotencyKey,
         CancellationToken cancellationToken = default) => repository.GetByIdempotencyKeyAsync(

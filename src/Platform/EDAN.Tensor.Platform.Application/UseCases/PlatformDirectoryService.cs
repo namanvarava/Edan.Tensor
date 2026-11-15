@@ -90,15 +90,54 @@ public sealed class PlatformDirectoryService(
         (await tenantMemberships.GetForTenantAsync(tenantId, cancellationToken)).Select(x =>
             new TenantMembershipView(x.Id.Value, x.TenantId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())).ToArray();
 
+    public async Task<PlatformPage<TenantMembershipView>> GetTenantMembershipsPageAsync(
+        TenantId tenantId, string? subjectId, TenantMembershipStatus? status, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = (await tenantMemberships.GetForTenantAsync(tenantId, cancellationToken)).AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subjectId))
+            query = query.Where(x => x.SubjectId.Contains(subjectId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        return Page(query.OrderBy(x => x.SubjectId).Select(x =>
+            new TenantMembershipView(x.Id.Value, x.TenantId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())), page, pageSize);
+    }
+
     public async Task<IReadOnlyList<OrganizationMembershipView>> GetOrganizationMembershipsAsync(
         TenantId tenantId, OrganizationId organizationId, CancellationToken cancellationToken = default) =>
         (await scopedMemberships.GetOrganizationMembershipsAsync(tenantId, organizationId, cancellationToken)).Select(x =>
             new OrganizationMembershipView(x.Id.Value, x.TenantId.Value, x.OrganizationId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())).ToArray();
 
+    public async Task<PlatformPage<OrganizationMembershipView>> GetOrganizationMembershipsPageAsync(
+        TenantId tenantId, OrganizationId organizationId, string? subjectId, ScopedMembershipStatus? status,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = (await scopedMemberships.GetOrganizationMembershipsAsync(tenantId, organizationId, cancellationToken)).AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subjectId))
+            query = query.Where(x => x.SubjectId.Contains(subjectId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        return Page(query.OrderBy(x => x.SubjectId).Select(x =>
+            new OrganizationMembershipView(x.Id.Value, x.TenantId.Value, x.OrganizationId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())), page, pageSize);
+    }
+
     public async Task<IReadOnlyList<ProjectMembershipView>> GetProjectMembershipsAsync(
         TenantId tenantId, OrganizationId organizationId, ProjectId projectId, CancellationToken cancellationToken = default) =>
         (await scopedMemberships.GetProjectMembershipsAsync(tenantId, organizationId, projectId, cancellationToken)).Select(x =>
             new ProjectMembershipView(x.Id.Value, x.TenantId.Value, x.OrganizationId.Value, x.ProjectId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())).ToArray();
+
+    public async Task<PlatformPage<ProjectMembershipView>> GetProjectMembershipsPageAsync(
+        TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string? subjectId,
+        ScopedMembershipStatus? status, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = (await scopedMemberships.GetProjectMembershipsAsync(tenantId, organizationId, projectId, cancellationToken)).AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subjectId))
+            query = query.Where(x => x.SubjectId.Contains(subjectId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        return Page(query.OrderBy(x => x.SubjectId).Select(x =>
+            new ProjectMembershipView(x.Id.Value, x.TenantId.Value, x.OrganizationId.Value, x.ProjectId.Value, x.SubjectId, x.Role.ToString(), x.Status.ToString())), page, pageSize);
+    }
 
     public async Task<Result> UpdateTenantAsync(TenantId tenantId, string? name, TenantStatus? status, CancellationToken cancellationToken = default)
     {

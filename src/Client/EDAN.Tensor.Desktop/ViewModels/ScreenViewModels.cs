@@ -293,13 +293,19 @@ public sealed class MembershipManagementViewModel(IDesktopScreenService session)
     {
         Fields.Clear();
         if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var items = await Session.Client!.GetTenantMembershipsAsync(tenantId, cancellationToken);
-            AddField("Tenant 멤버십 수", items.Count.ToString());
-            foreach (var item in items)
+            var page = await Session.Client!.GetTenantMembershipsFilteredAsync(tenantId, SearchText,
+                page: pageNumber, pageSize: pageSize, cancellationToken: cancellationToken);
+            TargetOptions.Clear();
+            AddField("전체 Tenant 멤버십 수", page.TotalCount.ToString());
+            foreach (var item in page.Items)
+            {
                 AddField(item.SubjectId, $"{item.Role} · {item.Status}");
-            StatusMessage = $"{items.Count}개의 Tenant 멤버십을 조회했습니다.";
+                AddTargetOption(item.Id, $"멤버십 선택: {item.SubjectId}");
+            }
+            StatusMessage = $"{page.Items.Count}개의 Tenant 멤버십을 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -326,6 +332,17 @@ public sealed class MembershipManagementViewModel(IDesktopScreenService session)
         {
             switch (operation)
             {
+                case "tenant-membership-update":
+                    if (!TryGetTargetId(out var tenantMembershipId)
+                        || !TryParsePayload<UpdateMembershipRequestContract>(out var tenantMembershipRequest))
+                    {
+                        AddField("Tenant 멤버십 수정 조건", "대상 멤버십 ID와 Role 또는 Revoke JSON이 필요합니다.");
+                        StatusMessage = "Tenant 멤버십 수정 조건 입력 전";
+                        return;
+                    }
+                    await Session.Client!.UpdateTenantMembershipAsync(tenantId, tenantMembershipId, tenantMembershipRequest!);
+                    StatusMessage = "Tenant 멤버십 역할·회수 변경을 요청했습니다.";
+                    break;
                 case "organization-membership-grant":
                     if (!Guid.TryParse(GetInputText("OrganizationId"), out var organizationId)
                         || organizationId == Guid.Empty
@@ -371,17 +388,19 @@ public sealed class AuthorizationPolicyManagementViewModel(IDesktopScreenService
     {
         Fields.Clear();
         if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var policies = await Session.Client!.GetAuthorizationPoliciesAsync(tenantId, cancellationToken);
+            var policyPage = await Session.Client!.GetAuthorizationPoliciesAsync(tenantId,
+                page: pageNumber, pageSize: pageSize, cancellationToken: cancellationToken);
             TargetOptions.Clear();
-            AddField("정책 수", policies.Count.ToString());
-            foreach (var policy in policies)
+            AddField("정책 수", $"{policyPage.Items.Count} / {policyPage.TotalCount}");
+            foreach (var policy in policyPage.Items)
             {
                 AddField(policy.Action, $"{policy.SubjectId} · {policy.ResourceType} · {policy.Effect} · {(policy.IsEnabled ? "활성" : "비활성")}");
                 AddTargetOption(policy.Id, $"정책 선택: {policy.Action}");
             }
-            StatusMessage = $"{policies.Count}개의 권한 정책을 조회했습니다. Tenant 관리자 권한이 필요합니다.";
+            StatusMessage = $"{policyPage.Items.Count}개의 권한 정책을 조회했습니다. Tenant 관리자 권한이 필요합니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -413,13 +432,25 @@ public sealed class AuthorizationPolicyManagementViewModel(IDesktopScreenService
     protected override async Task ExecuteSecondaryCommandAsync(string operation)
     {
         Fields.Clear();
-        if (operation != "policy-enabled" || !TryGetTenant(out var tenantId)
-            || !TryGetTargetId(out var policyId)
-            || !TryParseExplicitPayload<SetAuthorizationPolicyEnabledRequestContract>(out var request)) return;
+        if (!TryGetTenant(out var tenantId)) return;
         try
         {
-            await Session.Client!.SetAuthorizationPolicyEnabledAsync(tenantId, policyId, request!);
-            StatusMessage = "권한 정책 활성화 상태 변경을 요청했습니다.";
+            if (operation == "policy-enabled")
+            {
+                if (!TryGetTargetId(out var policyId)
+                    || !TryParseExplicitPayload<SetAuthorizationPolicyEnabledRequestContract>(out var request)) return;
+                await Session.Client!.SetAuthorizationPolicyEnabledAsync(tenantId, policyId, request!);
+                StatusMessage = "권한 정책 활성화 상태 변경을 요청했습니다.";
+            }
+            else if (operation == "policy-evaluate")
+            {
+                if (!TryParseExplicitPayload<EvaluateAuthorizationPolicyRequestContract>(out var evaluateRequest)) return;
+                var decision = await Session.Client!.EvaluateAuthorizationPolicyAsync(tenantId, evaluateRequest!);
+                AddField("허용 여부", decision.IsAllowed ? "허용" : "거부");
+                AddField("사유", decision.ReasonCode);
+                AddField("일치 정책", decision.MatchedPolicyId ?? "없음");
+                StatusMessage = "권한 정책 평가를 완료했습니다.";
+            }
         }
         catch (Exception exception) { ShowException(exception); }
     }
@@ -530,6 +561,21 @@ public sealed class AuthorizationAuditManagementViewModel(IDesktopScreenService 
                     AddField("시도 수", jobDetails.Job.AttemptCount.ToString());
                     AddField("최근 오류", jobDetails.Job.FailureReason ?? "없음");
                     StatusMessage = "감사 아카이브 작업 상세를 조회했습니다.";
+                    break;
+                case "audit-archive-job-list":
+                    if (!TryGetPage(out var jobPageNumber, out var jobPageSize)) return;
+                    var jobs = await Session.Client!.GetAuthorizationAuditArchiveJobsAsync(tenantId,
+                        status: string.IsNullOrWhiteSpace(SearchText) ? null : SearchText,
+                        page: jobPageNumber, pageSize: jobPageSize);
+                    TargetOptions.Clear();
+                    AddField("페이지", $"{jobs.Page} / {jobs.PageSize}");
+                    AddField("전체 작업 수", jobs.TotalCount.ToString());
+                    foreach (var item in jobs.Items)
+                    {
+                        AddField(item.JobId.ToString("D"), $"{item.Status} · {item.FromUtc:O} ~ {item.ToUtc:O}");
+                        AddTargetOption(item.JobId, $"Archive Job 선택: {item.JobId:D}");
+                    }
+                    StatusMessage = $"{jobs.Items.Count}개의 아카이브 작업을 조회했습니다.";
                     break;
                 case "audit-archive-job-retry":
                     if (!TryGetTargetId(out var retryJobId)) return;
@@ -665,28 +711,30 @@ public sealed class DataSetManagementViewModel(IDesktopScreenService session)
     public override async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var dataSetId))
-        {
-            AddField("조회 조건", "Tenant ID와 대상 ID에 DataSet ID를 입력하면 실제 metadata를 조회합니다.");
-            StatusMessage = "DataSet ID 입력 전";
-            return;
-        }
+        if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var dataSet = await Session.Client!.GetDataSetAsync(tenantId, dataSetId, cancellationToken);
-            if (dataSet is null)
+            var page = await Session.Client!.GetDataSetsAsync(tenantId, search: SearchText,
+                page: pageNumber, pageSize: pageSize, cancellationToken: cancellationToken);
+            TargetOptions.Clear();
+            AddField("페이지", $"{page.Page} / {page.PageSize}");
+            AddField("전체 DataSet 수", page.TotalCount.ToString());
+            foreach (var item in page.Items)
             {
-                AddField("결과", "선택한 Tenant에서 DataSet을 찾을 수 없습니다.");
-                StatusMessage = "DataSet 없음";
-                return;
+                AddField(item.Name, $"{item.Status} · v{item.Version} · schema {item.CurrentSchemaVersion?.ToString() ?? "-"}");
+                AddTargetOption(item.Id, $"DataSet 선택: {item.Name}");
             }
-            AddField("이름", dataSet.Name);
-            AddField("범위", $"Organization {dataSet.OrganizationId:D} / Project {dataSet.ProjectId:D}");
-            AddField("상태", dataSet.Status);
-            AddField("버전", dataSet.Version.ToString());
-            AddField("스키마", dataSet.CurrentSchemaVersion?.ToString() ?? "미등록");
-            AddField("저장 어댑터", $"{dataSet.StorageAdapter} / {dataSet.ContentFormat}");
-            StatusMessage = "DataSet metadata를 조회했습니다.";
+            if (TryGetTargetId(out var dataSetId))
+            {
+                var dataSet = await Session.Client.GetDataSetAsync(tenantId, dataSetId, cancellationToken);
+                if (dataSet is not null)
+                {
+                    AddField("선택 DataSet 범위", $"Organization {dataSet.OrganizationId:D} / Project {dataSet.ProjectId:D}");
+                    AddField("저장 어댑터", $"{dataSet.StorageAdapter} / {dataSet.ContentFormat}");
+                }
+            }
+            StatusMessage = $"{page.Items.Count}개의 DataSet metadata를 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -728,12 +776,11 @@ public sealed class DataSetSchemaManagementViewModel(IDesktopScreenService sessi
         }
         try
         {
-            var dataSet = await Session.Client!.GetDataSetAsync(tenantId, dataSetId, cancellationToken);
-            if (dataSet is null) { AddField("결과", "DataSet을 찾을 수 없습니다."); StatusMessage = "DataSet 없음"; return; }
-            AddField("현재 schema version", dataSet.CurrentSchemaVersion?.ToString() ?? "미등록");
-            foreach (var revision in dataSet.SchemaRevisions)
+            var schemaPage = await Session.Client!.GetDataSetSchemaRevisionsAsync(tenantId, dataSetId, cancellationToken);
+            AddField("현재 schema version", schemaPage.CurrentSchemaVersion?.ToString() ?? "미등록");
+            foreach (var revision in schemaPage.Items)
                 AddField($"Revision {revision.Version}", $"{revision.CreatedAtUtc:O} · {revision.SchemaJson}");
-            StatusMessage = $"{dataSet.SchemaRevisions.Count}개의 schema revision을 조회했습니다.";
+            StatusMessage = $"{schemaPage.Items.Count}개의 schema revision을 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -846,24 +893,33 @@ public sealed class DataSetValidationManagementViewModel(IDesktopScreenService s
     public override async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var executionId))
-        {
-            AddField("조회 조건", "Tenant ID와 검증 실행 ID를 입력하면 실행 상태와 상세 결과를 조회합니다.");
-            StatusMessage = "검증 실행 ID 입력 전";
-            return;
-        }
+        if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var execution = await Session.Client!.GetDataSetValidationAsync(tenantId, executionId, cancellationToken);
-            if (execution is null) { AddField("결과", "검증 실행을 찾을 수 없습니다."); StatusMessage = "검증 실행 없음"; return; }
-            AddField("상태", execution.Status);
-            AddField("진행", $"{execution.ProcessedRecords} / {execution.TotalRecords}");
-            AddField("오류·경고", $"{execution.ErrorCount} / {execution.WarningCount}");
-            AddField("DataSet·Schema", $"{execution.DataSetId:D} / v{execution.SchemaVersion}");
-            var details = await Session.Client.GetDataSetValidationDetailsAsync(tenantId, executionId, take: 20, cancellationToken: cancellationToken);
-            foreach (var detail in details.Items)
-                AddField($"행 {detail.RowNumber}", $"{detail.Severity} · {detail.Code} · {detail.Message}");
-            StatusMessage = $"검증 실행과 상세 결과 {details.Items.Count}건을 조회했습니다.";
+            var page = await Session.Client!.GetDataSetValidationsAsync(tenantId,
+                page: pageNumber, pageSize: pageSize, cancellationToken: cancellationToken);
+            TargetOptions.Clear();
+            AddField("페이지", $"{page.Page} / {page.PageSize}");
+            AddField("전체 실행 수", page.TotalCount.ToString());
+            foreach (var item in page.Items)
+            {
+                AddField(item.Id.ToString("D"), $"{item.Status} · DataSet {item.DataSetId:D} · {item.ErrorCount} errors");
+                AddTargetOption(item.Id, $"검증 실행 선택: {item.Id:D}");
+            }
+            if (TryGetTargetId(out var executionId))
+            {
+                var execution = await Session.Client.GetDataSetValidationAsync(tenantId, executionId, cancellationToken);
+                if (execution is not null)
+                {
+                    AddField("선택 실행 상태", execution.Status);
+                    var details = await Session.Client.GetDataSetValidationDetailsAsync(tenantId, executionId,
+                        take: 20, cancellationToken: cancellationToken);
+                    foreach (var detail in details.Items)
+                        AddField($"행 {detail.RowNumber}", $"{detail.Severity} · {detail.Code} · {detail.Message}");
+                }
+            }
+            StatusMessage = $"{page.Items.Count}개의 검증 실행을 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -894,12 +950,30 @@ public sealed class DataSetValidationManagementViewModel(IDesktopScreenService s
         {
             switch (operation)
             {
+                case "validation-list":
+                    if (!TryGetPage(out var validationPageNumber, out var validationPageSize)) return;
+                    var profiles = await Session.Client!.GetDataSetValidationProfilesAsync(tenantId,
+                        search: SearchText, page: validationPageNumber, pageSize: validationPageSize);
+                    var executions = await Session.Client.GetDataSetValidationsAsync(tenantId,
+                        page: validationPageNumber, pageSize: validationPageSize);
+                    TargetOptions.Clear();
+                    AddField("프로필", $"{profiles.Items.Count} / {profiles.TotalCount}");
+                    foreach (var profile in profiles.Items)
+                        AddField($"Profile {profile.Name}", $"revision {profile.Revision} · {profile.Id:D}");
+                    AddField("실행", $"{executions.Items.Count} / {executions.TotalCount}");
+                    foreach (var execution in executions.Items)
+                    {
+                        AddField($"Execution {execution.Id:D}", $"{execution.Status} · DataSet {execution.DataSetId:D}");
+                        AddTargetOption(execution.Id, $"검증 실행 선택: {execution.Id:D}");
+                    }
+                    StatusMessage = "검증 프로필과 실행 목록을 조회했습니다.";
+                    break;
                 case "validation-profile":
                     if (!TryParseExplicitPayload<CreateDataSetValidationProfileRequestContract>(out var profileRequest)) return;
-                    var profile = await Session.Client!.CreateDataSetValidationProfileAsync(tenantId, profileRequest!);
-                    LastResultIdText = profile.Id.ToString("D");
-                    AddField("Profile ID", profile.Id.ToString("D"));
-                    AddField("Revision", profile.Revision.ToString());
+                    var createdProfile = await Session.Client!.CreateDataSetValidationProfileAsync(tenantId, profileRequest!);
+                    LastResultIdText = createdProfile.Id.ToString("D");
+                    AddField("Profile ID", createdProfile.Id.ToString("D"));
+                    AddField("Revision", createdProfile.Revision.ToString());
                     StatusMessage = "검증 프로필을 생성했습니다.";
                     break;
                 case "validation-profile-revision":
@@ -928,22 +1002,31 @@ public sealed class WorkerTaskMonitoringViewModel(IDesktopScreenService session)
     public override async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var taskId))
-        {
-            AddField("조회 조건", "Tenant ID와 Worker 작업 ID를 입력하면 Lease·진행 상태를 조회합니다.");
-            StatusMessage = "Worker 작업 ID 입력 전";
-            return;
-        }
+        if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var task = await Session.Client!.GetWorkerTaskAsync(tenantId, taskId, cancellationToken);
-            if (task is null) { AddField("결과", "Tenant 범위에서 Worker 작업을 찾을 수 없습니다."); StatusMessage = "작업 없음"; return; }
-            AddField("유형·상태", $"{task.TaskType} · {task.Status}");
-            AddField("진행률", $"{task.ProgressPercent}% · {task.ProgressStage ?? "단계 없음"}");
-            AddField("시도", $"{task.AttemptCount} / {task.MaxAttempts}");
-            AddField("Fencing·Checkpoint", $"{task.FencingToken} / {task.CheckpointVersion}");
-            AddField("메시지", task.ProgressMessage ?? "없음");
-            StatusMessage = "Worker 작업 상태를 조회했습니다.";
+            var page = await Session.Client!.GetWorkerTasksAsync(tenantId, page: pageNumber,
+                pageSize: pageSize, cancellationToken: cancellationToken);
+            TargetOptions.Clear();
+            AddField("페이지", $"{page.Page} / {page.PageSize}");
+            AddField("전체 작업 수", page.TotalCount.ToString());
+            foreach (var item in page.Items)
+            {
+                AddField(item.TaskType, $"{item.Status} · {item.ProgressPercent}% · {item.CreatedAtUtc:O}");
+                AddTargetOption(item.Id, $"작업 선택: {item.TaskType}");
+            }
+            if (TryGetTargetId(out var taskId))
+            {
+                var task = await Session.Client.GetWorkerTaskAsync(tenantId, taskId, cancellationToken);
+                if (task is not null)
+                {
+                    AddField("선택 작업 진행", $"{task.ProgressPercent}% · {task.ProgressStage ?? "단계 없음"}");
+                    AddField("Fencing·Checkpoint", $"{task.FencingToken} / {task.CheckpointVersion}");
+                    AddField("메시지", task.ProgressMessage ?? "없음");
+                }
+            }
+            StatusMessage = $"{page.Items.Count}개의 Worker 작업을 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -1010,6 +1093,24 @@ public sealed class DeadLetterQueueManagementViewModel(IDesktopScreenService ses
         }
         catch (Exception exception) { ShowException(exception); }
     }
+
+    protected override async Task ExecuteSecondaryCommandAsync(string operation)
+    {
+        Fields.Clear();
+        if (operation != "replay-history" || !TryGetTenant(out var tenantId)
+            || !TryGetPage(out var pageNumber, out var pageSize)) return;
+        try
+        {
+            var history = await Session.Client!.GetWorkerReplayHistoryAsync(tenantId,
+                page: pageNumber, pageSize: pageSize);
+            AddField("페이지", $"{history.Page} / {history.PageSize}");
+            AddField("전체 Replay 이력", history.TotalCount.ToString());
+            foreach (var item in history.Items)
+                AddField(item.OriginalTaskId.ToString("D"), $"{item.ReplayTaskId:D} · {item.RequestedBy} · {item.CreatedAtUtc:O}");
+            StatusMessage = $"{history.Items.Count}개의 Replay 이력을 조회했습니다.";
+        }
+        catch (Exception exception) { ShowException(exception); }
+    }
 }
 
 public sealed class ExternalDeliveryMonitoringViewModel(IDesktopScreenService session)
@@ -1018,22 +1119,27 @@ public sealed class ExternalDeliveryMonitoringViewModel(IDesktopScreenService se
     public override async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var deliveryId))
-        {
-            AddField("조회 조건", "Tenant ID와 외부 전달 ID를 입력하면 전달 상태를 조회합니다.");
-            StatusMessage = "외부 전달 ID 입력 전";
-            return;
-        }
+        if (!TryGetTenant(out var tenantId)) return;
+        if (!TryGetPage(out var pageNumber, out var pageSize)) return;
         try
         {
-            var delivery = await Session.Client!.GetExternalDeliveryAsync(tenantId, deliveryId, cancellationToken);
-            if (delivery is null) { AddField("결과", "Tenant 범위에서 외부 전달을 찾을 수 없습니다."); StatusMessage = "전달 없음"; return; }
-            AddField("대상 URI", delivery.TargetUri);
-            AddField("상태", delivery.Status);
-            AddField("시도", $"{delivery.AttemptCount} / {delivery.MaxAttempts}");
-            AddField("오류 코드", delivery.LastErrorCode ?? "없음");
-            AddField("생성 시각", delivery.CreatedAtUtc.ToString("O"));
-            StatusMessage = "외부 전달 상태를 조회했습니다.";
+            var page = await Session.Client!.GetExternalDeliveriesAsync(tenantId,
+                page: pageNumber, pageSize: pageSize, cancellationToken: cancellationToken);
+            TargetOptions.Clear();
+            AddField("페이지", $"{page.Page} / {page.PageSize}");
+            AddField("전체 전달 수", page.TotalCount.ToString());
+            foreach (var item in page.Items)
+            {
+                AddField(item.TargetUri, $"{item.Status} · {item.AttemptCount}/{item.MaxAttempts} · {item.LastErrorCode ?? "-"}");
+                AddTargetOption(item.Id, $"전달 선택: {item.Id:D}");
+            }
+            if (TryGetTargetId(out var deliveryId))
+            {
+                var delivery = await Session.Client.GetExternalDeliveryAsync(tenantId, deliveryId, cancellationToken);
+                if (delivery is not null)
+                    AddField("선택 전달 생성 시각", delivery.CreatedAtUtc.ToString("O"));
+            }
+            StatusMessage = $"{page.Items.Count}개의 외부 전달을 조회했습니다.";
         }
         catch (TensorApiException ex) { ShowError(ex); }
     }
@@ -1051,6 +1157,22 @@ public sealed class ExternalDeliveryMonitoringViewModel(IDesktopScreenService se
             AddField("Worker Task ID", result.WorkerTaskId.ToString("D"));
             AddField("생성됨", result.Created ? "예" : "기존 전달 재사용");
             StatusMessage = "외부 전달 생성을 요청했습니다.";
+        }
+        catch (Exception exception) { ShowException(exception); }
+    }
+
+    protected override async Task ExecuteSecondaryCommandAsync(string operation)
+    {
+        Fields.Clear();
+        if (operation != "delivery-retry" || !TryGetTenant(out var tenantId)
+            || !TryGetTargetId(out var deliveryId) || !TryGetRequestKey(out var key)) return;
+        try
+        {
+            var result = await Session.Client!.RetryExternalDeliveryAsync(tenantId, deliveryId, key);
+            LastResultIdText = result.Delivery.Id.ToString("D");
+            AddField("전달 ID", result.Delivery.Id.ToString("D"));
+            AddField("Worker Task ID", result.WorkerTaskId.ToString("D"));
+            StatusMessage = "외부 전달 수동 재시도를 요청했습니다.";
         }
         catch (Exception exception) { ShowException(exception); }
     }

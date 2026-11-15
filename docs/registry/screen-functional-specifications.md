@@ -929,7 +929,7 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 - 15개 ScreenId가 기존 `screens.csv`와 일치한다.
 - 본 문서와 CSV에 15개 화면이 각각 한 번씩만 존재한다.
 - MODULE·AREA 코드는 기존 코드 사전의 승인 코드와 일치한다.
-- 모든 화면 상태는 구현 증거가 생기기 전까지 `Planned`를 유지한다.
+- 현재 Registry의 15개 화면 상태는 기존 코드와 문서의 `InDevelopment`를 유지한다. WPF smoke와 테스트host 실행 증거 없이 `Active`로 승격하지 않는다.
 - API 근거는 실제 Endpoint·Service에서 확인된 범위만 기재한다.
 - 제안 역할을 실제 인증 정책으로 잘못 표시하지 않는다.
 - View·ViewModel·Service 경로 및 바인딩은 실제 구현 확인 후에만 별도 Registry에 등록한다.
@@ -951,33 +951,37 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 | PLT-ORG-001 | organization 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
 | PLT-PJT-001 | project 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
 | PLT-USR-001 | user invitation 생성 | PartiallyImplemented | 초대 목록·상세·재발송·취소·만료 API 없음 |
-| PLT-MBR-001 | tenant/org/project membership 부여·mine 조회 | PartiallyImplemented | 목록·상세·역할 변경·회수 API 없음 |
-| PLT-AUTH-001 | authorization policy 생성·목록·수정·enabled 변경 | PartiallyImplemented | 정책 검색·평가 결과 API 없음 |
-| PLT-AUD-001 | audit query·integrity·archive·schedule·job·retention | Implemented | archive 목록/검색 API는 별도 미확인 |
-| PLT-QTA-001 | quota CRUD 일부·enabled·history | PartiallyImplemented | page/pageSize 외 정책 필터 없음 |
-| DSET-DSM-001 | dataset 생성·상세·content·activate | PartiallyImplemented | collection 목록·수정·삭제/보관 API 없음 |
-| DSET-SCHM-001 | schema 추가·상세 내 revisions | PartiallyImplemented | revision 전용 조회/검색 API 없음 |
-| DSET-STO-001 | content·dataset/tenant usage·history·quota events | PartiallyImplemented | storage lifecycle 및 상세 필터 없음 |
-| DSET-VLD-001 | profile/revision·validation 실행·상세·details·삭제 | PartiallyImplemented | profile/execution 목록 API 없음 |
-| WRK-TSK-001 | worker task 생성·상세 | PartiallyImplemented | task 목록·필터·운영 제어 API 없음 |
-| WRK-DLQ-001 | DLQ 목록·replay | PartiallyImplemented | 추가 필터·replay history API 없음 |
-| WRK-XDL-001 | external delivery 생성·상세 | PartiallyImplemented | delivery 목록·검색·수동 retry API 없음 |
+| PLT-MBR-001 | tenant/org/project membership 부여·목록·mine 조회·역할 변경·회수 | Implemented | query-enabled 목록은 subject/status/page/pageSize를 지원; mine은 활성 배열 |
+| PLT-AUTH-001 | authorization policy 생성·목록·필터·평가·수정·enabled 변경 | Implemented | evaluation과 tenant-scoped page filter route 추가 |
+| PLT-AUD-001 | audit query·integrity·archive·schedule·job·retention·job 목록 | Implemented | archive job page route 추가; raw archive export는 없음 |
+| PLT-QTA-001 | quota CRUD·enabled·history·scope/enabled filter | Implemented | target/plan query는 실제 계약에 없음 |
+| DSET-DSM-001 | dataset 생성·목록·상세·content·activate | PartiallyImplemented | collection filter 구현; 수정·삭제·보관·복구 API 없음 |
+| DSET-SCHM-001 | schema 추가·상세·전용 revisions 목록 | Implemented | version/date filter·diff·rollback API는 없음 |
+| DSET-STO-001 | content·dataset/tenant usage·history·quota events 필터 | PartiallyImplemented | storage lifecycle 및 aggregate 상세 filter 없음 |
+| DSET-VLD-001 | profile/revision·profile/execution 목록·validation 실행·상세·details·삭제 | PartiallyImplemented | profile lifecycle 및 date/failure filter 없음 |
+| WRK-TSK-001 | worker task 생성·목록·상세 | PartiallyImplemented | cancel·retry·result download API 없음 |
+| WRK-DLQ-001 | DLQ 목록·필터·replay·replay history | Implemented | taskId/status는 item/detail 계약 |
+| WRK-XDL-001 | external delivery 생성·목록·상세·필터·수동 retry | Implemented | safe projection만 반환하고 payload는 비노출 |
 
 ### 9.1 실제 계약 정정 사항
 
 - `PLT-TNT-001`의 `GET /tenants/mine`은 전체 tenant DTO가 아니라 `TenantId`, `Role`만 제공한다. 생성은 `CreateTenantRequest(Code, Name)`, 활성화는 request body가 없다.
-- `PLT-AUTH-001`의 생성 DTO는 `OrganizationId?`, `ProjectId?`, `SubjectId`, `Action`, `ResourceType`, `Effect`, `Priority`이며, 목록에는 `IsEnabled`, `CreatedAtUtc`가 추가된다.
-- `PLT-QTA-001`은 `ExpectedVersion`을 사용하는 optimistic concurrency와 page/history를 실제 지원하지만, domain filter는 지원하지 않는다.
-- `DSET-DSM-001`은 dataset 전체 목록 API가 없고, 생성·상세·content·activate 경로만 확인된다. 상세에 `SchemaRevisions`가 내장된다.
+- `PLT-AUTH-001`의 생성 DTO는 `OrganizationId?`, `ProjectId?`, `SubjectId`, `Action`, `ResourceType`, `Effect`, `Priority`이며, 목록에는 `IsEnabled`, `CreatedAtUtc`가 추가된다. 목록은 organization/project/subject/action/effect/enabled/page/pageSize를 지원하고 평가 결과는 `IsAllowed`, `ReasonCode`, `MatchedPolicyId`다.
+- `PLT-QTA-001`은 `ExpectedVersion`을 사용하는 optimistic concurrency와 page/history를 실제 지원하며 scope/isEnabled filter가 추가됐다. target/plan query는 실제 계약에 없다.
+- `DSET-DSM-001`은 tenant-scoped collection에 organization/project/search/status/page/pageSize query를 제공하고, 생성·상세·content·activate 경로를 유지한다. 상세에 `SchemaRevisions`가 내장된다.
+- `DSET-SCHM-001`은 `GET /datasets/{dataSetId}/schemas`의 `TotalCount`, `Page`, `PageSize`, `Items[Version; SchemaJson; CreatedAtUtc]` page contract를 사용한다.
+- `DSET-STO-001` history는 from/to/take, quota event는 scope/eventType/from/to/take를 사용한다.
+- `DSET-VLD-001` profile list는 search/page/pageSize, execution list는 dataSetId/profileId/status/page/pageSize를 사용한다.
+- `WRK-TSK-001`, `WRK-DLQ-001`, `WRK-XDL-001`은 각각 task list, DLQ filter/replay history, delivery list/filter/manual retry route를 제공하며 payload는 반환하지 않는다.
 - `DSET-VLD-001` 실행 생성은 `Idempotency-Key`와 dataset version/schema/profile revision을 요구하고, 실행 상세와 details는 서로 다른 응답 구조를 사용한다.
 - `WRK-DLQ-001` replay는 `Replay-Request-Id` GUID를 요구하고 원본 task를 보존한 새 task ID를 반환한다.
-- `WRK-XDL-001` 응답은 내부 payload를 반환하지 않는다. 자동 retry는 Worker 내부 동작이며 수동 retry endpoint는 없다.
+- `WRK-XDL-001` 응답은 내부 payload를 반환하지 않는다. 자동 retry는 Worker 내부 동작이며 admin 수동 retry는 `POST /worker/deliveries/{deliveryId}/retry`에서 새 worker task를 등록한다.
 
 ### 9.2 인증·인가·DI·테스트 확인
 
 - 외부 JWT issuer/audience/lifetime/signing key 검증, `TenantMember`/`PlatformAdministrator` 정책, `X-Tenant-Id`와 route tenant 비교, active membership 및 TenantAdministrator 검증을 실제 소스에서 확인했다.
 - API Application Service의 DI 등록과 WPF View/ViewModel의 `IDesktopScreenService` → `DesktopApiSession` 바인딩을 실제 소스에서 확인했다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
-- 기준선 전체 테스트는 `dotnet test EDAN.Tensor.sln --no-restore --configuration Release --logger "console;verbosity=minimal"`이며 13개 프로젝트에서 273 passed, 0 failed, 0 skipped였다. 이번 변경 후 새 테스트 실행은 testhost 연결 문제로 확정하지 못했으므로 새 테스트를 통과로 기록하지 않았다.
+- `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 현재 변경분에서 경고 0개·오류 0개로 완료했다. 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 testhost에 90초 내 연결하지 못해 중단(exit 1)되었으므로 이번 변경의 테스트를 통과로 기록하지 않았다.
 - 테스트 및 상세 격차·우선순위·UI 단계 판단은 [screen-implementation-gaps.md](screen-implementation-gaps.md)에 고정했다.
 
 ### 9.3 조사 후 관리 원칙
@@ -985,10 +989,31 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 1. 기존 설계 기능은 API가 제공하지 않는 필드를 실제 제공 필드처럼 표시하지 않는다.
 2. `NotImplemented`와 `NotVerified`를 구분하고, 테스트를 실행하지 않은 경우 `NotRun` 또는 `NotFound`로 기록한다.
 3. ScreenId 및 MODULE·AREA 코드는 변경하지 않는다.
-4. UI 아키텍처는 실제로 연결된 15개 화면의 공통 경계를 따르되, API가 없는 collection/filter/control은 구현하지 않는다. 확인된 mutation은 공통 명령 영역으로 연결하고, 구조화 입력과 UI smoke/test 증거를 확보한 뒤 `Active`로 승격한다.
+4. UI 아키텍처는 실제로 연결된 15개 화면의 공통 경계를 따르되, API가 없는 lifecycle/control은 구현하지 않는다. 확인된 mutation은 공통 명령 영역으로 연결하고, 구조화 입력과 UI smoke/test 증거를 확보한 뒤 `Active`로 승격한다.
 
 ### 9.4 부록 변경 이력
 
 | 버전 | 내용 |
 |---|---|
 | 1.1 | 15개 화면 API·DTO 전수 조사 결과, 실제 계약 정정, 테스트 결과 및 구현 격차 문서 연결 |
+| 1.2 | collection/filter/retry/evaluation/membership 계약과 화면 연결 추가, 실제 테스트호스트 미확인 상태 반영 |
+
+### 9.5 2026-11-15 추가 구현 계약 우선순위
+
+아래 항목은 본 문서 앞부분의 설계 제안 중 실제 소스에 추가로 확정·구현된 계약이다. 상세 필드와 근거는 `screen-api-mapping.csv`의 API ID를 우선한다.
+
+| 화면 | 추가 확정 계약 |
+|---|---|
+| PLT-MBR-001 | Tenant·조직·프로젝트 membership query 목록(`subjectId`, `status`, `page`, `pageSize`)과 각 범위의 `PATCH` 역할 변경·회수. 기존 no-query 배열과 `mine` 활성 배열은 호환성 때문에 유지 |
+| PLT-AUTH-001 | 정책 필터·페이징과 `POST .../authorization-policies/evaluate`의 `AuthorizationDecision` |
+| PLT-AUD-001 | `GET .../authorization-audit/archive-jobs`의 status·UTC 기간·페이징 |
+| PLT-QTA-001 | quota `scope`, `isEnabled`, `page`, `pageSize` 필터 |
+| DSET-DSM-001 | DataSet collection의 organization/project/search/status/page/pageSize |
+| DSET-SCHM-001 | 전용 schema revision page |
+| DSET-STO-001 | history 기간 필터와 quota-event scope/eventType/기간 필터 |
+| DSET-VLD-001 | validation profile/execution collection page |
+| WRK-TSK-001 | task collection의 taskType/status/UTC 기간/page 필터 |
+| WRK-DLQ-001 | DLQ type/error/UTC 기간 필터와 replay history page |
+| WRK-XDL-001 | delivery collection filter와 admin manual retry |
+
+이 추가 계약은 UI에서 실제 typed Client 호출과 공통 대상 선택·구조화 Request DTO 입력으로 연결되어 있다. 다만 WPF 화면의 직접 실행 smoke는 테스트host 연결 실패로 확인하지 못했으므로 화면 Registry 상태는 `InDevelopment`를 유지한다.

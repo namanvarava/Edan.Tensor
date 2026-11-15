@@ -5,6 +5,10 @@ namespace EDAN.Tensor.Worker.Application.Abstractions;
 public interface IWorkerTaskRepository
 {
     Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default);
+    Task<WorkerTaskPage> GetPageAsync(Guid tenantId, string? taskType, WorkerTaskStatus? status,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("Worker 작업 페이지 조회가 구현되지 않았습니다.");
     Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, Guid? afterTenantId = null);
     Task<IReadOnlyList<WorkerTask>> GetReadyAsync(Guid tenantId, DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, Guid? afterTaskId = null);
     Task<int> RecoverExpiredLeasesAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default);
@@ -20,3 +24,7 @@ public interface IWorkerTaskRepository
     void Add(WorkerTask task);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+
+/// <summary>Tenant 범위 Worker 작업의 필터·페이징 결과입니다.</summary>
+public sealed record WorkerTaskPage(
+    IReadOnlyList<WorkerTask> Items, int TotalCount, int Page, int PageSize);

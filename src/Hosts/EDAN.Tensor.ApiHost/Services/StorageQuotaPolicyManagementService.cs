@@ -16,15 +16,17 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
     /// <param name="pageSize">페이지에 포함할 정책 수이며 1~100 사이여야 합니다.</param>
     /// <param name="token">작업 취소를 감시하는 토큰입니다.</param>
     /// <returns>Tenant 범위로 제한된 저장 용량 정책 페이지를 반환합니다.</returns>
-    public async Task<StorageQuotaPolicyPage> GetPoliciesAsync(TenantId tenantId, int page = 1,
-        int pageSize = 50, CancellationToken token = default)
+    public async Task<StorageQuotaPolicyPage> GetPoliciesAsync(TenantId tenantId, StorageQuotaPolicyScope? scope = null,
+        bool? isEnabled = null, int page = 1, int pageSize = 50, CancellationToken token = default)
     {
         var skip = ValidatePage(page, pageSize);
         var query = db.StorageQuotaPolicies.AsNoTracking()
-            .Where(x => x.TenantId == tenantId)
-            .OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
+            .Where(x => x.TenantId == tenantId);
+        if (scope.HasValue) query = query.Where(x => x.Scope == scope.Value);
+        if (isEnabled.HasValue) query = query.Where(x => x.IsEnabled == isEnabled.Value);
+        var ordered = query.OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
         var totalCount = await query.CountAsync(token);
-        var items = await query.Skip(skip).Take(pageSize).ToListAsync(token);
+        var items = await ordered.Skip(skip).Take(pageSize).ToListAsync(token);
         return new StorageQuotaPolicyPage(items, totalCount, page, pageSize);
     }
 

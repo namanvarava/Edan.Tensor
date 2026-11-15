@@ -4,6 +4,7 @@ using EDAN.Tensor.HostServices.Services;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.UseCases;
 using EDAN.Tensor.DataSet.Domain.Model;
+using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -38,6 +39,26 @@ public static class DataSetEndpoints
             }
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("CreateDataSet");
 
+        tenantGroup.MapGet("", async (Guid tenantId, Guid? organizationId, Guid? projectId,
+            string? search, DataSetStatus? status, int page, int pageSize,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            try
+            {
+                var result = await service.GetPageAsync(tenantId, organizationId, projectId, search, status,
+                    page == 0 ? 1 : page, pageSize == 0 ? 50 : pageSize, token);
+                return Results.Ok(new
+                {
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    Items = result.Items.Select(ToDataSetResponse)
+                });
+            }
+            catch (ArgumentException ex) { return Results.BadRequest(new ApiError("dataset.invalid_query", ex.Message)); }
+            catch (OverflowException) { return Results.BadRequest(new ApiError("dataset.invalid_page", "페이지 범위가 너무 큽니다.")); }
+        }).WithName("GetDataSets");
+
         tenantGroup.MapGet("/{dataSetId:guid}", async (Guid tenantId, Guid dataSetId,
             DataSetManagementService service, CancellationToken token) =>
         {
@@ -65,6 +86,23 @@ public static class DataSetEndpoints
                     })
                 });
         }).WithName("GetDataSet");
+
+        tenantGroup.MapGet("/{dataSetId:guid}/schemas", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var dataSet = await service.GetAsync(new DataSetId(dataSetId), tenantId, token);
+            return dataSet is null
+                ? Results.NotFound(new ApiError("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."))
+                : Results.Ok(new
+                {
+                    DataSetId = dataSetId,
+                    dataSet.CurrentSchemaVersion,
+                    Items = dataSet.SchemaRevisions.Select(revision => new
+                    {
+                        revision.Version, revision.SchemaJson, revision.CreatedAtUtc
+                    })
+                });
+        }).WithName("GetDataSetSchemaRevisions");
 
         tenantGroup.MapPost("/{dataSetId:guid}/content", async (Guid tenantId, Guid dataSetId,
             HttpRequest request, DataSetManagementService service, IConfiguration configuration, CancellationToken token) =>
@@ -174,9 +212,10 @@ public static class DataSetEndpoints
         }).WithName("GetTenantStorageUsage");
 
         tenantUsageGroup.MapGet("/storage-usage/history", async (Guid tenantId, int? take,
+            DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
             DataSetStorageUsageSnapshotService snapshotService, CancellationToken token) =>
         {
-            var history = await snapshotService.GetHistoryAsync(tenantId, take ?? 168, token);
+            var history = await snapshotService.GetHistoryAsync(tenantId, take ?? 168, fromUtc, toUtc, token);
             return Results.Ok(history.Select(x => new
             {
                 x.PeriodStartUtc, x.CapturedAtUtc, x.UsedBytes, x.DataSetCount
@@ -184,9 +223,11 @@ public static class DataSetEndpoints
         }).WithName("GetTenantStorageUsageHistory");
 
         tenantUsageGroup.MapGet("/storage-usage/quota-events", async (Guid tenantId, int? take,
+            string? scope, string? eventType, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
             DataSetStorageUsageSnapshotService snapshotService, CancellationToken token) =>
         {
-            var history = await snapshotService.GetQuotaEventHistoryAsync(tenantId, take ?? 100, token);
+            var history = await snapshotService.GetQuotaEventHistoryAsync(tenantId, take ?? 100,
+                scope, eventType, fromUtc, toUtc, token);
             return Results.Ok(history.Select(x => new
             {
                 x.PolicyId, x.Scope, x.TargetId, x.EventType, x.UsedBytes, x.LimitBytes,
@@ -199,4 +240,19 @@ public static class DataSetEndpoints
 
     public sealed record CreateDataSetRequest(Guid OrganizationId, Guid ProjectId, string Name, string StorageAdapter = "sqlite", string ContentFormat = "json-array");
     public sealed record AddDataSetSchemaRequest(string SchemaJson);
+
+    private static object ToDataSetResponse(DataSetAggregate dataSet) => new
+    {
+        Id = dataSet.Id.Value,
+        dataSet.TenantId,
+        dataSet.OrganizationId,
+        dataSet.ProjectId,
+        dataSet.Name,
+        dataSet.StorageAdapter,
+        dataSet.ContentFormat,
+        Status = dataSet.Status.ToString(),
+        dataSet.Version,
+        dataSet.CreatedAtUtc,
+        dataSet.CurrentSchemaVersion
+    };
 }

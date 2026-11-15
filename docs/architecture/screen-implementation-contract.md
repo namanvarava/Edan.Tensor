@@ -14,23 +14,24 @@
 4. API가 이미 제공하는 필드는 typed Client 계약과 구조화 Request DTO 입력으로 연결하고, 화면 요구에 필요한 목록·상세·검색·lifecycle이 없으면 API 계약과 서버 테스트를 먼저 추가한다.
 5. 모든 Tenant 범위 호출은 route `tenantId`, `X-Tenant-Id`, 인증 주체, active membership 및 필요한 TenantAdministrator 검사를 유지한다.
 6. 서버가 제공하지 않는 필드는 로컬 임시 필드나 추정 DTO로 채우지 않는다. API가 보완되기 전에는 화면에서 동작을 비활성화하고 상태를 표시한다.
-7. `PLT-AUD-001`의 감사 운영 API, `PLT-QTA-001`의 page/history, `DSET-VLD-001`의 idempotency, `WRK-DLQ-001`의 replay, `WRK-XDL-001`의 opaque payload 경계는 현재 계약을 유지하고, 소스에 존재하는 archive·schedule·retention·quota·content·validation 운영 계약을 typed Client와 화면 명령에 연결한다.
+7. `PLT-AUD-001`의 감사 운영 API, `PLT-QTA-001`의 page/history/filter, `DSET-VLD-001`의 collection/idempotency, `WRK-DLQ-001`의 filter/replay history, `WRK-XDL-001`의 collection/manual retry/opaque payload 경계는 현재 계약을 유지하고, 소스에 존재하는 archive·schedule·retention·quota·content·validation 운영 계약을 typed Client와 화면 명령에 연결한다.
 8. WPF 화면 구현은 API 보완과 함께 진행하되, UI 완료 상태는 전체 화면의 build·unit test·API integration test·registry path 검증을 통과한 뒤에만 표시한다.
 
 ## 2. API 보완 범위
 
 ### P1
 
-- Platform: tenant/org/project/user/membership 조회와 확인된 lifecycle·역할 변경 계약은 화면에 연결 완료. API가 없는 revoke 및 추가 collection은 별도 API 확정 필요
-- Authorization: 정책 create/update/enabled와 감사 query·integrity 계약은 화면에 연결 완료. 평가 전용 조회 API는 확인되지 않음
-- DataSet: detail/schema/content/validation 실행과 확인된 profile·revision·delete 계약은 화면에 연결 완료. dataset/profile/execution collection API는 소스에 없음
-- Worker: enqueue/task detail/DLQ replay/external delivery create·detail은 연결 완료. task/delivery collection 및 운영 제어 API는 소스에 없음
+- Platform: tenant/org/project/user/membership 조회와 확인된 lifecycle·역할 변경·회수 계약은 화면에 연결 완료. 남은 것은 제품 계약이 없는 추가 lifecycle이다.
+- Authorization: 정책 create/update/enabled/filter/evaluate와 감사 query·integrity 계약은 화면에 연결 완료.
+- DataSet: collection/detail/schema/content/validation 실행·profile/execution collection과 확인된 profile·revision·delete 계약은 화면에 연결 완료.
+- Worker: task collection/detail, DLQ filter/replay history, external delivery collection/manual retry와 enqueue/create 계약은 화면에 연결 완료.
 
 ### P2
 
-- quota history, storage quota events, audit archive/job/schedule/retention은 실제 route와 DTO를 확인해 화면에 연결 완료
-- quota scope/status, storage 기간/scope, DLQ type/error/date/history, audit archive collection/filter는 route/repository가 확인되지 않아 API 부재로 기록
-- DataSet schema revision 전용 목록과 validation profile/execution collection, Worker 운영 제어, External Delivery 수동 retry/list도 API 부재로 기록
+- quota history, scope/enabled filter, storage quota events, audit archive/job list/schedule/retention은 실제 route와 DTO를 확인해 화면에 연결 완료
+- storage 기간/scope/eventType, DLQ type/error/date/history, audit archive collection/filter는 실제 route와 repository를 추가해 화면에 연결 완료
+- DataSet schema revision 전용 목록과 validation profile/execution collection, Worker task/delivery collection 및 External Delivery 수동 retry도 실제 route와 repository를 추가해 화면에 연결 완료
+- DataSet lifecycle, Worker cancel/force-retry/result download, audit raw archive export는 제품 계약이 없어 구현하지 않고 격차 문서에 유지
 - anonymous projection은 기존 API가 제공하는 실제 응답 필드를 그대로 기록했으며, 새 필드를 추정해 named response로 바꾸지 않음
 
 기존 Domain 모델이 제공하지 않는 business rule은 UI에서 임의로 만들지 않는다. 필요한 lifecycle은 Domain method, Application Service, repository, endpoint, Client contract, test 순서로 추가한다.

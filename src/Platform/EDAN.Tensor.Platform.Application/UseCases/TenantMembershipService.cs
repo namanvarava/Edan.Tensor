@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
 
 namespace EDAN.Tensor.Platform.Application.UseCases;
@@ -36,5 +37,26 @@ public sealed class TenantMembershipService(
         {
             return Result<TenantMembershipId>.Failure(new Error("platform.validation", ex.Message));
         }
+    }
+
+    /// <summary>테넌트 구성원의 역할을 변경하거나 접근 권한을 회수합니다.</summary>
+    public async Task<Result> UpdateAsync(
+        TenantId tenantId, TenantMembershipId membershipId, TenantRole? role, bool revoke,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await memberships.GetByIdAsync(tenantId, membershipId, cancellationToken);
+        if (membership is null)
+            return Result.Failure(new Error("platform.membership.not_found", "테넌트 멤버십을 찾을 수 없습니다."));
+        if (!revoke && !role.HasValue)
+            return Result.Failure(new Error("platform.validation", "Role 또는 Revoke 중 하나가 필요합니다."));
+        try
+        {
+            if (revoke) membership.Revoke();
+            else membership.ChangeRole(role!.Value);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (BusinessRuleViolationException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
+        catch (ArgumentException ex) { return Result.Failure(new Error("platform.validation", ex.Message)); }
     }
 }

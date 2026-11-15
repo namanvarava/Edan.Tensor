@@ -272,6 +272,66 @@ public sealed class TensorApiClientTests
             client.GetWorkerDeadLettersAsync(Guid.NewGuid(), page: int.MaxValue));
     }
 
+    /// <summary>추가된 화면 목록 계약이 필터·페이징 query와 Tenant 경계를 보존합니다.</summary>
+    [Fact]
+    public async Task RegistryCollectionContractsSendFiltersAndDeserializePages()
+    {
+        var tenantId = Guid.NewGuid();
+        var dataSetId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("/authorization-policies", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":2,\"pageSize\":10,\"items\":[{\"id\":\"" + Guid.NewGuid() + "\",\"organizationId\":null,\"projectId\":null,\"subjectId\":\"user-1\",\"action\":\"read\",\"resourceType\":\"DataSet\",\"effect\":\"Allow\",\"priority\":1,\"isEnabled\":true,\"createdAtUtc\":\"2026-01-01T00:00:00Z\"}]}");
+            if (request.RequestUri.AbsolutePath.EndsWith("/datasets", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":1,\"pageSize\":5,\"items\":[{\"id\":\"" + dataSetId + "\",\"tenantId\":\"" + tenantId + "\",\"organizationId\":\"" + Guid.NewGuid() + "\",\"projectId\":\"" + Guid.NewGuid() + "\",\"name\":\"Orders\",\"storageAdapter\":\"sqlite\",\"contentFormat\":\"json-array\",\"status\":\"Active\",\"version\":2,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"currentSchemaVersion\":1}]}");
+            return JsonResponse("{\"totalCount\":0,\"page\":1,\"pageSize\":5,\"items\":[]}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var policies = await client.GetAuthorizationPoliciesAsync(tenantId, subjectId: "user-1",
+            isEnabled: true, page: 2, pageSize: 10);
+        var dataSets = await client.GetDataSetsAsync(tenantId, search: "Orders", pageSize: 5);
+
+        Assert.Single(policies.Items);
+        Assert.Equal(2, policies.Page);
+        Assert.Single(dataSets.Items);
+        Assert.Equal(dataSetId, dataSets.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task MembershipContractsSendScopeFiltersAndPatchPayload()
+    {
+        var tenantId = Guid.NewGuid();
+        var membershipId = Guid.NewGuid();
+        var handler = new RecordingHandler(async (request, cancellationToken) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.Method == HttpMethod.Get)
+            {
+                Assert.Equal($"/api/platform/tenants/{tenantId:D}/memberships", request.RequestUri!.AbsolutePath);
+                Assert.Contains("subjectId=user-1", request.RequestUri.Query, StringComparison.Ordinal);
+                Assert.Contains("status=Active", request.RequestUri.Query, StringComparison.Ordinal);
+                return JsonResponse($"{{\"totalCount\":1,\"page\":1,\"pageSize\":20,\"items\":[{{\"id\":\"{membershipId:D}\",\"tenantId\":\"{tenantId:D}\",\"subjectId\":\"user-1\",\"role\":\"Member\",\"status\":\"Active\"}}]}}");
+            }
+
+            Assert.Equal(HttpMethod.Patch, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/memberships/{membershipId:D}", request.RequestUri!.AbsolutePath);
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            Assert.Contains("revoke", body, StringComparison.OrdinalIgnoreCase);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var page = await client.GetTenantMembershipsFilteredAsync(tenantId, "user-1", "Active", pageSize: 20);
+        await client.UpdateTenantMembershipAsync(tenantId, membershipId, new UpdateMembershipRequestContract(null, true));
+
+        Assert.Single(page.Items);
+        Assert.Equal(membershipId, page.Items[0].Id);
+    }
+
     private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK) =>
         new(statusCode)
         {

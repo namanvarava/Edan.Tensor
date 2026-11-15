@@ -157,13 +157,70 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, "memberships"), tenantId), cancellationToken);
     }
 
-    /// <summary>Tenant 범위의 권한 정책을 조회합니다.</summary>
-    public Task<IReadOnlyList<AuthorizationPolicyContract>> GetAuthorizationPoliciesAsync(
-        Guid tenantId, CancellationToken cancellationToken = default)
+    public Task<TenantMembershipPageContract> GetTenantMembershipsFilteredAsync(
+        Guid tenantId, string? subjectId = null, string? status = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
     {
         ValidateTenantId(tenantId);
-        return SendJsonAsync<IReadOnlyList<AuthorizationPolicyContract>>(
-            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "authorization-policies"), tenantId), cancellationToken);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(subjectId)) parts.Add($"subjectId={Uri.EscapeDataString(subjectId.Trim())}");
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        return SendJsonAsync<TenantMembershipPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"memberships?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    public Task<OrganizationMembershipPageContract> GetOrganizationMembershipsAsync(
+        Guid tenantId, Guid organizationId, string? subjectId = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(organizationId, nameof(organizationId)); ValidatePage(page, pageSize);
+        var query = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(subjectId)) query += $"&subjectId={Uri.EscapeDataString(subjectId.Trim())}";
+        if (!string.IsNullOrWhiteSpace(status)) query += $"&status={Uri.EscapeDataString(status.Trim())}";
+        return SendJsonAsync<OrganizationMembershipPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"organizations/{organizationId:D}/memberships?{query}"), tenantId), cancellationToken);
+    }
+
+    public Task<ProjectMembershipPageContract> GetProjectMembershipsAsync(
+        Guid tenantId, Guid organizationId, Guid projectId, string? subjectId = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(organizationId, nameof(organizationId)); ValidateId(projectId, nameof(projectId)); ValidatePage(page, pageSize);
+        var query = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(subjectId)) query += $"&subjectId={Uri.EscapeDataString(subjectId.Trim())}";
+        if (!string.IsNullOrWhiteSpace(status)) query += $"&status={Uri.EscapeDataString(status.Trim())}";
+        return SendJsonAsync<ProjectMembershipPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"organizations/{organizationId:D}/projects/{projectId:D}/memberships?{query}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위의 권한 정책을 조회합니다.</summary>
+    public Task<AuthorizationPolicyPageContract> GetAuthorizationPoliciesAsync(
+        Guid tenantId, Guid? organizationId = null, Guid? projectId = null,
+        string? subjectId = null, string? action = null, string? effect = null,
+        bool? isEnabled = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (organizationId is Guid organization) parts.Add($"organizationId={organization:D}");
+        if (projectId is Guid project) parts.Add($"projectId={project:D}");
+        if (!string.IsNullOrWhiteSpace(subjectId)) parts.Add($"subjectId={Uri.EscapeDataString(subjectId.Trim())}");
+        if (!string.IsNullOrWhiteSpace(action)) parts.Add($"action={Uri.EscapeDataString(action.Trim())}");
+        if (!string.IsNullOrWhiteSpace(effect)) parts.Add($"effect={Uri.EscapeDataString(effect.Trim())}");
+        if (isEnabled is bool enabled) parts.Add($"isEnabled={enabled.ToString().ToLowerInvariant()}");
+        return SendJsonAsync<AuthorizationPolicyPageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"authorization-policies?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    public Task<AuthorizationDecisionContract> EvaluateAuthorizationPolicyAsync(Guid tenantId,
+        EvaluateAuthorizationPolicyRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationDecisionContract>(SendRequest(HttpMethod.Post,
+            TenantPath(tenantId, "authorization-policies/evaluate"), tenantId, request), cancellationToken);
     }
 
     /// <summary>Tenant 범위의 권한 감사 기록을 필터와 함께 조회합니다.</summary>
@@ -264,6 +321,21 @@ public sealed class TensorApiClient
             cancellationToken);
     }
 
+    public Task<AuthorizationAuditArchiveJobPageContract> GetAuthorizationAuditArchiveJobsAsync(
+        Guid tenantId, string? status = null, DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        return SendJsonAsync<AuthorizationAuditArchiveJobPageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId,
+                $"authorization-audit/archive-jobs?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
     public Task<AuthorizationAuditArchiveJobContract> RetryAuthorizationAuditArchiveJobAsync(
         Guid tenantId, Guid jobId, CancellationToken cancellationToken = default)
     {
@@ -318,6 +390,20 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-quota-policies?page={page}&pageSize={pageSize}"), tenantId), cancellationToken);
     }
 
+    public Task<StorageQuotaPolicyPageContract> GetStorageQuotaPoliciesFilteredAsync(
+        Guid tenantId, string? scope = null, bool? isEnabled = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var query = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(scope)) query += $"&scope={Uri.EscapeDataString(scope.Trim())}";
+        if (isEnabled is bool enabled) query += $"&isEnabled={enabled.ToString().ToLowerInvariant()}";
+        return SendJsonAsync<StorageQuotaPolicyPageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-quota-policies?{query}"), tenantId),
+            cancellationToken);
+    }
+
     /// <summary>DataSet 단위 실제 저장량과 적용된 한도를 조회합니다.</summary>
     public Task<DataSetStorageUsageContract> GetDataSetStorageUsageAsync(
         Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default)
@@ -347,6 +433,19 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/history?take={take}"), tenantId), cancellationToken);
     }
 
+    public Task<IReadOnlyList<DataSetStorageUsageSnapshotContract>> GetTenantStorageUsageHistoryFilteredAsync(
+        Guid tenantId, int take = 168, DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        if (take is < 1 or > 744) throw new ArgumentOutOfRangeException(nameof(take));
+        var query = $"take={take}";
+        if (fromUtc is DateTimeOffset from) query += $"&fromUtc={UtcQuery(from)}";
+        if (toUtc is DateTimeOffset to) query += $"&toUtc={UtcQuery(to)}";
+        return SendJsonAsync<IReadOnlyList<DataSetStorageUsageSnapshotContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/history?{query}"), tenantId), cancellationToken);
+    }
+
     /// <summary>Tenant 저장량 quota 임계치 이벤트 이력을 조회합니다.</summary>
     public Task<IReadOnlyList<DataSetQuotaEventContract>> GetTenantQuotaEventHistoryAsync(
         Guid tenantId, int take = 100, CancellationToken cancellationToken = default)
@@ -357,6 +456,23 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/quota-events?take={take}"), tenantId), cancellationToken);
     }
 
+    public Task<IReadOnlyList<DataSetQuotaEventContract>> GetTenantQuotaEventHistoryFilteredAsync(
+        Guid tenantId, int take = 100, string? scope = null, string? eventType = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
+        var query = $"take={take}";
+        if (!string.IsNullOrWhiteSpace(scope)) query += $"&scope={Uri.EscapeDataString(scope.Trim())}";
+        if (!string.IsNullOrWhiteSpace(eventType)) query += $"&eventType={Uri.EscapeDataString(eventType.Trim())}";
+        if (fromUtc is DateTimeOffset from) query += $"&fromUtc={UtcQuery(from)}";
+        if (toUtc is DateTimeOffset to) query += $"&toUtc={UtcQuery(to)}";
+        return SendJsonAsync<IReadOnlyList<DataSetQuotaEventContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/quota-events?{query}"), tenantId),
+            cancellationToken);
+    }
+
     /// <summary>Tenant 범위 외부 전달 상태를 조회합니다.</summary>
     public Task<ExternalDeliveryContract?> GetExternalDeliveryAsync(
         Guid tenantId, Guid deliveryId, CancellationToken cancellationToken = default)
@@ -365,6 +481,23 @@ public sealed class TensorApiClient
         ValidateId(deliveryId, nameof(deliveryId));
         return SendOptionalAsync<ExternalDeliveryContract>(
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/deliveries/{deliveryId:D}"), tenantId), cancellationToken);
+    }
+
+    public Task<ExternalDeliveryPageContract> GetExternalDeliveriesAsync(
+        Guid tenantId, string? status = null, string? targetHost = null, string? errorCode = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        if (!string.IsNullOrWhiteSpace(targetHost)) parts.Add($"targetHost={Uri.EscapeDataString(targetHost.Trim())}");
+        if (!string.IsNullOrWhiteSpace(errorCode)) parts.Add($"errorCode={Uri.EscapeDataString(errorCode.Trim())}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        return SendJsonAsync<ExternalDeliveryPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"worker/deliveries?{string.Join("&", parts)}"), tenantId), cancellationToken);
     }
 
     public Task<ResourceIdContract> CreateTenantAsync(
@@ -437,6 +570,25 @@ public sealed class TensorApiClient
         ArgumentNullException.ThrowIfNull(request);
         return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
             TenantPath(tenantId, $"organizations/{organizationId:D}/projects/{projectId:D}/memberships"), tenantId), request, cancellationToken);
+    }
+
+    public Task UpdateTenantMembershipAsync(Guid tenantId, Guid membershipId, UpdateMembershipRequestContract request,
+        CancellationToken cancellationToken = default) =>
+        UpdateMembershipAsync(tenantId, $"memberships/{ValidateAndFormatId(membershipId, nameof(membershipId))}", request, cancellationToken);
+
+    public Task UpdateOrganizationMembershipAsync(Guid tenantId, Guid organizationId, Guid membershipId,
+        UpdateMembershipRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateId(organizationId, nameof(organizationId));
+        return UpdateMembershipAsync(tenantId, $"organizations/{organizationId:D}/memberships/{ValidateAndFormatId(membershipId, nameof(membershipId))}", request, cancellationToken);
+    }
+
+    public Task UpdateProjectMembershipAsync(Guid tenantId, Guid organizationId, Guid projectId, Guid membershipId,
+        UpdateMembershipRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateId(organizationId, nameof(organizationId));
+        ValidateId(projectId, nameof(projectId));
+        return UpdateMembershipAsync(tenantId, $"organizations/{organizationId:D}/projects/{projectId:D}/memberships/{ValidateAndFormatId(membershipId, nameof(membershipId))}", request, cancellationToken);
     }
 
     public Task UpdateTenantAsync(Guid tenantId, UpdateDirectoryEntryRequestContract request,
@@ -581,6 +733,19 @@ public sealed class TensorApiClient
         return SendJsonAsync<CreateExternalDeliveryResponseContract>(message, request, cancellationToken);
     }
 
+    public Task<CreateExternalDeliveryResponseContract> RetryExternalDeliveryAsync(
+        Guid tenantId, Guid deliveryId, string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(deliveryId, nameof(deliveryId));
+        ValidateHeaderValue(idempotencyKey, nameof(idempotencyKey));
+        var message = CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"worker/deliveries/{deliveryId:D}/retry"), tenantId);
+        message.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
+        return SendJsonAsync<CreateExternalDeliveryResponseContract>(message, cancellationToken);
+    }
+
     /// <summary>선택된 Tenant에 새 DataSet을 생성합니다.</summary>
     public Task<CreateDataSetResponseContract> CreateDataSetAsync(
         Guid tenantId, CreateDataSetRequestContract request,
@@ -602,6 +767,32 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"datasets/{dataSetId:D}"), tenantId), cancellationToken);
     }
 
+    /// <summary>Tenant 범위 DataSet을 조직·프로젝트·이름·상태로 필터링해 페이지 조회합니다.</summary>
+    public Task<DataSetPageContract> GetDataSetsAsync(Guid tenantId, Guid? organizationId = null,
+        Guid? projectId = null, string? search = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (organizationId is Guid organization) parts.Add($"organizationId={organization:D}");
+        if (projectId is Guid project) parts.Add($"projectId={project:D}");
+        if (!string.IsNullOrWhiteSpace(search)) parts.Add($"search={Uri.EscapeDataString(search.Trim())}");
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        return SendJsonAsync<DataSetPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>DataSet의 불변 스키마 revision 목록을 조회합니다.</summary>
+    public Task<DataSetSchemaRevisionPageContract> GetDataSetSchemaRevisionsAsync(
+        Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        return SendJsonAsync<DataSetSchemaRevisionPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets/{dataSetId:D}/schemas"), tenantId), cancellationToken);
+    }
+
     /// <summary>DataSet에 불변 스키마 revision을 등록합니다.</summary>
     public Task<AddDataSetSchemaResponseContract> AddDataSetSchemaAsync(
         Guid tenantId, Guid dataSetId, AddDataSetSchemaRequestContract request,
@@ -613,6 +804,32 @@ public sealed class TensorApiClient
         return SendJsonAsync<AddDataSetSchemaResponseContract>(
             CreateRequest(HttpMethod.Post, TenantPath(tenantId, $"datasets/{dataSetId:D}/schemas"), tenantId),
             request, cancellationToken);
+    }
+
+    public Task<DataSetValidationProfilePageContract> GetDataSetValidationProfilesAsync(
+        Guid tenantId, string? search = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var query = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(search)) query += $"&search={Uri.EscapeDataString(search.Trim())}";
+        return SendJsonAsync<DataSetValidationProfilePageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets/validation-profiles?{query}"), tenantId), cancellationToken);
+    }
+
+    public Task<DataSetValidationExecutionPageContract> GetDataSetValidationsAsync(
+        Guid tenantId, Guid? dataSetId = null, Guid? profileId = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (dataSetId is Guid dataSet) parts.Add($"dataSetId={dataSet:D}");
+        if (profileId is Guid profile) parts.Add($"profileId={profile:D}");
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        return SendJsonAsync<DataSetValidationExecutionPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets/validations?{string.Join("&", parts)}"), tenantId), cancellationToken);
     }
 
     /// <summary>DataSet 콘텐츠를 스트림으로 저장합니다.</summary>
@@ -733,6 +950,22 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/tasks/{taskId:D}"), tenantId), cancellationToken);
     }
 
+    public Task<WorkerTaskStatusPageContract> GetWorkerTasksAsync(
+        Guid tenantId, string? taskType = null, string? status = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(taskType)) parts.Add($"taskType={Uri.EscapeDataString(taskType.Trim())}");
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        return SendJsonAsync<WorkerTaskStatusPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"worker/tasks?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
     /// <summary>Tenant 관리자가 조회할 DLQ 작업을 1 이상인 페이지와 1~100 범위의 페이지 크기로 반환합니다.</summary>
     /// <param name="tenantId">DLQ 작업이 속한 Tenant 식별자입니다.</param>
     /// <param name="page">조회할 페이지 번호입니다. 1 이상이어야 하며 페이지 오프셋이 정수 범위를 넘지 않아야 합니다.</param>
@@ -751,6 +984,37 @@ public sealed class TensorApiClient
         return SendJsonAsync<WorkerDeadLetterPageContract>(
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/dead-letters?page={page}&pageSize={pageSize}"), tenantId),
             cancellationToken);
+    }
+
+    public Task<WorkerDeadLetterPageContract> GetWorkerDeadLettersFilteredAsync(
+        Guid tenantId, string? taskType = null, string? errorCode = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(taskType)) parts.Add($"taskType={Uri.EscapeDataString(taskType.Trim())}");
+        if (!string.IsNullOrWhiteSpace(errorCode)) parts.Add($"errorCode={Uri.EscapeDataString(errorCode.Trim())}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        return SendJsonAsync<WorkerDeadLetterPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"worker/dead-letters?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    public Task<WorkerReplayHistoryPageContract> GetWorkerReplayHistoryAsync(
+        Guid tenantId, Guid? originalTaskId = null, DateTimeOffset? fromUtc = null,
+        DateTimeOffset? toUtc = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (originalTaskId is Guid original) parts.Add($"originalTaskId={original:D}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        return SendJsonAsync<WorkerReplayHistoryPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"worker/dead-letters/replays?{string.Join("&", parts)}"), tenantId), cancellationToken);
     }
 
     /// <summary>DLQ 작업을 멱등적인 Replay-Request-Id로 재처리합니다.</summary>
@@ -796,6 +1060,20 @@ public sealed class TensorApiClient
             ? $"/api/platform/tenants/{tenantId:D}"
             : TenantPath(tenantId, suffix);
         return SendNoContentAsync(SendRequest(HttpMethod.Put, path, tenantId, request), cancellationToken);
+    }
+
+    private Task UpdateMembershipAsync(Guid tenantId, string suffix, UpdateMembershipRequestContract request,
+        CancellationToken cancellationToken)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendNoContentAsync(SendRequest(HttpMethod.Patch, TenantPath(tenantId, suffix), tenantId, request), cancellationToken);
+    }
+
+    private static string ValidateAndFormatId(Guid value, string paramName)
+    {
+        ValidateId(value, paramName);
+        return value.ToString("D");
     }
 
     private async Task<T> SendJsonAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken)

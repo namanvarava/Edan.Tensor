@@ -2021,7 +2021,12 @@ public sealed class PlatformApiIntegrationTests
     private static async Task<int> ReadArrayLengthAsync(HttpResponseMessage response)
     {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return document.RootElement.GetArrayLength();
+        if (document.RootElement.ValueKind == JsonValueKind.Array)
+            return document.RootElement.GetArrayLength();
+        if (document.RootElement.TryGetProperty("items", out var items)
+            || document.RootElement.TryGetProperty("Items", out items))
+            return items.GetArrayLength();
+        throw new JsonException("응답에 배열 또는 Items 페이지가 없습니다.");
     }
 
     private static async Task<Guid> ReadIdAsync(HttpResponseMessage response)

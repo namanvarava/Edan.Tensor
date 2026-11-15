@@ -6,12 +6,20 @@ namespace EDAN.Tensor.Platform.Application.Abstractions;
 public interface IAuthorizationPolicyRepository
 {
     Task<IReadOnlyList<AuthorizationPolicy>> GetByTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default);
+    Task<AuthorizationPolicyPage> GetPageAsync(TenantId tenantId, OrganizationId? organizationId,
+        ProjectId? projectId, string? subjectId, string? action, AuthorizationPolicyEffect? effect,
+        bool? isEnabled, int page, int pageSize, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("정책 페이지 조회가 구현되지 않았습니다.");
     Task<AuthorizationPolicy?> GetByIdAsync(AuthorizationPolicyId id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AuthorizationPolicy>> GetApplicableAsync(TenantId tenantId, OrganizationId? organizationId,
         ProjectId? projectId, string subjectId, string action, string resourceType, CancellationToken cancellationToken = default);
     void Add(AuthorizationPolicy policy);
     void AddChangeAudit(AuthorizationPolicyChangeAuditEntry entry);
 }
+
+/// <summary>Tenant 범위 접근 정책의 필터·페이징 결과입니다.</summary>
+public sealed record AuthorizationPolicyPage(
+    IReadOnlyList<AuthorizationPolicy> Items, int TotalCount, int Page, int PageSize);
 
 /// <summary>권한 감사 저장소는 평가 결과를 추가 전용으로 기록합니다.</summary>
 public interface IAuthorizationAuditRepository

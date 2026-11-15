@@ -1,6 +1,7 @@
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Application.Abstractions;
+using EDAN.Tensor.Worker.Domain.Model;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -16,17 +17,20 @@ public static class WorkerEndpoints
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>()
             .AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        group.MapGet("", async (Guid tenantId, WorkerTaskDeadLetterService service,
+        group.MapGet("", async (Guid tenantId, string? taskType, string? errorCode,
+            DateTimeOffset? fromUtc, DateTimeOffset? toUtc, WorkerTaskDeadLetterService service,
             CancellationToken token, int page = 1, int pageSize = 50) =>
         {
             try
             {
-                var tasks = await service.GetAsync(tenantId, page, pageSize, token);
+                var result = await service.GetPageAsync(tenantId, taskType, errorCode, fromUtc, toUtc,
+                    page, pageSize, token);
                 return Results.Ok(new
                 {
-                    Page = page,
-                    PageSize = pageSize,
-                    Items = tasks.Select(task => new
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    Items = result.Items.Select(task => new
                     {
                         task.Id,
                         task.TaskType,
@@ -48,6 +52,19 @@ public static class WorkerEndpoints
                 return Results.BadRequest(new { Code = "worker.dead_letter.invalid_page", Description = "페이지 범위가 너무 큽니다." });
             }
         }).WithName("GetWorkerDeadLetters");
+
+        group.MapGet("/replays", async (Guid tenantId, Guid? originalTaskId,
+            DateTimeOffset? fromUtc, DateTimeOffset? toUtc, WorkerTaskDeadLetterService service,
+            CancellationToken token, int page = 1, int pageSize = 50) =>
+        {
+            try
+            {
+                return Results.Ok(await service.GetReplayHistoryAsync(tenantId, originalTaskId,
+                    fromUtc, toUtc, page, pageSize, token));
+            }
+            catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new { Code = "worker.dead_letter.invalid_query", Description = ex.Message }); }
+            catch (OverflowException) { return Results.BadRequest(new { Code = "worker.dead_letter.invalid_page", Description = "페이지 범위가 너무 큽니다." }); }
+        }).WithName("GetWorkerDeadLetterReplayHistory");
 
         group.MapPost("/{taskId:guid}/replay", async (Guid tenantId, Guid taskId,
             HttpContext context, WorkerTaskDeadLetterService service, CancellationToken token) =>
@@ -93,6 +110,19 @@ public static class WorkerEndpoints
                 ? Results.NotFound(new { Code = "worker.task.not_found", Description = "Tenant의 작업을 찾을 수 없습니다." })
                 : Results.Ok(task);
         }).WithName("GetWorkerTaskStatus");
+
+        taskGroup.MapGet("", async (Guid tenantId, string? taskType, WorkerTaskStatus? status,
+            DateTimeOffset? fromUtc, DateTimeOffset? toUtc, WorkerTaskQueryService service,
+            CancellationToken token, int page = 1, int pageSize = 50) =>
+        {
+            try
+            {
+                return Results.Ok(await service.GetPageAsync(tenantId, taskType, status, fromUtc, toUtc,
+                    page, pageSize, token));
+            }
+            catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new { Code = "worker.task.invalid_query", Description = ex.Message }); }
+            catch (OverflowException) { return Results.BadRequest(new { Code = "worker.task.invalid_page", Description = "페이지 범위가 너무 큽니다." }); }
+        }).WithName("GetWorkerTasks");
 
         taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
             EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>

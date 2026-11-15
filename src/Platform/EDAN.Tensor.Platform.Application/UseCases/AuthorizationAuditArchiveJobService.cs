@@ -70,6 +70,16 @@ public sealed class AuthorizationAuditArchiveJobService(
         return new AuthorizationAuditArchiveJobDetails(ToView(job), attempts.Select(ToAttempt).ToArray());
     }
 
+    /// <summary>Tenant 범위 아카이브 작업을 상태·생성 기간으로 필터링해 페이지 조회합니다.</summary>
+    public async Task<AuthorizationAuditArchiveJobPageView> GetPageAsync(TenantId tenantId, string? status,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await jobs.GetPageAsync(tenantId, status, fromUtc, toUtc, page, pageSize, cancellationToken);
+        return new AuthorizationAuditArchiveJobPageView(result.TotalCount, result.Page, result.PageSize,
+            result.Items.Select(ToView).ToArray());
+    }
+
     private async Task<AuthorizationAuditArchiveJobView> ExecuteAsync(AuthorizationAuditArchiveJob job,
         string operation, CancellationToken cancellationToken)
     {
@@ -114,6 +124,10 @@ public sealed record AuthorizationAuditArchiveJobView(Guid JobId, Guid TenantId,
 /// <summary>아카이브 작업과 실행 시도 목록을 함께 제공합니다.</summary>
 public sealed record AuthorizationAuditArchiveJobDetails(AuthorizationAuditArchiveJobView Job,
     IReadOnlyList<AuthorizationAuditArchiveAttemptView> Attempts);
+
+/// <summary>감사 아카이브 작업 목록의 API projection입니다.</summary>
+public sealed record AuthorizationAuditArchiveJobPageView(
+    int TotalCount, int Page, int PageSize, IReadOnlyList<AuthorizationAuditArchiveJobView> Items);
 
 /// <summary>아카이브 작업의 체크섬 검증 결과를 제공합니다.</summary>
 public sealed record AuthorizationAuditJobVerification(Guid JobId, bool IsValid, string ReasonCode, string? Sha256);

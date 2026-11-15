@@ -12,6 +12,17 @@ public sealed class DataSetValidationService(
     IDataSetValidationRepository validations,
     DataSetManagementService dataSetManagement)
 {
+    /// <summary>Tenant 범위 검증 프로필을 이름으로 필터링해 페이지 조회합니다.</summary>
+    public Task<DataSetValidationProfilePage> GetProfilesAsync(Guid tenantId, string? search,
+        int page, int pageSize, CancellationToken cancellationToken = default) =>
+        validations.GetProfilesAsync(tenantId, search, page, pageSize, cancellationToken);
+
+    /// <summary>Tenant 범위 검증 실행을 DataSet·프로필·상태로 필터링해 페이지 조회합니다.</summary>
+    public Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
+        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        CancellationToken cancellationToken = default) =>
+        validations.GetExecutionsAsync(tenantId, dataSetId, profileId, status, page, pageSize, cancellationToken);
+
     /// <summary>프로필 문서를 검증한 뒤 첫 번째 불변 revision을 생성합니다.</summary>
     public async Task<Result<DataSetValidationProfileSnapshot>> CreateProfileAsync(
         Guid tenantId, string name, string definitionJson, DateTimeOffset nowUtc,
