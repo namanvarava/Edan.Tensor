@@ -60,8 +60,9 @@ public sealed class PlatformApiIntegrationTests
             displayName = "초대 사용자",
             lifetimeDays = 7
         });
-        Assert.Equal(HttpStatusCode.Created, invitationResponse.StatusCode);
-        var invitationId = await ReadIdAsync(invitationResponse);
+        Assert.True(invitationResponse.StatusCode == HttpStatusCode.Created,
+            await invitationResponse.Content.ReadAsStringAsync());
+        var invitationId = await ReadGuidAsync(invitationResponse, "invitationId");
         var delivery = factory.Services.GetRequiredService<DevelopmentInvitationDelivery>();
         Assert.True(delivery.TryGetToken(invitationId, out var token));
 
@@ -85,8 +86,9 @@ public sealed class PlatformApiIntegrationTests
             email = $"revoke-{suffix}@example.com",
             displayName = "철회 사용자"
         });
-        Assert.Equal(HttpStatusCode.Created, secondInvitation.StatusCode);
-        var secondInvitationId = await ReadIdAsync(secondInvitation);
+        Assert.True(secondInvitation.StatusCode == HttpStatusCode.Created,
+            await secondInvitation.Content.ReadAsStringAsync());
+        var secondInvitationId = await ReadGuidAsync(secondInvitation, "invitationId");
         using var revokeResponse = await client.PostAsync($"/api/platform/tenants/{tenantId}/invitations/{secondInvitationId}/revoke", null);
         Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
         using var revokedResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/invitations?status=Revoked");
@@ -2157,8 +2159,13 @@ public sealed class PlatformApiIntegrationTests
 
     private static async Task<Guid> ReadIdAsync(HttpResponseMessage response)
     {
+        return await ReadGuidAsync(response, "id");
+    }
+
+    private static async Task<Guid> ReadGuidAsync(HttpResponseMessage response, string propertyName)
+    {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return document.RootElement.GetProperty("id").GetGuid();
+        return document.RootElement.GetProperty(propertyName).GetGuid();
     }
 
     /// <summary>짧은 통합 검증 작업에서 Lease 갱신을 계속 허용합니다.</summary>

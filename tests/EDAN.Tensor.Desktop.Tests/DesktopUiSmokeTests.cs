@@ -19,6 +19,7 @@ public sealed class DesktopUiSmokeTests
             try
             {
                 var app = new App();
+            app.InitializeComponent();
                 var window = new MainWindow();
                 var viewModel = Assert.IsType<MainWindowViewModel>(window.DataContext);
                 Assert.Equal(15, viewModel.Screens.Count);

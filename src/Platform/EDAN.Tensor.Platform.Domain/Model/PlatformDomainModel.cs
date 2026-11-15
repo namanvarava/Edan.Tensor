@@ -117,7 +117,7 @@ public sealed class Invitation : AggregateRoot<InvitationId>
  public void Accept(string tokenHash, DateTimeOffset nowUtc)
  {
   ExpireIfNeeded(nowUtc);
-  if (Status != InvitationStatus.Pending || !CryptographicEquals(TokenHash, tokenHash))
+  if (Status != InvitationStatus.Pending || !CryptographicEquals(TokenHash, ValidateTokenHash(tokenHash)))
    throw new BusinessRuleViolationException("platform.invitation.token_invalid", "유효하지 않거나 만료된 초대 token입니다.");
   Status=InvitationStatus.Accepted; AcceptedAtUtc=nowUtc.ToUniversalTime();
  }

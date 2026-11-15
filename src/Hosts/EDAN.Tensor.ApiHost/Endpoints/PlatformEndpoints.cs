@@ -736,7 +736,12 @@ public static class PlatformEndpoints
         {
             var lifetime = request.LifetimeDays.HasValue ? TimeSpan.FromDays(request.LifetimeDays.Value) : (TimeSpan?)null;
             var result = await service.CreateAsync(new TenantId(tenantId), request.Email, request.DisplayName, lifetime, token);
-            return result.IsSuccess ? Results.Json(result.Value, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            return result.IsSuccess
+                ? Results.Json(new InvitationCreatedResponse(result.Value.UserId, result.Value.Id, result.Value.UserId,
+                    result.Value.TenantId, result.Value.Email, result.Value.DisplayName, result.Value.Status,
+                    result.Value.CreatedAtUtc, result.Value.ExpiresAtUtc, result.Value.AcceptedAtUtc,
+                    result.Value.RevokedAtUtc, result.Value.ResendCount), statusCode: StatusCodes.Status201Created)
+                : ToHttpResult(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapPost("/{tenantId:guid}/invitations/{invitationId:guid}/resend", async (Guid tenantId, Guid invitationId,
@@ -850,6 +855,9 @@ public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName, int? LifetimeDays = null);
 public sealed record InvitationLifetimeRequest(int? LifetimeDays = null);
 public sealed record AcceptInvitationRequest(string Token);
+public sealed record InvitationCreatedResponse(Guid Id, Guid InvitationId, Guid UserId, Guid TenantId, string Email,
+    string DisplayName, string Status, DateTimeOffset CreatedAtUtc, DateTimeOffset ExpiresAtUtc,
+    DateTimeOffset? AcceptedAtUtc, DateTimeOffset? RevokedAtUtc, int ResendCount);
 public sealed record UpdateDirectoryEntryRequest(string? Name, string? Status);
 public sealed record SetUserStatusRequest(string Status);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
