@@ -4,6 +4,9 @@
 승인된 정책과 제안을 구분하고 설계 검토와 실제 실행 증거를 별도로 판단해야 합니다.
 
 - [EDAN 소스 개발 표준](standards/EDAN-SOURCE-DEVELOPMENT-STANDARD.md)
+- [EDAN Screen Registry 관리 표준](standards/EDAN-SCREEN-REGISTRY-STANDARD.md)
+- [화면 Registry 기본 목록](registry/screens.csv)
+- [화면-Service 연결 목록](registry/screen-service-bindings.csv)
 - [프로젝트 구조](architecture/project-structure.md)
 - [데이터베이스 테이블명·컬럼명 표준 명명 규칙](database-naming-conventions.md)
 - [현재 Work 범위 감사](validation/2026-11-10-current-work-scope-audit.md)
