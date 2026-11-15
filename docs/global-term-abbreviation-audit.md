@@ -12,16 +12,20 @@
 |---|---:|
 | 기존 원본 데이터 행 | 116 |
 | 기존 대표 영문명 고유 개념 | 110 |
-| 확장 카탈로그 행 | 355 |
-| 확장 카탈로그 고유 영문명 | 343 |
-| 확장 카탈로그 내부 반복 행 통합 | 12 |
-| 기존 추가 후보 | 27 |
-| 확장 사전 약어 후보 행 | 364 |
-| 3자 후보 | 316 |
-| 4자 후보 | 48 |
-| 후보 미배정 | 0 |
-| 후보 약어 중복 | 0 |
-| 형식 위반 | 0 |
+| 기존 26개 확장 후보 원본 | 26 |
+| 기존 후보의 의미 분리 후 개념 수 | 27 |
+| ERP 확장 카탈로그 원본 행 | 355 |
+| ERP 확장 카탈로그 고유 영문명 | 343 |
+| ERP 카탈로그 내부 반복 행 통합 | 12 |
+| 확장 통합 레지스트리 행 | 362 |
+| 기존·확장 간 동일 개념 통합 | 12 |
+| 최종 대표 개념 수(복합 컬럼 패턴 제외) | 453 |
+| 기존 복합 컬럼 조합 규칙 | 7 |
+| 최종 3자 대표 약어 | 385 |
+| 최종 4자 대표 약어 | 68 |
+| 대표 약어 미배정 | 0 |
+| 대표 약어 중복 | 0 |
+| 3자·4자 형식 위반 | 0 |
 
 ## 2. 기존 전자사전 중복 통합
 
@@ -71,8 +75,8 @@
 
 ## 5. 후보 전역 중복 및 형식 검사
 
-전체 확장 카탈로그와 기존 26개 후보의 약어를 하나의 전역 네임스페이스에서 비교했다.
-검사 결과: 약어 중복 0건, 미배정 0건, 형식 위반 0건.
+기존 110개 대표 용어의 정규화 약어와 ERP 확장·기존 26개 후보를 하나의 전역 네임스페이스에서 대조했다. 동일 개념 12건은 하나의 대표 개념으로 통합하고, 의미가 다른 동명 개념은 별도 대표명으로 분리했다.
+최종 453개 대표 개념을 검사한 결과: 약어 중복 0건, 미배정 0건, 3자·4자 형식 위반 0건. 기존 7개 복합 컬럼 패턴은 독립 대표 약어가 아니므로 별도 조합 규칙으로 관리한다.
 
 ## 6. 전체 확장 대표 용어 및 약어 후보
 
@@ -440,6 +444,50 @@
 | Unix Epoch | uep | Unix 기준시각 | Platform | 1970-01-01T00:00:00Z 기준 경과 시간 | 기존 26개 후보 추가 |
 | Millisecond | msec | 밀리초 | Platform, IIOT | 1/1000초 시간 단위. ms는 SI 단위 기호로 별도 관리 | 기존 26개 후보 추가 |
 | Seen | seen | 관찰됨·확인됨 | Audit, Platform | 관찰 상태. Read·Acknowledged와 구분 | 기존 26개 후보 추가 |
+
+
+## 6.1 동의어·약칭 및 인접 개념의 의미 판정
+
+### 동일 개념으로 통합하거나 약칭으로 연결한 항목
+
+| 대표 개념 | 동의어·약칭 | 처리 |
+|---|---|---|
+| Work in Process | WIP | Work in Process에 통합하고 wip를 대표 약어로 사용 |
+| Bill of Materials | BOM | Bill of Materials에 통합하고 bom을 대표 약어로 사용 |
+| Unit of Measure | UOM | Unit of Measure에 통합하고 uom을 대표 약어로 사용 |
+| Request for Quotation | RFQ | Request for Quotation에 통합하고 rfq를 대표 약어로 사용 |
+| Proof of Delivery | POD | Proof of Delivery에 통합하고 pod를 대표 약어로 사용 |
+| Programmable Logic Controller | PLC | 풀네임을 대표명으로 사용하고 plc를 대표 약어로 사용 |
+| Distributed Control System | DCS | 풀네임을 대표명으로 사용하고 dcs를 대표 약어로 사용 |
+| Supervisory Control and Data Acquisition | SCADA | 풀네임을 대표명으로 사용하고 scad를 내부 약어로 사용 |
+| Overall Equipment Effectiveness | OEE | 풀네임을 대표명으로 사용하고 oee를 대표 약어로 사용 |
+
+### 독립 개념으로 유지한 인접 용어
+
+| 개념 A | 개념 B | 분리 근거 |
+|---|---|---|
+| Production Order | Manufacturing Order | ERP 생산 관리 오더와 MES/MOM 제조 실행 상위 오더. 연계키·소유권으로 연결 |
+| Purchase Receipt | Goods Receipt | 구매 주문에 대한 수령 사건과 재고 거래 기록을 구분 |
+| Goods Receipt | Inspection Receipt | 물품 수령·재고 거래와 검사 대상 등록을 구분 |
+| Sales Order | Purchase Order | 고객 판매 약정과 공급업체 구매 약정 |
+| Production Order | Work Order | 생산 관리 단위와 개별 작업 지시 |
+| Work Order | Maintenance Order | 일반 작업 지시와 설비 정비 지시 |
+| Shipment | Goods Delivery | 물류 출하·인계와 수령지 납품 이행 |
+| Process | Manufacturing Operation | 제조 변환 공정과 라우팅 내 개별 실행 단계 |
+| Tag | Signal | 논리적 데이터 식별자와 수집되는 물리·논리 신호 |
+| Signal | Measurement | 신호 정의와 특정 시점에 관측된 값 |
+| Traceability | Genealogy | 추적 능력·기능과 실제 투입·산출 계보 관계 |
+| Corrective Action | Preventive Action | 발생 부적합 시정과 잠재 문제 예방 |
+| Revision | Version | 승인된 내용 개정 차수와 기술·배포 버전 |
+| Equipment | Asset | 설비 운영 객체와 재무·관리 자산 |
+| Employee | Person | 고용 관계가 있는 인력과 일반 개인 |
+| Employee | User | 인사 인력 정보와 시스템 계정 |
+| Used State | Used Quantity | 사용 여부 상태와 소비·사용 수량 |
+| Expected | Expiration | 기대값·예정값과 유효기간 만료 |
+| Action | Actor | 수행 행위와 행위 주체 |
+| Identifier | Identity | 객체 식별값과 인증·권한 신원 |
+
+이 표의 인접 개념은 자동 통합하지 않는다. 관계 용어 또는 상위·하위·문맥 관계로 연결하고, 물리 컬럼명은 구체적인 대표 개념을 선택한다.
 
 ## 7. 검증 한계 및 승인 원칙
 
