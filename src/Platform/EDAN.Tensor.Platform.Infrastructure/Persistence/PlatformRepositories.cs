@@ -65,15 +65,17 @@ public sealed class InvitationRepository(PlatformDbContext db) : IInvitationRepo
     {
         if (page < 1 || pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
         var query = db.Invitations.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        // EmailAddress is persisted through a value converter; apply its Value-based search after materialization
+        // so the contract remains provider-independent (including SQLite used by integration smoke).
+        var all = await query.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var value = search.Trim().ToLowerInvariant();
-            query = query.Where(x => x.Email.Value.Contains(value) || x.DisplayName.ToLower().Contains(value));
+            var value = search.Trim();
+            all = all.Where(x => x.Email.Value.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+                x.DisplayName.Contains(value, StringComparison.OrdinalIgnoreCase)).ToList();
         }
-        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query.OrderByDescending(x => x.CreatedAtUtc).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        return new(totalCount, items);
+        return new(all.Count, all.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
     }
     public void Add(Invitation invitation) => db.Invitations.Add(invitation);
 }
