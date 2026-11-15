@@ -100,6 +100,12 @@ public sealed class DataSetManagementService(
     public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
         repository.GetAsync(id, tenantId, cancellationToken);
 
+    /// <summary>Tenant 범위 DataSet을 조직·프로젝트·이름·상태로 필터링해 페이지 조회합니다.</summary>
+    public Task<DataSetPage> GetPageAsync(Guid tenantId, Guid? organizationId, Guid? projectId,
+        string? search, DataSetStatus? status, int page, int pageSize,
+        CancellationToken cancellationToken = default) =>
+        repository.GetPageAsync(tenantId, organizationId, projectId, search, status, page, pageSize, cancellationToken);
+
     /// <summary>DataSet 및 동일 Project 소유 범위의 실제 콘텐츠 저장량을 조회합니다.</summary>
     public async Task<DataSetStorageUsage?> GetStorageUsageAsync(
         DataSetId id, Guid tenantId, IDataSetStorageUsageReader usageReader,

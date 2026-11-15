@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
 
 namespace EDAN.Tensor.Platform.Application.UseCases;
@@ -61,6 +62,48 @@ public sealed class ScopedMembershipService(
             return Result<ProjectMembershipId>.Success(membership.Id);
         }
         catch (ArgumentException ex) { return Fail<ProjectMembershipId>("platform.validation", ex.Message); }
+    }
+
+    /// <summary>조직 구성원의 역할을 변경하거나 접근 권한을 회수합니다.</summary>
+    public async Task<Result> UpdateOrganizationAsync(
+        TenantId tenantId, OrganizationId organizationId, OrganizationMembershipId membershipId,
+        OrganizationRole? role, bool revoke, CancellationToken cancellationToken = default)
+    {
+        var membership = await memberships.GetOrganizationMembershipAsync(tenantId, organizationId, membershipId, cancellationToken);
+        if (membership is null)
+            return Result.Failure(new Error("platform.organization_membership.not_found", "조직 멤버십을 찾을 수 없습니다."));
+        if (!revoke && !role.HasValue)
+            return Result.Failure(new Error("platform.validation", "Role 또는 Revoke 중 하나가 필요합니다."));
+        try
+        {
+            if (revoke) membership.Revoke();
+            else membership.ChangeRole(role!.Value);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (BusinessRuleViolationException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
+        catch (ArgumentException ex) { return Result.Failure(new Error("platform.validation", ex.Message)); }
+    }
+
+    /// <summary>프로젝트 구성원의 역할을 변경하거나 접근 권한을 회수합니다.</summary>
+    public async Task<Result> UpdateProjectAsync(
+        TenantId tenantId, OrganizationId organizationId, ProjectId projectId, ProjectMembershipId membershipId,
+        ProjectRole? role, bool revoke, CancellationToken cancellationToken = default)
+    {
+        var membership = await memberships.GetProjectMembershipAsync(tenantId, organizationId, projectId, membershipId, cancellationToken);
+        if (membership is null)
+            return Result.Failure(new Error("platform.project_membership.not_found", "프로젝트 멤버십을 찾을 수 없습니다."));
+        if (!revoke && !role.HasValue)
+            return Result.Failure(new Error("platform.validation", "Role 또는 Revoke 중 하나가 필요합니다."));
+        try
+        {
+            if (revoke) membership.Revoke();
+            else membership.ChangeRole(role!.Value);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (BusinessRuleViolationException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
+        catch (ArgumentException ex) { return Result.Failure(new Error("platform.validation", ex.Message)); }
     }
 
     private static Result<T> Fail<T>(string code, string description) => Result<T>.Failure(new Error(code, description));

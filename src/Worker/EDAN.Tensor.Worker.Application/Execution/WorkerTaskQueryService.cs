@@ -16,13 +16,26 @@ public sealed class WorkerTaskQueryService(IWorkerTaskRepository repository)
             throw new ArgumentException("작업 식별자는 비어 있을 수 없습니다.", nameof(taskId));
 
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
-        return task is null ? null : new WorkerTaskStatusView(
-            task.Id, task.TaskType, task.Status.ToString(), task.AttemptCount,
-            task.MaxAttempts, task.FencingToken, task.CheckpointVersion,
-            task.CreatedAtUtc, task.NextAttemptAtUtc, task.CompletedAtUtc,
-            task.LastErrorCode, task.LeaseExpiresAtUtc, task.ProgressPercent,
-            task.ProgressStage, task.ProgressMessage, task.ResultReference is not null);
+        return task is null ? null : ToView(task);
     }
+
+    /// <summary>Tenant 범위 Worker 작업을 유형·상태·생성 기간으로 필터링해 페이지 조회합니다.</summary>
+    public async Task<WorkerTaskStatusPageView> GetPageAsync(Guid tenantId, string? taskType,
+        WorkerTaskStatus? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var result = await repository.GetPageAsync(tenantId, taskType, status, fromUtc, toUtc,
+            page, pageSize, cancellationToken);
+        return new WorkerTaskStatusPageView(result.TotalCount, result.Page, result.PageSize,
+            result.Items.Select(ToView).ToArray());
+    }
+
+    private static WorkerTaskStatusView ToView(WorkerTask task) => new(
+        task.Id, task.TaskType, task.Status.ToString(), task.AttemptCount,
+        task.MaxAttempts, task.FencingToken, task.CheckpointVersion,
+        task.CreatedAtUtc, task.NextAttemptAtUtc, task.CompletedAtUtc,
+        task.LastErrorCode, task.LeaseExpiresAtUtc, task.ProgressPercent,
+        task.ProgressStage, task.ProgressMessage, task.ResultReference is not null);
 }
 
 /// <summary>API에 공개 가능한 작업 운영 메타데이터입니다.</summary>
@@ -43,3 +56,7 @@ public sealed record WorkerTaskStatusView(
     string? ProgressStage,
     string? ProgressMessage,
     bool HasResult);
+
+/// <summary>Worker 작업 목록의 API projection입니다.</summary>
+public sealed record WorkerTaskStatusPageView(
+    int TotalCount, int Page, int PageSize, IReadOnlyList<WorkerTaskStatusView> Items);

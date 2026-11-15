@@ -8,6 +8,8 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 public sealed class TenantRepository(PlatformDbContext db) : ITenantRepository
 {
     public Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken = default) => db.Tenants.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await db.Tenants.AsNoTracking().OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsCodeAsync(TenantCode code, CancellationToken cancellationToken = default) => db.Tenants.AnyAsync(x => x.Code == code, cancellationToken);
     public void Add(Tenant tenant) => db.Tenants.Add(tenant);
 }
@@ -15,6 +17,8 @@ public sealed class TenantRepository(PlatformDbContext db) : ITenantRepository
 public sealed class OrganizationRepository(PlatformDbContext db) : IOrganizationRepository
 {
     public Task<Organization?> GetByIdAsync(OrganizationId id, CancellationToken cancellationToken = default) => db.Organizations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Organization>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.Organizations.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsCodeAsync(TenantId tenantId, OrganizationCode code, CancellationToken cancellationToken = default) => db.Organizations.AnyAsync(x => x.TenantId == tenantId && x.Code == code, cancellationToken);
     public void Add(Organization organization) => db.Organizations.Add(organization);
 }
@@ -22,12 +26,22 @@ public sealed class OrganizationRepository(PlatformDbContext db) : IOrganization
 public sealed class ProjectRepository(PlatformDbContext db) : IProjectRepository
 {
     public Task<Project?> GetByIdAsync(ProjectId id, CancellationToken cancellationToken = default) => db.Projects.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Project>> GetForTenantAsync(TenantId tenantId, OrganizationId? organizationId = null, CancellationToken cancellationToken = default)
+    {
+        var query = db.Projects.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (organizationId is not null)
+            query = query.Where(x => x.OrganizationId == organizationId);
+        return await query.OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
+    }
     public Task<bool> ExistsCodeAsync(OrganizationId organizationId, ProjectCode code, CancellationToken cancellationToken = default) => db.Projects.AnyAsync(x => x.OrganizationId == organizationId && x.Code == code, cancellationToken);
     public void Add(Project project) => db.Projects.Add(project);
 }
 
 public sealed class UserRepository(PlatformDbContext db) : IUserRepository
 {
+    public Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default) => db.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<User>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.Users.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Email.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsEmailAsync(TenantId tenantId, EmailAddress email, CancellationToken cancellationToken = default) => db.Users.AnyAsync(x => x.TenantId == tenantId && x.Email == email, cancellationToken);
     public void Add(User user) => db.Users.Add(user);
 }
@@ -45,6 +59,12 @@ public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMe
             .Where(x => x.SubjectId == subjectId && x.Status == TenantMembershipStatus.Active)
             .OrderBy(x => x.TenantId)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TenantMembership>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.TenantMemberships.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
+
+    public Task<TenantMembership?> GetByIdAsync(TenantId tenantId, TenantMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        db.TenantMemberships.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == membershipId, cancellationToken);
 
     public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
 }
@@ -72,6 +92,22 @@ public sealed class ScopedMembershipRepository(PlatformDbContext db) : IScopedMe
             x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
             (x.Role == ProjectRole.Contributor || x.Role == ProjectRole.Manager), cancellationToken);
 
+    public async Task<IReadOnlyList<OrganizationMembership>> GetOrganizationMembershipsAsync(TenantId tenantId, OrganizationId organizationId, CancellationToken cancellationToken = default) =>
+        await db.OrganizationMemberships.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.OrganizationId == organizationId)
+            .OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<ProjectMembership>> GetProjectMembershipsAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, CancellationToken cancellationToken = default) =>
+        await db.ProjectMemberships.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId)
+            .OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
+
+    public Task<OrganizationMembership?> GetOrganizationMembershipAsync(TenantId tenantId, OrganizationId organizationId, OrganizationMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        db.OrganizationMemberships.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.Id == membershipId, cancellationToken);
+
+    public Task<ProjectMembership?> GetProjectMembershipAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, ProjectMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        db.ProjectMemberships.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId && x.Id == membershipId, cancellationToken);
+
     public void Add(OrganizationMembership membership) => db.OrganizationMemberships.Add(membership);
     public void Add(ProjectMembership membership) => db.ProjectMemberships.Add(membership);
 }
@@ -97,6 +133,29 @@ public sealed class AuthorizationPolicyRepository(PlatformDbContext db) : IAutho
             .Where(x => x.TenantId == tenantId)
             .ToListAsync(cancellationToken);
         return policies.OrderByDescending(x => x.CreatedAtUtc).ToArray();
+    }
+
+    public async Task<AuthorizationPolicyPage> GetPageAsync(TenantId tenantId, OrganizationId? organizationId,
+        ProjectId? projectId, string? subjectId, string? action, AuthorizationPolicyEffect? effect,
+        bool? isEnabled, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        var query = db.AuthorizationPolicies.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (organizationId is not null) query = query.Where(x => x.OrganizationId == organizationId);
+        if (projectId is not null) query = query.Where(x => x.ProjectId == projectId);
+        if (!string.IsNullOrWhiteSpace(subjectId)) query = query.Where(x => x.SubjectId == subjectId);
+        if (!string.IsNullOrWhiteSpace(action)) query = query.Where(x => x.Action == action.ToLowerInvariant());
+        if (effect.HasValue) query = query.Where(x => x.Effect == effect.Value);
+        if (isEnabled.HasValue) query = query.Where(x => x.IsEnabled == isEnabled.Value);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = (await query.ToListAsync(cancellationToken))
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id.Value)
+            .Skip(checked((page - 1) * pageSize))
+            .Take(pageSize)
+            .ToArray();
+        return new AuthorizationPolicyPage(items, totalCount, page, pageSize);
     }
 
     public Task<AuthorizationPolicy?> GetByIdAsync(AuthorizationPolicyId id, CancellationToken cancellationToken = default) =>
@@ -179,6 +238,26 @@ public sealed class AuthorizationAuditRepository(PlatformDbContext db) : IAuthor
 /// <summary>감사 아카이브 작업과 실행 이력을 Tenant 범위로 조회하고 추가합니다.</summary>
 public sealed class AuthorizationAuditArchiveJobRepository(PlatformDbContext db) : IAuthorizationAuditArchiveJobRepository
 {
+    public async Task<AuthorizationAuditArchiveJobPage> GetPageAsync(TenantId tenantId, string? status,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        var query = db.AuthorizationAuditArchiveJobs.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(x => x.Status.ToString() == status);
+        if (fromUtc.HasValue) query = query.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime());
+        if (toUtc.HasValue) query = query.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime());
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = (await query.ToListAsync(cancellationToken))
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize))
+            .Take(pageSize)
+            .ToArray();
+        return new AuthorizationAuditArchiveJobPage(items, totalCount, page, pageSize);
+    }
+
     public Task<AuthorizationAuditArchiveJob?> GetAsync(TenantId tenantId, Guid jobId,
         CancellationToken cancellationToken = default) =>
         db.AuthorizationAuditArchiveJobs.SingleOrDefaultAsync(

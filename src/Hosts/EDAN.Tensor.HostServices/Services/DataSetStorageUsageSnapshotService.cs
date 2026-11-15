@@ -245,13 +245,17 @@ public sealed class DataSetStorageUsageSnapshotService(
     /// <returns>Tenant에 속한 저장량 스냅샷 목록을 최신 순서로 반환합니다.</returns>
     /// <exception cref="ArgumentException">Tenant 식별자가 비어 있으면 예외를 반환합니다.</exception>
     /// <exception cref="ArgumentOutOfRangeException">조회 개수가 1~744 범위를 벗어나면 예외를 반환합니다.</exception>
-    public Task<List<DataSetStorageUsageSnapshot>> GetHistoryAsync(
-        Guid tenantId, int take = 168, CancellationToken cancellationToken = default)
+    public async Task<List<DataSetStorageUsageSnapshot>> GetHistoryAsync(
+        Guid tenantId, int take = 168, DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
         ValidateTake(take, 744);
-        return dataSetDb.StorageUsageSnapshots.AsNoTracking().Where(x => x.TenantId == tenantId)
-            .OrderByDescending(x => x.Id).Take(take).ToListAsync(cancellationToken);
+        var items = await dataSetDb.StorageUsageSnapshots.AsNoTracking().Where(x => x.TenantId == tenantId)
+            .ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) items = items.Where(x => x.PeriodStartUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) items = items.Where(x => x.PeriodStartUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        return items.OrderByDescending(x => x.PeriodStartUtc).ThenByDescending(x => x.Id).Take(take).ToList();
     }
 
     /// <summary>Tenant의 quota 임계치 이벤트를 최신 순서로 제한된 개수만 조회합니다.</summary>
@@ -261,14 +265,20 @@ public sealed class DataSetStorageUsageSnapshotService(
     /// <returns>Tenant에 속한 quota 임계치 이벤트 목록을 최신 순서로 반환합니다.</returns>
     /// <exception cref="ArgumentException">Tenant 식별자가 비어 있으면 예외를 반환합니다.</exception>
     /// <exception cref="ArgumentOutOfRangeException">조회 개수가 1~500 범위를 벗어나면 예외를 반환합니다.</exception>
-    public Task<List<DataSetQuotaThresholdEvent>> GetQuotaEventHistoryAsync(
-        Guid tenantId, int take = 100, CancellationToken cancellationToken = default)
+    public async Task<List<DataSetQuotaThresholdEvent>> GetQuotaEventHistoryAsync(
+        Guid tenantId, int take = 100, string? scope = null, string? eventType = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null,
+        CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty) throw new ArgumentException("Tenant 식별자는 비어 있을 수 없습니다.", nameof(tenantId));
         ValidateTake(take, 500);
-        return dataSetDb.QuotaThresholdEvents.AsNoTracking().Where(x => x.TenantId == tenantId)
-            .OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id)
-            .Take(take).ToListAsync(cancellationToken);
+        var items = await dataSetDb.QuotaThresholdEvents.AsNoTracking().Where(x => x.TenantId == tenantId)
+            .ToListAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(scope)) items = items.Where(x => x.Scope == scope).ToList();
+        if (!string.IsNullOrWhiteSpace(eventType)) items = items.Where(x => x.EventType == eventType).ToList();
+        if (fromUtc.HasValue) items = items.Where(x => x.OccurredAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) items = items.Where(x => x.OccurredAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        return items.OrderByDescending(x => x.OccurredAtUtc).ThenByDescending(x => x.Id).Take(take).ToList();
     }
 
     private static void ValidateTake(int take, int maximum)

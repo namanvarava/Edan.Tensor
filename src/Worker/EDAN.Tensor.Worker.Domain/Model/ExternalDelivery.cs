@@ -80,6 +80,17 @@ public sealed class ExternalDelivery
         Version++;
     }
 
+    /// <summary>운영자 수동 재시도를 위해 종료된 실패 전달을 대기 상태로 되돌립니다.</summary>
+    public void PrepareRetry()
+    {
+        if (Status == ExternalDeliveryStatus.Succeeded)
+            throw new InvalidOperationException("성공한 외부 전달은 재시도할 수 없습니다.");
+        Status = ExternalDeliveryStatus.Pending;
+        CompletedAtUtc = null;
+        LastErrorCode = null;
+        Version++;
+    }
+
     private static string ValidateUri(string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
