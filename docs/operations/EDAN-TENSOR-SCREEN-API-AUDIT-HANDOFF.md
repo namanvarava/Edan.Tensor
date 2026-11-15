@@ -389,4 +389,4 @@ Screen Registry에 등록된 15개 화면의 기능 명세를 실제 소스 코�
 - WPF smoke: STA 스레드에서 `App`·`MainWindow`·15개 Registry 화면 DataTemplate 로딩을 검증하는 `EDAN.Tensor.Desktop.Tests` 추가
 - CI: 전체 테스트 외에 HTTP smoke와 WPF smoke 단계를 명시적으로 추가
 
-API Host의 임시 SQLite migration 기동과 Release build는 확인했다. 현재 실행 환경의 VSTest testhost가 180초 동안 연결되지 않아 새 HTTP/WPF smoke의 로컬 통과는 주장하지 않으며, CI 실행 결과가 확보될 때까지 CSV의 `TestStatus`는 `NotRun`으로 유지한다. 상세 계약은 [invitation-and-worker-result-contract.md](../architecture/invitation-and-worker-result-contract.md)에 기록한다.
+API Host의 임시 SQLite migration 기동과 Release build를 확인했다. GitHub Actions run `43736265722`에서 전체 Build/Test, HTTP smoke 2건, WPF UI smoke 1건이 통과했다. 로컬 VSTest testhost는 연결되지 않았지만 원격 검증 결과를 CSV에 반영했으며, action-level UI 조작 행은 smoke 범위 밖이므로 `NotRun`을 유지한다. 상세 계약은 [invitation-and-worker-result-contract.md](../architecture/invitation-and-worker-result-contract.md)에 기록한다.

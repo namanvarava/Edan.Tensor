@@ -982,7 +982,7 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 
 - 외부 JWT issuer/audience/lifetime/signing key 검증, `TenantMember`/`PlatformAdministrator` 정책, `X-Tenant-Id`와 route tenant 비교, active membership 및 TenantAdministrator 검증을 실제 소스에서 확인했다.
 - API Application Service의 DI 등록과 WPF View/ViewModel의 `IDesktopScreenService` → `DesktopApiSession` 바인딩을 실제 소스에서 확인했다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
-- `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 현재 변경분에서 경고 0개·오류 0개로 완료했다. 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 testhost에 90초 내 연결하지 못해 중단(exit 1)되었으므로 이번 변경의 테스트를 통과로 기록하지 않았다.
+- `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 오류 0건으로 완료했다. 원격 GitHub Actions run `43736265722`에서 전체 `dotnet test`, HTTP smoke 2건, WPF UI smoke 1건이 모두 통과했다. 로컬 testhost 연결 실패는 별도 환경 미확인으로 기록한다.
 - 테스트 및 상세 격차·우선순위·UI 단계 판단은 [screen-implementation-gaps.md](screen-implementation-gaps.md)에 고정했다.
 
 ### 9.3 조사 후 관리 원칙
@@ -1024,6 +1024,6 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 | PLT-USR-001 | `Invitation` aggregate, SHA-256 token hash, Pending/Accepted/Expired/Revoked lifecycle, 개발 전달 Adapter, resend/revoke/accept API |
 | WRK-TSK-001 | `IWorkerResultStore`, 개발용 `FileSystemWorkerResultStore`, 성공 작업의 raw result 저장·metadata·streaming API, 64 MiB 상한 |
 
-HTTP smoke와 WPF STA smoke는 별도 테스트 프로젝트/CI 단계에 등록했다. 로컬 실행에서는 VSTest testhost가 연결되지 않았으므로 문서의 테스트 상태는 실행 전까지 `NotRun`으로 유지한다.
+HTTP smoke와 WPF STA smoke는 별도 테스트 프로젝트/CI 단계에 등록했고, 원격 CI run `43736265722`에서 통과했다. action-level UI 명령은 해당 smoke 범위에 포함되지 않으므로 관련 UI 검증 행은 `NotRun`으로 유지한다.
 
 이 추가 계약은 UI에서 실제 typed Client 호출과 공통 대상 선택·구조화 Request DTO 입력으로 연결되어 있다. 다만 WPF 화면의 직접 실행 smoke는 테스트host 연결 실패로 확인하지 못했으므로 화면 Registry 상태는 `InDevelopment`를 유지한다.
