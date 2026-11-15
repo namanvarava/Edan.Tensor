@@ -190,7 +190,7 @@
 | Routing | rou | 공정경로 | ERP-PRD, MES, PLM | 제품 생산에 필요한 공정의 순서·경로 정의 / 생산 수행 순서와 작업 단계 | 신규 후보 · 약어 배정 |
 | Work Center | wce | 작업장 | ERP-PRD, MES, MOM | 생산능력·작업이 배정되는 자원 그룹 / 작업 수행 자원의 논리적 그룹 | 신규 후보 · 약어 배정 |
 | Capacity | capa | 생산능력 | ERP-PRD, MOM | 기간·자원별 처리 가능한 양 | 신규 후보 · 약어 배정 |
-| Work Schedule | wsc | 일정 | ERP-PRD, MES, MOM | 작업의 시간 배치. 계획과 실제 실행시간 구분 | 의미 분리 |
+| Work Schedule | wsc | 작업일정 | ERP-PRD, MES, MOM | 작업의 시간 배치. 계획과 실제 실행시간 구분 | 기존 Schedule 개념과 통합 |
 | Dispatch | disp | 작업배포 | MES, MOM | 실행 순서·자원을 정해 작업을 현장에 배정 | 신규 후보 · 약어 배정 |
 | Work in Process | wpr | 재공 | ERP-CST, MES, MOM | 생산공정에 투입되어 아직 완제품이 되지 않은 상태·수량 | 신규 후보 · 약어 배정 |
 | Production Output | pou | 생산산출 | MES, ERP-CST | 생산 작업으로 산출된 수량 | 신규 후보 · 약어 배정 |
@@ -218,7 +218,6 @@
 | Work Unit | wun | 작업단위 | MES, MOM | 현장에서 실행·기록하는 최소 업무 단위 | 신규 후보 · 약어 배정 |
 | Job | job | 작업건 | MES, MOM, EDAN | 실행 인스턴스. Work Order·Task와 별도 | 기존 26개 후보 통합 |
 | Work Request | wre | 작업요청 | MES, EAM | 작업 수행을 요청하는 문서·사건. Work Order와 구분 | 신규 후보 · 약어 배정 |
-| Work Schedule | wos | 작업일정 | MES, MOM | 작업 실행 예정 시간 배치 | 신규 후보 · 약어 배정 |
 | Dispatch List | dli | 작업배포목록 | MES, MOM | 작업장·자원에 배정할 작업의 순서 목록 | 신규 후보 · 약어 배정 |
 | Production Run | pru | 생산실행 | MES, MOM | 특정 생산오더·조건으로 수행한 생산 실행 단위 | 신규 후보 · 약어 배정 |
 | Production Lot | plo | 생산로트 | MES, QMS | 동일 생산 조건으로 추적하는 산출물 집합 | 신규 후보 · 약어 배정 |
