@@ -114,6 +114,8 @@ Screen Registry는 EDAN Tensor의 모든 사용자 화면을 식별하고, 화�
 - Client, Hosts, SharedKernel은 API Client·실행 진입점·공통 기술 기반이므로 독립적인 업무 화면 소유 MODULE로 등록하지 않는다.
 - 실제 구현 소스가 없는 ERP·MES·MOM·QMS·PLM·EAM·IIoT·TAG 등 확장 업무 모듈은 현재 MODULE 코드로 발급하지 않는다.
 - 업무 용어 사전의 적용 모듈 표기와 실제 소스 프로젝트 경계가 다르면 실제 소스 소유권을 우선하고 차이는 Registry 비고에 남긴다.
+- AREA 코드가 전역 업무 용어 사전의 대표 약어와 같은 개념을 나타내면 해당 대표 약어를 우선 사용한다. 다른 개념과 약어가 충돌하면 의미가 다른 코드를 새로 선정한다. 예를 들어 Dispatch는 전역 약어 `disp`와 일치하는 `DISP`를 사용하고, Display에 이미 사용 중인 `DSP`는 사용하지 않는다.
+- MODULE 코드와 AREA 코드는 Screen Registry의 코드 공간에서 서로 중복될 수 없다. 전역 업무 용어 약어와의 비교는 의미 충돌 방지를 위한 검토이며, 모듈 분류 코드와 전역 용어 약어를 같은 식별자 체계로 취급하지 않는다.
 
 AREA 코드는 실제 소스 책임과 전역 업무 용어를 대조해 등록한다. 현재 등록된 코드는 다음 영역을 포함한다.
 
@@ -121,7 +123,7 @@ AREA 코드는 실제 소스 책임과 전역 업무 용어를 대조해 등록�
 | --- | --- | --- |
 | PLT | TNT, ORG, PJT, USR, MBR, AUTH, AUD, QTA | 테넌트·조직·프로젝트·사용자·소속·권한·감사·할당량 |
 | DSET | DSM, SCHM, STO, VLD | 데이터셋 관리·스키마·저장소·검증 |
-| WRK | TSK, DSP, WLS, DLQ, XDL | 작업·디스패치·Lease·실패 격리·외부 전달 |
+| WRK | TSK, DISP, WLS, DLQ, XDL | 작업·디스패치·Lease·실패 격리·외부 전달 |
 | COML | PAY | 결제 및 결제 공급자 경계 |
 | LIC | LCM, KEY | 라이선스 수명주기·서명키 |
 
