@@ -39,6 +39,8 @@ public sealed class EfDataSetRepository(DataSetDbContext dbContext) : IDataSetRe
 
     public void Add(DataSetAggregate dataSet) => dbContext.DataSets.Add(dataSet);
 
+    public void Remove(DataSetAggregate dataSet) => dbContext.DataSets.Remove(dataSet);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // Owned collection의 복합 키(DataSetId + Version)가 이미 설정되어 있으면

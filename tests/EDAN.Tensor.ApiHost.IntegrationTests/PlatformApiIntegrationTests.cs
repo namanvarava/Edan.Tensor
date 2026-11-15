@@ -81,6 +81,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/retention", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs", document, StringComparison.Ordinal);
@@ -90,11 +91,17 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas/diff", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas/{version}/rollback", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/archive", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/restore", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/storage/reset", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}/revisions", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage", document, StringComparison.Ordinal);
@@ -102,6 +109,10 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage/quota-events", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/users/{userId}/status", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/cancel", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/retry", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/deliveries", document, StringComparison.Ordinal);

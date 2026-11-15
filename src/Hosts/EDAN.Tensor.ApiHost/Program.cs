@@ -135,6 +135,7 @@ builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
+builder.Services.AddScoped<WorkerTaskCommandService>();
 var deliveryHosts = builder.Configuration.GetSection("ExternalDelivery:AllowedHosts")
     .GetChildren().Select(section => section.Value).OfType<string>()
     .ToHashSet(StringComparer.OrdinalIgnoreCase);

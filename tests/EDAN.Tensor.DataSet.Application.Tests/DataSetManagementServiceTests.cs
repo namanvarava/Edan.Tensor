@@ -97,6 +97,7 @@ public sealed class DataSetManagementServiceTests
         public Task<DataSetAggregate?> GetAsync(DataSetId id, Guid tenantId, CancellationToken cancellationToken = default) =>
             Task.FromResult(DataSets.SingleOrDefault(x => x.Id == id && x.Scope.TenantId == tenantId));
         public void Add(DataSetAggregate dataSet) => DataSets.Add(dataSet);
+        public void Remove(DataSetAggregate dataSet) => DataSets.Remove(dataSet);
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             Saves++;

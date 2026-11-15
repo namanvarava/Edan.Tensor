@@ -67,6 +67,22 @@ public sealed class DataSetDomainTests
         Assert.Throws<BusinessRuleViolationException>(() => dataSet.Rename("변경"));
         Assert.Throws<BusinessRuleViolationException>(() => dataSet.AddSchema("""{"type":"array"}""", DateTimeOffset.UtcNow));
         Assert.Throws<BusinessRuleViolationException>(() => dataSet.ChangeStorageReference(new("tenant:01.dataset:02")));
+        dataSet.Restore();
+        Assert.Equal(DataSetStatus.Active, dataSet.Status);
+    }
+
+    [Fact]
+    public void SchemaRollbackCreatesNewRevisionFromSelectedImmutableRevision()
+    {
+        var dataSet = Create();
+        dataSet.AddSchema("""{"type":"object","title":"v1"}""", DateTimeOffset.UtcNow);
+        dataSet.AddSchema("""{"type":"object","title":"v2"}""", DateTimeOffset.UtcNow);
+
+        var rollback = dataSet.RollbackSchema(1, DateTimeOffset.UtcNow);
+
+        Assert.Equal(3, rollback.Version);
+        Assert.Equal("""{"type":"object","title":"v1"}""", rollback.SchemaJson);
+        Assert.Equal(3, dataSet.CurrentSchemaVersion);
     }
 
     [Fact]

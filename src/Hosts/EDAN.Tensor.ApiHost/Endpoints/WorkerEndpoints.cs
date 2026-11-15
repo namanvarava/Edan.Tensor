@@ -111,6 +111,15 @@ public static class WorkerEndpoints
                 : Results.Ok(task);
         }).WithName("GetWorkerTaskStatus");
 
+        taskGroup.MapGet("/{taskId:guid}/result", async (Guid tenantId, Guid taskId,
+            WorkerTaskCommandService service, CancellationToken token) =>
+        {
+            var result = await service.GetResultAsync(tenantId, taskId, token);
+            return result is null
+                ? Results.NotFound(new { Code = "worker.task.result_not_found", Description = "작업 결과가 아직 저장되지 않았거나 Tenant 범위에서 찾을 수 없습니다." })
+                : Results.Ok(result);
+        }).WithName("GetWorkerTaskResult");
+
         taskGroup.MapGet("", async (Guid tenantId, string? taskType, WorkerTaskStatus? status,
             DateTimeOffset? fromUtc, DateTimeOffset? toUtc, WorkerTaskQueryService service,
             CancellationToken token, int page = 1, int pageSize = 50) =>
@@ -123,6 +132,28 @@ public static class WorkerEndpoints
             catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new { Code = "worker.task.invalid_query", Description = ex.Message }); }
             catch (OverflowException) { return Results.BadRequest(new { Code = "worker.task.invalid_page", Description = "페이지 범위가 너무 큽니다." }); }
         }).WithName("GetWorkerTasks");
+
+        taskGroup.MapPost("/{taskId:guid}/cancel", async (Guid tenantId, Guid taskId,
+            WorkerTaskCommandService service, CancellationToken token) =>
+        {
+            var changed = await service.CancelAsync(tenantId, taskId, token);
+            return changed ? Results.NoContent() : Results.Conflict(new
+            {
+                Code = "worker.task.invalid_transition",
+                Description = "작업이 없거나 현재 상태에서 취소할 수 없습니다."
+            });
+        }).WithName("CancelWorkerTask");
+
+        taskGroup.MapPost("/{taskId:guid}/retry", async (Guid tenantId, Guid taskId,
+            WorkerTaskCommandService service, CancellationToken token) =>
+        {
+            var changed = await service.ForceRetryAsync(tenantId, taskId, token);
+            return changed ? Results.NoContent() : Results.Conflict(new
+            {
+                Code = "worker.task.invalid_transition",
+                Description = "작업이 없거나 현재 상태에서 강제 재시도할 수 없습니다."
+            });
+        }).WithName("RetryWorkerTask");
 
         taskGroup.MapPost("", async (Guid tenantId, HttpRequest request,
             EnqueueWorkerTaskRequest body, WorkerTaskEnqueueService service, CancellationToken token) =>

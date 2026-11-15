@@ -19,9 +19,11 @@ public sealed class DataSetValidationService(
 
     /// <summary>Tenant 범위 검증 실행을 DataSet·프로필·상태로 필터링해 페이지 조회합니다.</summary>
     public Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
-        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        Guid? profileId, DataSetValidationStatus? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        string? failureCode, int page, int pageSize,
         CancellationToken cancellationToken = default) =>
-        validations.GetExecutionsAsync(tenantId, dataSetId, profileId, status, page, pageSize, cancellationToken);
+        validations.GetExecutionsAsync(tenantId, dataSetId, profileId, status, fromUtc, toUtc, failureCode,
+            page, pageSize, cancellationToken);
 
     /// <summary>프로필 문서를 검증한 뒤 첫 번째 불변 revision을 생성합니다.</summary>
     public async Task<Result<DataSetValidationProfileSnapshot>> CreateProfileAsync(
@@ -66,6 +68,31 @@ public sealed class DataSetValidationService(
             return Failure<DataSetValidationProfileSnapshot>("dataset.validation.profile_invalid", exception.Message);
         }
     }
+
+    public async Task<Result<DataSetValidationProfileSnapshot>> UpdateProfileAsync(
+        Guid tenantId, Guid profileId, string name, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            EnsureTenant(tenantId);
+            var updated = await validations.UpdateProfileAsync(tenantId, profileId, name, cancellationToken);
+            return updated is null
+                ? Failure<DataSetValidationProfileSnapshot>("dataset.validation.profile_not_found", "Tenant 범위에서 검증 프로필을 찾을 수 없습니다.")
+                : Result<DataSetValidationProfileSnapshot>.Success(updated);
+        }
+        catch (ArgumentException exception)
+        {
+            return Failure<DataSetValidationProfileSnapshot>("dataset.validation.profile_invalid", exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Failure<DataSetValidationProfileSnapshot>("dataset.validation.profile_conflict", exception.Message);
+        }
+    }
+
+    public Task<bool> DeleteProfileAsync(Guid tenantId, Guid profileId,
+        CancellationToken cancellationToken = default) =>
+        validations.DeleteProfileAsync(tenantId, profileId, cancellationToken);
 
     /// <summary>현재 DataSet·스키마·프로필 revision을 고정하고 Idempotency-Key에 수렴하는 검증 실행을 예약합니다.</summary>
     /// <param name="tenantId">검증 실행을 소유하는 Tenant 식별자입니다.</param>

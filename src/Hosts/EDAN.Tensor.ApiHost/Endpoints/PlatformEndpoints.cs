@@ -202,6 +202,15 @@ public static class PlatformEndpoints
             return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapPatch("/{tenantId:guid}/users/{userId:guid}/status", async (Guid userId,
+            SetUserStatusRequest request, PlatformDirectoryService service, CancellationToken token) =>
+        {
+            if (!Enum.TryParse(request.Status, true, out UserStatus status))
+                return ValidationError("지원하지 않는 사용자 상태입니다.");
+            var result = await service.UpdateUserAsync(new UserId(userId), null, status, token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("SetUserStatus");
+
         tenantGroup.MapPost("/{tenantId:guid}/authorization-policies",
             async (Guid tenantId, CreateAuthorizationPolicyRequest request, AuthorizationPolicyService service, CancellationToken token) =>
             {
@@ -271,12 +280,12 @@ public static class PlatformEndpoints
         // 저장 용량 정책은 Tenant 관리자만 변경하며 조회도 제한된 페이지로 반환합니다.
         tenantGroup.MapGet("/{tenantId:guid}/storage-quota-policies",
             async (Guid tenantId, StorageQuotaPolicyManagementService service, CancellationToken token,
-                StorageQuotaPolicyScope? scope = null, bool? isEnabled = null,
+                StorageQuotaPolicyScope? scope = null, Guid? targetId = null, bool? isEnabled = null,
                 int page = 1, int pageSize = 50) =>
             {
                 try
                 {
-                    var result = await service.GetPoliciesAsync(new TenantId(tenantId), scope, isEnabled,
+                    var result = await service.GetPoliciesAsync(new TenantId(tenantId), scope, targetId, isEnabled,
                         page, pageSize, token);
                     return Results.Ok(new
                     {
@@ -484,6 +493,18 @@ public static class PlatformEndpoints
                         "Tenant 범위에서 감사 아카이브를 찾을 수 없습니다."));
                 return Results.Ok(result);
             }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/authorization-audit/archives/{archiveId:guid}",
+            async (Guid tenantId, Guid archiveId, AuthorizationAuditArchiveService service,
+                CancellationToken token) =>
+            {
+                var result = await service.DownloadAsync(new TenantId(tenantId), archiveId, token);
+                return result is null
+                    ? Results.NotFound(new ApiError("authorization.audit.archive.not_found",
+                        "Tenant 범위에서 검증 가능한 감사 아카이브를 찾을 수 없습니다."))
+                    : Results.File(result.Content, "application/json", $"{archiveId:N}.edan-audit.json");
+            }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>()
+            .WithName("DownloadAuthorizationAuditArchive");
 
         // 아카이브 작업의 상태와 재시도·검증 이력을 Tenant 관리자에게 제공합니다.
         // Tenant 관리자는 아카이브 예약 주기와 활성 상태를 관리합니다.
@@ -798,6 +819,7 @@ public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
 public sealed record UpdateDirectoryEntryRequest(string? Name, string? Status);
+public sealed record SetUserStatusRequest(string Status);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
 public sealed record CreatePolicyRequest(Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
 

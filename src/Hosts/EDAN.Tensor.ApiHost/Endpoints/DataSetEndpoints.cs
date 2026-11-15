@@ -104,6 +104,20 @@ public static class DataSetEndpoints
                 });
         }).WithName("GetDataSetSchemaRevisions");
 
+        tenantGroup.MapGet("/{dataSetId:guid}/schemas/diff", async (Guid tenantId, Guid dataSetId,
+            int fromVersion, int toVersion, DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.GetSchemaDiffAsync(new DataSetId(dataSetId), tenantId,
+                fromVersion, toVersion, token);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : result.Error.Code switch
+                {
+                    "dataset.not_found" or "dataset.schema_not_found" => Results.NotFound(new { result.Error.Code, result.Error.Description }),
+                    _ => Results.BadRequest(new { result.Error.Code, result.Error.Description })
+                };
+        }).WithName("GetDataSetSchemaDiff");
+
         tenantGroup.MapPost("/{dataSetId:guid}/content", async (Guid tenantId, Guid dataSetId,
             HttpRequest request, DataSetManagementService service, IConfiguration configuration, CancellationToken token) =>
         {
@@ -182,6 +196,18 @@ public static class DataSetEndpoints
                     : Results.BadRequest(new ApiError(result.Error.Code, result.Error.Description));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("AddDataSetSchema");
 
+        tenantGroup.MapPost("/{dataSetId:guid}/schemas/{version:int}/rollback", async (Guid tenantId,
+            Guid dataSetId, int version, DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.RollbackSchemaAsync(new DataSetId(dataSetId), tenantId, version,
+                DateTimeOffset.UtcNow, token);
+            return result.IsSuccess
+                ? Results.Ok(new { DataSetId = dataSetId, SchemaVersion = result.Value, RolledBackFromVersion = version })
+                : result.Error.Code == "dataset.not_found" || result.Error.Code == "dataset.schema_not_found"
+                    ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                    : Results.Conflict(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("RollbackDataSetSchema");
+
         tenantGroup.MapPost("/{dataSetId:guid}/activate", async (Guid tenantId, Guid dataSetId,
             DataSetManagementService service, CancellationToken token) =>
         {
@@ -192,6 +218,53 @@ public static class DataSetEndpoints
                     ? Results.NotFound(new { result.Error.Code, result.Error.Description })
                     : Results.Conflict(new { result.Error.Code, result.Error.Description });
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("ActivateDataSet");
+
+        tenantGroup.MapPatch("/{dataSetId:guid}", async (Guid tenantId, Guid dataSetId,
+            RenameDataSetRequest request, DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.RenameAsync(new DataSetId(dataSetId), tenantId, request.Name, token);
+            return result.IsSuccess
+                ? Results.NoContent()
+                : result.Error.Code == "dataset.not_found"
+                    ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                    : Results.BadRequest(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("RenameDataSet");
+
+        tenantGroup.MapPost("/{dataSetId:guid}/archive", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.ArchiveAsync(new DataSetId(dataSetId), tenantId, token);
+            return result.IsSuccess ? Results.NoContent() : result.Error.Code == "dataset.not_found"
+                ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                : Results.Conflict(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("ArchiveDataSet");
+
+        tenantGroup.MapPost("/{dataSetId:guid}/restore", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.RestoreAsync(new DataSetId(dataSetId), tenantId, token);
+            return result.IsSuccess ? Results.NoContent() : result.Error.Code == "dataset.not_found"
+                ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                : Results.Conflict(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("RestoreDataSet");
+
+        tenantGroup.MapPost("/{dataSetId:guid}/storage/reset", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.ResetStorageAsync(new DataSetId(dataSetId), tenantId, token);
+            return result.IsSuccess ? Results.NoContent() : result.Error.Code == "dataset.not_found"
+                ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                : Results.Conflict(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("ResetDataSetStorage");
+
+        tenantGroup.MapDelete("/{dataSetId:guid}", async (Guid tenantId, Guid dataSetId,
+            DataSetManagementService service, CancellationToken token) =>
+        {
+            var result = await service.DeleteAsync(new DataSetId(dataSetId), tenantId, token);
+            return result.IsSuccess ? Results.NoContent() : result.Error.Code == "dataset.not_found"
+                ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                : Results.Conflict(new { result.Error.Code, result.Error.Description });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("DeleteDataSet");
 
         var tenantUsageGroup = endpoints.MapGroup("/api/platform/tenants/{tenantId:guid}")
             .WithTags("DataSet")
@@ -240,6 +313,7 @@ public static class DataSetEndpoints
 
     public sealed record CreateDataSetRequest(Guid OrganizationId, Guid ProjectId, string Name, string StorageAdapter = "sqlite", string ContentFormat = "json-array");
     public sealed record AddDataSetSchemaRequest(string SchemaJson);
+    public sealed record RenameDataSetRequest(string Name);
 
     private static object ToDataSetResponse(DataSetAggregate dataSet) => new
     {

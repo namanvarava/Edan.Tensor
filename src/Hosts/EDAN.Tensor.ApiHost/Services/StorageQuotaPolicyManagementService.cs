@@ -17,12 +17,13 @@ public sealed class StorageQuotaPolicyManagementService(PlatformDbContext db, Da
     /// <param name="token">작업 취소를 감시하는 토큰입니다.</param>
     /// <returns>Tenant 범위로 제한된 저장 용량 정책 페이지를 반환합니다.</returns>
     public async Task<StorageQuotaPolicyPage> GetPoliciesAsync(TenantId tenantId, StorageQuotaPolicyScope? scope = null,
-        bool? isEnabled = null, int page = 1, int pageSize = 50, CancellationToken token = default)
+        Guid? targetId = null, bool? isEnabled = null, int page = 1, int pageSize = 50, CancellationToken token = default)
     {
         var skip = ValidatePage(page, pageSize);
         var query = db.StorageQuotaPolicies.AsNoTracking()
             .Where(x => x.TenantId == tenantId);
         if (scope.HasValue) query = query.Where(x => x.Scope == scope.Value);
+        if (targetId.HasValue) query = query.Where(x => x.TargetId == targetId.Value);
         if (isEnabled.HasValue) query = query.Where(x => x.IsEnabled == isEnabled.Value);
         var ordered = query.OrderBy(x => x.Scope).ThenBy(x => x.TargetId);
         var totalCount = await query.CountAsync(token);
