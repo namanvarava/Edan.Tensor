@@ -14,7 +14,7 @@
 | PLT-TNT-001 | InDevelopment | 내 소속 조회 + Tenant directory | 구조화 Tenant 생성·활성화, directory 대상 선택, Tenant 수정 | directory API는 PlatformAdministrator 경계이며 UI smoke 미확인 | P1 |
 | PLT-ORG-001 | InDevelopment | 조직 검색·페이징 | 구조화 생성, 대상 선택, 조직 이름·상태 수정 | UI smoke 미확인; ID/date filter는 실제 source contract에 없음 | P1 |
 | PLT-PJT-001 | InDevelopment | 프로젝트 검색·페이징 | organizationId 대상 선택, 구조화 생성, 프로젝트 이름·상태 수정 | UI smoke 미확인; ID/date filter는 실제 source contract에 없음 | P1 |
-| PLT-USR-001 | InDevelopment | 사용자·초대 검색·페이징 | 구조화 초대, 초대 상태 조회·재전송·철회·수락, 대상 선택, 사용자 수정, 상태 전용 명령 | UI smoke 미확인 | P1 |
+| PLT-USR-001 | InDevelopment | 사용자·초대 검색·페이징 | 구조화 초대, 초대 상태 조회·재전송·철회·수락, 대상 선택, 사용자 수정, 상태 전용 명령 | CI WPF Registry smoke 통과; action-level UI 미검증 | P1 |
 | PLT-MBR-001 | InDevelopment | Tenant·조직·프로젝트 멤버십 목록 | query-enabled scope list, 구조화 grant, 역할 변경·회수 명령 연결 | UI smoke 미확인; own-membership은 기존 unpaged 배열 | P1 |
 | PLT-AUTH-001 | InDevelopment | 정책 목록·필터·평가 | 구조화 생성·수정, 대상 선택, enabled 변경, 평가 결과 API 연결 | UI smoke 미확인 | P1 |
 | PLT-AUD-001 | InDevelopment | 감사 검색·필터·페이징 | integrity, archive 생성·검증·다운로드, archive job 목록·상세·재시도·검증, schedule, retention 연결 | UI smoke 미확인 | P2 |
@@ -23,7 +23,7 @@
 | DSET-SCHM-001 | InDevelopment | DataSet schema revision 목록 | 구조화 schema 등록, 전용 revision API, diff, immutable rollback, 실제 revision 필드 표시 | UI smoke 미확인 | P2 |
 | DSET-STO-001 | InDevelopment | tenant·DataSet usage와 history | 파일 업로드·다운로드, 기간·scope·eventType filter, quota event, storage reset 연결 | UI smoke 미확인 | P2 |
 | DSET-VLD-001 | InDevelopment | validation profile/execution 목록·detail | profile/execution collection, 구조화 validation 실행, profile/revision 생성·이름 변경·삭제, execution 삭제, date/failure filter 연결 | UI smoke 미확인 | P1 |
-| WRK-TSK-001 | InDevelopment | Worker task 목록·상세 | taskType/status/time filter, 구조화 enqueue, 취소·강제 재시도, 결과 metadata 조회와 Tenant/Task 격리 raw result 저장·스트리밍 | UI smoke 미확인 | P1 |
+| WRK-TSK-001 | InDevelopment | Worker task 목록·상세 | taskType/status/time filter, 구조화 enqueue, 취소·강제 재시도, 결과 metadata 조회와 Tenant/Task 격리 raw result 저장·스트리밍 | CI WPF Registry smoke 통과; action-level UI 미검증 | P1 |
 | WRK-DLQ-001 | InDevelopment | DLQ 페이징·필터·replay history | type/error/date filter, 대상 선택, replay 및 Replay 키, history 연결 | UI smoke 미확인; taskId/status는 item/detail 계약 | P2 |
 | WRK-XDL-001 | InDevelopment | 외부 전달 목록·상세·수동 retry | status/host/error/date filter, 구조화 delivery 생성, 수동 retry와 결과 ID 연결 | UI smoke 미확인; payload는 계속 비노출 | P1 |
 
@@ -68,7 +68,7 @@
 
 ### P0 — 보안 경계 유지
 
-Tenant route/header/membership 검증과 관리자 endpoint filter를 기존 API Host 소스 기준으로 유지했다. 새 화면 명령은 모두 typed Client를 통하며 저장소 직접 접근을 추가하지 않았다. 현재 변경 후 런타임 보안 테스트는 testhost 연결 실패로 실행 증거를 확보하지 못했으므로 통과로 표시하지 않는다.
+Tenant route/header/membership 검증과 관리자 endpoint filter를 기존 API Host 소스 기준으로 유지했다. 새 화면 명령은 모두 typed Client를 통하며 저장소 직접 접근을 추가하지 않았다. 원격 CI run `43736265722`가 전체 API 통합 테스트와 신규 Tenant 경계 smoke를 통과했고, 로컬 testhost만 별도로 미확인이다.
 
 ### P1 — 실제 계약 구현 완료, 런타임 확인 대기
 
@@ -77,7 +77,7 @@ Tenant route/header/membership 검증과 관리자 endpoint filter를 기존 API
 3. DataSet content/history/quota event, audit archive/job/schedule/retention/raw archive export 계약을 화면 명령에 연결했다.
 4. 확정된 `IWorkerResultStore` 계약과 개발용 파일 adapter를 구현했다. Worker 도메인은 계속 `ResultReference`만 보유하고, raw bytes와 metadata는 Tenant·Task 검증을 거쳐 별도 저장소가 관리한다.
 
-남은 항목은 기능 구현이 아니라 현재 환경에서 수행하지 못한 WPF UI smoke와 일부 신규 HTTP 경로의 실행 증거다. 해당 항목은 통과로 표시하지 않는다.
+남은 항목은 기능 구현이 아니라 로컬 환경에서 수행하지 못한 testhost 실행과 action-level UI 조작 증거다. 원격 Windows CI run `43736265722`에서는 전체 테스트, HTTP smoke, WPF Registry smoke가 통과했다.
 
 ### P2 — 소스 확인 완료 및 권장 구현 반영
 
@@ -90,9 +90,9 @@ Tenant route/header/membership 검증과 관리자 endpoint filter를 기존 API
 - 현재 변경분을 반영한 전체 Release 빌드는 오류 0건으로 완료됐다. API Host·Desktop·신규 smoke 프로젝트도 모두 빌드됐다. 패키지 취약성 조회 경고 3건은 외부 NuGet advisory/network 상태로 발생했으며 컴파일 오류는 아니다.
 - CSV 검증을 실행했다. `screens.csv` 15행, `screen-api-mapping.csv` 110행, `screen-api-validation.csv` 75행, 기능 명세 15행, 서비스 바인딩 15행이며 Screen ID 15개, API ID 중복 0건, Validation ID 중복 0건, mapping·validation·functional·binding 참조 누락 0건이다.
 - `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 snapshot 테스트 접근성 오류를 수정한 뒤 오류 0건으로 재검증됐다.
-- 로컬 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 첫 테스트 호스트에 90초 내 연결하지 못해 중단되었고, Worker Domain·DataSet Domain·Client 변경 테스트의 개별 실행도 로컬 testhost 연결 제한시간에 도달했다. 그러나 원격 GitHub Actions `Build and Test` workflow `run #1162`가 커밋 `d508fd3`에서 `dotnet build`와 `dotnet test`를 모두 실행해 성공했다. 따라서 CI가 검증한 코드 테스트와 별도로 실행하지 않은 WPF smoke·HTTP endpoint smoke는 새 API·UI 검증 행의 `TestStatus=NotRun`으로 유지한다.
-- 변경 전 기준선 전체 테스트는 13개 프로젝트 273 passed였으나 이번 변경 후 전체 통과를 의미하지 않는다.
+- 로컬 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`과 로컬 WPF smoke는 VSTest testhost 연결 제한으로 완료되지 않았다. 반면 원격 GitHub Actions run `43736265722`가 현재 커밋을 대상으로 전체 Build/Test, HTTP smoke 2건, WPF UI smoke 1건을 모두 성공시켰다. API/Worker 신규 계약 검증 행은 실제 원격 실행 증거에 따라 `Passed`로 갱신했고, action-level UI 행은 Registry smoke 범위를 넘지 않으므로 `NotRun`을 유지한다.
+- 변경 전 기준선 전체 테스트는 13개 프로젝트 273 passed였고, 현재 커밋의 원격 전체 suite도 모든 프로젝트 통과를 확인했다.
 
 ## 6. UI 아키텍처 단계 판단
 
-15개 화면의 API·DTO 조사와 실제 소스에 존재하는 조회·검색·페이징·mutation·lifecycle·control 계약 연결은 완료 범위로 판단한다. 화면 상태를 `Active`로 승격하려면 실행 가능한 환경에서 현재 변경분의 WPF smoke와 테스트host 재실행 증거가 추가로 필요하다. 이는 코드 미구현이 아니라 검증 환경의 미확인 상태다.
+15개 화면의 API·DTO 조사와 실제 소스에 존재하는 조회·검색·페이징·mutation·lifecycle·control 계약 연결, 원격 Windows CI의 전체 Build/Test·HTTP smoke·WPF Registry smoke는 완료 범위로 판단한다. 화면 상태는 action-level UI 조작과 운영 IdP/DB를 포함하지 않는 현재 조사 단계의 `InDevelopment` 의미를 유지하며, 이는 이번 계약 구현의 미완료를 뜻하지 않는다.

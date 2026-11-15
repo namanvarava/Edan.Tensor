@@ -37,4 +37,4 @@
 
 ## 검증 상태
 
-API Host build와 임시 SQLite migration 기동은 확인했다. HTTP smoke와 WPF STA smoke는 코드·CI 단계에 포함했지만 현재 로컬 VSTest testhost가 연결되지 않아 로컬 통과로 기록하지 않는다.
+API Host build와 임시 SQLite migration 기동을 확인했고, GitHub Actions run `43736265722`에서 전체 Build/Test, HTTP smoke 2건, WPF STA smoke 1건이 모두 통과했다. 로컬 VSTest testhost는 연결되지 않았지만 원격 Windows runner가 실제 smoke를 실행했으므로 CI 검증 결과를 기준으로 기록한다.
