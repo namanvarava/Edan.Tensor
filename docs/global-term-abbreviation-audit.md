@@ -189,7 +189,7 @@
 | Work Order | wor | 작업오더 | MES, EAM | 수행할 작업과 자원·일정을 지시하는 단위 | 신규 후보 · 약어 배정 |
 | Routing | rou | 공정경로 | ERP-PRD, MES, PLM | 제품 생산에 필요한 공정의 순서·경로 정의 / 생산 수행 순서와 작업 단계 | 신규 후보 · 약어 배정 |
 | Work Center | wce | 작업장 | ERP-PRD, MES, MOM | 생산능력·작업이 배정되는 자원 그룹 / 작업 수행 자원의 논리적 그룹 | 신규 후보 · 약어 배정 |
-| Capacity | capa | 생산능력 | ERP-PRD, MOM | 기간·자원별 처리 가능한 양 | 신규 후보 · 약어 배정 |
+| Capacity | cpty | 생산능력 | ERP-PRD, MOM | 기간·자원별 처리 가능한 양 | 신규 후보 · 약어 배정 |
 | Work Schedule | wsc | 작업일정 | ERP-PRD, MES, MOM | 작업의 시간 배치. 계획과 실제 실행시간 구분 | 기존 Schedule 개념과 통합 |
 | Dispatch | disp | 작업배포 | MES, MOM | 실행 순서·자원을 정해 작업을 현장에 배정 | 신규 후보 · 약어 배정 |
 | Work in Process | wip | 재공 | ERP-CST, MES, MOM | 생산공정에 투입되어 아직 완제품이 되지 않은 상태·수량. WIP는 동일 개념의 업계 약칭 | 기존 WIP 별칭 통합 |
@@ -276,7 +276,7 @@
 | Item | ite | 품목 | PLM, ERP | 구매·생산·재고·판매에서 관리하는 카탈로그 항목 | 신규 후보 · 약어 배정 |
 | Part | part | 부품 | PLM, ERP-PRD | 제품을 구성하거나 조립되는 개별 구성 요소 | 신규 후보 · 약어 배정 |
 | Component | cot | 구성요소 | PLM, MES | 상위 제품·구조에 포함되는 요소 | 신규 후보 · 약어 배정 |
-| Bill of Materials | bma | 자재명세서 | PLM, ERP-PRD, MES | 상위 품목과 하위 구성품·수량·유효성을 표현하는 구조 | 신규 후보 · 약어 배정 |
+| Bill of Materials | bom | 자재명세서 | PLM, ERP-PRD, MES | 상위 품목과 하위 구성품·수량·유효성을 표현하는 구조. BOM은 동일 개념의 업계 약칭 | 신규 후보 · 약어 배정 |
 | BOM Line | bli | BOM 항목 | PLM, ERP-PRD | BOM 내 하위 품목·수량·위치 관계 | 신규 후보 · 약어 배정 |
 | Engineering BOM | ebo | 설계BOM | PLM | 설계 관점 제품 구조 | 신규 후보 · 약어 배정 |
 | Manufacturing BOM | mbo | 제조BOM | PLM, ERP-PRD, MES | 제조·조립 관점 제품 구조 | 신규 후보 · 약어 배정 |
