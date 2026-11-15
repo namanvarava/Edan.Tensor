@@ -67,7 +67,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.True(delivery.TryGetToken(invitationId, out var token));
 
         using var listResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/invitations?status=Pending&page=1&pageSize=10");
-        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        Assert.True(listResponse.StatusCode == HttpStatusCode.OK,
+            await listResponse.Content.ReadAsStringAsync());
         Assert.Equal(1, await ReadArrayLengthAsync(listResponse));
 
         using var resendResponse = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/invitations/{invitationId}/resend", new { lifetimeDays = 7 });
