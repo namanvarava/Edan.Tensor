@@ -90,7 +90,7 @@ Tenant route/header/membership 검증과 관리자 endpoint filter를 기존 API
 - 현재 변경분을 반영한 `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`이 경고 0개·오류 0개로 완료됐다. Desktop 최종 빌드도 경고 0개·오류 0개다.
 - CSV 검증을 실행했다. `screens.csv` 15행, `screen-api-mapping.csv` 104행, `screen-api-validation.csv` 75행, 기능 명세 15행, 서비스 바인딩 15행이며 Screen ID 15개, API ID 중복 0건, mapping·validation·functional·binding 참조 누락 0건이다.
 - `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 최신 변경분 기준 경고 0개·오류 0개로 완료됐다.
-- 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 첫 테스트 호스트에 90초 내 연결하지 못해 중단되었고, Worker Domain·DataSet Domain·Client 변경 테스트의 개별 실행도 testhost 연결 제한시간에 도달했다. 따라서 이번 변경의 테스트는 통과로 집계하지 않고 새 API·UI 검증 행의 `TestStatus`를 `NotRun`으로 유지한다.
+- 로컬 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 첫 테스트 호스트에 90초 내 연결하지 못해 중단되었고, Worker Domain·DataSet Domain·Client 변경 테스트의 개별 실행도 로컬 testhost 연결 제한시간에 도달했다. 그러나 원격 GitHub Actions `Build and Test` workflow `run #1162`가 커밋 `d508fd3`에서 `dotnet build`와 `dotnet test`를 모두 실행해 성공했다. 따라서 CI가 검증한 코드 테스트와 별도로 실행하지 않은 WPF smoke·HTTP endpoint smoke는 새 API·UI 검증 행의 `TestStatus=NotRun`으로 유지한다.
 - 변경 전 기준선 전체 테스트는 13개 프로젝트 273 passed였으나 이번 변경 후 전체 통과를 의미하지 않는다.
 
 ## 6. UI 아키텍처 단계 판단
