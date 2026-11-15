@@ -68,13 +68,14 @@ public sealed class InvitationRepository(PlatformDbContext db) : IInvitationRepo
         if (status.HasValue) query = query.Where(x => x.Status == status.Value);
         // EmailAddress is persisted through a value converter; apply its Value-based search after materialization
         // so the contract remains provider-independent (including SQLite used by integration smoke).
-        var all = await query.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+        var all = await query.ToListAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var value = search.Trim();
             all = all.Where(x => x.Email.Value.Contains(value, StringComparison.OrdinalIgnoreCase) ||
                 x.DisplayName.Contains(value, StringComparison.OrdinalIgnoreCase)).ToList();
         }
+        all = all.OrderByDescending(x => x.CreatedAtUtc).ToList();
         return new(all.Count, all.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
     }
     public void Add(Invitation invitation) => db.Invitations.Add(invitation);

@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using EDAN.Tensor.DataSet.Application.Abstractions;
@@ -2225,8 +2224,7 @@ public sealed class PlatformApiIntegrationTests
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
                     ["Authentication:Audience"] = "edan-tensor-api",
                     ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long",
-                    ["ExternalDelivery:AllowLoopback"] = "true",
-                    ["Diagnostics:ExposeExceptionDetails"] = "true"
+                    ["ExternalDelivery:AllowLoopback"] = "true"
                 });
             });
             return base.CreateHost(builder);
@@ -2235,7 +2233,6 @@ public sealed class PlatformApiIntegrationTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Debug).AddConsole());
             builder.ConfigureTestServices(services =>
             {
                 services.AddSingleton<IDataSetStorageQuotaPolicyProvider>(new IntegrationQuotaPolicyProvider());
