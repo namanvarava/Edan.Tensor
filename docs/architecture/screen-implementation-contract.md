@@ -31,7 +31,7 @@
 - quota history, scope/enabled filter, storage quota events, audit archive/job list/schedule/retention은 실제 route와 DTO를 확인해 화면에 연결 완료
 - storage 기간/scope/eventType, DLQ type/error/date/history, audit archive collection/filter는 실제 route와 repository를 추가해 화면에 연결 완료
 - DataSet schema revision 전용 목록과 validation profile/execution collection, Worker task/delivery collection 및 External Delivery 수동 retry도 실제 route와 repository를 추가해 화면에 연결 완료
-- DataSet lifecycle, Worker cancel/force-retry/result download, audit raw archive export는 제품 계약이 없어 구현하지 않고 격차 문서에 유지
+- DataSet lifecycle, Worker cancel/force-retry/result-reference, audit raw archive export는 실제 도메인·Application 계약에 맞춰 구현하며, Worker 결과는 현재 모델이 외부 `ResultReference`만 보관하므로 raw bytes가 아닌 Tenant 검증된 참조를 반환한다.
 - anonymous projection은 기존 API가 제공하는 실제 응답 필드를 그대로 기록했으며, 새 필드를 추정해 named response로 바꾸지 않음
 
 기존 Domain 모델이 제공하지 않는 business rule은 UI에서 임의로 만들지 않는다. 필요한 lifecycle은 Domain method, Application Service, repository, endpoint, Client contract, test 순서로 추가한다.

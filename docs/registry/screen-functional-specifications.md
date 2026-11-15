@@ -947,19 +947,19 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 
 | ScreenId | 실제 확인된 API 범위 | 실제 상태 | 조사 결과의 핵심 |
 |---|---|---|---|
-| PLT-TNT-001 | tenant 생성·활성화·mine membership | PartiallyImplemented | 전체 tenant 목록·상세·검색 API 없음 |
-| PLT-ORG-001 | organization 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
-| PLT-PJT-001 | project 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
-| PLT-USR-001 | user invitation 생성 | PartiallyImplemented | 초대 목록·상세·재발송·취소·만료 API 없음 |
+| PLT-TNT-001 | tenant 생성·활성화·directory·mine membership | Implemented | directory는 PlatformAdministrator의 search/status/page/pageSize 계약이며 mine은 활성 소속 배열 |
+| PLT-ORG-001 | organization 생성·목록·상세·수정·상태 | Implemented | ID/date filter는 실제 source contract에 없음 |
+| PLT-PJT-001 | project 생성·목록·상세·수정·상태 | Implemented | ID/date filter는 실제 source contract에 없음 |
+| PLT-USR-001 | user invitation 생성·directory 검색·상태 변경 | Implemented | 별도 초대 token·resend·expiry aggregate는 현재 도메인 계약에 없음 |
 | PLT-MBR-001 | tenant/org/project membership 부여·목록·mine 조회·역할 변경·회수 | Implemented | query-enabled 목록은 subject/status/page/pageSize를 지원; mine은 활성 배열 |
 | PLT-AUTH-001 | authorization policy 생성·목록·필터·평가·수정·enabled 변경 | Implemented | evaluation과 tenant-scoped page filter route 추가 |
-| PLT-AUD-001 | audit query·integrity·archive·schedule·job·retention·job 목록 | Implemented | archive job page route 추가; raw archive export는 없음 |
-| PLT-QTA-001 | quota CRUD·enabled·history·scope/enabled filter | Implemented | target/plan query는 실제 계약에 없음 |
-| DSET-DSM-001 | dataset 생성·목록·상세·content·activate | PartiallyImplemented | collection filter 구현; 수정·삭제·보관·복구 API 없음 |
-| DSET-SCHM-001 | schema 추가·상세·전용 revisions 목록 | Implemented | version/date filter·diff·rollback API는 없음 |
-| DSET-STO-001 | content·dataset/tenant usage·history·quota events 필터 | PartiallyImplemented | storage lifecycle 및 aggregate 상세 filter 없음 |
-| DSET-VLD-001 | profile/revision·profile/execution 목록·validation 실행·상세·details·삭제 | PartiallyImplemented | profile lifecycle 및 date/failure filter 없음 |
-| WRK-TSK-001 | worker task 생성·목록·상세 | PartiallyImplemented | cancel·retry·result download API 없음 |
+| PLT-AUD-001 | audit query·integrity·archive·archive download·schedule·job·retention·job 목록 | Implemented | archive download는 tenant 및 checksum 검증 후 제공 |
+| PLT-QTA-001 | quota CRUD·enabled·history·scope/target/enabled filter | Implemented | PlanCode는 응답 필드이며 별도 query 의미는 없음 |
+| DSET-DSM-001 | dataset 생성·목록·상세·content·activate·rename·archive·restore·delete | Implemented | lifecycle route와 storage reset 연결 |
+| DSET-SCHM-001 | schema 추가·상세·전용 revisions 목록·diff·rollback | Implemented | version/date filter는 실제 계약에 없음 |
+| DSET-STO-001 | content·dataset/tenant usage·history·quota events·storage reset | Implemented | aggregate usage list filter는 실제 계약에 없음 |
+| DSET-VLD-001 | profile/revision·profile/execution 목록·validation 실행·상세·details·삭제·profile lifecycle | Implemented | date/failureCode execution filter와 profile update/delete 연결 |
+| WRK-TSK-001 | worker task 생성·목록·상세·cancel·force retry·result reference | Implemented | raw result bytes가 아니라 도메인이 보관하는 opaque ResultReference를 반환 |
 | WRK-DLQ-001 | DLQ 목록·필터·replay·replay history | Implemented | taskId/status는 item/detail 계약 |
 | WRK-XDL-001 | external delivery 생성·목록·상세·필터·수동 retry | Implemented | safe projection만 반환하고 payload는 비노출 |
 

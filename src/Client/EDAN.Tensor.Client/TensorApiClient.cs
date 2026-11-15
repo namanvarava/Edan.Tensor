@@ -278,6 +278,16 @@ public sealed class TensorApiClient
             request, cancellationToken);
     }
 
+    /// <summary>Tenant 관리자 검증을 통과한 감사 아카이브 원문 스트림을 엽니다.</summary>
+    public Task<Stream> OpenAuthorizationAuditArchiveAsync(Guid tenantId, Guid archiveId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(archiveId, nameof(archiveId));
+        return SendStreamAsync(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"authorization-audit/archives/{archiveId:D}"), tenantId), cancellationToken);
+    }
+
     public Task<AuthorizationAuditArchiveScheduleContract> GetAuthorizationAuditArchiveScheduleAsync(
         Guid tenantId, CancellationToken cancellationToken = default)
     {
@@ -402,6 +412,30 @@ public sealed class TensorApiClient
         return SendJsonAsync<StorageQuotaPolicyPageContract>(
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-quota-policies?{query}"), tenantId),
             cancellationToken);
+    }
+
+    public Task<StorageQuotaPolicyPageContract> GetStorageQuotaPoliciesByTargetAsync(
+        Guid tenantId, string? scope = null, Guid? targetId = null, bool? isEnabled = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var query = $"page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrWhiteSpace(scope)) query += $"&scope={Uri.EscapeDataString(scope.Trim())}";
+        if (targetId is Guid target) query += $"&targetId={target:D}";
+        if (isEnabled is bool enabled) query += $"&isEnabled={enabled.ToString().ToLowerInvariant()}";
+        return SendJsonAsync<StorageQuotaPolicyPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"storage-quota-policies?{query}"), tenantId), cancellationToken);
+    }
+
+    public Task SetUserStatusAsync(Guid tenantId, Guid userId, SetUserStatusRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(userId, nameof(userId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendNoContentAsync(SendRequest(HttpMethod.Patch,
+            TenantPath(tenantId, $"users/{userId:D}/status"), tenantId, request), cancellationToken);
     }
 
     /// <summary>DataSet 단위 실제 저장량과 적용된 한도를 조회합니다.</summary>
@@ -704,6 +738,26 @@ public sealed class TensorApiClient
             TenantPath(tenantId, $"datasets/validation-profiles/{profileId:D}/revisions"), tenantId), request, cancellationToken);
     }
 
+    public Task<CreateDataSetValidationProfileContract> UpdateDataSetValidationProfileAsync(Guid tenantId,
+        Guid profileId, UpdateDataSetValidationProfileRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(profileId, nameof(profileId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<CreateDataSetValidationProfileContract>(SendRequest(HttpMethod.Put,
+            TenantPath(tenantId, $"datasets/validation-profiles/{profileId:D}"), tenantId, request), cancellationToken);
+    }
+
+    public Task DeleteDataSetValidationProfileAsync(Guid tenantId, Guid profileId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(profileId, nameof(profileId));
+        return SendNoContentAsync(CreateRequest(HttpMethod.Delete,
+            TenantPath(tenantId, $"datasets/validation-profiles/{profileId:D}"), tenantId), cancellationToken);
+    }
+
     public Task ActivateDataSetAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default)
     {
         ValidateTenantId(tenantId);
@@ -806,6 +860,49 @@ public sealed class TensorApiClient
             request, cancellationToken);
     }
 
+    public Task RenameDataSetAsync(Guid tenantId, Guid dataSetId, string name,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return SendNoContentAsync(SendRequest(HttpMethod.Patch,
+            TenantPath(tenantId, $"datasets/{dataSetId:D}"), tenantId, new { Name = name.Trim() }), cancellationToken);
+    }
+
+    public Task ArchiveDataSetAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(CreateRequest(HttpMethod.Post, TenantPath(tenantId, $"datasets/{dataSetId:D}/archive"), tenantId), cancellationToken);
+
+    public Task RestoreDataSetAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(CreateRequest(HttpMethod.Post, TenantPath(tenantId, $"datasets/{dataSetId:D}/restore"), tenantId), cancellationToken);
+
+    public Task ResetDataSetStorageAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(CreateRequest(HttpMethod.Post, TenantPath(tenantId, $"datasets/{dataSetId:D}/storage/reset"), tenantId), cancellationToken);
+
+    public Task DeleteDataSetAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(CreateRequest(HttpMethod.Delete, TenantPath(tenantId, $"datasets/{dataSetId:D}"), tenantId), cancellationToken);
+
+    public Task<DataSetSchemaDiffContract> GetDataSetSchemaDiffAsync(Guid tenantId, Guid dataSetId,
+        int fromVersion, int toVersion, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        if (fromVersion < 1) throw new ArgumentOutOfRangeException(nameof(fromVersion));
+        if (toVersion < 1) throw new ArgumentOutOfRangeException(nameof(toVersion));
+        return SendJsonAsync<DataSetSchemaDiffContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets/{dataSetId:D}/schemas/diff?fromVersion={fromVersion}&toVersion={toVersion}"), tenantId), cancellationToken);
+    }
+
+    public Task<AddDataSetSchemaResponseContract> RollbackDataSetSchemaAsync(Guid tenantId, Guid dataSetId,
+        int version, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        if (version < 1) throw new ArgumentOutOfRangeException(nameof(version));
+        return SendJsonAsync<AddDataSetSchemaResponseContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"datasets/{dataSetId:D}/schemas/{version}/rollback"), tenantId), cancellationToken);
+    }
+
     public Task<DataSetValidationProfilePageContract> GetDataSetValidationProfilesAsync(
         Guid tenantId, string? search = null, int page = 1, int pageSize = 50,
         CancellationToken cancellationToken = default)
@@ -828,6 +925,24 @@ public sealed class TensorApiClient
         if (dataSetId is Guid dataSet) parts.Add($"dataSetId={dataSet:D}");
         if (profileId is Guid profile) parts.Add($"profileId={profile:D}");
         if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        return SendJsonAsync<DataSetValidationExecutionPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"datasets/validations?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    public Task<DataSetValidationExecutionPageContract> GetDataSetValidationsFilteredAsync(
+        Guid tenantId, Guid? dataSetId = null, Guid? profileId = null, string? status = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null, string? failureCode = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (dataSetId is Guid dataSet) parts.Add($"dataSetId={dataSet:D}");
+        if (profileId is Guid profile) parts.Add($"profileId={profile:D}");
+        if (!string.IsNullOrWhiteSpace(status)) parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={UtcQuery(from)}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
+        if (!string.IsNullOrWhiteSpace(failureCode)) parts.Add($"failureCode={Uri.EscapeDataString(failureCode.Trim())}");
         return SendJsonAsync<DataSetValidationExecutionPageContract>(CreateRequest(HttpMethod.Get,
             TenantPath(tenantId, $"datasets/validations?{string.Join("&", parts)}"), tenantId), cancellationToken);
     }
@@ -964,6 +1079,29 @@ public sealed class TensorApiClient
         if (toUtc is DateTimeOffset to) parts.Add($"toUtc={UtcQuery(to)}");
         return SendJsonAsync<WorkerTaskStatusPageContract>(CreateRequest(HttpMethod.Get,
             TenantPath(tenantId, $"worker/tasks?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    public Task<WorkerTaskResultContract?> GetWorkerTaskResultAsync(Guid tenantId, Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(taskId, nameof(taskId));
+        return SendOptionalAsync<WorkerTaskResultContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"worker/tasks/{taskId:D}/result"), tenantId), cancellationToken);
+    }
+
+    public Task CancelWorkerTaskAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(taskId, nameof(taskId));
+        return SendNoContentAsync(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"worker/tasks/{taskId:D}/cancel"), tenantId), cancellationToken);
+    }
+
+    public Task RetryWorkerTaskAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(taskId, nameof(taskId));
+        return SendNoContentAsync(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"worker/tasks/{taskId:D}/retry"), tenantId), cancellationToken);
     }
 
     /// <summary>Tenant 관리자가 조회할 DLQ 작업을 1 이상인 페이지와 1~100 범위의 페이지 크기로 반환합니다.</summary>

@@ -84,6 +84,16 @@ public sealed class AuthorizationAuditArchiveService(
         }
     }
 
+    /// <summary>체크섬과 Tenant 식별자를 검증한 뒤 원본 아카이브를 다운로드합니다.</summary>
+    public async Task<AuthorizationAuditArchiveDownload?> DownloadAsync(TenantId tenantId, Guid archiveId,
+        CancellationToken cancellationToken = default)
+    {
+        var verification = await VerifyAsync(tenantId, archiveId, null, cancellationToken);
+        if (!verification.IsValid) return null;
+        var bytes = await archives.ReadAsync(archiveId, cancellationToken);
+        return bytes is null ? null : new AuthorizationAuditArchiveDownload(bytes, verification.Sha256!);
+    }
+
     private static void ValidateWindow(DateTimeOffset fromUtc, DateTimeOffset toUtc)
     {
         if (fromUtc > toUtc)
@@ -111,3 +121,5 @@ public sealed record AuthorizationAuditArchiveResult(Guid ArchiveId, Guid Tenant
 /// <summary>감사 아카이브의 내부 및 외부 체크섬 검증 결과를 제공합니다.</summary>
 public sealed record AuthorizationAuditArchiveVerification(Guid ArchiveId, bool IsValid,
     string ReasonCode, string? Sha256);
+
+public sealed record AuthorizationAuditArchiveDownload(byte[] Content, string Sha256);

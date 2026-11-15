@@ -123,6 +123,8 @@ public sealed record DataSetPageContract(
 
 public sealed record DataSetSchemaRevisionPageContract(
     Guid DataSetId, int? CurrentSchemaVersion, IReadOnlyList<DataSetSchemaRevisionContract> Items);
+public sealed record DataSetSchemaDiffContract(
+    int FromVersion, int ToVersion, string FromSchemaJson, string ToSchemaJson, bool Changed);
 
 public sealed record ExternalDeliveryContract(
     Guid Id, Guid TenantId, string TargetUri, string IdempotencyKey, string Status,
@@ -141,6 +143,7 @@ public sealed record CreateOrganizationRequestContract(string Code, string Name)
 public sealed record CreateProjectRequestContract(string Code, string Name);
 public sealed record InviteUserRequestContract(string Email, string DisplayName);
 public sealed record UpdateDirectoryEntryRequestContract(string? Name, string? Status);
+public sealed record SetUserStatusRequestContract(string Status);
 public sealed record GrantTenantMembershipRequestContract(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequestContract(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequestContract(string SubjectId, string Role);
@@ -163,6 +166,7 @@ public sealed record UpdateStorageQuotaPolicyRequestContract(
 public sealed record SetStorageQuotaPolicyEnabledRequestContract(bool IsEnabled, long ExpectedVersion);
 public sealed record CreateDataSetValidationProfileRequestContract(string Name, string DefinitionJson);
 public sealed record CreateDataSetValidationRevisionRequestContract(string DefinitionJson);
+public sealed record UpdateDataSetValidationProfileRequestContract(string Name);
 public sealed record CreateExternalDeliveryRequestContract(
     string TargetUri, System.Text.Json.JsonElement Payload, int MaxAttempts = 5);
 public sealed record VerifyAuthorizationAuditIntegrityRequestContract(
@@ -323,6 +327,7 @@ public sealed record WorkerTaskStatusContract(
 
 public sealed record WorkerTaskStatusPageContract(
     int TotalCount, int Page, int PageSize, IReadOnlyList<WorkerTaskStatusContract> Items);
+public sealed record WorkerTaskResultContract(Guid TaskId, string TaskType, string Status, string ResultReference);
 
 /// <summary>Worker DLQ 항목의 운영 메타데이터입니다.</summary>
 public sealed record WorkerDeadLetterContract(

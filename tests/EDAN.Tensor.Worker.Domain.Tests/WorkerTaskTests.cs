@@ -20,6 +20,35 @@ public sealed class WorkerTaskTests
     }
 
     [Fact]
+    public void OperatorCanCancelPendingTaskAndForceRetryIt()
+    {
+        var task = Create();
+        task.CancelByOperator(Now);
+        Assert.Equal(WorkerTaskStatus.Cancelled, task.Status);
+        task.ForceRetry(Now.AddMinutes(1));
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, task.Status);
+        Assert.Equal(0, task.AttemptCount);
+        Assert.Equal(Now.AddMinutes(1), task.NextAttemptAtUtc);
+    }
+
+    [Fact]
+    public void OperatorCanForceRetryDeadLetteredTask()
+    {
+        var task = Create(maxAttempts: 1);
+        var lease = Guid.NewGuid();
+        var token = task.AcquireLease("worker-a", lease, Now, Now.AddMinutes(10));
+        task.Start(lease, token, Now);
+        task.Fail(lease, token, "permanent", Now.AddMinutes(1), Now.AddMinutes(2));
+        Assert.Equal(WorkerTaskStatus.DeadLettered, task.Status);
+
+        task.ForceRetry(Now.AddMinutes(3));
+
+        Assert.Equal(WorkerTaskStatus.RetryScheduled, task.Status);
+        Assert.Equal(0, task.AttemptCount);
+        Assert.Null(task.ResultReference);
+    }
+
+    [Fact]
     public void CreateRejectsEmptyTenantId()
     {
         Assert.Throws<ArgumentException>(() =>

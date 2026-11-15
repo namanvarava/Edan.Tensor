@@ -177,13 +177,31 @@ public abstract class RegistryScreenViewModel : ObservableObject
             case "DSET-STO-001":
                 Add("콘텐츠 업로드", "dataset-content-upload");
                 Add("콘텐츠 다운로드", "dataset-content-download");
+                Add("저장소 초기화", "dataset-storage-reset");
                 Add("Quota 이벤트 조회", "quota-events");
                 break;
             case "DSET-VLD-001":
                 Add("검증 프로필·실행 목록", "validation-list");
                 Add("검증 프로필 생성", "validation-profile");
                 Add("프로필 revision 추가", "validation-profile-revision");
+                Add("검증 프로필 이름 변경", "validation-profile-update");
+                Add("검증 프로필 삭제", "validation-profile-delete");
                 Add("검증 실행 삭제", "validation-delete");
+                break;
+            case "DSET-DSM-001":
+                Add("DataSet 이름 변경", "dataset-rename");
+                Add("DataSet 보관", "dataset-archive");
+                Add("DataSet 복원", "dataset-restore");
+                Add("DataSet 삭제", "dataset-delete");
+                break;
+            case "DSET-SCHM-001":
+                Add("스키마 비교", "schema-diff");
+                Add("스키마 rollback", "schema-rollback");
+                break;
+            case "WRK-TSK-001":
+                Add("작업 취소", "worker-task-cancel");
+                Add("작업 강제 재시도", "worker-task-retry");
+                Add("작업 결과 참조", "worker-task-result");
                 break;
             case "WRK-DLQ-001": Add("Replay 이력 조회", "replay-history"); break;
             case "WRK-XDL-001": Add("외부 전달 수동 재시도", "delivery-retry"); break;
@@ -377,8 +395,12 @@ public abstract class RegistryScreenViewModel : ObservableObject
                 break;
             case "DSET-SCHM-001":
                 AddInput("SchemaJson", "Schema JSON", "JSON schema 문서", ScreenInputKind.Json);
+                AddInput("Version", "Schema version", "rollback할 버전", ScreenInputKind.Integer, false);
+                AddInput("FromVersion", "From version", "비교 시작 버전", ScreenInputKind.Integer, false);
+                AddInput("ToVersion", "To version", "비교 종료 버전", ScreenInputKind.Integer, false);
                 break;
             case "DSET-VLD-001":
+                AddInput("Name", "Profile name", "프로필 이름", ScreenInputKind.String, false);
                 AddInput("ExpectedDataSetVersion", "Expected DataSet version", "1", ScreenInputKind.Integer);
                 AddInput("SchemaVersion", "Schema version", "1", ScreenInputKind.Integer);
                 AddInput("ProfileId", "Profile ID", "GUID", ScreenInputKind.Guid);

@@ -209,6 +209,35 @@ public sealed class WorkerTask
         Version++;
     }
 
+    /// <summary>관리자가 Tenant 범위에서 실행 중인 작업을 강제로 취소합니다.</summary>
+    public void CancelByOperator(DateTimeOffset nowUtc)
+    {
+        if (Status is WorkerTaskStatus.Succeeded or WorkerTaskStatus.DeadLettered or WorkerTaskStatus.Cancelled)
+            throw new InvalidOperationException("종료된 작업은 취소할 수 없습니다.");
+        ClearLease();
+        Status = WorkerTaskStatus.Cancelled;
+        NextAttemptAtUtc = null;
+        Version++;
+    }
+
+    /// <summary>취소 또는 DLQ 작업을 시도 횟수 초기화와 함께 즉시 재시도합니다.</summary>
+    public void ForceRetry(DateTimeOffset nowUtc)
+    {
+        if (Status is not (WorkerTaskStatus.Cancelled or WorkerTaskStatus.DeadLettered))
+            throw new InvalidOperationException("취소되었거나 DLQ에 있는 작업만 강제 재시도할 수 있습니다.");
+        ClearLease();
+        AttemptCount = 0;
+        ProgressPercent = 0;
+        ProgressStage = null;
+        ProgressMessage = null;
+        Checkpoint = null;
+        CompletedAtUtc = null;
+        ResultReference = null;
+        NextAttemptAtUtc = nowUtc.ToUniversalTime();
+        Status = WorkerTaskStatus.RetryScheduled;
+        Version++;
+    }
+
     private void EnsureLease(Guid leaseId, long fencingToken, DateTimeOffset nowUtc)
     {
         if (LeaseId != leaseId || FencingToken != fencingToken || !LeaseExpiresAtUtc.HasValue
