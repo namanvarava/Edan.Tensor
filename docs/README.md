@@ -5,6 +5,7 @@
 
 - [프로젝트 구조](architecture/project-structure.md)
 - [데이터베이스 테이블명·컬럼명 표준 명명 규칙](database-naming-conventions.md)
+- [DB 명명 규칙·전자사전 정합성 감사](validation/2026-11-15-database-naming-compliance-audit.md)
 - [현재 Work 범위 감사](validation/2026-11-10-current-work-scope-audit.md)
 - [구현 및 CI 검증 현황](validation/2026-11-06-main-ci-and-scope.md)
 - [전체 구현 진행 방향](implementation-roadmap.md)

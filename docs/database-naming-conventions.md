@@ -282,3 +282,19 @@ builder.Property(x => x.CreatedAtUtc)
 - 약어 추가·변경·폐기는 기존 컬럼과의 충돌을 확인한 뒤 승인한다.
 - 표준 변경 시 본 문서와 전자사전을 함께 갱신한다.
 - 문서의 표준과 실제 구현이 다르면 차이를 기록하고 예외 또는 Migration 대상으로 관리한다.
+
+
+## 16. 전자사전 정합성 검증 상태 (2026-11-15)
+
+2026-11-15 기준 기존 전자사전과 DB 컬럼 검토표를 대조한 결과, 본 문서의 일부 예시·약어는 전자사전에 아직 등록되지 않았거나 기존 항목과 표기가 다릅니다. 따라서 **전자사전 정합성 검증이 끝나기 전까지 미등록 약어를 승인된 표준으로 간주하지 않습니다.**
+
+- `Status`의 표준 약어는 전자사전의 `sta`입니다. `st`를 사용하지 않습니다.
+- `Project`의 표준 약어는 `pjt`입니다. `prj`를 사용하지 않습니다.
+- `Interval`의 표준 약어는 `intv`입니다. `int_hr`가 아니라 `intv_hr`를 사용합니다.
+- `Result Code`는 `rslt_cd`로 구성합니다. `result_code`는 전자사전 조합 규칙에 맞지 않습니다.
+- `Actor`와 `By`는 현재 전자사전에 별도 항목이 없습니다. `actr_subid`, `crt_by`, `upd_by`, `del_by`는 전자사전 등록·승인 전까지 제안 명칭입니다.
+- `Stage`, `Job`, `Identity`, `Expiration`, `Rule`, `Row`, 일반 `Hash`, `Ready`, `Unix`, `Token`도 전자사전 항목의 등록 상태를 확인한 뒤 사용합니다.
+- `Role`은 전자사전에 `role`과 `rol`이 함께 존재합니다. 하나의 표준 약어로 통합하는 변경을 먼저 승인해야 합니다.
+- `Created DateTime(crtdt)`, `Creator(crtmer)`, `Updater(updmer)`, `Use Yes/No(useyn)`, `Delete Yes/No(delyn)`, `Sort Number(sortnum)`는 구형 결합 표기입니다. 신규 표준은 `crt_utc` 또는 `crt_dt`, `crt_by`, `upd_utc` 또는 `upd_dt`, `upd_by`, `use_yn`, `del_yn`, `sort_num`으로 정리하되 전자사전 개별 항목을 함께 갱신해야 합니다.
+
+상세 결과와 기존 구현의 위반 사례는 [2026-11-15 DB 명명 규칙·전자사전 정합성 감사](validation/2026-11-15-database-naming-compliance-audit.md)를 기준으로 관리합니다.
