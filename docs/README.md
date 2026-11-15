@@ -7,6 +7,7 @@
 - [EDAN Screen Registry 관리 표준](standards/EDAN-SCREEN-REGISTRY-STANDARD.md)
 - [화면 Registry 기본 목록](registry/screens.csv)
 - [화면-Service 연결 목록](registry/screen-service-bindings.csv)
+- [Screen MODULE·AREA 코드 사전](registry/screen-module-area-codes.csv)
 - [프로젝트 구조](architecture/project-structure.md)
 - [데이터베이스 테이블명·컬럼명 표준 명명 규칙](database-naming-conventions.md)
 - [현재 Work 범위 감사](validation/2026-11-10-current-work-scope-audit.md)
