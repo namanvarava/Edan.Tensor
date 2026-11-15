@@ -9,7 +9,7 @@
 - API 검증: [screen-api-validation.csv](screen-api-validation.csv)
 - 구현 격차: [screen-implementation-gaps.md](screen-implementation-gaps.md)
 - 작성 원칙: 확정된 화면 ID·MODULE·AREA는 기존 Screen Registry를 참조하고, 상세 기능은 본 문서에서 단일 관리한다.
-- 구현 상태: 화면 UI·View·ViewModel이 구현되었다는 의미가 아니다.
+- 구현 상태: `src/Client/EDAN.Tensor.Desktop`에 공통 WPF View, 15개 ViewModel, typed Client 조회 binding이 구현되어 `InDevelopment`로 관리한다. 모든 mutation workflow와 실행 가능한 UI smoke/test가 확인되기 전에는 `Active`로 판정하지 않는다.
 
 ## 1. 문서 목적 및 관리 경계
 
@@ -29,18 +29,20 @@
 
 ## 2. 확정 기준과 설계 제안의 구분
 
-### 2.1 기존 Registry에서 확정된 항목
+### 2.1 기존 Registry에서 확정된 항목과 현재 구현 반영
 - 15개 ScreenId, MODULE·AREA 코드, 한국어·영문 화면명
-- 모든 화면의 현재 상태는 `Planned`
-- ViewTechnology, ViewType, ViewPath, ViewCodeBehindPath, ViewModelType, ViewModelPath는 실제 구현 확인 전까지 공란
-- Service 연결은 실제 ViewModel과 계약이 확인될 때까지 등록하지 않음
+- 모든 화면의 현재 상태는 `InDevelopment`
+- ViewTechnology, ViewType, ViewPath, ViewCodeBehindPath, ViewModelType, ViewModelPath는 `screens.csv`에 실제 소스 경로로 기록
+- ViewModel은 `IDesktopScreenService` 계약을 사용하고, 구현체 `DesktopApiSession`은 `MainWindowViewModel`에서 창 수명으로 생성
+- 공통 View는 `Views/RegistryScreenView.xaml`, 화면별 concrete View와 ViewModel은 실제 WPF 프로젝트 소스에 존재
 
-### 2.2 본 명세의 설계 기준
+### 2.2 본 명세의 설계 기준과 실제 제한
 - 목적, 기능, 검색 조건, 입력·출력 항목은 화면 설계 기준으로 정의
 - 검색 조건은 UI 설계 조건이며, API가 해당 필터를 모두 지원한다는 뜻이 아님
 - 입력 항목은 화면 요구사항이며, 실제 Request DTO와 일치 여부를 구현 전에 검증
 - 출력 항목은 화면에 필요한 정보이며, 실제 Response 계약에서 제공하지 않는 값은 API 보완 또는 표시 제외
 - 사용자 권한의 제안 역할은 현재 구현된 인증 정책과 구분
+- 현재 구현은 실제 API가 제공하는 조회·검색·페이징·상세 계약을 호출하고, 공통 JSON 명령 영역을 통해 확인된 생성·수정·재처리 계약도 호출한다. 구조화된 입력·대상 선택·UI smoke/test가 없는 항목은 [구현 격차 보고서](screen-implementation-gaps.md)에 미완료로 유지한다.
 
 ### 2.3 권한 표현 기준
 
@@ -974,8 +976,8 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 ### 9.2 인증·인가·DI·테스트 확인
 
 - 외부 JWT issuer/audience/lifetime/signing key 검증, `TenantMember`/`PlatformAdministrator` 정책, `X-Tenant-Id`와 route tenant 비교, active membership 및 TenantAdministrator 검증을 실제 소스에서 확인했다.
-- API Application Service의 DI 등록은 확인했지만 View/ViewModel이 없으므로 `screen-service-bindings.csv`는 계속 header-only로 유지한다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
-- 실제 실행한 전체 테스트는 `dotnet test EDAN.Tensor.sln --no-restore --configuration Release --logger "console;verbosity=minimal"`이며 13개 프로젝트에서 273 passed, 0 failed, 0 skipped였다. 실행하지 않은 테스트는 통과로 기록하지 않았다.
+- API Application Service의 DI 등록과 WPF View/ViewModel의 `IDesktopScreenService` → `DesktopApiSession` 바인딩을 실제 소스에서 확인했다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
+- 기준선 전체 테스트는 `dotnet test EDAN.Tensor.sln --no-restore --configuration Release --logger "console;verbosity=minimal"`이며 13개 프로젝트에서 273 passed, 0 failed, 0 skipped였다. 이번 변경 후 새 테스트 실행은 testhost 연결 문제로 확정하지 못했으므로 새 테스트를 통과로 기록하지 않았다.
 - 테스트 및 상세 격차·우선순위·UI 단계 판단은 [screen-implementation-gaps.md](screen-implementation-gaps.md)에 고정했다.
 
 ### 9.3 조사 후 관리 원칙
@@ -983,7 +985,7 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 1. 기존 설계 기능은 API가 제공하지 않는 필드를 실제 제공 필드처럼 표시하지 않는다.
 2. `NotImplemented`와 `NotVerified`를 구분하고, 테스트를 실행하지 않은 경우 `NotRun` 또는 `NotFound`로 기록한다.
 3. ScreenId 및 MODULE·AREA 코드는 변경하지 않는다.
-4. UI 아키텍처 설계는 가능하지만 P1 API 격차를 결정하기 전 UI 기능을 구현하지 않는다.
+4. UI 아키텍처는 실제로 연결된 15개 화면의 공통 경계를 따르되, API가 없는 collection/filter/control은 구현하지 않는다. 확인된 mutation은 공통 명령 영역으로 연결하고, 구조화 입력과 UI smoke/test 증거를 확보한 뒤 `Active`로 승격한다.
 
 ### 9.4 부록 변경 이력
 

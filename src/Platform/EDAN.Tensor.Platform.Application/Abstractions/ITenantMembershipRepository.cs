@@ -9,5 +9,7 @@ public interface ITenantMembershipRepository
     Task<bool> ExistsAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default);
     Task<bool> HasActiveMembershipAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TenantMembership>> GetActiveForSubjectAsync(string subjectId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TenantMembership>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<TenantMembership>>([]);
     void Add(TenantMembership membership);
 }

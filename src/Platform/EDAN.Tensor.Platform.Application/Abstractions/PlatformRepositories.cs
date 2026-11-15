@@ -6,6 +6,8 @@ namespace EDAN.Tensor.Platform.Application.Abstractions;
 public interface ITenantRepository
 {
     Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Tenant>>([]);
     Task<bool> ExistsCodeAsync(TenantCode code, CancellationToken cancellationToken = default);
     void Add(Tenant tenant);
 }
@@ -14,6 +16,8 @@ public interface ITenantRepository
 public interface IOrganizationRepository
 {
     Task<Organization?> GetByIdAsync(OrganizationId id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Organization>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Organization>>([]);
     Task<bool> ExistsCodeAsync(TenantId tenantId, OrganizationCode code, CancellationToken cancellationToken = default);
     void Add(Organization organization);
 }
@@ -22,6 +26,8 @@ public interface IOrganizationRepository
 public interface IProjectRepository
 {
     Task<Project?> GetByIdAsync(ProjectId id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Project>> GetForTenantAsync(TenantId tenantId, OrganizationId? organizationId = null, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Project>>([]);
     Task<bool> ExistsCodeAsync(OrganizationId organizationId, ProjectCode code, CancellationToken cancellationToken = default);
     void Add(Project project);
 }
@@ -29,6 +35,9 @@ public interface IProjectRepository
 /// <summary>사용자 저장소는 테넌트 범위에서 이메일 중복을 확인합니다.</summary>
 public interface IUserRepository
 {
+    Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default) => Task.FromResult<User?>(null);
+    Task<IReadOnlyList<User>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<User>>([]);
     Task<bool> ExistsEmailAsync(TenantId tenantId, EmailAddress email, CancellationToken cancellationToken = default);
     void Add(User user);
 }

@@ -1,10 +1,10 @@
 # Client API 연동 계약
 
-이 문서는 WPF 화면이 아직 없는 환경에서도 현재 승인된 Platform·DataSet·Worker API 흐름을 안전하게 소비할 수 있도록 추가한 typed API Client와 공유 계약의 사용 범위를 고정합니다.
+이 문서는 WPF 화면이 API를 직접 조합하지 않고 현재 승인된 Platform·DataSet·Worker API 흐름을 안전하게 소비하도록 하는 typed API Client와 공유 계약의 사용 범위를 고정합니다. 실제 WPF Desktop은 `src/Client/EDAN.Tensor.Desktop`에서 이 Client를 사용합니다.
 
 ## 제공 모듈
 
-- `EDAN.Tensor.Client.Contracts`는 Tenant 소속, DataSet, 검증 실행, Worker 작업·DLQ의 요청·응답 계약을 제공합니다.
+- `EDAN.Tensor.Client.Contracts`는 Tenant 소속, Platform directory·권한·감사·Quota, DataSet, 저장량, 검증 실행, Worker 작업·DLQ·외부 전달의 요청·응답 계약을 제공합니다.
 - `EDAN.Tensor.Client`는 `HttpClient` 기반 `TensorApiClient`를 제공하며, 인증 토큰·Tenant 헤더·Idempotency 헤더·Replay 헤더를 요청 경계에서 일관되게 구성합니다.
 - Client는 API Host의 Tenant 경로와 `X-Tenant-Id`를 같은 식별자로 설정하여 경로와 선택 헤더가 어긋나는 요청을 만들지 않습니다.
 - Client는 API의 `{ Code, Description }` 오류 계약을 `TensorApiException`의 상태 코드·오류 코드·설명으로 보존하고, 응답의 `X-Request-Id`가 있으면 `RequestId`로 전달합니다. 토큰과 응답 본문을 로그로 남기지 않습니다.
@@ -26,6 +26,8 @@ var api = new TensorApiClient(httpClient, new TensorApiClientOptions
 });
 
 var memberships = await api.GetMyMembershipsAsync(cancellationToken);
+var organizations = await api.GetOrganizationsAsync(tenantId, search: "core", page: 1, pageSize: 50, cancellationToken);
+var policies = await api.GetAuthorizationPoliciesAsync(tenantId, cancellationToken);
 var dataSet = await api.CreateDataSetAsync(
     tenantId,
     new CreateDataSetRequestContract(organizationId, projectId, "고객 데이터"),
@@ -48,6 +50,12 @@ var task = await api.EnqueueWorkerTaskAsync(
 - DLQ 재처리에는 호출자가 생성한 `Replay-Request-Id` GUID가 필요합니다.
 - 콘텐츠 업로드 스트림은 요청이 끝나면 `HttpClient` 요청 콘텐츠와 함께 해제되므로 호출자는 업로드 완료 후 해당 스트림을 재사용하지 않습니다. 콘텐츠 다운로드 스트림을 `Dispose`하면 HTTP 응답도 함께 해제됩니다.
 
+## Desktop 연결 경계
+
+- WPF ViewModel은 `IDesktopScreenService`만 의존하며 `DesktopApiSession`이 한 창의 API Client, Tenant ID, Bearer token 공급자를 보유합니다.
+- 화면의 공통 조회 입력은 API가 지원하는 검색어·page·pageSize·대상 ID만 사용합니다. API에 없는 collection/list/filter를 화면에서 추정하지 않습니다.
+- Desktop은 API 권한을 대체하지 않으며, 401·403·409·validation 오류와 `X-Request-Id`를 화면 상태로 표시할 수 있는 Client 예외를 사용합니다.
+
 ## 범위 경계
 
-이 모듈은 WPF 화면, 결제 공급자, Commercial entitlement, Licensing 발급·검증 업무를 구현하지 않습니다. 해당 기능은 승인된 업무·화면·보안 계약이 제공된 뒤 이 Client 계약 위에 별도 추가합니다. API가 지원하는 SQLite·CSV·JSON 검증 v1 범위를 임의로 DuckDB·Parquet으로 확장하지 않습니다.
+이 모듈은 결제 공급자, Commercial entitlement, Licensing 발급·검증 업무를 구현하지 않습니다. 해당 기능은 승인된 업무·화면·보안 계약이 제공된 뒤 이 Client 계약 위에 별도 추가합니다. API가 지원하는 SQLite·CSV·JSON 검증 v1 범위를 임의로 DuckDB·Parquet으로 확장하지 않습니다.

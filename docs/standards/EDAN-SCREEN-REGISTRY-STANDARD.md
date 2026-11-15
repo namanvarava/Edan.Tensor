@@ -441,9 +441,9 @@ Registry 변경은 관련 소스 변경과 동일한 작업 단위에서 커밋�
 
 2026-11-15 기준 main-auto 저장소의 전체 Git 트리(444개 경로)를 확인한 결과, .xaml, .xaml.cs, ViewModel 또는 Screen Registry로 식별되는 화면 구현 파일은 확인되지 않았다. src/Client에는 Client Contracts와 API Client가 존재한다. 업무 화면 소유 모듈은 Platform, DataSet, Worker, Commercial, Licensing으로 구분하며 코드 정의는 screen-module-area-codes.csv에서 관리한다.
 
-현재 Registry에는 기존 합의된 15개 화면이 `Planned`로 등록되어 있지만, 실제 UI 화면·ViewModel·UI Service binding은 확인되지 않았다. API·DTO 조사 파일은 API 구현의 존재와 화면 구현의 존재를 구분하기 위해 별도로 관리한다. 실제 화면이 확인되기 전까지 View·ViewModel·UI Service 연결을 추정하지 않는다.
+2026-11-15 기준으로 Registry의 15개 화면은 `main-auto`의 `src/Client/EDAN.Tensor.Desktop`에 WPF View·ViewModel과 `IDesktopScreenService` binding이 실제로 등록되어 `InDevelopment`로 관리한다. `RegistryScreenView.xaml`은 공통 WPF View이고, 15개 화면별 View 클래스·ViewModel·MainWindow DataTemplate 매핑이 존재한다. API·DTO 조사 파일은 API 구현과 화면 구현을 구분하기 위해 계속 별도로 관리한다.
 
-이는 Screen Registry 표준 미확정을 의미하지 않는다. 관리 규칙과 API 조사 결과는 확정하되, 화면 상태는 실제 UI 구현 증거가 생길 때까지 `Planned`로 유지한다.
+`InDevelopment`는 실제 View·ViewModel·typed Client 조회 경로가 존재한다는 뜻이다. 모든 mutation workflow와 UI smoke/test 증거가 확인되기 전에는 `Active`로 승격하지 않는다. API가 제공하지 않는 목록·필터·운영 제어를 추정하여 Registry에 기록하지 않는다.
 
 ## 15. 확정된 관리 기준 요약
 

@@ -8,6 +8,8 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 public sealed class TenantRepository(PlatformDbContext db) : ITenantRepository
 {
     public Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken = default) => db.Tenants.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await db.Tenants.AsNoTracking().OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsCodeAsync(TenantCode code, CancellationToken cancellationToken = default) => db.Tenants.AnyAsync(x => x.Code == code, cancellationToken);
     public void Add(Tenant tenant) => db.Tenants.Add(tenant);
 }
@@ -15,6 +17,8 @@ public sealed class TenantRepository(PlatformDbContext db) : ITenantRepository
 public sealed class OrganizationRepository(PlatformDbContext db) : IOrganizationRepository
 {
     public Task<Organization?> GetByIdAsync(OrganizationId id, CancellationToken cancellationToken = default) => db.Organizations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Organization>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.Organizations.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsCodeAsync(TenantId tenantId, OrganizationCode code, CancellationToken cancellationToken = default) => db.Organizations.AnyAsync(x => x.TenantId == tenantId && x.Code == code, cancellationToken);
     public void Add(Organization organization) => db.Organizations.Add(organization);
 }
@@ -22,12 +26,22 @@ public sealed class OrganizationRepository(PlatformDbContext db) : IOrganization
 public sealed class ProjectRepository(PlatformDbContext db) : IProjectRepository
 {
     public Task<Project?> GetByIdAsync(ProjectId id, CancellationToken cancellationToken = default) => db.Projects.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<Project>> GetForTenantAsync(TenantId tenantId, OrganizationId? organizationId = null, CancellationToken cancellationToken = default)
+    {
+        var query = db.Projects.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (organizationId is not null)
+            query = query.Where(x => x.OrganizationId == organizationId);
+        return await query.OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
+    }
     public Task<bool> ExistsCodeAsync(OrganizationId organizationId, ProjectCode code, CancellationToken cancellationToken = default) => db.Projects.AnyAsync(x => x.OrganizationId == organizationId && x.Code == code, cancellationToken);
     public void Add(Project project) => db.Projects.Add(project);
 }
 
 public sealed class UserRepository(PlatformDbContext db) : IUserRepository
 {
+    public Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default) => db.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public async Task<IReadOnlyList<User>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.Users.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Email.Value).ToListAsync(cancellationToken);
     public Task<bool> ExistsEmailAsync(TenantId tenantId, EmailAddress email, CancellationToken cancellationToken = default) => db.Users.AnyAsync(x => x.TenantId == tenantId && x.Email == email, cancellationToken);
     public void Add(User user) => db.Users.Add(user);
 }
@@ -45,6 +59,9 @@ public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMe
             .Where(x => x.SubjectId == subjectId && x.Status == TenantMembershipStatus.Active)
             .OrderBy(x => x.TenantId)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TenantMembership>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
+        await db.TenantMemberships.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
 
     public void Add(TenantMembership membership) => db.TenantMemberships.Add(membership);
 }
@@ -71,6 +88,16 @@ public sealed class ScopedMembershipRepository(PlatformDbContext db) : IScopedMe
         db.ProjectMemberships.AnyAsync(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId &&
             x.SubjectId == subjectId && x.Status == ScopedMembershipStatus.Active &&
             (x.Role == ProjectRole.Contributor || x.Role == ProjectRole.Manager), cancellationToken);
+
+    public async Task<IReadOnlyList<OrganizationMembership>> GetOrganizationMembershipsAsync(TenantId tenantId, OrganizationId organizationId, CancellationToken cancellationToken = default) =>
+        await db.OrganizationMemberships.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.OrganizationId == organizationId)
+            .OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<ProjectMembership>> GetProjectMembershipsAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, CancellationToken cancellationToken = default) =>
+        await db.ProjectMemberships.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.OrganizationId == organizationId && x.ProjectId == projectId)
+            .OrderBy(x => x.SubjectId).ToListAsync(cancellationToken);
 
     public void Add(OrganizationMembership membership) => db.OrganizationMemberships.Add(membership);
     public void Add(ProjectMembership membership) => db.ProjectMemberships.Add(membership);

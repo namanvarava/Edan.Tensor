@@ -45,11 +45,144 @@ public static class PlatformEndpoints
             return Results.Ok(memberships.Select(x => new { TenantId = x.TenantId.Value, Role = x.Role.ToString() }));
         }).RequireAuthorization("TenantMember");
 
+        group.MapGet("/tenants", async (string? search, TenantStatus? status, int? page, int? pageSize,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetTenantsAsync(search, status, page ?? 1, pageSize ?? 50, token);
+            return Results.Ok(result);
+        }).RequireAuthorization("PlatformAdministrator");
+
         // 경로의 TenantId가 요청에서 선택한 Tenant와 일치하고 활성 소속이 확인된 경우에만 업무 API를 실행합니다.
         var tenantGroup = group.MapGroup("/tenants")
             .RequireAuthorization("TenantMember")
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetTenantAsync(new TenantId(tenantId), token);
+            return result is null ? Results.NotFound(new ApiError("platform.tenant.not_found", "테넌트를 찾을 수 없습니다.")) : Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/organizations", async (Guid tenantId, string? search, OrganizationStatus? status,
+            int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetOrganizationsAsync(new TenantId(tenantId), search, status, page ?? 1, pageSize ?? 50, token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/organizations/{organizationId:guid}", async (Guid organizationId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetOrganizationAsync(new OrganizationId(organizationId), token);
+            return result is null ? Results.NotFound(new ApiError("platform.organization.not_found", "조직을 찾을 수 없습니다.")) : Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/projects", async (Guid tenantId, Guid? organizationId, string? search,
+            ProjectStatus? status, int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetProjectsAsync(new TenantId(tenantId),
+                organizationId is Guid org ? new OrganizationId(org) : null, search, status, page ?? 1, pageSize ?? 50, token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/projects/{projectId:guid}", async (Guid projectId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetProjectAsync(new ProjectId(projectId), token);
+            return result is null ? Results.NotFound(new ApiError("platform.project.not_found", "프로젝트를 찾을 수 없습니다.")) : Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/users", async (Guid tenantId, string? search, UserStatus? status,
+            int? page, int? pageSize, PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetUsersAsync(new TenantId(tenantId), search, status, page ?? 1, pageSize ?? 50, token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/users/{userId:guid}", async (Guid userId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetUserAsync(new UserId(userId), token);
+            return result is null ? Results.NotFound(new ApiError("platform.user.not_found", "사용자를 찾을 수 없습니다.")) : Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/memberships", async (Guid tenantId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetTenantMembershipsAsync(new TenantId(tenantId), token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/organizations/{organizationId:guid}/memberships", async (Guid tenantId, Guid organizationId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetOrganizationMembershipsAsync(new TenantId(tenantId), new OrganizationId(organizationId), token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/organizations/{organizationId:guid}/projects/{projectId:guid}/memberships", async (Guid tenantId, Guid organizationId, Guid projectId,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            var result = await service.GetProjectMembershipsAsync(new TenantId(tenantId), new OrganizationId(organizationId), new ProjectId(projectId), token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}", async (Guid tenantId, UpdateDirectoryEntryRequest request,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            TenantStatus? status = null;
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                if (!Enum.TryParse(request.Status, true, out TenantStatus parsed))
+                    return ValidationError("지원하지 않는 테넌트 상태입니다.");
+                status = parsed;
+            }
+            var result = await service.UpdateTenantAsync(new TenantId(tenantId), request.Name, status, token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/organizations/{organizationId:guid}", async (Guid organizationId, UpdateDirectoryEntryRequest request,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            OrganizationStatus? status = null;
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                if (!Enum.TryParse(request.Status, true, out OrganizationStatus parsed))
+                    return ValidationError("지원하지 않는 조직 상태입니다.");
+                status = parsed;
+            }
+            var result = await service.UpdateOrganizationAsync(new OrganizationId(organizationId), request.Name, status, token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/organizations/{organizationId:guid}/projects/{projectId:guid}", async (Guid projectId, UpdateDirectoryEntryRequest request,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            ProjectStatus? status = null;
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                if (!Enum.TryParse(request.Status, true, out ProjectStatus parsed))
+                    return ValidationError("지원하지 않는 프로젝트 상태입니다.");
+                status = parsed;
+            }
+            var result = await service.UpdateProjectAsync(new ProjectId(projectId), request.Name, status, token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPut("/{tenantId:guid}/users/{userId:guid}", async (Guid userId, UpdateDirectoryEntryRequest request,
+            PlatformDirectoryService service, CancellationToken token) =>
+        {
+            UserStatus? status = null;
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                if (!Enum.TryParse(request.Status, true, out UserStatus parsed))
+                    return ValidationError("지원하지 않는 사용자 상태입니다.");
+                status = parsed;
+            }
+            var result = await service.UpdateUserAsync(new UserId(userId), request.Name, status, token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapPost("/{tenantId:guid}/authorization-policies",
             async (Guid tenantId, CreateAuthorizationPolicyRequest request, AuthorizationPolicyService service, CancellationToken token) =>
@@ -549,6 +682,7 @@ public sealed record UpdateAuthorizationAuditArchiveScheduleRequest(int Interval
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
 public sealed record InviteUserRequest(string Email, string DisplayName);
+public sealed record UpdateDirectoryEntryRequest(string? Name, string? Status);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);
 public sealed record CreatePolicyRequest(Guid? OrganizationId, Guid? ProjectId, string Key, string Value);
 

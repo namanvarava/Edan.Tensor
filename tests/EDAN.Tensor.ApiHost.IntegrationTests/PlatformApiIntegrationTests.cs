@@ -1724,6 +1724,87 @@ public sealed class PlatformApiIntegrationTests
     }
 
     [Fact]
+    public async Task PlatformDirectoryRoutesReturnTenantScopedPagedContracts()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new
+        {
+            code = $"DIR-{suffix}", name = "Directory Tenant"
+        });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created,
+            (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships",
+                new { subjectId = "directory-admin", role = "Administrator" })).StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "directory-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString("D"));
+
+        using var organizationResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations", new { code = $"ORG-{suffix}", name = "Directory Org" });
+        Assert.Equal(HttpStatusCode.Created, organizationResponse.StatusCode);
+        var organizationId = await ReadIdAsync(organizationResponse);
+        using var projectResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}/projects",
+            new { code = $"PRJ-{suffix}", name = "Directory Project" });
+        Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
+        var projectId = await ReadIdAsync(projectResponse);
+        using var userResponse = await client.PostAsJsonAsync(
+            $"/api/platform/tenants/{tenantId}/users/invitations",
+            new { email = $"directory-{suffix}@example.com", displayName = "Directory User" });
+        Assert.Equal(HttpStatusCode.Created, userResponse.StatusCode);
+        var userId = await ReadIdAsync(userResponse);
+
+        using var tenantList = await client.GetAsync($"/api/platform/tenants/{tenantId}");
+        Assert.Equal(HttpStatusCode.OK, tenantList.StatusCode);
+        using var tenantJson = JsonDocument.Parse(await tenantList.Content.ReadAsStringAsync());
+        Assert.Equal(tenantId, tenantJson.RootElement.GetProperty("id").GetGuid());
+
+        using var organizationList = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/organizations?search=Directory&page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, organizationList.StatusCode);
+        Assert.Equal(1, await ReadPageItemCountAsync(organizationList));
+
+        using var projectList = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/projects?organizationId={organizationId:D}&page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, projectList.StatusCode);
+        Assert.Equal(1, await ReadPageItemCountAsync(projectList));
+
+        using var userList = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/users?search=directory&page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, userList.StatusCode);
+        Assert.Equal(1, await ReadPageItemCountAsync(userList));
+
+        using var memberships = await client.GetAsync($"/api/platform/tenants/{tenantId}/memberships");
+        Assert.Equal(HttpStatusCode.OK, memberships.StatusCode);
+        Assert.Equal(1, await ReadArrayLengthAsync(memberships));
+
+        using var organizationDetail = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/organizations/{organizationId}");
+        Assert.Equal(HttpStatusCode.OK, organizationDetail.StatusCode);
+        using var projectDetail = await client.GetAsync(
+            $"/api/platform/tenants/{tenantId}/projects/{projectId}");
+        Assert.Equal(HttpStatusCode.OK, projectDetail.StatusCode);
+        using var userDetail = await client.GetAsync($"/api/platform/tenants/{tenantId}/users/{userId}");
+        Assert.Equal(HttpStatusCode.OK, userDetail.StatusCode);
+
+        static async Task<int> ReadPageItemCountAsync(HttpResponseMessage response)
+        {
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            return document.RootElement.GetProperty("items").GetArrayLength();
+        }
+    }
+
+    [Fact]
     public async Task AuthenticatedSubjectWithoutMembershipCannotAccessSelectedTenant()
     {
         using var factory = new ApiHostFactory();

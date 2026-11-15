@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using EDAN.Tensor.Client;
 using EDAN.Tensor.Client.Contracts;
 using Xunit;
@@ -34,6 +35,84 @@ public sealed class TensorApiClientTests
         var membership = Assert.Single(memberships);
         Assert.Equal(tenantId, membership.TenantId);
         Assert.Equal("platform_admin", membership.Role);
+    }
+
+    [Fact]
+    public async Task GetOrganizationsAsync_EncodesDirectoryFiltersAndPaging()
+    {
+        var tenantId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/organizations", request.RequestUri!.AbsolutePath);
+            Assert.Contains("search=alpha%20team", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Contains("page=2", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Contains("pageSize=10", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            return JsonResponse($"{{\"items\":[{{\"id\":\"{Guid.NewGuid():D}\",\"tenantId\":\"{tenantId:D}\",\"code\":\"ORG\",\"name\":\"Alpha Team\",\"status\":\"Active\"}}],\"totalCount\":1,\"page\":2,\"pageSize\":10}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var page = await client.GetOrganizationsAsync(tenantId, "alpha team", page: 2, pageSize: 10);
+
+        Assert.Single(page.Items);
+        Assert.Equal("Alpha Team", page.Items[0].Name);
+        Assert.Equal(2, page.Page);
+    }
+
+    [Fact]
+    public async Task TenantScopedOperationalContractsDeserializeAndPreserveHeaders()
+    {
+        var tenantId = Guid.NewGuid();
+        var deliveryId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("authorization-audit", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":1,\"pageSize\":50,\"items\":[{\"id\":\"" + Guid.NewGuid() + "\",\"subjectId\":\"user-1\",\"action\":\"read\",\"resourceType\":\"DataSet\",\"scope\":\"Tenant\",\"isAllowed\":true,\"reasonCode\":\"policy.allow\",\"matchedPolicyId\":null,\"occurredAtUtc\":\"2026-01-01T00:00:00Z\"}]}");
+            if (request.RequestUri.AbsolutePath.EndsWith("usage", StringComparison.Ordinal))
+                return JsonResponse("{\"tenantBytes\":12,\"tenantDataSetCount\":1,\"organizationBytes\":8,\"organizationDataSetCount\":1,\"projectBytes\":4,\"projectDataSetCount\":1,\"dataSetBytes\":4,\"limits\":{\"tenantLimitBytes\":100,\"organizationLimitBytes\":80,\"projectLimitBytes\":60,\"dataSetLimitBytes\":40},\"utilizationPercent\":{\"tenant\":12,\"organization\":10,\"project\":6.67,\"dataSet\":10},\"warningThresholdPercent\":80,\"warnings\":[],\"measuredAtUtc\":\"2026-01-01T00:00:00Z\"}");
+            return JsonResponse("{\"id\":\"" + deliveryId + "\",\"tenantId\":\"" + tenantId + "\",\"targetUri\":\"https://example.test/hook\",\"idempotencyKey\":\"delivery-1\",\"status\":\"Queued\",\"attemptCount\":0,\"maxAttempts\":3,\"lastErrorCode\":null,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"completedAtUtc\":null}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var audit = await client.GetAuthorizationAuditAsync(tenantId);
+        var usage = await client.GetDataSetStorageUsageAsync(tenantId, Guid.NewGuid());
+        var delivery = await client.GetExternalDeliveryAsync(tenantId, deliveryId);
+
+        Assert.Equal("user-1", Assert.Single(audit.Items).SubjectId);
+        Assert.Equal(12, usage.TenantBytes);
+        Assert.Equal(deliveryId, delivery!.Id);
+    }
+
+    [Fact]
+    public async Task CreateExternalDeliveryAsync_SendsTenantAndIdempotencyContract()
+    {
+        var tenantId = Guid.NewGuid();
+        var deliveryId = Guid.NewGuid();
+        var workerTaskId = Guid.NewGuid();
+        var handler = new RecordingHandler(async (request, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/worker/deliveries", request.RequestUri!.AbsolutePath);
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            Assert.Equal("desktop-delivery-1", request.Headers.GetValues("Idempotency-Key").Single());
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            Assert.Contains("https://example.test/hook", body, StringComparison.Ordinal);
+            return JsonResponse($"{{\"delivery\":{{\"id\":\"{deliveryId:D}\",\"tenantId\":\"{tenantId:D}\",\"targetUri\":\"https://example.test/hook\",\"idempotencyKey\":\"desktop-delivery-1\",\"status\":\"Queued\",\"attemptCount\":0,\"maxAttempts\":3,\"lastErrorCode\":null,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"completedAtUtc\":null}},\"workerTaskId\":\"{workerTaskId:D}\",\"created\":true}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+        using var payload = JsonDocument.Parse("{\"event\":\"screen-test\"}");
+
+        var response = await client.CreateExternalDeliveryAsync(tenantId,
+            new CreateExternalDeliveryRequestContract("https://example.test/hook", payload.RootElement, 3),
+            "desktop-delivery-1");
+
+        Assert.Equal(deliveryId, response.Delivery.Id);
+        Assert.Equal(workerTaskId, response.WorkerTaskId);
     }
 
     /// <summary>검증 등록이 경로 Tenant와 Idempotency-Key를 함께 전달합니다.</summary>

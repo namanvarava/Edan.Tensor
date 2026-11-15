@@ -107,6 +107,356 @@ public sealed class TensorApiClient
         SendJsonAsync<IReadOnlyList<TenantMembershipContract>>(
             CreateRequest(HttpMethod.Get, "/api/platform/tenants/mine"), cancellationToken);
 
+    /// <summary>플랫폼 관리자가 검색·상태·페이지 조건으로 Tenant directory를 조회합니다.</summary>
+    public Task<PlatformPageContract<TenantDirectoryContract>> GetTenantsAsync(
+        string? search = null, string? status = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        return SendJsonAsync<PlatformPageContract<TenantDirectoryContract>>(
+            CreateRequest(HttpMethod.Get, $"/api/platform/tenants{Query(search, status, page, pageSize)}"), cancellationToken);
+    }
+
+    /// <summary>선택된 Tenant의 조직 directory를 조회합니다.</summary>
+    public Task<PlatformPageContract<OrganizationDirectoryContract>> GetOrganizationsAsync(
+        Guid tenantId, string? search = null, string? status = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidatePage(page, pageSize);
+        return SendJsonAsync<PlatformPageContract<OrganizationDirectoryContract>>(
+            CreateRequest(HttpMethod.Get, $"{TenantPath(tenantId, "organizations")}{Query(search, status, page, pageSize)}", tenantId), cancellationToken);
+    }
+
+    /// <summary>선택된 Tenant의 프로젝트 directory를 조회합니다.</summary>
+    public Task<PlatformPageContract<ProjectDirectoryContract>> GetProjectsAsync(
+        Guid tenantId, Guid? organizationId = null, string? search = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidatePage(page, pageSize);
+        var query = Query(search, status, page, pageSize, organizationId is Guid org ? ("organizationId", org.ToString("D")) : null);
+        return SendJsonAsync<PlatformPageContract<ProjectDirectoryContract>>(
+            CreateRequest(HttpMethod.Get, $"{TenantPath(tenantId, "projects")}{query}", tenantId), cancellationToken);
+    }
+
+    /// <summary>선택된 Tenant의 사용자 directory를 조회합니다.</summary>
+    public Task<PlatformPageContract<UserDirectoryContract>> GetUsersAsync(
+        Guid tenantId, string? search = null, string? status = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidatePage(page, pageSize);
+        return SendJsonAsync<PlatformPageContract<UserDirectoryContract>>(
+            CreateRequest(HttpMethod.Get, $"{TenantPath(tenantId, "users")}{Query(search, status, page, pageSize)}", tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위의 멤버십 directory를 조회합니다.</summary>
+    public Task<IReadOnlyList<TenantMembershipDirectoryContract>> GetTenantMembershipsAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendJsonAsync<IReadOnlyList<TenantMembershipDirectoryContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "memberships"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위의 권한 정책을 조회합니다.</summary>
+    public Task<IReadOnlyList<AuthorizationPolicyContract>> GetAuthorizationPoliciesAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendJsonAsync<IReadOnlyList<AuthorizationPolicyContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "authorization-policies"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위의 권한 감사 기록을 필터와 함께 조회합니다.</summary>
+    public Task<AuthorizationAuditPageContract> GetAuthorizationAuditAsync(
+        Guid tenantId, string? subjectId = null, string? action = null, bool? isAllowed = null,
+        DateTimeOffset? fromUtc = null, DateTimeOffset? toUtc = null, int page = 1, int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(subjectId)) parts.Add($"subjectId={Uri.EscapeDataString(subjectId.Trim())}");
+        if (!string.IsNullOrWhiteSpace(action)) parts.Add($"action={Uri.EscapeDataString(action.Trim())}");
+        if (isAllowed is bool allowed) parts.Add($"isAllowed={allowed.ToString().ToLowerInvariant()}");
+        if (fromUtc is DateTimeOffset from) parts.Add($"fromUtc={Uri.EscapeDataString(from.ToUniversalTime().ToString("O"))}");
+        if (toUtc is DateTimeOffset to) parts.Add($"toUtc={Uri.EscapeDataString(to.ToUniversalTime().ToString("O"))}");
+        return SendJsonAsync<AuthorizationAuditPageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"authorization-audit?{string.Join("&", parts)}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위의 저장 용량 정책을 페이지로 조회합니다.</summary>
+    public Task<StorageQuotaPolicyPageContract> GetStorageQuotaPoliciesAsync(
+        Guid tenantId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidatePage(page, pageSize);
+        return SendJsonAsync<StorageQuotaPolicyPageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-quota-policies?page={page}&pageSize={pageSize}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>DataSet 단위 실제 저장량과 적용된 한도를 조회합니다.</summary>
+    public Task<DataSetStorageUsageContract> GetDataSetStorageUsageAsync(
+        Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        return SendJsonAsync<DataSetStorageUsageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"datasets/{dataSetId:D}/usage"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 전체의 실제 저장량을 조회합니다.</summary>
+    public Task<DataSetTenantStorageUsageContract> GetTenantStorageUsageAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendJsonAsync<DataSetTenantStorageUsageContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "storage-usage"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 저장량 스냅샷 이력을 조회합니다.</summary>
+    public Task<IReadOnlyList<DataSetStorageUsageSnapshotContract>> GetTenantStorageUsageHistoryAsync(
+        Guid tenantId, int take = 168, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        if (take is < 1 or > 744) throw new ArgumentOutOfRangeException(nameof(take));
+        return SendJsonAsync<IReadOnlyList<DataSetStorageUsageSnapshotContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/history?take={take}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 저장량 quota 임계치 이벤트 이력을 조회합니다.</summary>
+    public Task<IReadOnlyList<DataSetQuotaEventContract>> GetTenantQuotaEventHistoryAsync(
+        Guid tenantId, int take = 100, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        if (take is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(take));
+        return SendJsonAsync<IReadOnlyList<DataSetQuotaEventContract>>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"storage-usage/quota-events?take={take}"), tenantId), cancellationToken);
+    }
+
+    /// <summary>Tenant 범위 외부 전달 상태를 조회합니다.</summary>
+    public Task<ExternalDeliveryContract?> GetExternalDeliveryAsync(
+        Guid tenantId, Guid deliveryId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(deliveryId, nameof(deliveryId));
+        return SendOptionalAsync<ExternalDeliveryContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"worker/deliveries/{deliveryId:D}"), tenantId), cancellationToken);
+    }
+
+    public Task<ResourceIdContract> CreateTenantAsync(
+        CreateTenantRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post, "/api/platform/tenants"), request, cancellationToken);
+    }
+
+    public Task ActivateTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendNoContentAsync(CreateRequest(HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/activate"), cancellationToken);
+    }
+
+    public Task<ResourceIdContract> CreateOrganizationAsync(
+        Guid tenantId, CreateOrganizationRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post, TenantPath(tenantId, "organizations"), tenantId), request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> CreateProjectAsync(
+        Guid tenantId, Guid organizationId, CreateProjectRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(organizationId, nameof(organizationId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"organizations/{organizationId:D}/projects"), tenantId), request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> InviteUserAsync(
+        Guid tenantId, InviteUserRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "users/invitations"), tenantId), request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> GrantTenantMembershipAsync(
+        Guid tenantId, GrantTenantMembershipRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "memberships"), tenantId), request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> GrantOrganizationMembershipAsync(
+        Guid tenantId, Guid organizationId, GrantOrganizationMembershipRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(organizationId, nameof(organizationId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"organizations/{organizationId:D}/memberships"), tenantId), request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> GrantProjectMembershipAsync(
+        Guid tenantId, Guid organizationId, Guid projectId, GrantProjectMembershipRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(organizationId, nameof(organizationId));
+        ValidateId(projectId, nameof(projectId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"organizations/{organizationId:D}/projects/{projectId:D}/memberships"), tenantId), request, cancellationToken);
+    }
+
+    public Task UpdateTenantAsync(Guid tenantId, UpdateDirectoryEntryRequestContract request,
+        CancellationToken cancellationToken = default) =>
+        UpdateDirectoryEntryAsync(tenantId, string.Empty, request, cancellationToken);
+
+    public Task UpdateOrganizationAsync(Guid tenantId, Guid organizationId, UpdateDirectoryEntryRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateId(organizationId, nameof(organizationId));
+        return UpdateDirectoryEntryAsync(tenantId, $"organizations/{organizationId:D}", request, cancellationToken);
+    }
+
+    public Task UpdateProjectAsync(Guid tenantId, Guid organizationId, Guid projectId, UpdateDirectoryEntryRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateId(organizationId, nameof(organizationId));
+        ValidateId(projectId, nameof(projectId));
+        return UpdateDirectoryEntryAsync(tenantId, $"organizations/{organizationId:D}/projects/{projectId:D}", request, cancellationToken);
+    }
+
+    public Task UpdateUserAsync(Guid tenantId, Guid userId, UpdateDirectoryEntryRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateId(userId, nameof(userId));
+        return UpdateDirectoryEntryAsync(tenantId, $"users/{userId:D}", request, cancellationToken);
+    }
+
+    public Task<ResourceIdContract> CreateAuthorizationPolicyAsync(Guid tenantId,
+        CreateAuthorizationPolicyRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "authorization-policies"), tenantId), request, cancellationToken);
+    }
+
+    public Task UpdateAuthorizationPolicyAsync(Guid tenantId, Guid policyId,
+        UpdateAuthorizationPolicyRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(policyId, nameof(policyId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendNoContentAsync(SendRequest(HttpMethod.Put,
+            TenantPath(tenantId, $"authorization-policies/{policyId:D}"), tenantId, request), cancellationToken);
+    }
+
+    public Task SetAuthorizationPolicyEnabledAsync(Guid tenantId, Guid policyId,
+        SetAuthorizationPolicyEnabledRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(policyId, nameof(policyId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendNoContentAsync(SendRequest(HttpMethod.Patch,
+            TenantPath(tenantId, $"authorization-policies/{policyId:D}/enabled"), tenantId, request), cancellationToken);
+    }
+
+    public Task<StorageQuotaPolicyContract> CreateStorageQuotaPolicyAsync(Guid tenantId,
+        CreateStorageQuotaPolicyRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<StorageQuotaPolicyContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "storage-quota-policies"), tenantId), request, cancellationToken);
+    }
+
+    public Task<StorageQuotaPolicyContract> UpdateStorageQuotaPolicyAsync(Guid tenantId, Guid policyId,
+        UpdateStorageQuotaPolicyRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(policyId, nameof(policyId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<StorageQuotaPolicyContract>(SendRequest(HttpMethod.Put,
+            TenantPath(tenantId, $"storage-quota-policies/{policyId:D}"), tenantId, request), cancellationToken);
+    }
+
+    public Task<StorageQuotaPolicyContract> SetStorageQuotaPolicyEnabledAsync(Guid tenantId, Guid policyId,
+        SetStorageQuotaPolicyEnabledRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(policyId, nameof(policyId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<StorageQuotaPolicyContract>(SendRequest(HttpMethod.Patch,
+            TenantPath(tenantId, $"storage-quota-policies/{policyId:D}/enabled"), tenantId, request), cancellationToken);
+    }
+
+    public Task<StorageQuotaPolicyHistoryPageContract> GetStorageQuotaPolicyHistoryAsync(Guid tenantId, Guid policyId,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(policyId, nameof(policyId));
+        ValidatePage(page, pageSize);
+        return SendJsonAsync<StorageQuotaPolicyHistoryPageContract>(CreateRequest(HttpMethod.Get,
+            TenantPath(tenantId, $"storage-quota-policies/{policyId:D}/history?page={page}&pageSize={pageSize}"), tenantId), cancellationToken);
+    }
+
+    public Task<CreateDataSetValidationProfileContract> CreateDataSetValidationProfileAsync(Guid tenantId,
+        CreateDataSetValidationProfileRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<CreateDataSetValidationProfileContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "datasets/validation-profiles"), tenantId), request, cancellationToken);
+    }
+
+    public Task<CreateDataSetValidationProfileRevisionContract> AddDataSetValidationProfileRevisionAsync(Guid tenantId,
+        Guid profileId, CreateDataSetValidationRevisionRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(profileId, nameof(profileId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<CreateDataSetValidationProfileRevisionContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"datasets/validation-profiles/{profileId:D}/revisions"), tenantId), request, cancellationToken);
+    }
+
+    public Task ActivateDataSetAsync(Guid tenantId, Guid dataSetId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(dataSetId, nameof(dataSetId));
+        return SendNoContentAsync(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"datasets/{dataSetId:D}/activate"), tenantId), cancellationToken);
+    }
+
+    public Task<AuthorizationAuditIntegrityVerificationContract> VerifyAuthorizationAuditIntegrityAsync(Guid tenantId,
+        VerifyAuthorizationAuditIntegrityRequestContract request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationAuditIntegrityVerificationContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, "authorization-audit/integrity/verify"), tenantId), request, cancellationToken);
+    }
+
+    public Task<CreateExternalDeliveryResponseContract> CreateExternalDeliveryAsync(Guid tenantId,
+        CreateExternalDeliveryRequestContract request, string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        ValidateHeaderValue(idempotencyKey, nameof(idempotencyKey));
+        var message = CreateRequest(HttpMethod.Post, TenantPath(tenantId, "worker/deliveries"), tenantId);
+        message.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
+        return SendJsonAsync<CreateExternalDeliveryResponseContract>(message, request, cancellationToken);
+    }
+
     /// <summary>선택된 Tenant에 새 DataSet을 생성합니다.</summary>
     public Task<CreateDataSetResponseContract> CreateDataSetAsync(
         Guid tenantId, CreateDataSetRequestContract request,
@@ -306,6 +656,24 @@ public sealed class TensorApiClient
         return request;
     }
 
+    private HttpRequestMessage SendRequest(HttpMethod method, string path, Guid tenantId, object content)
+    {
+        var request = CreateRequest(method, path, tenantId);
+        request.Content = JsonContent.Create(content, options: JsonOptions);
+        return request;
+    }
+
+    private Task UpdateDirectoryEntryAsync(Guid tenantId, string suffix,
+        UpdateDirectoryEntryRequestContract request, CancellationToken cancellationToken)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        var path = string.IsNullOrWhiteSpace(suffix)
+            ? $"/api/platform/tenants/{tenantId:D}"
+            : TenantPath(tenantId, suffix);
+        return SendNoContentAsync(SendRequest(HttpMethod.Put, path, tenantId, request), cancellationToken);
+    }
+
     private async Task<T> SendJsonAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         using (request)
@@ -399,6 +767,27 @@ public sealed class TensorApiClient
     {
         if (value == Guid.Empty)
             throw new ArgumentException("식별자는 비어 있을 수 없습니다.", parameterName);
+    }
+
+    private static void ValidatePage(int page, int pageSize)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        if ((long)(page - 1) * pageSize > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(page), "페이지 오프셋이 정수 범위를 초과합니다.");
+    }
+
+    private static string Query(string? search, string? status, int page, int pageSize,
+        (string Key, string Value)? extra = null)
+    {
+        var parts = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(search))
+            parts.Add($"search={Uri.EscapeDataString(search.Trim())}");
+        if (!string.IsNullOrWhiteSpace(status))
+            parts.Add($"status={Uri.EscapeDataString(status.Trim())}");
+        if (extra is { } value)
+            parts.Add($"{value.Key}={Uri.EscapeDataString(value.Value)}");
+        return "?" + string.Join("&", parts);
     }
 
     private static void ValidateHeaderValue(string value, string parameterName)

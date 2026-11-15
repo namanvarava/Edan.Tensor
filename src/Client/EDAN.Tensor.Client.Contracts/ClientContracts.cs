@@ -6,6 +6,115 @@ public sealed record ApiErrorContract(string Code, string Description);
 /// <summary>현재 인증 주체가 속한 Tenant 소속 정보입니다.</summary>
 public sealed record TenantMembershipContract(Guid TenantId, string Role);
 
+/// <summary>서버 페이징을 사용하는 Platform directory 응답입니다.</summary>
+public sealed record PlatformPageContract<T>(
+    IReadOnlyList<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record TenantDirectoryContract(Guid Id, string Code, string Name, string Status, DateTimeOffset CreatedAtUtc);
+public sealed record OrganizationDirectoryContract(Guid Id, Guid TenantId, string Code, string Name, string Status);
+public sealed record ProjectDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string Code, string Name, string Status);
+public sealed record UserDirectoryContract(Guid Id, Guid TenantId, string Email, string DisplayName, string Status);
+public sealed record TenantMembershipDirectoryContract(Guid Id, Guid TenantId, string SubjectId, string Role, string Status);
+public sealed record OrganizationMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string SubjectId, string Role, string Status);
+public sealed record ProjectMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, Guid ProjectId, string SubjectId, string Role, string Status);
+
+public sealed record AuthorizationPolicyContract(
+    Guid Id, Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action,
+    string ResourceType, string Effect, int Priority, bool IsEnabled, DateTimeOffset CreatedAtUtc);
+
+public sealed record AuthorizationAuditEntryContract(
+    Guid Id, string SubjectId, string Action, string ResourceType, string Scope,
+    bool IsAllowed, string ReasonCode, string? MatchedPolicyId, DateTimeOffset OccurredAtUtc);
+
+public sealed record AuthorizationAuditPageContract(
+    int TotalCount, int Page, int PageSize, IReadOnlyList<AuthorizationAuditEntryContract> Items);
+
+public sealed record StorageQuotaPolicyContract(
+    Guid Id, Guid TenantId, string Scope, Guid TargetId, long? TenantLimitBytes,
+    long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes,
+    int WarningThresholdPercent, string PlanCode, bool IsEnabled, long Version,
+    string UpdatedBy, DateTimeOffset UpdatedAtUtc);
+
+public sealed record StorageQuotaPolicyPageContract(
+    int TotalCount, int Page, int PageSize, IReadOnlyList<StorageQuotaPolicyContract> Items);
+
+public sealed record StorageQuotaPolicyHistoryContract(
+    Guid Id, Guid TenantId, Guid PolicyId, string ActorSubjectId, string ChangeType,
+    string BeforeJson, string AfterJson, DateTimeOffset OccurredAtUtc);
+
+public sealed record StorageQuotaPolicyHistoryPageContract(
+    int TotalCount, int Page, int PageSize, IReadOnlyList<StorageQuotaPolicyHistoryContract> Items);
+
+public sealed record DataSetStorageUsageContract(
+    long TenantBytes, long TenantDataSetCount, long OrganizationBytes, long OrganizationDataSetCount,
+    long ProjectBytes, long ProjectDataSetCount, long DataSetBytes,
+    DataSetStorageLimitsContract Limits, DataSetStorageUtilizationContract UtilizationPercent,
+    int WarningThresholdPercent, IReadOnlyList<string> Warnings, DateTimeOffset MeasuredAtUtc);
+
+public sealed record DataSetStorageLimitsContract(
+    long? TenantLimitBytes, long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes);
+
+public sealed record DataSetStorageUtilizationContract(
+    double? Tenant, double? Organization, double? Project, double? DataSet);
+
+public sealed record DataSetTenantStorageUsageContract(long TenantBytes, long TenantDataSetCount, DateTimeOffset MeasuredAtUtc);
+
+public sealed record DataSetStorageUsageSnapshotContract(
+    DateTimeOffset PeriodStartUtc, DateTimeOffset CapturedAtUtc, long UsedBytes, long DataSetCount);
+
+public sealed record DataSetQuotaEventContract(
+    Guid PolicyId, string Scope, Guid TargetId, string EventType, long UsedBytes, long LimitBytes,
+    double UtilizationPercent, long PolicyVersion, DateTimeOffset OccurredAtUtc);
+
+public sealed record ExternalDeliveryContract(
+    Guid Id, Guid TenantId, string TargetUri, string IdempotencyKey, string Status,
+    int AttemptCount, int MaxAttempts, string? LastErrorCode,
+    DateTimeOffset CreatedAtUtc, DateTimeOffset? CompletedAtUtc);
+
+public sealed record CreateExternalDeliveryResponseContract(
+    ExternalDeliveryContract Delivery, Guid WorkerTaskId, bool Created);
+
+public sealed record ResourceIdContract(Guid Id);
+public sealed record CreateTenantRequestContract(string Code, string Name);
+public sealed record CreateOrganizationRequestContract(string Code, string Name);
+public sealed record CreateProjectRequestContract(string Code, string Name);
+public sealed record InviteUserRequestContract(string Email, string DisplayName);
+public sealed record UpdateDirectoryEntryRequestContract(string? Name, string? Status);
+public sealed record GrantTenantMembershipRequestContract(string SubjectId, string Role);
+public sealed record GrantOrganizationMembershipRequestContract(string SubjectId, string Role);
+public sealed record GrantProjectMembershipRequestContract(string SubjectId, string Role);
+public sealed record CreateAuthorizationPolicyRequestContract(
+    Guid? OrganizationId, Guid? ProjectId, string SubjectId, string Action,
+    string ResourceType, string Effect, int Priority);
+public sealed record UpdateAuthorizationPolicyRequestContract(string Effect, int Priority);
+public sealed record SetAuthorizationPolicyEnabledRequestContract(bool IsEnabled);
+public sealed record CreateStorageQuotaPolicyRequestContract(
+    string Scope, Guid TargetId, long? TenantLimitBytes, long? OrganizationLimitBytes,
+    long? ProjectLimitBytes, long? DataSetLimitBytes, int WarningThresholdPercent = 80,
+    string? PlanCode = "Community");
+public sealed record UpdateStorageQuotaPolicyRequestContract(
+    long ExpectedVersion, long? TenantLimitBytes, long? OrganizationLimitBytes,
+    long? ProjectLimitBytes, long? DataSetLimitBytes, int WarningThresholdPercent,
+    string PlanCode);
+public sealed record SetStorageQuotaPolicyEnabledRequestContract(bool IsEnabled, long ExpectedVersion);
+public sealed record CreateDataSetValidationProfileRequestContract(string Name, string DefinitionJson);
+public sealed record CreateDataSetValidationRevisionRequestContract(string DefinitionJson);
+public sealed record CreateExternalDeliveryRequestContract(
+    string TargetUri, System.Text.Json.JsonElement Payload, int MaxAttempts = 5);
+public sealed record VerifyAuthorizationAuditIntegrityRequestContract(
+    DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
+public sealed record CreateDataSetValidationProfileContract(
+    Guid Id, Guid TenantId, string Name, int Revision, string DefinitionJson, DateTimeOffset CreatedAtUtc);
+public sealed record CreateDataSetValidationProfileRevisionContract(
+    Guid Id, Guid TenantId, string Name, int Revision, string DefinitionJson, DateTimeOffset CreatedAtUtc);
+public sealed record AuthorizationAuditIntegrityResultContract(
+    Guid TenantId, DateTimeOffset FromUtc, DateTimeOffset ToUtc, int RecordCount, string Sha256);
+public sealed record AuthorizationAuditIntegrityVerificationContract(
+    AuthorizationAuditIntegrityResultContract Current, bool IsValid);
+
 /// <summary>DataSet 생성을 요청하는 입력입니다.</summary>
 public sealed record CreateDataSetRequestContract(
     Guid OrganizationId,
