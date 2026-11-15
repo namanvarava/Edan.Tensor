@@ -252,6 +252,9 @@ Registry 파일은 다음 위치에서 관리한다.
         screen-module-area-codes.csv
         screen-functional-specifications.md
         screen-functional-specifications.csv
+        screen-api-mapping.csv
+        screen-api-validation.csv
+        screen-implementation-gaps.md
 
 CSV는 UTF-8 인코딩, 첫 행 헤더, 쉼표 구분을 사용한다. Excel 호환성을 위해 RFC 4180 방식의 필드 인용 규칙을 따른다.
 
@@ -315,6 +318,23 @@ CSV는 UTF-8 인코딩, 첫 행 헤더, 쉼표 구분을 사용한다. Excel 호
 - 사용자 권한은 현재 구현된 인증 정책과 설계 제안 역할을 구분한다.
 - API 근거와 추가 구현 필요 사항을 명시하며, 미구현 기능을 구현 완료로 표시하지 않는다.
 - 상세 명세의 기준 파일과 변경 이력은 MD를 기준으로 관리하고 CSV는 같은 변경에서 함께 갱신한다.
+
+### 9.5 화면 API·DTO 조사 파일
+
+API·DTO 정합성 조사를 수행한 경우 다음 파일을 같은 조사 단위로 갱신한다.
+
+| 파일 | 책임 |
+|---|---|
+| docs/registry/screen-api-mapping.csv | ScreenId별 실제 Endpoint, HTTP method/route, Request/Response 계약, Application Service, 구현체, DI 등록, lifetime, 인증·인가, 테스트 증거 및 구현 상태 |
+| docs/registry/screen-api-validation.csv | 화면 기능별 기대 동작과 실제 동작의 비교, validation category, 상태, evidence path/symbol, 테스트 상태, gap 연결 |
+| docs/registry/screen-implementation-gaps.md | 15개 화면의 조사 요약, 미구현/미확인 구분, 우선순위, 테스트 결과 및 UI 단계 판단 |
+| docs/registry/screen-service-bindings.csv | 실제 ViewModel이 사용하는 Service 계약만 기록. API Endpoint에서 사용하는 Application Service를 UI 바인딩으로 추정하지 않음 |
+
+- API 조사 파일의 ScreenId는 `screens.csv`의 기존 15개 ID와 일치해야 한다.
+- API 조사 파일은 실제 소스 경로와 심볼을 근거로 작성하며, 소스에 없는 DTO 필드·query·권한을 추정하지 않는다.
+- `ImplementationStatus` 및 `Status`는 실제 구현과 부분 구현을 구분하고, 검증하지 않은 항목은 `NotVerified`로 남긴다.
+- 테스트를 실행하지 않은 경우 `Passed`로 기록하지 않는다. 결과가 없는 항목은 `NotRun` 또는 `NotFound`로 기록한다.
+- API 조사 문서가 추가되어도 `screens.csv`의 ScreenId, MODULE·AREA 코드, 화면 상태를 임의 변경하지 않는다.
 
 ### 9.3 빈 값과 다중 값
 
@@ -421,9 +441,9 @@ Registry 변경은 관련 소스 변경과 동일한 작업 단위에서 커밋�
 
 2026-11-15 기준 main-auto 저장소의 전체 Git 트리(444개 경로)를 확인한 결과, .xaml, .xaml.cs, ViewModel 또는 Screen Registry로 식별되는 화면 구현 파일은 확인되지 않았다. src/Client에는 Client Contracts와 API Client가 존재한다. 업무 화면 소유 모듈은 Platform, DataSet, Worker, Commercial, Licensing으로 구분하며 코드 정의는 screen-module-area-codes.csv에서 관리한다.
 
-따라서 최초 Registry는 헤더만 포함한 빈 데이터 파일로 시작한다. 실제 화면이 확인되기 전까지 예시 ID를 실제 화면으로 등록하거나 View·ViewModel·Service 연결을 추정하지 않는다.
+현재 Registry에는 기존 합의된 15개 화면이 `Planned`로 등록되어 있지만, 실제 UI 화면·ViewModel·UI Service binding은 확인되지 않았다. API·DTO 조사 파일은 API 구현의 존재와 화면 구현의 존재를 구분하기 위해 별도로 관리한다. 실제 화면이 확인되기 전까지 View·ViewModel·UI Service 연결을 추정하지 않는다.
 
-이는 Screen Registry 표준 미확정을 의미하지 않는다. 관리 규칙은 확정하고 실제 화면 데이터는 구현 시점에 등록한다는 의미다.
+이는 Screen Registry 표준 미확정을 의미하지 않는다. 관리 규칙과 API 조사 결과는 확정하되, 화면 상태는 실제 UI 구현 증거가 생길 때까지 `Planned`로 유지한다.
 
 ## 15. 확정된 관리 기준 요약
 
@@ -448,3 +468,4 @@ Registry 변경은 관련 소스 변경과 동일한 작업 단위에서 커밋�
 | 버전 | 내용 |
 | --- | --- |
 | 1.0 | 화면 ID, 화면명, View, ViewModel, Service 관계 및 Registry 운영 규칙 확정 |
+| 1.1 | API·DTO 조사 파일의 책임, 실제 소스·테스트 증거, UI 바인딩과 API 서비스의 분리 규칙 추가 |

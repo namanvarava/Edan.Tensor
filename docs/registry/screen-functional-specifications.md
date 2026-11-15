@@ -1,16 +1,21 @@
 # EDAN.Tensor 화면별 상세 기능 명세
 
-- 문서 상태: 화면 설계 기준안
+- 문서 상태: 화면 설계 기준안 + 2026-11-15 API·DTO 정합성 조사 반영
 - 적용 브랜치: `main-auto`
 - 기준 Registry: [screens.csv](screens.csv)
 - 화면 수: 15
 - 연계 CSV: [screen-functional-specifications.csv](screen-functional-specifications.csv)
+- API 매핑: [screen-api-mapping.csv](screen-api-mapping.csv)
+- API 검증: [screen-api-validation.csv](screen-api-validation.csv)
+- 구현 격차: [screen-implementation-gaps.md](screen-implementation-gaps.md)
 - 작성 원칙: 확정된 화면 ID·MODULE·AREA는 기존 Screen Registry를 참조하고, 상세 기능은 본 문서에서 단일 관리한다.
 - 구현 상태: 화면 UI·View·ViewModel이 구현되었다는 의미가 아니다.
 
 ## 1. 문서 목적 및 관리 경계
 
 본 문서는 등록된 15개 화면의 목적, 주요 기능, 검색 조건, 입력 항목, 출력 항목, 사용자 권한 및 API 구현 근거를 정의한다.
+
+2026-11-15 전수 조사 이후에는 화면 설계 요구와 실제 API 계약을 분리한다. 기존 화면별 절의 검색·입력·출력은 설계 기준이며, 실제 Request/Response 필드·Endpoint·DI·인가·테스트 결과는 API 매핑/검증 CSV와 이 문서의 API 정합성 부록을 기준으로 한다. 소스에 없는 필드는 실제 계약으로 승격하지 않는다.
 
 | 정보 | 기준 문서 |
 |---|---|
@@ -933,3 +938,55 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 | 버전 | 내용 |
 |---|---|
 | 1.0 | 기존 15개 화면 후보에 대한 목적·기능·검색·입력·출력·권한·API 격차 정의 |
+
+## 9. API·DTO 정합성 조사 부록 (2026-11-15)
+
+이 부록은 `main-auto`의 실제 소스와 테스트를 기준으로 갱신했다. 화면 UI·ViewModel 구현을 의미하지 않으며, 상세 필드·소스 경로·심볼·테스트 근거는 [screen-api-mapping.csv](screen-api-mapping.csv)와 [screen-api-validation.csv](screen-api-validation.csv)에 기록한다.
+
+| ScreenId | 실제 확인된 API 범위 | 실제 상태 | 조사 결과의 핵심 |
+|---|---|---|---|
+| PLT-TNT-001 | tenant 생성·활성화·mine membership | PartiallyImplemented | 전체 tenant 목록·상세·검색 API 없음 |
+| PLT-ORG-001 | organization 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
+| PLT-PJT-001 | project 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
+| PLT-USR-001 | user invitation 생성 | PartiallyImplemented | 초대 목록·상세·재발송·취소·만료 API 없음 |
+| PLT-MBR-001 | tenant/org/project membership 부여·mine 조회 | PartiallyImplemented | 목록·상세·역할 변경·회수 API 없음 |
+| PLT-AUTH-001 | authorization policy 생성·목록·수정·enabled 변경 | PartiallyImplemented | 정책 검색·평가 결과 API 없음 |
+| PLT-AUD-001 | audit query·integrity·archive·schedule·job·retention | Implemented | archive 목록/검색 API는 별도 미확인 |
+| PLT-QTA-001 | quota CRUD 일부·enabled·history | PartiallyImplemented | page/pageSize 외 정책 필터 없음 |
+| DSET-DSM-001 | dataset 생성·상세·content·activate | PartiallyImplemented | collection 목록·수정·삭제/보관 API 없음 |
+| DSET-SCHM-001 | schema 추가·상세 내 revisions | PartiallyImplemented | revision 전용 조회/검색 API 없음 |
+| DSET-STO-001 | content·dataset/tenant usage·history·quota events | PartiallyImplemented | storage lifecycle 및 상세 필터 없음 |
+| DSET-VLD-001 | profile/revision·validation 실행·상세·details·삭제 | PartiallyImplemented | profile/execution 목록 API 없음 |
+| WRK-TSK-001 | worker task 생성·상세 | PartiallyImplemented | task 목록·필터·운영 제어 API 없음 |
+| WRK-DLQ-001 | DLQ 목록·replay | PartiallyImplemented | 추가 필터·replay history API 없음 |
+| WRK-XDL-001 | external delivery 생성·상세 | PartiallyImplemented | delivery 목록·검색·수동 retry API 없음 |
+
+### 9.1 실제 계약 정정 사항
+
+- `PLT-TNT-001`의 `GET /tenants/mine`은 전체 tenant DTO가 아니라 `TenantId`, `Role`만 제공한다. 생성은 `CreateTenantRequest(Code, Name)`, 활성화는 request body가 없다.
+- `PLT-AUTH-001`의 생성 DTO는 `OrganizationId?`, `ProjectId?`, `SubjectId`, `Action`, `ResourceType`, `Effect`, `Priority`이며, 목록에는 `IsEnabled`, `CreatedAtUtc`가 추가된다.
+- `PLT-QTA-001`은 `ExpectedVersion`을 사용하는 optimistic concurrency와 page/history를 실제 지원하지만, domain filter는 지원하지 않는다.
+- `DSET-DSM-001`은 dataset 전체 목록 API가 없고, 생성·상세·content·activate 경로만 확인된다. 상세에 `SchemaRevisions`가 내장된다.
+- `DSET-VLD-001` 실행 생성은 `Idempotency-Key`와 dataset version/schema/profile revision을 요구하고, 실행 상세와 details는 서로 다른 응답 구조를 사용한다.
+- `WRK-DLQ-001` replay는 `Replay-Request-Id` GUID를 요구하고 원본 task를 보존한 새 task ID를 반환한다.
+- `WRK-XDL-001` 응답은 내부 payload를 반환하지 않는다. 자동 retry는 Worker 내부 동작이며 수동 retry endpoint는 없다.
+
+### 9.2 인증·인가·DI·테스트 확인
+
+- 외부 JWT issuer/audience/lifetime/signing key 검증, `TenantMember`/`PlatformAdministrator` 정책, `X-Tenant-Id`와 route tenant 비교, active membership 및 TenantAdministrator 검증을 실제 소스에서 확인했다.
+- API Application Service의 DI 등록은 확인했지만 View/ViewModel이 없으므로 `screen-service-bindings.csv`는 계속 header-only로 유지한다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
+- 실제 실행한 전체 테스트는 `dotnet test EDAN.Tensor.sln --no-restore --configuration Release --logger "console;verbosity=minimal"`이며 13개 프로젝트에서 273 passed, 0 failed, 0 skipped였다. 실행하지 않은 테스트는 통과로 기록하지 않았다.
+- 테스트 및 상세 격차·우선순위·UI 단계 판단은 [screen-implementation-gaps.md](screen-implementation-gaps.md)에 고정했다.
+
+### 9.3 조사 후 관리 원칙
+
+1. 기존 설계 기능은 API가 제공하지 않는 필드를 실제 제공 필드처럼 표시하지 않는다.
+2. `NotImplemented`와 `NotVerified`를 구분하고, 테스트를 실행하지 않은 경우 `NotRun` 또는 `NotFound`로 기록한다.
+3. ScreenId 및 MODULE·AREA 코드는 변경하지 않는다.
+4. UI 아키텍처 설계는 가능하지만 P1 API 격차를 결정하기 전 UI 기능을 구현하지 않는다.
+
+### 9.4 부록 변경 이력
+
+| 버전 | 내용 |
+|---|---|
+| 1.1 | 15개 화면 API·DTO 전수 조사 결과, 실제 계약 정정, 테스트 결과 및 구현 격차 문서 연결 |
