@@ -385,11 +385,12 @@ View와 ViewModel은 대응 관계를 유지하고, 화면명은 실제 업무 �
 | 화면 ID | 설명 |
 | --- | --- |
 | PLT-TNT-001 | Platform 테넌트 영역 첫 번째 화면 |
-| PLT-ORG-001 | Platform 조직 영역 첫 번째 화면 |
-| LIC-LIC-001 | Licensing 라이선스 영역 첫 번째 화면 |
-| COM-PRD-001 | Commercial 제품 영역 첫 번째 화면 |
+| DSET-DSM-001 | DataSet 데이터셋 관리 영역 첫 번째 화면 |
+| WRK-TSK-001 | Worker 작업 관리 영역 첫 번째 화면 |
+| COML-PAY-001 | Commercial 결제 영역 첫 번째 화면 |
+| LIC-LCM-001 | Licensing 라이선스 수명주기 영역 첫 번째 화면 |
 
-모듈 코드와 업무 영역 코드는 예시이며, 실제 코드 목록은 기존 모듈·업무 용어와 대조해 별도 관리한다. 화면 ID는 제품 전체에서 중복되지 않아야 하며 폐기된 ID를 다른 화면에 재사용하지 않는다.
+모듈·업무 영역 코드는 [Screen Module·Area Code Registry](../registry/screen-module-area-codes.csv)를 단일 기준으로 사용한다. 화면 ID는 제품 전체에서 중복되지 않아야 하며 폐기된 ID를 다른 화면에 재사용하지 않는다.
 
 ### 13.2 화면 정보 관리 — 사용자 확정
 
@@ -401,8 +402,9 @@ Registry 데이터는 다음 파일에서 관리한다.
 
 - 화면 기본 정보: ../registry/screens.csv
 - 화면과 Service 계약 관계: ../registry/screen-service-bindings.csv
+- MODULE·AREA 코드 사전: ../registry/screen-module-area-codes.csv
 
-파일 상단 개요에는 화면명과 화면 ID 등 해당 파일의 핵심 정보를 기록한다. 화면 Registry의 필드 정의와 생명주기 규칙은 본 절에서 중복 정의하지 않고 전용 표준 문서에서 관리한다.
+파일 상단 개요에는 화면명과 화면 ID 등 해당 파일의 핵심 정보를 기록한다. 화면 Registry의 필드 정의와 생명주기 규칙은 본 절에서 중복 정의하지 않고 전용 표준 문서에서 관리한다. MODULE·AREA 코드는 별도 코드 Registry를 단일 기준으로 사용한다.
 
 ## 14. C# 파일 상단 개요
 
