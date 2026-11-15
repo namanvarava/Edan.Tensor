@@ -514,3 +514,24 @@ EDAN의 업무 사전은 다음 모듈을 기준으로 확장한다. 공통 개�
 - [ ] Platform·DataSet·DataSet Content·Worker·Commercial 스키마를 모두 대조했는가?
 - [ ] ERP·MES·MOM·QMS·PLM·EAM·IIoT·TAG 업무의 중복 개념을 교차 검토했는가?
 - [ ] 표준 사전의 변경 이력과 승인 상태를 기록했는가?
+
+
+### 16.7 기존 예시의 적용 상태와 3자 표준 전환
+
+이 문서의 1~15절에 있는 `tntid`, `orgid`, `prjid`, `usrid`, `pln_cd`, `sort_num` 등은 기존 인벤토리 또는 이전 표준안에서 가져온 **레거시·설명용 예시**다. 16절의 3자 기본 약어 규칙과 충돌하는 2자 토큰은 신규 물리 컬럼에 사용할 수 없다. 기존 DB의 컬럼을 즉시 변경하라는 뜻도 아니다.
+
+신규 표준 사전에서 우선 검토할 3자 후보는 다음과 같다. 아래 값은 의미와 전역 충돌을 확인하기 위한 설계 후보이며, 대표 용어 사전의 최종 승인 전에는 확정 약어로 간주하지 않는다.
+
+| 기존 개념 | 기존 약어 | 3자 후보 | 신규 예시 | 비고 |
+| --- | --- | --- | --- | --- |
+| Identifier | `id` | `idr` | `tntidr` | Identity `idn`과 구분 |
+| Code | `cd` | `cod` | `tntcod` | 코드값·코드그룹 구분 필요 |
+| Name | `nm` | `nam` | `usrnam` | Display는 별도 표시 속성 |
+| Operation | `op` | `opr` | `opr_sta` | Task·Job과 구분 |
+| Date | `date` | `dte` | `exp_dte` | 날짜만 저장 |
+| DateTime | `dt` | `dtt` | `crt_dtt` | 시간 포함, 시간대는 별도 명시 |
+| Yes/No | `yn` | `ynf` | `ena_ynf` | Boolean/Flag 의미 확정 필요 |
+| Hour | `hr` | `hou` | `intv_hou` | 시간 단위 |
+| Role | `role` / `rol` | `rol` | `usr_rol` | `rol`만 대표 약어로 사용 |
+
+3자 후보가 기존 대표 용어와 충돌하면 4자 확장 규칙을 적용한다. 위 표의 후보도 전역 사전 전체 중복 검증을 통과하기 전까지는 확정하지 않는다.
