@@ -120,6 +120,27 @@ public static class WorkerEndpoints
                 : Results.Ok(result);
         }).WithName("GetWorkerTaskResult");
 
+        taskGroup.MapGet("/{taskId:guid}/result/raw", async (Guid tenantId, Guid taskId,
+            WorkerTaskCommandService service, CancellationToken token) =>
+        {
+            var result = await service.GetRawResultAsync(tenantId, taskId, token);
+            return result is null
+                ? Results.NotFound(new { Code = "worker.task.raw_result_not_found", Description = "작업의 파일 결과가 아직 저장되지 않았거나 Tenant 범위에서 찾을 수 없습니다." })
+                : Results.Stream(result.Content, result.Metadata.ContentType, $"worker-result-{taskId:N}.bin", enableRangeProcessing: true);
+        }).WithName("GetWorkerTaskRawResult");
+
+        taskGroup.MapPut("/{taskId:guid}/result/raw", async (Guid tenantId, Guid taskId,
+            HttpRequest request, WorkerTaskCommandService service, CancellationToken token) =>
+        {
+            if (request.ContentLength is > 67_108_864)
+                return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+            var contentType = string.IsNullOrWhiteSpace(request.ContentType) ? "application/octet-stream" : request.ContentType;
+            var result = await service.StoreRawResultAsync(tenantId, taskId, contentType, request.Body, token);
+            return result is null
+                ? Results.Conflict(new { Code = "worker.task.raw_result_invalid_transition", Description = "성공 상태의 Tenant 작업에만 raw 결과를 저장할 수 있습니다." })
+                : Results.Ok(result);
+        }).WithName("StoreWorkerTaskRawResult");
+
         taskGroup.MapGet("", async (Guid tenantId, string? taskType, WorkerTaskStatus? status,
             DateTimeOffset? fromUtc, DateTimeOffset? toUtc, WorkerTaskQueryService service,
             CancellationToken token, int page = 1, int pageSize = 50) =>

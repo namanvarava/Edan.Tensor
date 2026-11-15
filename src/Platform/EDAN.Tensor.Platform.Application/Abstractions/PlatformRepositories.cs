@@ -42,6 +42,30 @@ public interface IUserRepository
     void Add(User user);
 }
 
+/// <summary>초대 token은 해시만 저장하고 Tenant·사용자 소속을 함께 조회합니다.</summary>
+public interface IInvitationRepository
+{
+    Task<Invitation?> GetByIdAsync(TenantId tenantId, InvitationId id, CancellationToken cancellationToken = default);
+    Task<Invitation?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+    Task<InvitationPageData> GetPageAsync(TenantId tenantId, string? search, InvitationStatus? status,
+        int page, int pageSize, CancellationToken cancellationToken = default);
+    void Add(Invitation invitation);
+}
+
+public sealed record InvitationPageData(int TotalCount, IReadOnlyList<Invitation> Items);
+
+/// <summary>초대 token의 생성·전달을 인프라 Adapter로 분리합니다.</summary>
+public interface IInvitationTokenService
+{
+    string CreateToken();
+    string HashToken(string token);
+}
+
+public interface IInvitationDelivery
+{
+    Task DeliverAsync(Invitation invitation, string rawToken, CancellationToken cancellationToken = default);
+}
+
 /// <summary>자원 저장소는 새 자원을 등록합니다.</summary>
 public interface IResourceRepository
 {

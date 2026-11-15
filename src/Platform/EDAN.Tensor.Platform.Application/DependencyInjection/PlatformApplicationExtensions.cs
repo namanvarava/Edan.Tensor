@@ -13,6 +13,7 @@ public static class PlatformApplicationExtensions
         ArgumentNullException.ThrowIfNull(services);
         services.AddSingleton<ISystemClock, SystemClock>();
         services.AddScoped<PlatformProvisioningService>();
+        services.AddScoped<InvitationService>();
         services.AddScoped<PlatformDirectoryService>();
         services.AddScoped<TenantMembershipService>();
         services.AddScoped<ScopedMembershipService>();

@@ -15,6 +15,13 @@ public static class PlatformEndpoints
     {
         var group = endpoints.MapGroup("/api/platform").WithTags("Platform");
 
+        // 수락은 token 자체가 인증 수단이므로 로그인 전에도 가능하지만, token hash가 맞을 때만 사용자 활성화가 됩니다.
+        group.MapPost("/invitations/accept", async (AcceptInvitationRequest request, InvitationService service, CancellationToken token) =>
+        {
+            var result = await service.AcceptAsync(request.Token, token);
+            return result.IsSuccess ? Results.Ok(new { UserId = result.Value.Value, Status = "Active" }) : ToHttpResult(result);
+        }).WithName("AcceptInvitation");
+
         // Tenant 생성과 최초 활성화는 플랫폼 관리자에게만 허용합니다.
         group.MapPost("/tenants", async (CreateTenantRequest request, PlatformProvisioningService service, CancellationToken token) =>
         {
@@ -717,12 +724,40 @@ public static class PlatformEndpoints
             return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        // 사용자 초대는 Tenant 관리자만 수행하여 외부 주체 연결을 임의로 생성하지 못하게 합니다.
-        tenantGroup.MapPost("/{tenantId:guid}/users/invitations", async (Guid tenantId, InviteUserRequest request, PlatformProvisioningService service, CancellationToken token) =>
+        // 사용자 초대는 Tenant 관리자만 수행하며 raw token은 Delivery Adapter로만 전달합니다.
+        tenantGroup.MapGet("/{tenantId:guid}/invitations", async (Guid tenantId, string? search, InvitationStatus? status,
+            int? page, int? pageSize, InvitationService service, CancellationToken token) =>
         {
-            var result = await service.InviteUserAsync(new TenantId(tenantId), request.Email, request.DisplayName, token);
-            return result.IsSuccess ? Results.Json(new { Id = result.Value.Value }, statusCode: StatusCodes.Status201Created) : ToHttpResult(result);
+            var result = await service.GetPageAsync(new TenantId(tenantId), search, status, page ?? 1, pageSize ?? 50, token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("GetInvitations");
+
+        tenantGroup.MapPost("/{tenantId:guid}/users/invitations", async (Guid tenantId, InviteUserRequest request, InvitationService service, CancellationToken token) =>
+        {
+            var lifetime = request.LifetimeDays.HasValue ? TimeSpan.FromDays(request.LifetimeDays.Value) : (TimeSpan?)null;
+            var result = await service.CreateAsync(new TenantId(tenantId), request.Email, request.DisplayName, lifetime, token);
+            return result.IsSuccess
+                ? Results.Json(new InvitationCreatedResponse(result.Value.UserId, result.Value.Id, result.Value.UserId,
+                    result.Value.TenantId, result.Value.Email, result.Value.DisplayName, result.Value.Status,
+                    result.Value.CreatedAtUtc, result.Value.ExpiresAtUtc, result.Value.AcceptedAtUtc,
+                    result.Value.RevokedAtUtc, result.Value.ResendCount), statusCode: StatusCodes.Status201Created)
+                : ToHttpResult(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/invitations/{invitationId:guid}/resend", async (Guid tenantId, Guid invitationId,
+            InvitationLifetimeRequest request, InvitationService service, CancellationToken token) =>
+        {
+            var lifetime = request.LifetimeDays.HasValue ? TimeSpan.FromDays(request.LifetimeDays.Value) : (TimeSpan?)null;
+            var result = await service.ResendAsync(new TenantId(tenantId), new InvitationId(invitationId), lifetime, token);
+            return result.IsSuccess ? Results.Ok(result.Value) : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("ResendInvitation");
+
+        tenantGroup.MapPost("/{tenantId:guid}/invitations/{invitationId:guid}/revoke", async (Guid tenantId, Guid invitationId,
+            InvitationService service, CancellationToken token) =>
+        {
+            var result = await service.RevokeAsync(new TenantId(tenantId), new InvitationId(invitationId), token);
+            return result.IsSuccess ? Results.NoContent() : ToHttpResult(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>().WithName("RevokeInvitation");
 
         // 자원과 정책의 Tenant 범위는 요청 본문이 아닌 선택된 Tenant 헤더와 데이터베이스 소속 검증으로 결정합니다.
         group.MapPost("/resources", async (CreateResourceRequest request, ITenantContext tenantContext, PlatformProvisioningService service, CancellationToken token) =>
@@ -817,7 +852,12 @@ public sealed record UpdateAuthorizationAuditRetentionRequest(int RetentionDays,
 public sealed record UpdateAuthorizationAuditArchiveScheduleRequest(int IntervalHours, bool IsEnabled);
 public sealed record CreateOrganizationRequest(string Code, string Name);
 public sealed record CreateProjectRequest(string Code, string Name);
-public sealed record InviteUserRequest(string Email, string DisplayName);
+public sealed record InviteUserRequest(string Email, string DisplayName, int? LifetimeDays = null);
+public sealed record InvitationLifetimeRequest(int? LifetimeDays = null);
+public sealed record AcceptInvitationRequest(string Token);
+public sealed record InvitationCreatedResponse(Guid Id, Guid InvitationId, Guid UserId, Guid TenantId, string Email,
+    string DisplayName, string Status, DateTimeOffset CreatedAtUtc, DateTimeOffset ExpiresAtUtc,
+    DateTimeOffset? AcceptedAtUtc, DateTimeOffset? RevokedAtUtc, int ResendCount);
 public sealed record UpdateDirectoryEntryRequest(string? Name, string? Status);
 public sealed record SetUserStatusRequest(string Status);
 public sealed record CreateResourceRequest(Guid? OrganizationId, Guid? ProjectId, string ResourceType, string Name);

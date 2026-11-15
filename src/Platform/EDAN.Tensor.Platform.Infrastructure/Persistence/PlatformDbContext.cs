@@ -11,6 +11,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<OrganizationMembership> OrganizationMemberships => Set<OrganizationMembership>();
     public DbSet<ProjectMembership> ProjectMemberships => Set<ProjectMembership>();
@@ -35,6 +36,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureOrganization(modelBuilder);
         ConfigureProject(modelBuilder);
         ConfigureUser(modelBuilder);
+        ConfigureInvitation(modelBuilder);
         ConfigureTenantMembership(modelBuilder);
         ConfigureOrganizationMembership(modelBuilder);
         ConfigureProjectMembership(modelBuilder);
@@ -74,7 +76,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
         entity.HasIndex(x => x.TenantId);
-        entity.HasAlternateKey(x => new { x.Id, x.TenantId });
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
@@ -112,6 +113,31 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureInvitation(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Invitation>();
+        entity.ToTable("platform_invitations");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<InvitationId>(value => new InvitationId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.UserId).HasConversion(IdConverter<UserId>(value => new UserId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.Email).HasConversion(x => x.Value, x => new EmailAddress(x)).HasMaxLength(320).IsRequired();
+        entity.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.Property(x => x.ExpiresAtUtc).IsRequired();
+        entity.Property(x => x.AcceptedAtUtc);
+        entity.Property(x => x.RevokedAtUtc);
+        entity.Property(x => x.ResendCount).IsRequired();
+        entity.HasIndex(x => x.TokenHash).IsUnique();
+        entity.HasIndex(x => new { x.TenantId, x.Status, x.CreatedAtUtc });
+        entity.HasIndex(x => new { x.TenantId, x.UserId });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasAlternateKey(x => new { x.Id, x.TenantId });
     }
 
     /// <summary>외부 인증 주체의 테넌트 소속과 역할을 고유하게 저장합니다.</summary>

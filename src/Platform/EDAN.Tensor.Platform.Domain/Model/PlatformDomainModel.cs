@@ -1,4 +1,6 @@
 using System.Net.Mail;
+using System.Security.Cryptography;
+using System.Text;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Primitives;
 namespace EDAN.Tensor.Platform.Domain.Model;
@@ -7,6 +9,7 @@ public sealed record TenantId : StronglyTypedId<Guid> { public TenantId(Guid val
 public sealed record OrganizationId : StronglyTypedId<Guid> { public OrganizationId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("조직 식별자는 비어 있을 수 없습니다.") : value) { } }
 public sealed record ProjectId : StronglyTypedId<Guid> { public ProjectId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("프로젝트 식별자는 비어 있을 수 없습니다.") : value) { } }
 public sealed record UserId : StronglyTypedId<Guid> { public UserId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("사용자 식별자는 비어 있을 수 없습니다.") : value) { } }
+public sealed record InvitationId : StronglyTypedId<Guid> { public InvitationId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("초대 식별자는 비어 있을 수 없습니다.") : value) { } }
 public sealed record ResourceId : StronglyTypedId<Guid> { public ResourceId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("자원 식별자는 비어 있을 수 없습니다.") : value) { } }
 public sealed record PolicyId : StronglyTypedId<Guid> { public PolicyId(Guid value) : base(value == Guid.Empty ? throw new ArgumentException("정책 식별자는 비어 있을 수 없습니다.") : value) { } }
 internal static class Rules
@@ -21,6 +24,7 @@ public enum TenantStatus{Provisioning,Active,Suspended,Closed}
 public enum OrganizationStatus{Active,Suspended,Closed}
 public enum ProjectStatus{Active,Suspended,Archived}
 public enum UserStatus{Invited,Active,Suspended,Deactivated}
+public enum InvitationStatus{Pending,Accepted,Expired,Revoked}
 public enum ResourceStatus{Active,Suspended,Retired}
 
 /// <summary>테넌트는 데이터 격리와 소유권의 최상위 경계입니다.</summary>
@@ -66,6 +70,68 @@ public sealed class User:AggregateRoot<UserId>
  public static User Invite(UserId id,TenantId tenant,EmailAddress email,string name){ArgumentNullException.ThrowIfNull(id);ArgumentNullException.ThrowIfNull(tenant);ArgumentNullException.ThrowIfNull(email);return new(id,tenant,email,name);}
  public void Rename(string name){Open();DisplayName=Rules.Text(name,120);} public void Activate(){if(Status is not(UserStatus.Invited or UserStatus.Suspended))Invalid();Status=UserStatus.Active;} public void Suspend(){if(Status!=UserStatus.Active)Invalid();Status=UserStatus.Suspended;} public void Deactivate(){Open();Status=UserStatus.Deactivated;}
  private void Open(){if(Status==UserStatus.Deactivated)Invalid();} private static void Invalid()=>throw new BusinessRuleViolationException("platform.user.invalid_transition","현재 사용자 상태에서는 요청한 상태 변경을 수행할 수 없습니다.");
+}
+
+/// <summary>초대는 사용자 상태와 분리된 Tenant 범위의 일회성 token lifecycle aggregate입니다.</summary>
+public sealed class Invitation : AggregateRoot<InvitationId>
+{
+ private Invitation(InvitationId id, TenantId tenantId, UserId userId, EmailAddress email, string displayName,
+     string tokenHash, DateTimeOffset createdAtUtc, DateTimeOffset expiresAtUtc) : base(id)
+ {
+  if (expiresAtUtc <= createdAtUtc) throw new ArgumentException("초대 만료 시각은 생성 시각보다 늦어야 합니다.", nameof(expiresAtUtc));
+  TenantId=tenantId; UserId=userId; Email=email; DisplayName=Rules.Text(displayName,120);
+  TokenHash=ValidateTokenHash(tokenHash); CreatedAtUtc=createdAtUtc.ToUniversalTime(); ExpiresAtUtc=expiresAtUtc.ToUniversalTime();
+  Status=InvitationStatus.Pending;
+ }
+ public TenantId TenantId{get;}
+ public UserId UserId{get;}
+ public EmailAddress Email{get;}
+ public string DisplayName{get;private set;}
+ public string TokenHash{get;private set;}
+ public InvitationStatus Status{get;private set;}
+ public DateTimeOffset CreatedAtUtc{get;}
+ public DateTimeOffset ExpiresAtUtc{get;private set;}
+ public DateTimeOffset? AcceptedAtUtc{get;private set;}
+ public DateTimeOffset? RevokedAtUtc{get;private set;}
+ public int ResendCount{get;private set;}
+
+ public static Invitation Create(InvitationId id, TenantId tenantId, UserId userId, EmailAddress email, string displayName,
+     string tokenHash, DateTimeOffset createdAtUtc, DateTimeOffset expiresAtUtc) =>
+     new(id, tenantId, userId, email, displayName, tokenHash, createdAtUtc, expiresAtUtc);
+
+ public void ExpireIfNeeded(DateTimeOffset nowUtc)
+ {
+  if (Status == InvitationStatus.Pending && ExpiresAtUtc <= nowUtc.ToUniversalTime()) Status=InvitationStatus.Expired;
+ }
+
+ public void Resend(string tokenHash, DateTimeOffset createdAtUtc, DateTimeOffset expiresAtUtc)
+ {
+  ExpireIfNeeded(createdAtUtc);
+  if (Status is InvitationStatus.Accepted or InvitationStatus.Revoked)
+   throw new BusinessRuleViolationException("platform.invitation.invalid_transition", "수락되었거나 철회된 초대는 재전송할 수 없습니다.");
+  if (expiresAtUtc <= createdAtUtc) throw new ArgumentException("초대 만료 시각은 생성 시각보다 늦어야 합니다.", nameof(expiresAtUtc));
+  TokenHash=ValidateTokenHash(tokenHash); ExpiresAtUtc=expiresAtUtc.ToUniversalTime();
+  Status=InvitationStatus.Pending; ResendCount++;
+ }
+
+ public void Accept(string tokenHash, DateTimeOffset nowUtc)
+ {
+  ExpireIfNeeded(nowUtc);
+  if (Status != InvitationStatus.Pending || !CryptographicEquals(TokenHash, ValidateTokenHash(tokenHash)))
+   throw new BusinessRuleViolationException("platform.invitation.token_invalid", "유효하지 않거나 만료된 초대 token입니다.");
+  Status=InvitationStatus.Accepted; AcceptedAtUtc=nowUtc.ToUniversalTime();
+ }
+
+ public void Revoke(DateTimeOffset nowUtc)
+ {
+  if (Status is not (InvitationStatus.Pending or InvitationStatus.Expired))
+   throw new BusinessRuleViolationException("platform.invitation.invalid_transition", "현재 상태의 초대는 철회할 수 없습니다.");
+  Status=InvitationStatus.Revoked; RevokedAtUtc=nowUtc.ToUniversalTime();
+ }
+
+ private static string ValidateTokenHash(string value){ArgumentException.ThrowIfNullOrWhiteSpace(value);var v=value.Trim().ToLowerInvariant();if(v.Length!=64||v.Any(c=>!(c is >= '0' and <= '9' or >= 'a' and <= 'f')))throw new ArgumentException("초대 token hash 형식이 올바르지 않습니다.",nameof(value));return v;}
+ private static bool CryptographicEquals(string left,string right)=>CryptographicOperations.FixedTimeEquals(
+  Encoding.UTF8.GetBytes(left), Encoding.UTF8.GetBytes(right));
 }
 /// <summary>자원 범위는 테넌트와 선택적 조직·프로젝트 식별자로 지정합니다.</summary>
 public sealed record ResourceScope

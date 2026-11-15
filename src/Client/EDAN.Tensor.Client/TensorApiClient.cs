@@ -148,6 +148,14 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, $"{TenantPath(tenantId, "users")}{Query(search, status, page, pageSize)}", tenantId), cancellationToken);
     }
 
+    public Task<InvitationPageContract> GetInvitationsAsync(Guid tenantId, string? search = null, string? status = null,
+        int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidatePage(page, pageSize);
+        return SendJsonAsync<InvitationPageContract>(CreateRequest(HttpMethod.Get,
+            $"{TenantPath(tenantId, "invitations")}{Query(search, status, page, pageSize)}", tenantId), cancellationToken);
+    }
+
     /// <summary>Tenant 범위의 멤버십 directory를 조회합니다.</summary>
     public Task<IReadOnlyList<TenantMembershipDirectoryContract>> GetTenantMembershipsAsync(
         Guid tenantId, CancellationToken cancellationToken = default)
@@ -572,6 +580,22 @@ public sealed class TensorApiClient
         ArgumentNullException.ThrowIfNull(request);
         return SendJsonAsync<ResourceIdContract>(CreateRequest(HttpMethod.Post,
             TenantPath(tenantId, "users/invitations"), tenantId), request, cancellationToken);
+    }
+
+    public Task<InvitationContract> ResendInvitationAsync(Guid tenantId, Guid invitationId,
+        InvitationLifetimeRequestContract? request = null, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(invitationId, nameof(invitationId));
+        return SendJsonAsync<InvitationContract>(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"invitations/{invitationId:D}/resend"), tenantId),
+            request ?? new InvitationLifetimeRequestContract(), cancellationToken);
+    }
+
+    public Task RevokeInvitationAsync(Guid tenantId, Guid invitationId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ValidateId(invitationId, nameof(invitationId));
+        return SendNoContentAsync(CreateRequest(HttpMethod.Post,
+            TenantPath(tenantId, $"invitations/{invitationId:D}/revoke"), tenantId), cancellationToken);
     }
 
     public Task<ResourceIdContract> GrantTenantMembershipAsync(
