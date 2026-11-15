@@ -1,0 +1,3654 @@
+{
+  "databases": {
+    "edan-tensor-platform.db": {
+      "path": "C:\\Users\\naman\\OneDrive\\����\\ChatGPT\\Edan.Tensor\\src\\Hosts\\EDAN.Tensor.ApiHost\\App_Data\\edan-tensor-platform.db",
+      "integrity_check": "ok",
+      "foreign_key_violations": 0,
+      "comment_rows": 185,
+      "product_table_count": 19,
+      "tables": {
+        "platform_authorization_audit": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Action",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ResourceType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Scope",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsAllowed",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ReasonCode",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "MatchedPolicyId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OccurredAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_SubjectId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "SubjectId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_audit_TenantId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_audit_archive_attempts": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "JobId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AttemptNumber",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Operation",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "StartedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FinishedAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsSuccessful",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ResultCode",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_archive_attempts_JobId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "JobId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_audit_archive_attempts_TenantId_JobId_StartedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "JobId",
+                "StartedAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_archive_attempts_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_authorization_audit_archive_jobs",
+              "from": "JobId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 1,
+              "table": "platform_authorization_audit_archive_jobs",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_audit_archive_jobs": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FromUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ToUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RequestedBy",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ArchiveId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RecordCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Sha256",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SizeBytes",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CompletedAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FailureReason",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AttemptCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_archive_jobs_TenantId_CreatedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "CreatedAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_archive_jobs_2",
+              "unique": true,
+              "origin": "u",
+              "partial": false,
+              "columns": [
+                "Id",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_archive_jobs_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_audit_archive_schedules": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IntervalHours",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsEnabled",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "NextRunAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LastRunAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LeaseId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LeaseExpiresAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_archive_schedules_IsEnabled_NextRunAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "IsEnabled",
+                "NextRunAtUtc"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_audit_archive_schedules_TenantId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_archive_schedules_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_audit_retention": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RetentionDays",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsLegalHold",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LegalHoldReason",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UpdatedBy",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UpdatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_retention_TenantId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_retention_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_audit_retention_changes": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "PolicyId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ActorSubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ChangeType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "BeforeJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AfterJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OccurredAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_audit_retention_changes_TenantId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_audit_retention_changes_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_policies": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProjectId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Action",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ResourceType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Effect",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Priority",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsEnabled",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_policies_ProjectId_OrganizationId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "ProjectId",
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_policies_OrganizationId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_policies_TenantId_SubjectId_Action_ResourceType_IsEnabled",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "SubjectId",
+                "Action",
+                "ResourceType",
+                "IsEnabled"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_policies_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_projects",
+              "from": "ProjectId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_projects",
+              "from": "OrganizationId",
+              "to": "OrganizationId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 2,
+              "table": "platform_projects",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_organizations",
+              "from": "OrganizationId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 1,
+              "table": "platform_organizations",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 2,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_authorization_policy_changes": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PolicyId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ActorSubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ChangeType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "BeforeJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AfterJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OccurredAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_authorization_policy_changes_PolicyId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "PolicyId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "IX_platform_authorization_policy_changes_TenantId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_authorization_policy_changes_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_organization_memberships": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Role",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_organization_memberships_OrganizationId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_organization_memberships_TenantId_OrganizationId_SubjectId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OrganizationId",
+                "SubjectId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_organization_memberships_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_organizations",
+              "from": "OrganizationId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_organizations",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_organizations": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Code",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_organizations_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_organizations_TenantId_Code",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Code"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_organizations_2",
+              "unique": true,
+              "origin": "u",
+              "partial": false,
+              "columns": [
+                "Id",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_organizations_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_policies": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "tenant_id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "organization_id",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "project_id",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Key",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Value",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsEnabled",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_policies_Key_Version",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "Key",
+                "Version"
+              ]
+            },
+            {
+              "name": "IX_platform_policies_project_id_organization_id_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "project_id",
+                "organization_id",
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "IX_platform_policies_organization_id_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "organization_id",
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "IX_platform_policies_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_policies_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_projects",
+              "from": "project_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_projects",
+              "from": "organization_id",
+              "to": "OrganizationId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 2,
+              "table": "platform_projects",
+              "from": "tenant_id",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_organizations",
+              "from": "organization_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 1,
+              "table": "platform_organizations",
+              "from": "tenant_id",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 2,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "tenant_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_project_memberships": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Role",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_project_memberships_ProjectId_OrganizationId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "ProjectId",
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_project_memberships_TenantId_OrganizationId_ProjectId_SubjectId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OrganizationId",
+                "ProjectId",
+                "SubjectId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_project_memberships_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_projects",
+              "from": "ProjectId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_projects",
+              "from": "OrganizationId",
+              "to": "OrganizationId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 2,
+              "table": "platform_projects",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_projects": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Code",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_projects_OrganizationId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_projects_TenantId_OrganizationId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OrganizationId"
+              ]
+            },
+            {
+              "name": "IX_platform_projects_OrganizationId_Code",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "OrganizationId",
+                "Code"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_projects_2",
+              "unique": true,
+              "origin": "u",
+              "partial": false,
+              "columns": [
+                "Id",
+                "OrganizationId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_projects_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_organizations",
+              "from": "OrganizationId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_organizations",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_resources": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "tenant_id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "organization_id",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "project_id",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ResourceType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_resources_project_id_organization_id_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "project_id",
+                "organization_id",
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "IX_platform_resources_organization_id_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "organization_id",
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "IX_platform_resources_tenant_id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "tenant_id"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_resources_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_projects",
+              "from": "project_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 1,
+              "table": "platform_projects",
+              "from": "organization_id",
+              "to": "OrganizationId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 0,
+              "sequence": 2,
+              "table": "platform_projects",
+              "from": "tenant_id",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_organizations",
+              "from": "organization_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 1,
+              "table": "platform_organizations",
+              "from": "tenant_id",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 2,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "tenant_id",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_storage_quota_policies": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Scope",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TargetId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantLimitBytes",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationLimitBytes",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProjectLimitBytes",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DataSetLimitBytes",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "WarningThresholdPercent",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PlanCode",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsEnabled",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UpdatedBy",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UpdatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_storage_quota_policies_TenantId_IsEnabled",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "IsEnabled"
+              ]
+            },
+            {
+              "name": "IX_platform_storage_quota_policies_TenantId_Scope_TargetId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Scope",
+                "TargetId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_storage_quota_policies_2",
+              "unique": true,
+              "origin": "u",
+              "partial": false,
+              "columns": [
+                "Id",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_storage_quota_policies_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_storage_quota_policy_changes": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PolicyId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ActorSubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ChangeType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "BeforeJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AfterJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OccurredAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_storage_quota_policy_changes_PolicyId_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "PolicyId",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_platform_storage_quota_policy_changes_TenantId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_storage_quota_policy_changes_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 0,
+              "table": "platform_storage_quota_policies",
+              "from": "PolicyId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            },
+            {
+              "id": 1,
+              "sequence": 1,
+              "table": "platform_storage_quota_policies",
+              "from": "TenantId",
+              "to": "TenantId",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_tenant_memberships": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SubjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Role",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_tenant_memberships_TenantId_SubjectId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "SubjectId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_tenant_memberships_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        },
+        "platform_tenants": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "Code",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_tenants_Code",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "Code"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_tenants_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "platform_users": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Email",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DisplayName",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_platform_users_TenantId_Email",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Email"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_platform_users_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "platform_tenants",
+              "from": "TenantId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "RESTRICT"
+            }
+          ]
+        }
+      }
+    },
+    "edan-tensor-dataset.db": {
+      "path": "C:\\Users\\naman\\OneDrive\\����\\ChatGPT\\Edan.Tensor\\src\\Hosts\\EDAN.Tensor.ApiHost\\App_Data\\edan-tensor-dataset.db",
+      "integrity_check": "ok",
+      "foreign_key_violations": 0,
+      "comment_rows": 98,
+      "product_table_count": 9,
+      "tables": {
+        "dataset_quota_threshold_events": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PolicyId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Scope",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TargetId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "EventType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UsedBytes",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LimitBytes",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UtilizationPercent",
+              "type": "REAL",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PolicyVersion",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OccurredAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_quota_threshold_events_TenantId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OccurredAtUtc"
+              ]
+            },
+            {
+              "name": "IX_dataset_quota_threshold_events_TenantId_PolicyId_OccurredAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "PolicyId",
+                "OccurredAtUtc"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_schema_revisions": {
+          "columns": [
+            {
+              "name": "DataSetId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 2
+            },
+            {
+              "name": "SchemaJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_schema_revisions_DataSetId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "DataSetId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_dataset_schema_revisions_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "DataSetId",
+                "Version"
+              ]
+            }
+          ],
+          "foreign_keys": [
+            {
+              "id": 0,
+              "sequence": 0,
+              "table": "datasets",
+              "from": "DataSetId",
+              "to": "Id",
+              "on_update": "NO ACTION",
+              "on_delete": "CASCADE"
+            }
+          ]
+        },
+        "dataset_storage_usage_snapshots": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PeriodStartUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CapturedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UsedBytes",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DataSetCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_storage_usage_snapshots_TenantId_CapturedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "CapturedAtUtc"
+              ]
+            },
+            {
+              "name": "IX_dataset_storage_usage_snapshots_TenantId_PeriodStartUtc",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "PeriodStartUtc"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_validation_details": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "ExecutionId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DetailReference",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RowNumber",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FieldName",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Code",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Severity",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Message",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_validation_details_ExecutionId_RowNumber_Code_FieldName",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "ExecutionId",
+                "RowNumber",
+                "Code",
+                "FieldName"
+              ]
+            },
+            {
+              "name": "IX_dataset_validation_details_TenantId_ExecutionId_RowNumber",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "ExecutionId",
+                "RowNumber"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_validation_executions": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DataSetId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ExpectedDataSetVersion",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "SchemaVersion",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProfileId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProfileRevision",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DetailReference",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProcessedRecords",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TotalRecords",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ErrorCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "WarningCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DetailItemCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "DetailTruncated",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RuleCountsJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FailureCode",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FailureMessage",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CompletedAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FencingToken",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": "0",
+              "pk_position": 0
+            },
+            {
+              "name": "IdempotencyKey",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_validation_executions_TenantId_IdempotencyKey",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "IdempotencyKey"
+              ]
+            },
+            {
+              "name": "IX_dataset_validation_executions_TenantId_DetailReference",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "DetailReference"
+              ]
+            },
+            {
+              "name": "IX_dataset_validation_executions_TenantId_DataSetId_CreatedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "DataSetId",
+                "CreatedAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_dataset_validation_executions_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_validation_profile_revisions": {
+          "columns": [
+            {
+              "name": "ProfileId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Revision",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 2
+            },
+            {
+              "name": "DefinitionJson",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_validation_profile_revisions_TenantId_ProfileId_Revision",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "ProfileId",
+                "Revision"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_dataset_validation_profile_revisions_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "ProfileId",
+                "Revision"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_validation_profiles": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_validation_profiles_TenantId_Name",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Name"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_dataset_validation_profiles_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "dataset_validation_seen_keys": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "ExecutionId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RuleCode",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "KeyHash",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_dataset_validation_seen_keys_ExecutionId_RuleCode_KeyHash",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "ExecutionId",
+                "RuleCode",
+                "KeyHash"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "datasets": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "Name",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "StorageAdapter",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "StorageReference",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ContentFormat",
+              "type": "TEXT",
+              "not_null": true,
+              "default": "'json-array'",
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_datasets_TenantId_OrganizationId_ProjectId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OrganizationId",
+                "ProjectId"
+              ]
+            },
+            {
+              "name": "IX_datasets_Status_CreatedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "Status",
+                "CreatedAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_datasets_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        }
+      }
+    },
+    "edan-tensor-dataset-content.db": {
+      "path": "C:\\Users\\naman\\OneDrive\\����\\ChatGPT\\Edan.Tensor\\src\\Hosts\\EDAN.Tensor.ApiHost\\App_Data\\edan-tensor-dataset-content.db",
+      "integrity_check": "ok",
+      "foreign_key_violations": 0,
+      "comment_rows": 13,
+      "product_table_count": 1,
+      "tables": {
+        "DataSetContent": {
+          "columns": [
+            {
+              "name": "StorageReference",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "DataSetId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OrganizationId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProjectId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Content",
+              "type": "BLOB",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_DataSetContent_Owner",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OrganizationId",
+                "ProjectId",
+                "DataSetId"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_DataSetContent_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "StorageReference"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        }
+      }
+    },
+    "edan-worker.db": {
+      "path": "C:\\Users\\naman\\OneDrive\\����\\ChatGPT\\Edan.Tensor\\src\\Hosts\\EDAN.Tensor.ApiHost\\edan-worker.db",
+      "integrity_check": "ok",
+      "foreign_key_violations": 0,
+      "comment_rows": 66,
+      "product_table_count": 4,
+      "tables": {
+        "external_deliveries": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TargetUri",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Payload",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IdempotencyKey",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AttemptCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "MaxAttempts",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LastErrorCode",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CompletedAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_external_deliveries_TenantId_Status_CreatedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Status",
+                "CreatedAtUtc"
+              ]
+            },
+            {
+              "name": "IX_external_deliveries_TenantId_IdempotencyKey",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "IdempotencyKey"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_external_deliveries_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "worker_task_replays": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "OriginalTaskId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ReplayTaskId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "RequestedBy",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ReplayRequestId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": "'00000000-0000-0000-0000-000000000000'",
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_worker_task_replays_TenantId_OriginalTaskId_ReplayRequestId",
+              "unique": true,
+              "origin": "c",
+              "partial": true,
+              "columns": [
+                "TenantId",
+                "OriginalTaskId",
+                "ReplayRequestId"
+              ]
+            },
+            {
+              "name": "IX_worker_task_replays_TenantId_ReplayTaskId",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "ReplayTaskId"
+              ]
+            },
+            {
+              "name": "IX_worker_task_replays_TenantId_OriginalTaskId_CreatedAtUtc",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "OriginalTaskId",
+                "CreatedAtUtc"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_worker_task_replays_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "worker_task_types": {
+          "columns": [
+            {
+              "name": "TaskType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "Description",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IsEnabled",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "UpdatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "sqlite_autoindex_worker_task_types_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "TaskType"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        },
+        "worker_tasks": {
+          "columns": [
+            {
+              "name": "Id",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 1
+            },
+            {
+              "name": "TenantId",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "TaskType",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "IdempotencyKey",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "PayloadReference",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Status",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "AttemptCount",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "MaxAttempts",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LeaseId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "WorkerId",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "FencingToken",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LeaseExpiresAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Checkpoint",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CheckpointVersion",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtc",
+              "type": "TEXT",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CompletedAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "NextAttemptAtUtc",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "LastErrorCode",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "Version",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProgressPercent",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": "0",
+              "pk_position": 0
+            },
+            {
+              "name": "ProgressStage",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ProgressMessage",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ResultReference",
+              "type": "TEXT",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "ReadyAtUtcUnixMilliseconds",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": "0",
+              "pk_position": 0
+            },
+            {
+              "name": "LeaseExpiresAtUtcUnixMilliseconds",
+              "type": "INTEGER",
+              "not_null": false,
+              "default": null,
+              "pk_position": 0
+            },
+            {
+              "name": "CreatedAtUtcUnixMilliseconds",
+              "type": "INTEGER",
+              "not_null": true,
+              "default": "0",
+              "pk_position": 0
+            }
+          ],
+          "indexes": [
+            {
+              "name": "IX_worker_tasks_Status_ReadyAtUtcUnixMilliseconds_TenantId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "Status",
+                "ReadyAtUtcUnixMilliseconds",
+                "TenantId"
+              ]
+            },
+            {
+              "name": "IX_worker_tasks_TenantId_Status_CreatedAtUtcUnixMilliseconds_Id",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Status",
+                "CreatedAtUtcUnixMilliseconds",
+                "Id"
+              ]
+            },
+            {
+              "name": "IX_worker_tasks_Status_LeaseExpiresAtUtcUnixMilliseconds",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "Status",
+                "LeaseExpiresAtUtcUnixMilliseconds"
+              ]
+            },
+            {
+              "name": "IX_worker_tasks_TenantId_Status_ReadyAtUtcUnixMilliseconds",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "Status",
+                "ReadyAtUtcUnixMilliseconds"
+              ]
+            },
+            {
+              "name": "IX_worker_tasks_TenantId_LeaseId",
+              "unique": false,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "LeaseId"
+              ]
+            },
+            {
+              "name": "IX_worker_tasks_TenantId_IdempotencyKey",
+              "unique": true,
+              "origin": "c",
+              "partial": false,
+              "columns": [
+                "TenantId",
+                "IdempotencyKey"
+              ]
+            },
+            {
+              "name": "sqlite_autoindex_worker_tasks_1",
+              "unique": true,
+              "origin": "pk",
+              "partial": false,
+              "columns": [
+                "Id"
+              ]
+            }
+          ],
+          "foreign_keys": []
+        }
+      }
+    }
+  },
+  "product_table_count": 33,
+  "errors": []
+}
