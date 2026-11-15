@@ -250,6 +250,8 @@ Registry 파일은 다음 위치에서 관리한다.
         screens.csv
         screen-service-bindings.csv
         screen-module-area-codes.csv
+        screen-functional-specifications.md
+        screen-functional-specifications.csv
 
 CSV는 UTF-8 인코딩, 첫 행 헤더, 쉼표 구분을 사용한다. Excel 호환성을 위해 RFC 4180 방식의 필드 인용 규칙을 따른다.
 
@@ -295,6 +297,24 @@ CSV는 UTF-8 인코딩, 첫 행 헤더, 쉼표 구분을 사용한다. Excel 호
 | 8 | UsagePurpose | 예 | 사용 목적 |
 | 9 | Required | 예 | 필수 연결 여부 |
 | 10 | Remarks | 선택 | 추가 설명 |
+
+### 9.4 화면별 상세 기능 명세
+
+화면별 업무 명세는 다음 전용 문서에서 관리한다.
+
+| 파일 | 책임 |
+| --- | --- |
+| docs/registry/screen-functional-specifications.md | 화면별 목적·주요 기능·검색 조건·입력·출력·권한·API 근거·구현 격차의 상세 설명 |
+| docs/registry/screen-functional-specifications.csv | 동일한 화면별 명세를 Excel 필터·정렬·검토용으로 제공 |
+
+- 상세 명세는 ScreenId를 기준으로 screens.csv의 화면 행과 연결한다.
+- screens.csv에는 화면 식별·상태·구현 연결 정보만 유지하고 상세 기능 명세 전체를 중복 기재하지 않는다.
+- CSV와 MD는 같은 1개 화면당 1개 레코드 원칙을 적용한다.
+- 검색 조건은 화면 설계 조건이며, API 지원 여부를 별도로 표시한다.
+- 입력·출력 항목은 실제 Request/Response 계약과 대조하기 전까지 화면 설계 항목으로 취급한다.
+- 사용자 권한은 현재 구현된 인증 정책과 설계 제안 역할을 구분한다.
+- API 근거와 추가 구현 필요 사항을 명시하며, 미구현 기능을 구현 완료로 표시하지 않는다.
+- 상세 명세의 기준 파일과 변경 이력은 MD를 기준으로 관리하고 CSV는 같은 변경에서 함께 갱신한다.
 
 ### 9.3 빈 값과 다중 값
 
