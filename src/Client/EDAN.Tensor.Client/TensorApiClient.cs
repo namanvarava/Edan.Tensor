@@ -184,6 +184,130 @@ public sealed class TensorApiClient
             CreateRequest(HttpMethod.Get, TenantPath(tenantId, $"authorization-audit?{string.Join("&", parts)}"), tenantId), cancellationToken);
     }
 
+    public Task<AuthorizationAuditIntegrityResultContract> GetAuthorizationAuditIntegrityAsync(
+        Guid tenantId, DateTimeOffset fromUtc, DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateDateWindow(fromUtc, toUtc);
+        var path = TenantPath(tenantId,
+            $"authorization-audit/integrity?fromUtc={UtcQuery(fromUtc)}&toUtc={UtcQuery(toUtc)}");
+        return SendJsonAsync<AuthorizationAuditIntegrityResultContract>(
+            CreateRequest(HttpMethod.Get, path, tenantId), cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveResultContract> CreateAuthorizationAuditArchiveAsync(
+        Guid tenantId, CreateAuthorizationAuditArchiveRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        ValidateDateWindow(request.FromUtc, request.ToUtc);
+        return SendJsonAsync<AuthorizationAuditArchiveResultContract>(
+            CreateRequest(HttpMethod.Post, TenantPath(tenantId, "authorization-audit/archives"), tenantId),
+            request, cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveVerificationContract> VerifyAuthorizationAuditArchiveAsync(
+        Guid tenantId, Guid archiveId, VerifyAuthorizationAuditArchiveRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(archiveId, nameof(archiveId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationAuditArchiveVerificationContract>(
+            CreateRequest(HttpMethod.Post,
+                TenantPath(tenantId, $"authorization-audit/archives/{archiveId:D}/verify"), tenantId),
+            request, cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveScheduleContract> GetAuthorizationAuditArchiveScheduleAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendJsonAsync<AuthorizationAuditArchiveScheduleContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "authorization-audit/archive-schedule"), tenantId),
+            cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveScheduleContract> UpdateAuthorizationAuditArchiveScheduleAsync(
+        Guid tenantId, UpdateAuthorizationAuditArchiveScheduleRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationAuditArchiveScheduleContract>(
+            SendRequest(HttpMethod.Put, TenantPath(tenantId, "authorization-audit/archive-schedule"), tenantId, request),
+            cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveJobContract> CreateAuthorizationAuditArchiveJobAsync(
+        Guid tenantId, CreateAuthorizationAuditArchiveRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        ValidateDateWindow(request.FromUtc, request.ToUtc);
+        return SendJsonAsync<AuthorizationAuditArchiveJobContract>(
+            CreateRequest(HttpMethod.Post, TenantPath(tenantId, "authorization-audit/archive-jobs"), tenantId),
+            request, cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveJobDetailsContract?> GetAuthorizationAuditArchiveJobAsync(
+        Guid tenantId, Guid jobId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(jobId, nameof(jobId));
+        return SendOptionalAsync<AuthorizationAuditArchiveJobDetailsContract>(
+            CreateRequest(HttpMethod.Get,
+                TenantPath(tenantId, $"authorization-audit/archive-jobs/{jobId:D}"), tenantId),
+            cancellationToken);
+    }
+
+    public Task<AuthorizationAuditArchiveJobContract> RetryAuthorizationAuditArchiveJobAsync(
+        Guid tenantId, Guid jobId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(jobId, nameof(jobId));
+        return SendJsonAsync<AuthorizationAuditArchiveJobContract>(
+            CreateRequest(HttpMethod.Post,
+                TenantPath(tenantId, $"authorization-audit/archive-jobs/{jobId:D}/retry"), tenantId),
+            cancellationToken);
+    }
+
+    public Task<AuthorizationAuditJobVerificationContract> VerifyAuthorizationAuditArchiveJobAsync(
+        Guid tenantId, Guid jobId, VerifyAuthorizationAuditArchiveRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ValidateId(jobId, nameof(jobId));
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationAuditJobVerificationContract>(
+            CreateRequest(HttpMethod.Post,
+                TenantPath(tenantId, $"authorization-audit/archive-jobs/{jobId:D}/verify"), tenantId),
+            request, cancellationToken);
+    }
+
+    public Task<AuthorizationAuditRetentionPolicyContract> GetAuthorizationAuditRetentionAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        return SendJsonAsync<AuthorizationAuditRetentionPolicyContract>(
+            CreateRequest(HttpMethod.Get, TenantPath(tenantId, "authorization-audit/retention"), tenantId),
+            cancellationToken);
+    }
+
+    public Task<AuthorizationAuditRetentionPolicyContract> UpdateAuthorizationAuditRetentionAsync(
+        Guid tenantId, UpdateAuthorizationAuditRetentionRequestContract request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId);
+        ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<AuthorizationAuditRetentionPolicyContract>(
+            SendRequest(HttpMethod.Put, TenantPath(tenantId, "authorization-audit/retention"), tenantId, request),
+            cancellationToken);
+    }
+
     /// <summary>Tenant 범위의 저장 용량 정책을 페이지로 조회합니다.</summary>
     public Task<StorageQuotaPolicyPageContract> GetStorageQuotaPoliciesAsync(
         Guid tenantId, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
@@ -776,6 +900,14 @@ public sealed class TensorApiClient
         if ((long)(page - 1) * pageSize > int.MaxValue)
             throw new ArgumentOutOfRangeException(nameof(page), "페이지 오프셋이 정수 범위를 초과합니다.");
     }
+
+    private static void ValidateDateWindow(DateTimeOffset fromUtc, DateTimeOffset toUtc)
+    {
+        if (fromUtc > toUtc) throw new ArgumentException("시작 시각은 종료 시각보다 늦을 수 없습니다.");
+    }
+
+    private static string UtcQuery(DateTimeOffset value) =>
+        Uri.EscapeDataString(value.ToUniversalTime().ToString("O"));
 
     private static string Query(string? search, string? status, int page, int pageSize,
         (string Key, string Value)? extra = null)

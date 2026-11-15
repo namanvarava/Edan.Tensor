@@ -89,9 +89,9 @@ Tenant 생성 및 활성화
 
 ### 4단계. DuckDB·Parquet·Commercial·WPF 기능을 구현합니다.
 
-- 2026-11-15 `main-auto` 진행 기록: 승인된 15개 Registry 화면의 WPF Desktop shell, navigation, 공통 API 세션, typed Client 조회 계약과 15개 ViewModel 연결을 시작했다. 이 구현은 현재 API가 제공하는 조회·검색·페이징·상세 범위에 한정하며, mutation workflow는 화면별 구현 격차 문서의 P1 항목으로 남긴다.
+- 2026-11-15 `main-auto` 진행 기록: 승인된 15개 Registry 화면의 WPF Desktop shell, navigation, 공통 API 세션, typed Client 조회 계약과 15개 ViewModel 연결을 완료했다. 구조화 Request DTO 입력, 대상 선택, 생성 결과 ID, directory update·membership grant·quota·audit·DataSet content·validation 운영 명령도 실제 소스 계약 범위에서 연결했다. API가 제공하지 않는 collection/filter/control은 구현하지 않고 화면별 구현 격차 문서에 API 부재로 기록한다.
 - 현재 Desktop 프로젝트는 `src/Client/EDAN.Tensor.Desktop`이며 `EDAN.Tensor.Client`만 참조한다. View에서 Application Service·Repository·DbContext를 직접 참조하지 않는다.
-- 이 진행 기록은 4단계 전체 완료나 화면 `Active` 승격을 의미하지 않는다. 실제 명령 UI, UI smoke/test, Release 검증 증거가 확보된 뒤에 화면별 상태를 전환한다.
+- 이 진행 기록은 4단계 전체 완료나 화면 `Active` 승격을 의미하지 않는다. 현재 변경 이후 UI smoke/test와 Release 검증 증거가 확보된 뒤에 화면별 상태를 전환한다.
 - 이 단계에서는 승인된 포맷·데이터·화면 계약을 기준으로 라이선스가 없는 제품 기능을 먼저 완성합니다.
 - DuckDB·Parquet 분석 어댑터와 지원 타입·용량·복구 기준을 구현합니다.
 - 실제 WorkerHost와 외부 수신 시스템의 응답 유실·중복 전달·재시도 E2E를 검증합니다.

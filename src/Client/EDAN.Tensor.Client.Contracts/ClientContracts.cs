@@ -32,6 +32,38 @@ public sealed record AuthorizationAuditEntryContract(
 public sealed record AuthorizationAuditPageContract(
     int TotalCount, int Page, int PageSize, IReadOnlyList<AuthorizationAuditEntryContract> Items);
 
+public sealed record AuthorizationAuditArchiveResultContract(
+    Guid ArchiveId, Guid TenantId, DateTimeOffset FromUtc, DateTimeOffset ToUtc,
+    int RecordCount, string Sha256, int SizeBytes);
+
+public sealed record AuthorizationAuditArchiveVerificationContract(
+    Guid ArchiveId, bool IsValid, string ReasonCode, string? Sha256);
+
+public sealed record AuthorizationAuditArchiveScheduleContract(
+    Guid TenantId, bool IsEnabled, int IntervalHours,
+    DateTimeOffset? NextRunAtUtc, DateTimeOffset? LastRunAtUtc, long Version);
+
+public sealed record AuthorizationAuditArchiveJobContract(
+    Guid JobId, Guid TenantId, DateTimeOffset FromUtc, DateTimeOffset ToUtc,
+    string RequestedBy, DateTimeOffset CreatedAtUtc, string Status, Guid? ArchiveId,
+    int RecordCount, string? Sha256, int? SizeBytes, DateTimeOffset? CompletedAtUtc,
+    string? FailureReason, int AttemptCount, long Version);
+
+public sealed record AuthorizationAuditArchiveAttemptContract(
+    Guid Id, int AttemptNumber, string Operation, DateTimeOffset StartedAtUtc,
+    DateTimeOffset? FinishedAtUtc, bool? IsSuccessful, string? ResultCode);
+
+public sealed record AuthorizationAuditArchiveJobDetailsContract(
+    AuthorizationAuditArchiveJobContract Job,
+    IReadOnlyList<AuthorizationAuditArchiveAttemptContract> Attempts);
+
+public sealed record AuthorizationAuditJobVerificationContract(
+    Guid JobId, bool IsValid, string ReasonCode, string? Sha256);
+
+public sealed record AuthorizationAuditRetentionPolicyContract(
+    Guid TenantId, int RetentionDays, bool IsLegalHold, string? LegalHoldReason,
+    string? UpdatedBy, DateTimeOffset? UpdatedAtUtc, long Version);
+
 public sealed record StorageQuotaPolicyContract(
     Guid Id, Guid TenantId, string Scope, Guid TargetId, long? TenantLimitBytes,
     long? OrganizationLimitBytes, long? ProjectLimitBytes, long? DataSetLimitBytes,
@@ -106,6 +138,11 @@ public sealed record CreateExternalDeliveryRequestContract(
     string TargetUri, System.Text.Json.JsonElement Payload, int MaxAttempts = 5);
 public sealed record VerifyAuthorizationAuditIntegrityRequestContract(
     DateTimeOffset FromUtc, DateTimeOffset ToUtc, string ExpectedSha256);
+public sealed record CreateAuthorizationAuditArchiveRequestContract(DateTimeOffset FromUtc, DateTimeOffset ToUtc);
+public sealed record VerifyAuthorizationAuditArchiveRequestContract(string? ExpectedSha256);
+public sealed record UpdateAuthorizationAuditArchiveScheduleRequestContract(int IntervalHours, bool IsEnabled);
+public sealed record UpdateAuthorizationAuditRetentionRequestContract(
+    int RetentionDays, bool IsLegalHold, string? LegalHoldReason);
 public sealed record CreateDataSetValidationProfileContract(
     Guid Id, Guid TenantId, string Name, int Revision, string DefinitionJson, DateTimeOffset CreatedAtUtc);
 public sealed record CreateDataSetValidationProfileRevisionContract(

@@ -336,6 +336,8 @@ API·DTO 정합성 조사를 수행한 경우 다음 파일을 같은 조사 단
 - 테스트를 실행하지 않은 경우 `Passed`로 기록하지 않는다. 결과가 없는 항목은 `NotRun` 또는 `NotFound`로 기록한다.
 - API 조사 문서가 추가되어도 `screens.csv`의 ScreenId, MODULE·AREA 코드, 화면 상태를 임의 변경하지 않는다.
 
+- 2026-11-15 `main-auto` 조사 기준: 15개 화면의 실제 조회·검색·페이징·구조화 Request DTO·대상 선택과 소스에 존재하는 mutation 운영 계약을 연결했다. API가 제공하지 않는 collection/filter/control은 추정 구현하지 않고 `screen-implementation-gaps.md`에 API 부재로 기록한다. 현재 변경 이후 WPF smoke와 테스트host 실행 증거가 없으므로 화면 상태는 계속 `InDevelopment`다.
+
 ### 9.3 빈 값과 다중 값
 
 - 확인되지 않은 값은 추정하지 않고 빈 값으로 둔다.

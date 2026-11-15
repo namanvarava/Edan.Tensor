@@ -38,7 +38,29 @@
                     <TextBox Grid.Column="1" Text="{Binding TargetIdText, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="DataSet, 검증 실행, Worker 작업, 외부 전달의 상세 조회에 사용합니다." />
                 </Grid>
-                <TextBlock Text="명령 Payload JSON (선택)" FontWeight="SemiBold" Margin="0,12,0,4" />
+                <ItemsControl ItemsSource="{Binding TargetOptions}" Margin="170,8,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Label}" Command="{Binding Command}" Margin="0,0,6,4" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="구조화된 Request DTO 입력" FontWeight="SemiBold" Margin="0,12,0,4" />
+                <ItemsControl ItemsSource="{Binding Inputs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                <TextBox Grid.Column="1" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding Placeholder}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="고급 Request DTO JSON (선택; 입력 시 구조화 입력보다 우선)" FontWeight="SemiBold" Margin="0,12,0,4" />
                 <TextBox Text="{Binding CommandPayloadText, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True" MinHeight="62" TextWrapping="Wrap"
                          ToolTip="화면에 노출된 API Request DTO JSON을 입력합니다. 서버가 최종 검증합니다." />
@@ -46,6 +68,11 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                     <TextBlock Text="Idempotency/Replay 키" VerticalAlignment="Center" FontWeight="SemiBold" />
                     <TextBox Grid.Column="1" Text="{Binding IdempotencyKeyText, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="최근 결과 ID" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    <TextBox Grid.Column="1" Text="{Binding LastResultIdText, Mode=OneWay}" IsReadOnly="True" />
                 </Grid>
             </StackPanel>
         </Border>

@@ -9,7 +9,7 @@
 - API 검증: [screen-api-validation.csv](screen-api-validation.csv)
 - 구현 격차: [screen-implementation-gaps.md](screen-implementation-gaps.md)
 - 작성 원칙: 확정된 화면 ID·MODULE·AREA는 기존 Screen Registry를 참조하고, 상세 기능은 본 문서에서 단일 관리한다.
-- 구현 상태: `src/Client/EDAN.Tensor.Desktop`에 공통 WPF View, 15개 ViewModel, typed Client 조회 binding이 구현되어 `InDevelopment`로 관리한다. 모든 mutation workflow와 실행 가능한 UI smoke/test가 확인되기 전에는 `Active`로 판정하지 않는다.
+- 구현 상태: `src/Client/EDAN.Tensor.Desktop`에 공통 WPF View, 15개 ViewModel, typed Client 조회·구조화 Request DTO·대상 선택·확인된 mutation binding이 구현되어 `InDevelopment`로 관리한다. API가 실제로 제공하지 않는 collection/filter/control은 미구현으로 구분하며, 실행 가능한 UI smoke/test가 확인되기 전에는 `Active`로 판정하지 않는다.
 
 ## 1. 문서 목적 및 관리 경계
 
@@ -42,7 +42,7 @@
 - 입력 항목은 화면 요구사항이며, 실제 Request DTO와 일치 여부를 구현 전에 검증
 - 출력 항목은 화면에 필요한 정보이며, 실제 Response 계약에서 제공하지 않는 값은 API 보완 또는 표시 제외
 - 사용자 권한의 제안 역할은 현재 구현된 인증 정책과 구분
-- 현재 구현은 실제 API가 제공하는 조회·검색·페이징·상세 계약을 호출하고, 공통 JSON 명령 영역을 통해 확인된 생성·수정·재처리 계약도 호출한다. 구조화된 입력·대상 선택·UI smoke/test가 없는 항목은 [구현 격차 보고서](screen-implementation-gaps.md)에 미완료로 유지한다.
+- 현재 구현은 실제 API가 제공하는 조회·검색·페이징·상세 계약과 화면별 구조화 Request DTO 입력을 호출한다. 수정·보존·스케줄처럼 DTO JSON이 필요한 계약은 고급 JSON 입력으로 연결하고, 대상 선택·생성 결과 ID·Replay/Idempotency 키를 공통 UI에 표시한다. API가 없는 기능과 UI smoke/test 미확인은 [구현 격차 보고서](screen-implementation-gaps.md)에 별도로 기록한다.
 
 ### 2.3 권한 표현 기준
 

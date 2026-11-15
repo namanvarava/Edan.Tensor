@@ -115,6 +115,31 @@ public sealed class TensorApiClientTests
         Assert.Equal(workerTaskId, response.WorkerTaskId);
     }
 
+    [Fact]
+    public async Task AuthorizationAuditOperationalContractsUseTenantScopedRoutes()
+    {
+        var tenantId = Guid.NewGuid();
+        var archiveId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("/integrity", StringComparison.Ordinal))
+                return JsonResponse($"{{\"tenantId\":\"{tenantId:D}\",\"fromUtc\":\"2026-01-01T00:00:00Z\",\"toUtc\":\"2026-01-02T00:00:00Z\",\"recordCount\":2,\"sha256\":\"ABC\"}}");
+            return JsonResponse($"{{\"archiveId\":\"{archiveId:D}\",\"tenantId\":\"{tenantId:D}\",\"fromUtc\":\"2026-01-01T00:00:00Z\",\"toUtc\":\"2026-01-02T00:00:00Z\",\"recordCount\":2,\"sha256\":\"ABC\",\"sizeBytes\":128}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+        var from = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        var to = DateTimeOffset.Parse("2026-01-02T00:00:00Z");
+
+        var integrity = await client.GetAuthorizationAuditIntegrityAsync(tenantId, from, to);
+        var archive = await client.CreateAuthorizationAuditArchiveAsync(tenantId,
+            new CreateAuthorizationAuditArchiveRequestContract(from, to));
+
+        Assert.Equal(2, integrity.RecordCount);
+        Assert.Equal(archiveId, archive.ArchiveId);
+    }
+
     /// <summary>검증 등록이 경로 Tenant와 Idempotency-Key를 함께 전달합니다.</summary>
     [Fact]
     public async Task CreateDataSetValidationAsync_SendsTenantAndIdempotencyHeaders()
