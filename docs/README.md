@@ -8,6 +8,7 @@
 - [화면 Registry 기본 목록](registry/screens.csv)
 - [화면별 상세 기능 명세](registry/screen-functional-specifications.md)
 - [화면별 상세 기능 명세 CSV](registry/screen-functional-specifications.csv)
+- [화면 API·DTO 정합성 전수 조사 및 후속 개발 인계 지시서](operations/EDAN-TENSOR-SCREEN-API-AUDIT-HANDOFF.md)
 - [화면-Service 연결 목록](registry/screen-service-bindings.csv)
 - [Screen MODULE·AREA 코드 사전](registry/screen-module-area-codes.csv)
 - [프로젝트 구조](architecture/project-structure.md)
