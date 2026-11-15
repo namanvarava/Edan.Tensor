@@ -501,7 +501,7 @@ EDAN의 업무 사전은 다음 모듈을 기준으로 확장한다. 공통 개�
 | 공통 | Effective Date | 적용일 | 시행일, 효력발생일 |
 | 공통 | Expiration | 만료 | 유효기간 종료, 만료일 |
 
-## 20. 사전 확정 전 필수 검증
+## 20. 신규 용어 추가 시 검증 기준
 
 - [ ] 대표 용어가 동일 개념의 관계 용어를 모두 수용하는가?
 - [ ] 상위어·하위어·문맥 유사어를 동의어로 잘못 합치지 않았는가?
@@ -516,45 +516,22 @@ EDAN의 업무 사전은 다음 모듈을 기준으로 확장한다. 공통 개�
 - [ ] 표준 사전의 변경 이력과 승인 상태를 기록했는가?
 
 
-### 16.7 기존 예시의 적용 상태와 3자 표준 전환
+### 16.7 기존 예시의 적용 상태와 확정 약어 전환
 
-이 문서의 1~15절에 있는 `tntid`, `orgid`, `prjid`, `usrid`, `pln_cd`, `sort_num` 등은 기존 인벤토리 또는 이전 표준안에서 가져온 **레거시·설명용 예시**다. 16절의 3자 기본 약어 규칙과 충돌하는 2자 토큰은 신규 물리 컬럼에 사용할 수 없다. 기존 DB의 컬럼을 즉시 변경하라는 뜻도 아니다.
+이 문서의 1~15절에 있는 `tntid`, `orgid`, `prjid`, `usrid`, `pln_cd`, `sort_num` 등은 기존 인벤토리 또는 이전 표준안에서 가져온 **레거시·설명용 예시**다. 기존 DB의 컬럼을 이 문서만으로 즉시 변경하라는 뜻은 아니다.
 
-신규 표준 사전에서 우선 검토할 3자 후보는 다음과 같다. 아래 값은 의미와 전역 충돌을 확인하기 위한 설계 후보이며, 대표 용어 사전의 최종 승인 전에는 확정 약어로 간주하지 않는다.
+다음 속성 약어는 전역 중복·길이 검증을 마친 확정 대표 약어다.
 
-| 기존 개념 | 기존 약어 | 3자 후보 | 신규 예시 | 비고 |
-| --- | --- | --- | --- | --- |
-| Identifier | `id` | `idr` | `tntidr` | Identity `idn`과 구분 |
-| Code | `cd` | `cod` | `tntcod` | 코드값·코드그룹 구분 필요 |
-| Name | `nm` | `nam` | `usrnam` | Display는 별도 표시 속성 |
-| Operation | `op` | `opr` | `opr_sta` | Task·Job과 구분 |
-| Date | `date` | `dte` | `exp_dte` | 날짜만 저장 |
-| DateTime | `dt` | `dtt` | `crt_dtt` | 시간 포함, 시간대는 별도 명시 |
-| Yes/No | `yn` | `ynf` | `ena_ynf` | Boolean/Flag 의미 확정 필요 |
-| Hour | `hr` | `hou` | `intv_hou` | 시간 단위 |
-| Role | `role` / `rol` | `rol` | `usr_rol` | `rol`만 대표 약어로 사용 |
+| 개념 | 레거시 약어 | 확정 약어 | 신규 예시 |
+| --- | --- | --- | --- |
+| Identifier | `id` | `idr` | `tntidr` |
+| Code | `cd` | `cod` | `tntcod` |
+| Name | `nm` | `nam` | `usrnam` |
+| Operation | `op` | `opr` | `opr_sta` |
+| Date | `date` | `dte` | `exp_dte` |
+| DateTime | `dt` | `dtt` | `crt_dtt` |
+| Yes/No Flag | `yn` | `ynf` | `ena_ynf` |
+| Hour | `hr` | `hou` | `intv_hou` |
+| Role | `role` | `rol` | `usr_rol` |
 
-3자 후보가 기존 대표 용어와 충돌하면 4자 확장 규칙을 적용한다. 위 표의 후보도 전역 사전 전체 중복 검증을 통과하기 전까지는 확정하지 않는다.
-
-## 21. 기존 287개 컬럼 재매핑 결과
-
-기존 4개 SQLite DB의 287개 컬럼 인벤토리를 전역 대표 용어·약어 표준에 대조한 재매핑 결과는 별도 보고서와 CSV를 기준으로 한다.
-
-- [287개 컬럼 전역 표준 재매핑 보고서](database-column-remapping-287.md)
-- [287개 컬럼 전체 재매핑 CSV](database-column-remapping-287.csv)
-
-재매핑 설계 결과는 다음과 같다.
-
-| DB | 테이블 | 컬럼 | 변경 권장 |
-|---|---:|---:|---:|
-| edan-tensor-platform.db | 19 | 154 | 106 |
-| edan-tensor-dataset.db | 9 | 77 | 47 |
-| edan-tensor-dataset-content.db | 1 | 6 | 4 |
-| edan-worker.db | 4 | 50 | 29 |
-| **합계** | **33** | **287** | **186** |
-
-기존 제안명 중 101개는 현재 제안과 일치하여 유지 후보로 분류했다. 186개는 대표 약어·복합 토큰·시간 단위 규칙에 따라 변경을 권장한다. 신규 컬럼명은 동일 테이블 안에서 중복되지 않도록 검사했다.
-
-`UpdatedBy`와 `RequestedBy`는 실제 저장값이 내부 사용자 식별자인지 외부 인증 Subject인지 확인한 후 최종 이름을 승인한다. `Sha256`은 SHA-256 알고리즘의 고정 표기이므로 일반 약어 길이 규칙의 기술 예외로 취급한다.
-
-**중요:** 이 결과는 287행 인벤토리 기준의 논리적 재매핑 설계안이다. 실제 SQLite 파일의 `sqlite_master`, `PRAGMA table_info`, EF Core 매핑, Migration, 인덱스·외래 키·트리거·뷰 및 외부 SQL 사용처 검증은 별도 수행해야 한다. 실제 DB 파일을 검사하기 전에는 물리 컬럼명 변경이나 Migration 완료로 간주하지 않는다.
+전체 445개 대표 용어와 약어는 [전역 업무 용어·약어 확정 사전](global-business-term-dictionary.md) 및 [전체 CSV](global-business-term-dictionary.csv)를 기준으로 한다. 기존 물리 컬럼명은 DB 구성과 코드 영향 분석 후 별도 Migration으로 전환한다.
