@@ -44,6 +44,15 @@ public sealed class WorkerTask
     public string? LastErrorCode { get; private set; }
     public long Version { get; private set; }
 
+    /// <summary>외부 결과 저장소가 저장을 완료한 뒤 결과 참조를 연결합니다.</summary>
+    public void AttachResultReference(string resultReference)
+    {
+        if (Status != WorkerTaskStatus.Succeeded)
+            throw new InvalidOperationException("성공한 작업에만 결과 참조를 연결할 수 있습니다.");
+        ResultReference = ValidateText(resultReference, 500, nameof(resultReference));
+        Version++;
+    }
+
     public static WorkerTask Create(Guid tenantId, string taskType, string idempotencyKey,
         string payloadReference, DateTimeOffset nowUtc, int maxAttempts = 5)
     {

@@ -265,22 +265,50 @@ public sealed class UserInvitationManagementViewModel(IDesktopScreenService sess
         {
             var result = await Session.Client!.InviteUserAsync(tenantId, request!);
             LastResultIdText = result.Id.ToString("D");
-            AddField("생성된 사용자 ID", result.Id.ToString("D"));
-            StatusMessage = "사용자 초대를 요청했습니다.";
+            AddField("생성된 초대 ID", result.Id.ToString("D"));
+            StatusMessage = "사용자 초대를 요청했습니다. raw token은 전달 Adapter가 관리합니다.";
         }
         catch (Exception exception) { ShowException(exception); }
     }
 
     protected override async Task ExecuteSecondaryCommandAsync(string operation)
     {
-        if (operation != "user-update") return;
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var userId)
-            || !TryParseExplicitPayload<UpdateDirectoryEntryRequestContract>(out var request)) return;
+        if (!TryGetTenant(out var tenantId)) return;
         try
         {
-            await Session.Client!.UpdateUserAsync(tenantId, userId, request!);
-            StatusMessage = "사용자 수정을 요청했습니다.";
+            if (operation == "user-update")
+            {
+                if (!TryGetTargetId(out var userId) || !TryParseExplicitPayload<UpdateDirectoryEntryRequestContract>(out var request)) return;
+                await Session.Client!.UpdateUserAsync(tenantId, userId, request!);
+                StatusMessage = "사용자 수정을 요청했습니다.";
+            }
+            else if (operation == "invitation-list")
+            {
+                if (!TryGetPage(out var page, out var pageSize)) return;
+                var result = await Session.Client!.GetInvitationsAsync(tenantId, SearchText, page: page, pageSize: pageSize);
+                foreach (var invitation in result.Items)
+                {
+                    AddField(invitation.Email, $"{invitation.Status} · 만료 {invitation.ExpiresAtUtc:u}");
+                    AddTargetOption(invitation.Id, $"초대 선택: {invitation.Email}");
+                }
+                StatusMessage = $"{result.Items.Count}개의 초대를 조회했습니다.";
+            }
+            else if (operation == "invitation-resend")
+            {
+                if (!TryGetTargetId(out var invitationId)) return;
+                var request = TryParseExplicitPayload<InvitationLifetimeRequestContract>(out var parsed)
+                    ? parsed : new InvitationLifetimeRequestContract();
+                var result = await Session.Client!.ResendInvitationAsync(tenantId, invitationId, request);
+                LastResultIdText = result.Id.ToString("D");
+                StatusMessage = "초대 token을 새로 발급해 전달 Adapter로 재전송했습니다.";
+            }
+            else if (operation == "invitation-revoke")
+            {
+                if (!TryGetTargetId(out var invitationId)) return;
+                await Session.Client!.RevokeInvitationAsync(tenantId, invitationId);
+                StatusMessage = "초대를 철회했습니다.";
+            }
         }
         catch (Exception exception) { ShowException(exception); }
     }

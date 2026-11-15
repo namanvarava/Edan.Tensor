@@ -161,6 +161,8 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         MutateAsync(tenantId, taskId, task => task.CancelByOperator(nowUtc), cancellationToken);
     public Task<bool> TryForceRetryAsync(Guid tenantId, Guid taskId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
         MutateAsync(tenantId, taskId, task => task.ForceRetry(nowUtc), cancellationToken);
+    public Task<bool> TryAttachResultReferenceAsync(Guid tenantId, Guid taskId, string resultReference, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.AttachResultReference(resultReference), cancellationToken);
 
     private async Task<bool> MutateAsync(Guid tenantId, Guid taskId, Action<WorkerTask> mutation, CancellationToken cancellationToken)
     {

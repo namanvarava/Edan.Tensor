@@ -17,6 +17,10 @@ public sealed record TenantDirectoryContract(Guid Id, string Code, string Name, 
 public sealed record OrganizationDirectoryContract(Guid Id, Guid TenantId, string Code, string Name, string Status);
 public sealed record ProjectDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string Code, string Name, string Status);
 public sealed record UserDirectoryContract(Guid Id, Guid TenantId, string Email, string DisplayName, string Status);
+public sealed record InvitationContract(Guid Id, Guid TenantId, Guid UserId, string Email, string DisplayName, string Status,
+    DateTimeOffset CreatedAtUtc, DateTimeOffset ExpiresAtUtc, DateTimeOffset? AcceptedAtUtc,
+    DateTimeOffset? RevokedAtUtc, int ResendCount);
+public sealed record InvitationPageContract(int TotalCount, int Page, int PageSize, IReadOnlyList<InvitationContract> Items);
 public sealed record TenantMembershipDirectoryContract(Guid Id, Guid TenantId, string SubjectId, string Role, string Status);
 public sealed record OrganizationMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string SubjectId, string Role, string Status);
 public sealed record ProjectMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, Guid ProjectId, string SubjectId, string Role, string Status);
@@ -142,6 +146,7 @@ public sealed record CreateTenantRequestContract(string Code, string Name);
 public sealed record CreateOrganizationRequestContract(string Code, string Name);
 public sealed record CreateProjectRequestContract(string Code, string Name);
 public sealed record InviteUserRequestContract(string Email, string DisplayName);
+public sealed record InvitationLifetimeRequestContract(int? LifetimeDays = null);
 public sealed record UpdateDirectoryEntryRequestContract(string? Name, string? Status);
 public sealed record SetUserStatusRequestContract(string Status);
 public sealed record GrantTenantMembershipRequestContract(string SubjectId, string Role);

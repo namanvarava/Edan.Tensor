@@ -54,6 +54,30 @@ public sealed class UserRepository(PlatformDbContext db) : IUserRepository
     public void Add(User user) => db.Users.Add(user);
 }
 
+public sealed class InvitationRepository(PlatformDbContext db) : IInvitationRepository
+{
+    public Task<Invitation?> GetByIdAsync(TenantId tenantId, InvitationId id, CancellationToken cancellationToken = default) =>
+        db.Invitations.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == id, cancellationToken);
+    public Task<Invitation?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default) =>
+        db.Invitations.SingleOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+    public async Task<InvitationPageData> GetPageAsync(TenantId tenantId, string? search, InvitationStatus? status,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        var query = db.Invitations.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var value = search.Trim().ToLowerInvariant();
+            query = query.Where(x => x.Email.Value.Contains(value) || x.DisplayName.ToLower().Contains(value));
+        }
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query.OrderByDescending(x => x.CreatedAtUtc).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return new(totalCount, items);
+    }
+    public void Add(Invitation invitation) => db.Invitations.Add(invitation);
+}
+
 public sealed class TenantMembershipRepository(PlatformDbContext db) : ITenantMembershipRepository
 {
     public Task<TenantMembership?> GetAsync(TenantId tenantId, string subjectId, CancellationToken cancellationToken = default) =>

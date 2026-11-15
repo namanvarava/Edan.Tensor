@@ -11,9 +11,9 @@ EDAN Tensor는 .NET 10 / C# 14 기반의 Modular Monolith 데이터 플랫폼입
 | --- | --- | --- |
 | Platform | Tenant·Organization·Project, 소속·권한 Policy, 감사와 아카이브, 닫힌 JWT 인증 경계, 비운영 IdP HTTPS Metadata·JWKS·Issuer·Audience·Tenant 경계·키 회전 검증 | 운영 IdP와 운영 배포는 별도 환경 검증 범위이며, Issue #84의 비운영 외부 검증과 GitHub main 보호 규칙 증거는 검증 기록에 남깁니다. |
 | DataSet | Tenant 소유 메타데이터, 스키마 revision, SQLite 콘텐츠 어댑터, 계층형 저장 용량 quota·관리 API·임계치 이력, UTF-8 CSV·JSON 객체 배열 검증, 불변 프로필 revision, 결과 보존·명시적 삭제 | DuckDB·Parquet 어댑터는 다음 릴리스 범위 |
-| Worker | 전용 DB, 작업 유형 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, 종료 인계, DataSet Validation Handler, 외부 전달 Idempotency Key와 재시도, 로컬 수신기 장애 검증 | 실제 운영 수신 시스템은 이번 범위에서 제외하고, 비운영 외부 IdP는 외부 환경 제공 후 검증 |
+| Worker | 전용 DB, 작업 유형 카탈로그, Lease/Fencing, 체크포인트, 재시도·DLQ·재처리, 종료 인계, DataSet Validation Handler, 외부 전달 Idempotency Key와 재시도, Tenant 격리 파일 결과 저장·raw streaming | 실제 운영 수신 시스템과 Object Storage Adapter는 별도 운영 구성 |
 | Commercial / Licensing | 독립된 모듈 경계를 유지하며, 승인된 개발 라이선스 1개를 발급·검증하는 별도 LicenseAuthority와 공급자 교체 가능한 결제 경계(`IPaymentProvider`)를 제공합니다. RBAC·기본 거부·최소 권한·감사 경계를 유지합니다. | 결제 공급자가 선정되기 전에는 결제 성공·상품 가격·유료 권리를 만들지 않으며, 실제 결제·Webhook·환불·운영 라이선스는 별도 업무 계약 승인 후 구현합니다. |
-| 클라이언트 | `EDAN.Tensor.Client.Contracts`·`EDAN.Tensor.Client` typed API와 Screen Registry 15개 WPF Desktop 화면을 제공합니다. 정책·감사·quota·DataSet·검증·Worker·외부 전달의 collection/filter/lifecycle/control 계약과 구조화 Request DTO 입력을 실제 API 경계에 연결했습니다. | 현재 화면 상태는 `InDevelopment`이며 WPF smoke와 이번 변경 후 testhost 실행은 미확인입니다. Worker 결과는 현재 도메인의 외부 ResultReference 계약을 따릅니다. 운영 IdP·운영 DB·Commercial/Licensing 업무 계약은 별도 범위입니다. |
+| 클라이언트 | `EDAN.Tensor.Client.Contracts`·`EDAN.Tensor.Client` typed API와 Screen Registry 15개 WPF Desktop 화면을 제공합니다. 정책·감사·quota·DataSet·검증·Worker·외부 전달 및 초대 lifecycle의 collection/filter/lifecycle/control 계약과 구조화 Request DTO 입력을 실제 API 경계에 연결했습니다. | 화면 상태는 `InDevelopment`이며 WPF smoke와 신규 HTTP smoke의 로컬 testhost 실행은 미확인입니다. 운영 IdP·운영 DB·Commercial/Licensing 업무 계약은 별도 범위입니다. |
 
 [검증 현황 문서](docs/validation/2026-11-10-licensing-implementation.md)는 승인된 LicenseAuthority 구현과 현재 HTTP 환경 미검증 조건을 기록합니다.
 [현재 범위 감사](docs/validation/2026-11-10-current-work-scope-audit.md)는 최신 main의 구현 범위·잔여 계약·검증 증거를 기록합니다.
@@ -67,6 +67,7 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 [API 보안](docs/architecture/platform-api-security.md), [의존성 규칙](docs/architecture/dependency-rules.md)을 함께 확인하세요.
 [Client API 연동 계약](docs/architecture/client-api-contract.md)도 확인하세요.
 [화면 구현 확정 계약](docs/architecture/screen-implementation-contract.md)에서 WPF 화면·API 보완·수용 기준을 확인하세요.
+[초대 lifecycle 및 Worker 결과 저장 계약](docs/architecture/invitation-and-worker-result-contract.md)에서 token hash·전달 Adapter·raw result 저장 경계를 확인하세요.
 [15개 화면 API·DTO 정합성 결과](docs/registry/screen-implementation-gaps.md)에서 실제 구현 범위, 권장 lifecycle/control 구현 결과, 테스트 미확인 상태를 확인하세요.
 
 

@@ -149,7 +149,12 @@ public abstract class RegistryScreenViewModel : ObservableObject
                 break;
             case "PLT-ORG-001": Add("조직 수정", "organization-update"); break;
             case "PLT-PJT-001": Add("프로젝트 수정", "project-update"); break;
-            case "PLT-USR-001": Add("사용자 수정", "user-update"); break;
+            case "PLT-USR-001":
+                Add("사용자 수정", "user-update");
+                Add("초대 lifecycle 조회", "invitation-list");
+                Add("초대 재전송", "invitation-resend");
+                Add("초대 철회", "invitation-revoke");
+                break;
             case "PLT-MBR-001":
                 Add("조직 멤버십 부여", "organization-membership-grant");
                 Add("프로젝트 멤버십 부여", "project-membership-grant");
