@@ -2225,7 +2225,8 @@ public sealed class PlatformApiIntegrationTests
                     ["Authentication:Issuer"] = "https://identity.test.edan.tensor",
                     ["Authentication:Audience"] = "edan-tensor-api",
                     ["Authentication:SigningKey"] = "integration-test-signing-key-at-least-32-bytes-long",
-                    ["ExternalDelivery:AllowLoopback"] = "true"
+                    ["ExternalDelivery:AllowLoopback"] = "true",
+                    ["Diagnostics:ExposeExceptionDetails"] = "true"
                 });
             });
             return base.CreateHost(builder);

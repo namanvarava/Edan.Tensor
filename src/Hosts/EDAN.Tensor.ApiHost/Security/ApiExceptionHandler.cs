@@ -12,7 +12,10 @@ namespace EDAN.Tensor.ApiHost.Security;
 /// 예기치 않은 예외는 상관관계 식별자를 로그에만 기록하고 응답에는 일반 오류 코드만 반환합니다.
 /// 요청이 이미 취소된 경우에는 응답을 다시 쓰지 않습니다.
 /// </remarks>
-public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
+public sealed class ApiExceptionHandler(
+    ILogger<ApiExceptionHandler> logger,
+    IConfiguration? configuration = null,
+    IHostEnvironment? environment = null) : IExceptionHandler
 {
     /// <summary>예외를 상태 코드와 기계 판독용 오류 코드로 변환합니다.</summary>
     /// <param name="httpContext">현재 HTTP 요청과 응답 컨텍스트를 지정합니다.</param>
@@ -25,6 +28,9 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             return false;
 
         var (statusCode, error) = ToError(exception);
+        if (statusCode >= StatusCodes.Status500InternalServerError && environment?.IsDevelopment() == true &&
+            configuration?.GetValue<bool>("Diagnostics:ExposeExceptionDetails") == true)
+            error = new ApiError(error.Code, exception.ToString());
         var traceId = httpContext.TraceIdentifier;
         if (statusCode >= StatusCodes.Status500InternalServerError)
         {
