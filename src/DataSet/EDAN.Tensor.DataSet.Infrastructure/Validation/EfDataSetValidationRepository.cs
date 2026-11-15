@@ -9,6 +9,47 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Validation;
 /// <summary>검증 프로필·실행·상세 결과를 DataSet 전용 DbContext에 저장합니다.</summary>
 public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : IDataSetValidationRepository
 {
+    public async Task<DataSetValidationProfilePage> GetProfilesAsync(Guid tenantId, string? search,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var profiles = dbContext.ValidationProfiles.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(search)) profiles = profiles.Where(x => x.Name.Contains(search.Trim()));
+        var totalCount = await profiles.CountAsync(cancellationToken);
+        var rows = await profiles.OrderBy(x => x.Name).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize).ToArrayAsync(cancellationToken);
+        var ids = rows.Select(x => x.Id).ToArray();
+        var revisions = await dbContext.ValidationProfileRevisions.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && ids.Contains(x.ProfileId))
+            .ToListAsync(cancellationToken);
+        var items = rows.Select(profile =>
+        {
+            var revision = revisions.Where(x => x.ProfileId == profile.Id)
+                .OrderByDescending(x => x.Revision).FirstOrDefault();
+            return new DataSetValidationProfileSnapshot(profile.Id, profile.TenantId, profile.Name,
+                revision?.Revision ?? 0, revision?.DefinitionJson ?? "{}", revision?.CreatedAtUtc ?? profile.CreatedAtUtc);
+        }).ToArray();
+        return new DataSetValidationProfilePage(items, totalCount, page, pageSize);
+    }
+
+    public async Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
+        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = dbContext.ValidationExecutions.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (dataSetId.HasValue) query = query.Where(x => x.DataSetId == dataSetId.Value);
+        if (profileId.HasValue) query = query.Where(x => x.ProfileId == profileId.Value);
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value.ToString());
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = (await query.ToListAsync(cancellationToken))
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize)
+            .Select(ToSnapshot).ToArray();
+        return new DataSetValidationExecutionPage(items, totalCount, page, pageSize);
+    }
+
     public async Task<DataSetValidationProfileSnapshot?> GetProfileAsync(
         Guid tenantId, Guid profileId, int revision, CancellationToken cancellationToken = default)
     {
@@ -335,6 +376,13 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
             execution.ErrorCount, execution.WarningCount, execution.DetailItemCount,
             execution.DetailTruncated, execution.RuleCountsJson, execution.FailureCode,
             execution.FailureMessage, execution.CreatedAtUtc, execution.CompletedAtUtc);
+
+    private static void ValidatePage(int page, int pageSize)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        _ = checked((page - 1) * pageSize);
+    }
 
     private async Task<bool> SaveFencedAsync(
         DataSetValidationExecution execution, CancellationToken cancellationToken)

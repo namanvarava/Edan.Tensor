@@ -18,6 +18,48 @@ public static class DataSetValidationEndpoints
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
 
+        memberGroup.MapGet("/validation-profiles", async (Guid tenantId, string? search, int page, int pageSize,
+            DataSetValidationService service, CancellationToken token) =>
+        {
+            try
+            {
+                var result = await service.GetProfilesAsync(tenantId, search, page == 0 ? 1 : page,
+                    pageSize == 0 ? 50 : pageSize, token);
+                return Results.Ok(new
+                {
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    Items = result.Items.Select(x => new
+                    {
+                        x.Id, x.TenantId, x.Name, x.Revision, x.DefinitionJson, x.CreatedAtUtc
+                    })
+                });
+            }
+            catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new ApiError("dataset.validation.invalid_query", ex.Message)); }
+            catch (OverflowException) { return Results.BadRequest(new ApiError("dataset.validation.invalid_page", "페이지 범위가 너무 큽니다.")); }
+        }).WithName("GetDataSetValidationProfiles");
+
+        memberGroup.MapGet("/validations", async (Guid tenantId, Guid? dataSetId, Guid? profileId,
+            DataSetValidationStatus? status, int page, int pageSize,
+            DataSetValidationService service, CancellationToken token) =>
+        {
+            try
+            {
+                var result = await service.GetExecutionsAsync(tenantId, dataSetId, profileId, status,
+                    page == 0 ? 1 : page, pageSize == 0 ? 50 : pageSize, token);
+                return Results.Ok(new
+                {
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    Items = result.Items.Select(ToResponse)
+                });
+            }
+            catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new ApiError("dataset.validation.invalid_query", ex.Message)); }
+            catch (OverflowException) { return Results.BadRequest(new ApiError("dataset.validation.invalid_page", "페이지 범위가 너무 큽니다.")); }
+        }).WithName("GetDataSetValidations");
+
         memberGroup.MapGet("/validations/{executionId:guid}", async (
             Guid tenantId, Guid executionId, DataSetValidationService service, CancellationToken token) =>
         {

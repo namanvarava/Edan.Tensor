@@ -10,6 +10,14 @@ public interface IScopedMembershipRepository
     Task<bool> HasOrganizationWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default);
     Task<bool> HasOrganizationManagementAccessAsync(TenantId tenantId, OrganizationId organizationId, string subjectId, CancellationToken cancellationToken = default);
     Task<bool> HasProjectWriteAccessAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, string subjectId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OrganizationMembership>> GetOrganizationMembershipsAsync(TenantId tenantId, OrganizationId organizationId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<OrganizationMembership>>([]);
+    Task<IReadOnlyList<ProjectMembership>> GetProjectMembershipsAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ProjectMembership>>([]);
+    Task<OrganizationMembership?> GetOrganizationMembershipAsync(TenantId tenantId, OrganizationId organizationId, OrganizationMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<OrganizationMembership?>(null);
+    Task<ProjectMembership?> GetProjectMembershipAsync(TenantId tenantId, OrganizationId organizationId, ProjectId projectId, ProjectMembershipId membershipId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<ProjectMembership?>(null);
     void Add(OrganizationMembership membership);
     void Add(ProjectMembership membership);
 }

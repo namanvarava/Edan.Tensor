@@ -5,6 +5,15 @@ namespace EDAN.Tensor.DataSet.Application.Abstractions;
 /// <summary>검증 프로필과 실행 결과를 Tenant 범위로 영속화하는 계약입니다.</summary>
 public interface IDataSetValidationRepository
 {
+    Task<DataSetValidationProfilePage> GetProfilesAsync(Guid tenantId, string? search, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("검증 프로필 목록 조회가 구현되지 않았습니다.");
+
+    Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
+        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("검증 실행 목록 조회가 구현되지 않았습니다.");
+
     Task<DataSetValidationProfileSnapshot?> GetProfileAsync(
         Guid tenantId, Guid profileId, int revision, CancellationToken cancellationToken = default);
 
@@ -86,3 +95,11 @@ public sealed record DataSetValidationRowWrite(
     int RowNumber,
     IReadOnlyList<DataSetValidationFinding> Findings,
     IReadOnlyList<DataSetValidationDuplicateObservation> DuplicateObservations);
+
+/// <summary>검증 프로필 목록의 필터·페이징 결과입니다.</summary>
+public sealed record DataSetValidationProfilePage(
+    IReadOnlyList<DataSetValidationProfileSnapshot> Items, int TotalCount, int Page, int PageSize);
+
+/// <summary>검증 실행 목록의 필터·페이징 결과입니다.</summary>
+public sealed record DataSetValidationExecutionPage(
+    IReadOnlyList<DataSetValidationExecutionSnapshot> Items, int TotalCount, int Page, int PageSize);

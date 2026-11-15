@@ -7,6 +7,26 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
 /// <summary>외부 전달 상태를 Worker SQLite에 Tenant 범위로 저장합니다.</summary>
 public sealed class ExternalDeliveryRepository(WorkerDbContext dbContext) : IExternalDeliveryRepository
 {
+    public async Task<ExternalDeliveryPage> GetPageAsync(Guid tenantId, ExternalDeliveryStatus? status,
+        string? targetHost, string? errorCode, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        var query = dbContext.ExternalDeliveries.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        if (!string.IsNullOrWhiteSpace(targetHost))
+            query = query.Where(x => x.TargetUri.Contains(targetHost.Trim()));
+        if (!string.IsNullOrWhiteSpace(errorCode)) query = query.Where(x => x.LastErrorCode == errorCode);
+        var deliveries = await query.ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) deliveries = deliveries.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) deliveries = deliveries.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        var totalCount = deliveries.Count;
+        var items = deliveries.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize).Select(ToSnapshot).ToArray();
+        return new ExternalDeliveryPage(items, totalCount, page, pageSize);
+    }
+
     /// <inheritdoc />
     public async Task<ExternalDeliveryCreateResult> CreateOrGetAsync(Guid tenantId, string targetUri, string payload,
         string idempotencyKey, int maxAttempts, DateTimeOffset nowUtc,
@@ -61,6 +81,17 @@ public sealed class ExternalDeliveryRepository(WorkerDbContext dbContext) : IExt
             .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.IdempotencyKey == idempotencyKey,
                 cancellationToken);
         return delivery is null ? null : ToSnapshot(delivery);
+    }
+
+    public async Task<ExternalDeliverySnapshot?> PrepareRetryAsync(Guid tenantId, Guid deliveryId,
+        CancellationToken cancellationToken = default)
+    {
+        var delivery = await dbContext.ExternalDeliveries.SingleOrDefaultAsync(
+            x => x.TenantId == tenantId && x.Id == deliveryId, cancellationToken);
+        if (delivery is null) return null;
+        delivery.PrepareRetry();
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToSnapshot(delivery);
     }
 
     /// <inheritdoc />

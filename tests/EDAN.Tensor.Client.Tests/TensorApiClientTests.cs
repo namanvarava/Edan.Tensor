@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using EDAN.Tensor.Client;
 using EDAN.Tensor.Client.Contracts;
 using Xunit;
@@ -34,6 +35,109 @@ public sealed class TensorApiClientTests
         var membership = Assert.Single(memberships);
         Assert.Equal(tenantId, membership.TenantId);
         Assert.Equal("platform_admin", membership.Role);
+    }
+
+    [Fact]
+    public async Task GetOrganizationsAsync_EncodesDirectoryFiltersAndPaging()
+    {
+        var tenantId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/organizations", request.RequestUri!.AbsolutePath);
+            Assert.Contains("search=alpha%20team", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Contains("page=2", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Contains("pageSize=10", request.RequestUri.Query, StringComparison.Ordinal);
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            return JsonResponse($"{{\"items\":[{{\"id\":\"{Guid.NewGuid():D}\",\"tenantId\":\"{tenantId:D}\",\"code\":\"ORG\",\"name\":\"Alpha Team\",\"status\":\"Active\"}}],\"totalCount\":1,\"page\":2,\"pageSize\":10}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var page = await client.GetOrganizationsAsync(tenantId, "alpha team", page: 2, pageSize: 10);
+
+        Assert.Single(page.Items);
+        Assert.Equal("Alpha Team", page.Items[0].Name);
+        Assert.Equal(2, page.Page);
+    }
+
+    [Fact]
+    public async Task TenantScopedOperationalContractsDeserializeAndPreserveHeaders()
+    {
+        var tenantId = Guid.NewGuid();
+        var deliveryId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("authorization-audit", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":1,\"pageSize\":50,\"items\":[{\"id\":\"" + Guid.NewGuid() + "\",\"subjectId\":\"user-1\",\"action\":\"read\",\"resourceType\":\"DataSet\",\"scope\":\"Tenant\",\"isAllowed\":true,\"reasonCode\":\"policy.allow\",\"matchedPolicyId\":null,\"occurredAtUtc\":\"2026-01-01T00:00:00Z\"}]}");
+            if (request.RequestUri.AbsolutePath.EndsWith("usage", StringComparison.Ordinal))
+                return JsonResponse("{\"tenantBytes\":12,\"tenantDataSetCount\":1,\"organizationBytes\":8,\"organizationDataSetCount\":1,\"projectBytes\":4,\"projectDataSetCount\":1,\"dataSetBytes\":4,\"limits\":{\"tenantLimitBytes\":100,\"organizationLimitBytes\":80,\"projectLimitBytes\":60,\"dataSetLimitBytes\":40},\"utilizationPercent\":{\"tenant\":12,\"organization\":10,\"project\":6.67,\"dataSet\":10},\"warningThresholdPercent\":80,\"warnings\":[],\"measuredAtUtc\":\"2026-01-01T00:00:00Z\"}");
+            return JsonResponse("{\"id\":\"" + deliveryId + "\",\"tenantId\":\"" + tenantId + "\",\"targetUri\":\"https://example.test/hook\",\"idempotencyKey\":\"delivery-1\",\"status\":\"Queued\",\"attemptCount\":0,\"maxAttempts\":3,\"lastErrorCode\":null,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"completedAtUtc\":null}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var audit = await client.GetAuthorizationAuditAsync(tenantId);
+        var usage = await client.GetDataSetStorageUsageAsync(tenantId, Guid.NewGuid());
+        var delivery = await client.GetExternalDeliveryAsync(tenantId, deliveryId);
+
+        Assert.Equal("user-1", Assert.Single(audit.Items).SubjectId);
+        Assert.Equal(12, usage.TenantBytes);
+        Assert.Equal(deliveryId, delivery!.Id);
+    }
+
+    [Fact]
+    public async Task CreateExternalDeliveryAsync_SendsTenantAndIdempotencyContract()
+    {
+        var tenantId = Guid.NewGuid();
+        var deliveryId = Guid.NewGuid();
+        var workerTaskId = Guid.NewGuid();
+        var handler = new RecordingHandler(async (request, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/worker/deliveries", request.RequestUri!.AbsolutePath);
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            Assert.Equal("desktop-delivery-1", request.Headers.GetValues("Idempotency-Key").Single());
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            Assert.Contains("https://example.test/hook", body, StringComparison.Ordinal);
+            return JsonResponse($"{{\"delivery\":{{\"id\":\"{deliveryId:D}\",\"tenantId\":\"{tenantId:D}\",\"targetUri\":\"https://example.test/hook\",\"idempotencyKey\":\"desktop-delivery-1\",\"status\":\"Queued\",\"attemptCount\":0,\"maxAttempts\":3,\"lastErrorCode\":null,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"completedAtUtc\":null}},\"workerTaskId\":\"{workerTaskId:D}\",\"created\":true}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+        using var payload = JsonDocument.Parse("{\"event\":\"screen-test\"}");
+
+        var response = await client.CreateExternalDeliveryAsync(tenantId,
+            new CreateExternalDeliveryRequestContract("https://example.test/hook", payload.RootElement, 3),
+            "desktop-delivery-1");
+
+        Assert.Equal(deliveryId, response.Delivery.Id);
+        Assert.Equal(workerTaskId, response.WorkerTaskId);
+    }
+
+    [Fact]
+    public async Task AuthorizationAuditOperationalContractsUseTenantScopedRoutes()
+    {
+        var tenantId = Guid.NewGuid();
+        var archiveId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("/integrity", StringComparison.Ordinal))
+                return JsonResponse($"{{\"tenantId\":\"{tenantId:D}\",\"fromUtc\":\"2026-01-01T00:00:00Z\",\"toUtc\":\"2026-01-02T00:00:00Z\",\"recordCount\":2,\"sha256\":\"ABC\"}}");
+            return JsonResponse($"{{\"archiveId\":\"{archiveId:D}\",\"tenantId\":\"{tenantId:D}\",\"fromUtc\":\"2026-01-01T00:00:00Z\",\"toUtc\":\"2026-01-02T00:00:00Z\",\"recordCount\":2,\"sha256\":\"ABC\",\"sizeBytes\":128}}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+        var from = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        var to = DateTimeOffset.Parse("2026-01-02T00:00:00Z");
+
+        var integrity = await client.GetAuthorizationAuditIntegrityAsync(tenantId, from, to);
+        var archive = await client.CreateAuthorizationAuditArchiveAsync(tenantId,
+            new CreateAuthorizationAuditArchiveRequestContract(from, to));
+
+        Assert.Equal(2, integrity.RecordCount);
+        Assert.Equal(archiveId, archive.ArchiveId);
     }
 
     /// <summary>검증 등록이 경로 Tenant와 Idempotency-Key를 함께 전달합니다.</summary>
@@ -166,6 +270,66 @@ public sealed class TensorApiClientTests
             client.GetWorkerDeadLettersAsync(Guid.NewGuid(), pageSize: 101));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             client.GetWorkerDeadLettersAsync(Guid.NewGuid(), page: int.MaxValue));
+    }
+
+    /// <summary>추가된 화면 목록 계약이 필터·페이징 query와 Tenant 경계를 보존합니다.</summary>
+    [Fact]
+    public async Task RegistryCollectionContractsSendFiltersAndDeserializePages()
+    {
+        var tenantId = Guid.NewGuid();
+        var dataSetId = Guid.NewGuid();
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.RequestUri!.AbsolutePath.EndsWith("/authorization-policies", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":2,\"pageSize\":10,\"items\":[{\"id\":\"" + Guid.NewGuid() + "\",\"organizationId\":null,\"projectId\":null,\"subjectId\":\"user-1\",\"action\":\"read\",\"resourceType\":\"DataSet\",\"effect\":\"Allow\",\"priority\":1,\"isEnabled\":true,\"createdAtUtc\":\"2026-01-01T00:00:00Z\"}]}");
+            if (request.RequestUri.AbsolutePath.EndsWith("/datasets", StringComparison.Ordinal))
+                return JsonResponse("{\"totalCount\":1,\"page\":1,\"pageSize\":5,\"items\":[{\"id\":\"" + dataSetId + "\",\"tenantId\":\"" + tenantId + "\",\"organizationId\":\"" + Guid.NewGuid() + "\",\"projectId\":\"" + Guid.NewGuid() + "\",\"name\":\"Orders\",\"storageAdapter\":\"sqlite\",\"contentFormat\":\"json-array\",\"status\":\"Active\",\"version\":2,\"createdAtUtc\":\"2026-01-01T00:00:00Z\",\"currentSchemaVersion\":1}]}");
+            return JsonResponse("{\"totalCount\":0,\"page\":1,\"pageSize\":5,\"items\":[]}");
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var policies = await client.GetAuthorizationPoliciesAsync(tenantId, subjectId: "user-1",
+            isEnabled: true, page: 2, pageSize: 10);
+        var dataSets = await client.GetDataSetsAsync(tenantId, search: "Orders", pageSize: 5);
+
+        Assert.Single(policies.Items);
+        Assert.Equal(2, policies.Page);
+        Assert.Single(dataSets.Items);
+        Assert.Equal(dataSetId, dataSets.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task MembershipContractsSendScopeFiltersAndPatchPayload()
+    {
+        var tenantId = Guid.NewGuid();
+        var membershipId = Guid.NewGuid();
+        var handler = new RecordingHandler(async (request, cancellationToken) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            if (request.Method == HttpMethod.Get)
+            {
+                Assert.Equal($"/api/platform/tenants/{tenantId:D}/memberships", request.RequestUri!.AbsolutePath);
+                Assert.Contains("subjectId=user-1", request.RequestUri.Query, StringComparison.Ordinal);
+                Assert.Contains("status=Active", request.RequestUri.Query, StringComparison.Ordinal);
+                return JsonResponse($"{{\"totalCount\":1,\"page\":1,\"pageSize\":20,\"items\":[{{\"id\":\"{membershipId:D}\",\"tenantId\":\"{tenantId:D}\",\"subjectId\":\"user-1\",\"role\":\"Member\",\"status\":\"Active\"}}]}}");
+            }
+
+            Assert.Equal(HttpMethod.Patch, request.Method);
+            Assert.Equal($"/api/platform/tenants/{tenantId:D}/memberships/{membershipId:D}", request.RequestUri!.AbsolutePath);
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            Assert.Contains("revoke", body, StringComparison.OrdinalIgnoreCase);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        var page = await client.GetTenantMembershipsFilteredAsync(tenantId, "user-1", "Active", pageSize: 20);
+        await client.UpdateTenantMembershipAsync(tenantId, membershipId, new UpdateMembershipRequestContract(null, true));
+
+        Assert.Single(page.Items);
+        Assert.Equal(membershipId, page.Items[0].Id);
     }
 
     private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK) =>

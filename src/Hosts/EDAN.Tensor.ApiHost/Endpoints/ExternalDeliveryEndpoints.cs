@@ -3,6 +3,7 @@ using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Worker.Application.Abstractions;
 using EDAN.Tensor.Worker.Application.ExternalDelivery;
 using EDAN.Tensor.Worker.Application.Execution;
+using EDAN.Tensor.Worker.Domain.Model;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -17,6 +18,26 @@ public static class ExternalDeliveryEndpoints
             .RequireAuthorization("TenantMember")
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+
+        memberGroup.MapGet("", async (Guid tenantId, ExternalDeliveryStatus? status,
+            string? targetHost, string? errorCode, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+            ExternalDeliveryService service, CancellationToken token, int page = 1, int pageSize = 50) =>
+        {
+            try
+            {
+                var result = await service.GetPageAsync(tenantId, status, targetHost, errorCode,
+                    fromUtc, toUtc, page, pageSize, token);
+                return Results.Ok(new
+                {
+                    result.TotalCount,
+                    result.Page,
+                    result.PageSize,
+                    Items = result.Items.Select(ToResponse)
+                });
+            }
+            catch (ArgumentOutOfRangeException ex) { return Results.BadRequest(new ApiError("external.delivery.invalid_query", ex.Message)); }
+            catch (OverflowException) { return Results.BadRequest(new ApiError("external.delivery.invalid_page", "페이지 범위가 너무 큽니다.")); }
+        }).WithName("GetExternalDeliveries");
 
         memberGroup.MapGet("/{deliveryId:guid}", async (Guid tenantId, Guid deliveryId,
             ExternalDeliveryService service, CancellationToken token) =>
@@ -85,6 +106,34 @@ public static class ExternalDeliveryEndpoints
                 return Results.BadRequest(new { Code = "external.delivery.invalid_request", Description = exception.Message });
             }
         }).WithName("CreateExternalDelivery");
+
+        adminGroup.MapPost("/{deliveryId:guid}/retry", async (Guid tenantId, Guid deliveryId,
+            HttpRequest httpRequest, ExternalDeliveryService service, WorkerTaskEnqueueService enqueue,
+            CancellationToken token) =>
+        {
+            if (!ApiRequestValidation.TryGetIdempotencyKey(httpRequest,
+                    "external.delivery.retry_idempotency_key_required",
+                    "external.delivery.retry_idempotency_key_too_long",
+                    out var idempotencyKey, out var headerError))
+                return Results.BadRequest(headerError);
+            try
+            {
+                var delivery = await service.PrepareRetryAsync(tenantId, deliveryId, token);
+                if (delivery is null)
+                    return Results.NotFound(new ApiError("external.delivery.not_found", "Tenant 범위에서 외부 전달을 찾을 수 없습니다."));
+                var task = await enqueue.EnqueueAsync(tenantId, idempotencyKey,
+                    ExternalDeliveryTaskContract.TaskType,
+                    ExternalDeliveryTaskContract.CreatePayloadReference(delivery.Id),
+                    delivery.MaxAttempts, token);
+                if (task.Conflict)
+                    return Results.Conflict(new ApiError("external.delivery.retry_idempotency_conflict",
+                        "동일 Idempotency-Key가 다른 Worker 작업으로 이미 사용되었습니다."));
+                return Results.Accepted($"/api/platform/tenants/{tenantId}/worker/deliveries/{delivery.Id}",
+                    new { Delivery = ToResponse(delivery), WorkerTaskId = task.Task.Id, task.Created });
+            }
+            catch (WorkerTaskTypeNotAvailableException) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
+            catch (InvalidOperationException ex) { return Results.Conflict(new ApiError("external.delivery.retry_not_allowed", ex.Message)); }
+        }).WithName("RetryExternalDelivery");
 
         return endpoints;
     }

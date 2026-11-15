@@ -57,6 +57,13 @@ public sealed class AuthorizationPolicyService(
     public Task<IReadOnlyList<AuthorizationPolicy>> GetByTenantAsync(TenantId tenantId,
         CancellationToken cancellationToken = default) => policies.GetByTenantAsync(tenantId, cancellationToken);
 
+    /// <summary>Tenant 범위 정책을 범위·주체·동작·효과·활성 상태로 필터링해 페이지 조회합니다.</summary>
+    public Task<AuthorizationPolicyPage> GetPageAsync(TenantId tenantId, OrganizationId? organizationId,
+        ProjectId? projectId, string? subjectId, string? action, AuthorizationPolicyEffect? effect,
+        bool? isEnabled, int page, int pageSize, CancellationToken cancellationToken = default) =>
+        policies.GetPageAsync(tenantId, organizationId, projectId, subjectId, action, effect,
+            isEnabled, page, pageSize, cancellationToken);
+
     /// <summary>정책 효과와 우선순위를 변경하고 변경 전후 상태를 감사 기록으로 남깁니다.</summary>
     public Task<Result<AuthorizationPolicyId>> UpdateAsync(TenantId tenantId, AuthorizationPolicyId policyId,
         AuthorizationPolicyEffect effect, int priority, string actorSubjectId,

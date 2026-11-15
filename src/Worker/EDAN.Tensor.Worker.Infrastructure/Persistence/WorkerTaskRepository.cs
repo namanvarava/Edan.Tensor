@@ -9,6 +9,23 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
     public Task<WorkerTask?> GetAsync(Guid tenantId, Guid taskId, CancellationToken cancellationToken = default) =>
         db.WorkerTasks.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == taskId, cancellationToken);
 
+    public async Task<WorkerTaskPage> GetPageAsync(Guid tenantId, string? taskType, WorkerTaskStatus? status,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = db.WorkerTasks.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(taskType)) query = query.Where(x => x.TaskType == taskType);
+        if (status.HasValue) query = query.Where(x => x.Status == status.Value);
+        var tasks = await query.ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) tasks = tasks.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) tasks = tasks.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        var totalCount = tasks.Count;
+        var items = tasks.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize).ToArray();
+        return new WorkerTaskPage(items, totalCount, page, pageSize);
+    }
+
     public async Task<IReadOnlyList<Guid>> GetReadyTenantIdsAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken = default, Guid? afterTenantId = null)
     {
         if (take is < 1 or > 1000) throw new ArgumentOutOfRangeException(nameof(take));
@@ -199,6 +216,42 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
             .ToArrayAsync(cancellationToken);
     }
 
+    public async Task<WorkerDeadLetterPage> GetDeadLetteredPageAsync(Guid tenantId, string? taskType,
+        string? errorCode, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = db.WorkerTasks.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.Status == WorkerTaskStatus.DeadLettered);
+        if (!string.IsNullOrWhiteSpace(taskType)) query = query.Where(x => x.TaskType == taskType);
+        if (!string.IsNullOrWhiteSpace(errorCode)) query = query.Where(x => x.LastErrorCode == errorCode);
+        var tasks = await query.ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) tasks = tasks.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) tasks = tasks.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        var totalCount = tasks.Count;
+        var items = tasks.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize).ToArray();
+        return new WorkerDeadLetterPage(items, totalCount, page, pageSize);
+    }
+
+    public async Task<WorkerReplayHistoryPage> GetReplayHistoryAsync(Guid tenantId, Guid? originalTaskId,
+        DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePage(page, pageSize);
+        var query = db.WorkerTaskReplayRecords.AsNoTracking().Where(x => x.TenantId == tenantId);
+        if (originalTaskId.HasValue) query = query.Where(x => x.OriginalTaskId == originalTaskId.Value);
+        var records = await query.ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) records = records.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) records = records.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        var totalCount = records.Count;
+        var items = records.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * pageSize)).Take(pageSize)
+            .Select(x => new WorkerReplayHistoryView(x.Id, x.OriginalTaskId, x.ReplayTaskId,
+                x.ReplayRequestId, x.RequestedBy, x.CreatedAtUtc)).ToArray();
+        return new WorkerReplayHistoryPage(items, totalCount, page, pageSize);
+    }
+
     public async Task<Guid?> ReplayAsync(Guid tenantId, Guid taskId, Guid replayRequestId, string requestedBy,
         DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
     {
@@ -274,4 +327,11 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         new(existing, created, existing.TaskType != requested.TaskType || existing.PayloadReference != requested.PayloadReference || existing.MaxAttempts != requested.MaxAttempts);
     public void Add(WorkerTask task) => db.WorkerTasks.Add(task);
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => db.SaveChangesAsync(cancellationToken);
+
+    private static void ValidatePage(int page, int pageSize)
+    {
+        if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
+        if (pageSize is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(pageSize));
+        _ = checked((page - 1) * pageSize);
+    }
 }
