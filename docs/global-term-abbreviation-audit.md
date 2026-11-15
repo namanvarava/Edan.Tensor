@@ -460,15 +460,15 @@
 
 기존 116행에서 영문명 기준 중복을 통합한 110개 항목이다. Role은 rol을 대표로 선택하고 role은 레거시 별칭으로 보존했다. Creator·Updater 및 시간·여부·정렬 복합 항목은 독립 약어가 아니라 조합 규칙으로 분류했다.
 
-| 영문 풀네임 | 기존 약어 | 정규화 약어·조합 | 한글명 | 분류 | 판정 |
+| 기존 영문명 | 정규화 대표 영문명 | 기존 약어 | 정규화 약어·조합 | 한글명 | 분류 | 판정 |
 |---|---|---|---|---|---|
-| Action | act / act | act | 행위·행위자 | 공통 | 중복 통합 |
+| Action | Action | act / act | act | 행위 | 공통 | 중복 통합·행위자 의미 제거 |
 | Adapter | adp | adp | 어댑터 | 공통 | 기존 약어 유지 |
 | After | aft | aft | 이후 |  | 기존 약어 유지 |
 | Allowed | alw | alw | 허용 여부 | 권한 | 기존 약어 유지 |
 | Archive | arc / arc | arc | 아카이브 | 보존 | 중복 통합 |
 | Attempt | attm | attm | 시도 | 수량 | 기존 약어 유지 |
-| Audit | aud | aud | 감사 | 권한 | 기존 약어 유지 |
+| Audit | Authorization Audit | aud | aud | 권한 감사 | 권한 | 의미 분리 |
 | Authorization | auth | auth | 권한 부여 |  | 기존 약어 유지 |
 | Before | bef | bef | 이전 |  | 기존 약어 유지 |
 | Bytes | byt | byt | 바이트 | 공통 | 기존 약어 유지 |
@@ -486,7 +486,7 @@
 | DateTime | dt | dtt | 일시 | 공통 | 표준 약어 전환 |
 | Delete | del | del | 삭제 | 공통 | 기존 약어 유지 |
 | Delete Yes/No | delyn | del_ynf | 삭제여부 | 공통 | 복합 조합 규칙 |
-| Delivery | dlv | dlv | 외부 전달 | 작업 | 기존 약어 유지 |
+| Delivery | External Delivery | dlv | dlv | 외부 전달 | 작업 | 의미 분리 |
 | Description | desc | desc | 설명 | 작업 | 기존 약어 유지 |
 | Detail | dtl | dtl | 상세 | 데이터 | 기존 약어 유지 |
 | Display | dsp | dsp | 표시 | 공통 | 기존 약어 유지 |
@@ -498,7 +498,7 @@
 | Event | evt | evt | 이벤트 | 공통 | 기존 약어 유지 |
 | Execution | exc | exc | 실행 | 데이터 | 기존 약어 유지 |
 | Expected | exp | exp | 예상·기대 | 공통 | 기존 약어 유지 |
-| Failure | fail | fail | 실패 | 오류 | 기존 약어 유지 |
+| Failure | Execution Failure | fail | fail | 실행 실패 | 오류 | 의미 분리 |
 | Fencing | fence | fcn | 펜싱 | 공통 | 표준 약어 전환 |
 | Field | fld | fld | 필드 | 공통 | 기존 약어 유지 |
 | Format | fmt | fmt | 형식 | 공통 | 기존 약어 유지 |
@@ -519,7 +519,7 @@
 | Name | nm | nam | 이름 | 공통 | 표준 약어 전환 |
 | Number | num | num | 번호 | 공통 | 기존 약어 유지 |
 | Occurred | occ | occ | 발생 | 공통 | 기존 약어 유지 |
-| Operation | op | opr | 작업 동작 | 공통 | 표준 약어 전환 |
+| Operation | System Operation | op | opr | 시스템 작업 동작 | 공통 | 표준 약어 전환·의미 분리 |
 | Organization | org | org | 조직 | 업무 | 기존 약어 유지 |
 | Original | orig | orig | 원본 | 공통 | 기존 약어 유지 |
 | Payload | pld | pld | 페이로드 | 공통 | 기존 약어 유지 |
@@ -536,12 +536,12 @@
 | Reference | ref | ref | 참조 | 공통 | 기존 약어 유지 |
 | Replay | rpl | rpl | 재실행 | 작업 | 기존 약어 유지 |
 | Request | req | req | 요청 | 공통 | 기존 약어 유지 |
-| Resource | rsrc | rsrc | 리소스 | 권한 | 기존 약어 유지 |
+| Resource | Authorization Resource | rsrc | rsrc | 권한 적용 리소스 | 권한 | 의미 분리 |
 | Result | rslt | rslt | 결과 | 공통 | 기존 약어 유지 |
 | Retention | rtn | rtn | 보존 | 보존 | 기존 약어 유지 |
 | Revision | rev | rev | 개정 버전 | 버전 | 기존 약어 유지 |
-| Role | role / rol | rol | 역할 | 권한 | 중복 통합 |
-| Schedule | schd | schd | 스케줄 | 운영 | 기존 약어 유지 |
+| Role | Access Role | role / rol | rol | 접근 권한 역할 | 권한 | 중복 통합·의미 분리 |
+| Schedule | Execution Schedule | schd | schd | 예약 실행 일정 | 운영 | 의미 분리 |
 | Schema | schm | schm | 스키마 | 데이터 | 기존 약어 유지 |
 | Scope | scp | scp | 범위 | 공통 | 기존 약어 유지 |
 | Sequence | seq | seq | 일련번호 | 공통 | 기존 약어 유지 |
@@ -554,7 +554,7 @@
 | Subject | sub | sub | 인증 주체 | 인증 | 기존 약어 유지 |
 | Successful | succ | succ | 성공 여부 | 결과 | 기존 약어 유지 |
 | Target | tgt | tgt | 대상 | 공통 | 기존 약어 유지 |
-| Task | tsk | tsk | 작업 | 작업 | 기존 약어 유지 |
+| Task | Worker Task | tsk | tsk | 비동기 작업 요청 | 작업 | 의미 분리 |
 | Tenant | tnt | tnt | 테넌트 | 업무 | 기존 약어 유지 |
 | Threshold | thr | thr | 임계값 | 공통 | 기존 약어 유지 |
 | Total | tot | tot | 전체 | 수량 | 기존 약어 유지 |
