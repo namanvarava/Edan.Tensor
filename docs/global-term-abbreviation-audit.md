@@ -98,7 +98,7 @@
 | Country | cou | 국가 | COM, ERP | 국가·지역 기준정보 | 신규 후보 · 약어 배정 |
 | Currency | cur | 통화 | ERP-FIN, COML | 금액의 통화 단위. 환율과 분리 | 신규 후보 · 약어 배정 |
 | Exchange Rate | era | 환율 | ERP-FIN, COML | 기준 통화 간 교환 비율과 유효기간 | 신규 후보 · 약어 배정 |
-| Unit of Measure | ume | 측정단위 | ERP, MES, QMS, TAG | 수량·측정값의 단위. 포장단위·재고단위·기준단위는 용도 관계로 관리 | 신규 후보 · 약어 배정 |
+| Unit of Measure | uom | 측정단위 | ERP, MES, QMS, TAG | 수량·측정값의 단위. 포장단위·재고단위·기준단위는 용도 관계로 관리 | 신규 후보 · 약어 배정 |
 | Calendar | cal | 달력 | COM, ERP, MES | 날짜·휴일·근무일 계산 기준 | 신규 후보 · 약어 배정 |
 | Shift | shi | 교대조 | ERP-HR, MES, MOM | 시간대별 인력·설비 운영조 | 신규 후보 · 약어 배정 |
 | Holiday | hol | 휴일 | COM, ERP-HR, MES | 업무·생산 달력에서 비근무로 처리되는 날짜 | 신규 후보 · 약어 배정 |
@@ -113,7 +113,7 @@
 | Lead | lea | 영업잠재고객 | CRM, ERP-SAL | 아직 거래기회로 확정되지 않은 잠재 수요 주체 | 신규 후보 · 약어 배정 |
 | Opportunity | opp | 영업기회 | CRM, ERP-SAL | 예상 매출 가능성이 있는 영업 활동 단위 | 신규 후보 · 약어 배정 |
 | Quotation | quo | 견적 | ERP-SAL, COML | 가격·조건을 제안하는 문서. 견적요청과 구분 | 신규 후보 · 약어 배정 |
-| Request for Quotation | rqu | 견적요청 | ERP-PUR, ERP-SAL | 공급자 또는 판매자에게 견적을 요청하는 행위·문서 | 신규 후보 · 약어 배정 |
+| Request for Quotation | rfq | 견적요청 | ERP-PUR, ERP-SAL | 공급자 또는 판매자에게 견적을 요청하는 행위·문서 | 신규 후보 · 약어 배정 |
 | Sales Order | sor | 수주 | ERP-SAL, COML | 고객의 구매 의사를 접수하고 판매 이행 대상으로 확정한 거래 | 신규 후보 · 약어 배정 |
 | Sales Order Line | sol | 수주항목 | ERP-SAL, COML | 수주 문서 내 품목·수량·가격 단위 | 신규 후보 · 약어 배정 |
 | Contract | cont | 계약 | ERP-SAL, ERP-PUR, COML | 당사자 간 법적·상업적 의무와 조건 | 신규 후보 · 약어 배정 |
@@ -178,21 +178,21 @@
 | Shipment Line | sli | 출하항목 | ERP-SAL, WMS | 출하 문서 내 품목·수량 단위 | 신규 후보 · 약어 배정 |
 | Delivery Route | dro | 배송경로 | TMS | 출발지와 목적지를 잇는 운송 경로 | 신규 후보 · 약어 배정 |
 | Freight | fre | 운임 | TMS, ERP-FIN | 운송 서비스의 비용 | 신규 후보 · 약어 배정 |
-| Proof of Delivery | pde | 배송증명 | TMS, ERP-SAL | 물품이 수령자에게 전달된 증거 | 신규 후보 · 약어 배정 |
+| Proof of Delivery | pod | 배송증명 | TMS, ERP-SAL | 물품이 수령자에게 전달된 증거. POD는 동일 개념의 약칭 | 신규 후보 · 약어 배정 |
 | Demand | dem | 수요 | SCM, ERP-PRD | 제품·자재·서비스가 필요로 되는 양 | 신규 후보 · 약어 배정 |
 | Demand Plan | dpl | 수요계획 | SCM, ERP-PRD | 미래 수요를 기간·품목별로 계획 | 신규 후보 · 약어 배정 |
 | Supply Plan | spl | 공급계획 | SCM, ERP-PRD | 수요 충족을 위한 조달·생산·재고 계획 | 신규 후보 · 약어 배정 |
 | Material Requirements Planning | mrp | 자재소요계획 | ERP-PRD, ERP-PUR | 생산·수요를 바탕으로 자재별 필요량·시점을 계산 | 신규 후보 · 약어 배정 |
 | Master Production Schedule | mps | 기준생산계획 | ERP-PRD | 완제품·주요 품목의 기간별 생산 계획 | 신규 후보 · 약어 배정 |
 | Production Plan | ppl | 생산계획 | ERP-PRD, MOM | 생산량·기간·자원에 대한 계획 | 신규 후보 · 약어 배정 |
-| Production Order | pod | 생산오더 | ERP-PRD, MES | 생산할 품목·수량·기간·공장을 지정하는 실행 관리 단위 | 신규 후보 · 약어 배정 |
+| Production Order | pord | 생산오더 | ERP-PRD, MES | 생산할 품목·수량·기간·공장을 지정하는 실행 관리 단위 | 신규 후보 · 약어 배정 |
 | Work Order | wor | 작업오더 | MES, EAM | 수행할 작업과 자원·일정을 지시하는 단위 | 신규 후보 · 약어 배정 |
 | Routing | rou | 공정경로 | ERP-PRD, MES, PLM | 제품 생산에 필요한 공정의 순서·경로 정의 / 생산 수행 순서와 작업 단계 | 신규 후보 · 약어 배정 |
 | Work Center | wce | 작업장 | ERP-PRD, MES, MOM | 생산능력·작업이 배정되는 자원 그룹 / 작업 수행 자원의 논리적 그룹 | 신규 후보 · 약어 배정 |
 | Capacity | capa | 생산능력 | ERP-PRD, MOM | 기간·자원별 처리 가능한 양 | 신규 후보 · 약어 배정 |
 | Work Schedule | wsc | 작업일정 | ERP-PRD, MES, MOM | 작업의 시간 배치. 계획과 실제 실행시간 구분 | 기존 Schedule 개념과 통합 |
 | Dispatch | disp | 작업배포 | MES, MOM | 실행 순서·자원을 정해 작업을 현장에 배정 | 신규 후보 · 약어 배정 |
-| Work in Process | wpr | 재공 | ERP-CST, MES, MOM | 생산공정에 투입되어 아직 완제품이 되지 않은 상태·수량 | 신규 후보 · 약어 배정 |
+| Work in Process | wip | 재공 | ERP-CST, MES, MOM | 생산공정에 투입되어 아직 완제품이 되지 않은 상태·수량. WIP는 동일 개념의 업계 약칭 | 기존 WIP 별칭 통합 |
 | Production Output | pou | 생산산출 | MES, ERP-CST | 생산 작업으로 산출된 수량 | 신규 후보 · 약어 배정 |
 | Material Consumption | mco | 자재소모 | ERP-PRD, MES | 생산에 실제 투입·소모된 자재량 | 신규 후보 · 약어 배정 |
 | Scrap | scr | 폐기 | MES, QMS, ERP-CST | 재사용·정상품 처리할 수 없어 폐기하는 수량·금액 | 신규 후보 · 약어 배정 |
@@ -221,7 +221,6 @@
 | Dispatch List | dli | 작업배포목록 | MES, MOM | 작업장·자원에 배정할 작업의 순서 목록 | 신규 후보 · 약어 배정 |
 | Production Run | pru | 생산실행 | MES, MOM | 특정 생산오더·조건으로 수행한 생산 실행 단위 | 신규 후보 · 약어 배정 |
 | Production Lot | plo | 생산로트 | MES, QMS | 동일 생산 조건으로 추적하는 산출물 집합 | 신규 후보 · 약어 배정 |
-| WIP | wip | 재공 | MES, MOM, ERP-CST | 생산 진행 중인 물품·수량 | 신규 후보 · 약어 배정 |
 | Production Line | prl | 생산라인 | MES, MOM | 공정·설비·작업장을 연결한 생산 흐름 | 신규 후보 · 약어 배정 |
 | Cell | cell | 제조셀 | MES, MOM | 특정 생산 목적을 위해 구성한 작업·설비 단위 | 신규 후보 · 약어 배정 |
 | Production Resource | prr | 생산자원 | MES, MOM | 인력·설비·도구·자재 등 실행에 필요한 자원 | 의미 분리 |
@@ -234,7 +233,7 @@
 | Actual Value | ava | 실측값 | MES, MOM, TAG | 실행 중 관측된 값 | 신규 후보 · 약어 배정 |
 | Downtime | dow | 비가동시간 | MES, MOM, EAM | 생산 가능한 시간이었으나 가동하지 못한 시간 / 설비가 가동하지 못한 시간. 고장 외 계획정지도 존재 | 신규 후보 · 약어 배정 |
 | Uptime | upt | 가동시간 | MES, MOM, EAM | 설비·라인이 가동 상태였던 시간 | 신규 후보 · 약어 배정 |
-| OEE | oee | 설비종합효율 | MES, MOM, EAM | 가용성·성능·품질 요소를 결합한 지표 | 신규 후보 · 약어 배정 |
+| Overall Equipment Effectiveness | oee | 설비종합효율 | MES, MOM, EAM | 가용성·성능·품질 요소를 결합한 지표 | 신규 후보 · 약어 배정 |
 | Andon | and | 안돈 | MES, MOM | 현장 이상·지원 요청·상태를 시각적으로 알리는 체계 | 신규 후보 · 약어 배정 |
 | Traceability | trac | 추적성 | MES, QMS, PLM | 원자재부터 생산·검사·출하까지 관계를 역·정방향으로 추적하는 능력 | 신규 후보 · 약어 배정 |
 | Genealogy | gen | 제품계보 | MES, QMS, PLM | 투입 로트·부품과 산출 제품 간 계보 관계 | 신규 후보 · 약어 배정 |
@@ -261,7 +260,7 @@
 | Preventive Action | pra | 예방조치 | QMS | 잠재 부적합 발생 가능성을 제거하는 조치 | 신규 후보 · 약어 배정 |
 | Root Cause | rca | 근본원인 | QMS, EAM | 문제를 발생시킨 근본 원인 | 신규 후보 · 약어 배정 |
 | Cause Analysis | can | 원인분석 | QMS, EAM | 현상·데이터로 원인을 규명하는 과정 | 신규 후보 · 약어 배정 |
-| CAPA | cpa | 시정·예방조치 | QMS | 시정조치와 예방조치를 묶어 관리하는 프로세스 | 신규 후보 · 약어 배정 |
+| Corrective and Preventive Action | capa | 시정·예방조치 | QMS | 시정조치와 예방조치를 묶어 관리하는 프로세스 | 신규 후보 · 약어 배정 |
 | Compliance Audit | adq | 심사 | QMS, IAM, ERP | 기준·요구사항 준수 여부를 독립적으로 확인 | 의미 분리 |
 | Calibration | cali | 교정 | QMS, EAM, TAG | 측정기 표시값과 표준값의 관계를 확인·조정 / 계측 결과와 표준값의 관계를 확인·조정 | 신규 후보 · 약어 배정 |
 | Gauge | gau | 게이지 | QMS, EAM | 측정에 사용하는 기기. Sensor와 구분 | 신규 후보 · 약어 배정 |
@@ -328,9 +327,9 @@
 | Sensor | sen | 센서 | IIOT, TAG, EAM | 물리량·상태를 감지하는 장치 | 신규 후보 · 약어 배정 |
 | Actuator | actu | 액추에이터 | IIOT, TAG, EAM | 제어 신호에 따라 물리 동작을 수행하는 장치 | 신규 후보 · 약어 배정 |
 | Controller | cor | 제어기 | IIOT, MES, MOM | 입력·로직에 따라 장치·공정을 제어하는 시스템 | 신규 후보 · 약어 배정 |
-| PLC | plc | 프로그래머블 로직 컨트롤러 | IIOT, TAG | 산업 현장 자동화 로직을 실행하는 제어 장치 | 신규 후보 · 약어 배정 |
-| DCS | dcs | 분산제어시스템 | IIOT, MOM | 공정 제어를 분산 수행하는 제어 시스템 | 신규 후보 · 약어 배정 |
-| SCADA | sca | 감시제어시스템 | IIOT, MOM | 설비·공정의 원격 감시·제어 시스템 | 신규 후보 · 약어 배정 |
+| Programmable Logic Controller | plc | 프로그래머블 로직 컨트롤러 | IIOT, TAG | 산업 현장 자동화 로직을 실행하는 제어 장치 | 신규 후보 · 약어 배정 |
+| Distributed Control System | dcs | 분산제어시스템 | IIOT, MOM | 공정 제어를 분산 수행하는 제어 시스템 | 신규 후보 · 약어 배정 |
+| Supervisory Control and Data Acquisition | scad | 감시제어·데이터취득 시스템 | IIOT, MOM | 설비·공정의 원격 감시·제어 시스템 | 신규 후보 · 약어 배정 |
 | Gateway | gat | 게이트웨이 | IIOT | 서로 다른 네트워크·프로토콜 간 데이터 중계 장치 | 신규 후보 · 약어 배정 |
 | Edge Device | ede | 엣지장치 | IIOT | 데이터 원천 근처에서 수집·전처리·제어를 수행하는 장치 | 신규 후보 · 약어 배정 |
 | Protocol | prot | 통신프로토콜 | IIOT | 장치 간 데이터 교환 규칙 | 신규 후보 · 약어 배정 |
