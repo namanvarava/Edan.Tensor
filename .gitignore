@@ -17,3 +17,22 @@ appsettings.*.Local.json
 *.p12
 *.key
 *.pem
+# 로컬 실행·검증 로그는 저장소 병합 대상이 아닙니다.
+*.log
+*.err.log
+*.out.log
+
+# 스키마 명세 생성 과정의 초안·렌더링·검사 임시자료는 최종 산출물과 구분합니다.
+outputs/edan-schema-dictionary-*/
+outputs/edan-schema-review-*/
+outputs/edan-schema-final-20261115/artifact-work/
+outputs/edan-schema-final-20261115/*.png
+outputs/edan-schema-final-20261115/*.inspect.ndjson
+
+# 개발 실행 중 생성되는 로컬 SQLite 파일은 저장소에 포함하지 않습니다.
+**/App_Data/*.db
+**/App_Data/*.db-shm
+**/App_Data/*.db-wal
+**/edan-worker.db
+**/edan-worker.db-shm
+**/edan-worker.db-wal
