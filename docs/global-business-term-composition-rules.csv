@@ -1,0 +1,8 @@
+구성 규칙 ID,원래 영문명,기존 약어,표준 조합,한글 의미,분류,처리
+"GBD-CMP-01","Created DateTime","crtdt","crt_dtt","최초 등록일시","공통","복합 조합 규칙"
+"GBD-CMP-02","Creator","crtmer","crt_by","최초 등록자","공통","복합 조합 규칙"
+"GBD-CMP-03","Delete Yes/No","delyn","del_ynf","삭제여부","공통","복합 조합 규칙"
+"GBD-CMP-04","Sort Number","sortnum","srt_num","정렬번호","공통","복합 조합 규칙"
+"GBD-CMP-05","Updated DateTime","upddt","upd_dtt","마지막 등록일시","공통","복합 조합 규칙"
+"GBD-CMP-06","Updater","updmer","upd_by","마지막 등록자","공통","복합 조합 규칙"
+"GBD-CMP-07","Use Yes/No","useyn","use_ynf","사용여부","공통","복합 조합 규칙"
