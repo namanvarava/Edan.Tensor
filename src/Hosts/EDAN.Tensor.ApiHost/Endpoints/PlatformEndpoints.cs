@@ -216,7 +216,7 @@ public static class PlatformEndpoints
 
         tenantGroup.MapGet("/{tenantId:guid}/authorization-policies",
             async (Guid tenantId, Guid? organizationId, Guid? projectId, string? subjectId, string? action,
-                AuthorizationPolicyEffect? effect, bool? isEnabled, int page, int pageSize,
+                AuthorizationPolicyEffect? effect, bool? isEnabled, int? page, int? pageSize,
                 AuthorizationPolicyService service, CancellationToken token) =>
             {
                 try
@@ -224,8 +224,8 @@ public static class PlatformEndpoints
                     var result = await service.GetPageAsync(new TenantId(tenantId),
                         organizationId is Guid organization ? new OrganizationId(organization) : null,
                         projectId is Guid project ? new ProjectId(project) : null,
-                        subjectId, action, effect, isEnabled, page == 0 ? 1 : page,
-                        pageSize == 0 ? 50 : pageSize, token);
+                        subjectId, action, effect, isEnabled, page ?? 1,
+                        pageSize ?? 50, token);
                     return Results.Ok(new
                     {
                         result.TotalCount,

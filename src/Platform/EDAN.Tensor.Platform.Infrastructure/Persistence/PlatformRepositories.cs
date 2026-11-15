@@ -9,7 +9,9 @@ public sealed class TenantRepository(PlatformDbContext db) : ITenantRepository
 {
     public Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken = default) => db.Tenants.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
     public async Task<IReadOnlyList<Tenant>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await db.Tenants.AsNoTracking().OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
+        (await db.Tenants.AsNoTracking().ToListAsync(cancellationToken))
+            .OrderBy(x => x.Code.Value)
+            .ToArray();
     public Task<bool> ExistsCodeAsync(TenantCode code, CancellationToken cancellationToken = default) => db.Tenants.AnyAsync(x => x.Code == code, cancellationToken);
     public void Add(Tenant tenant) => db.Tenants.Add(tenant);
 }
@@ -18,7 +20,9 @@ public sealed class OrganizationRepository(PlatformDbContext db) : IOrganization
 {
     public Task<Organization?> GetByIdAsync(OrganizationId id, CancellationToken cancellationToken = default) => db.Organizations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
     public async Task<IReadOnlyList<Organization>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
-        await db.Organizations.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
+        (await db.Organizations.AsNoTracking().Where(x => x.TenantId == tenantId).ToListAsync(cancellationToken))
+            .OrderBy(x => x.Code.Value)
+            .ToArray();
     public Task<bool> ExistsCodeAsync(TenantId tenantId, OrganizationCode code, CancellationToken cancellationToken = default) => db.Organizations.AnyAsync(x => x.TenantId == tenantId && x.Code == code, cancellationToken);
     public void Add(Organization organization) => db.Organizations.Add(organization);
 }
@@ -31,7 +35,9 @@ public sealed class ProjectRepository(PlatformDbContext db) : IProjectRepository
         var query = db.Projects.AsNoTracking().Where(x => x.TenantId == tenantId);
         if (organizationId is not null)
             query = query.Where(x => x.OrganizationId == organizationId);
-        return await query.OrderBy(x => x.Code.Value).ToListAsync(cancellationToken);
+        return (await query.ToListAsync(cancellationToken))
+            .OrderBy(x => x.Code.Value)
+            .ToArray();
     }
     public Task<bool> ExistsCodeAsync(OrganizationId organizationId, ProjectCode code, CancellationToken cancellationToken = default) => db.Projects.AnyAsync(x => x.OrganizationId == organizationId && x.Code == code, cancellationToken);
     public void Add(Project project) => db.Projects.Add(project);
@@ -41,7 +47,9 @@ public sealed class UserRepository(PlatformDbContext db) : IUserRepository
 {
     public Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken = default) => db.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
     public async Task<IReadOnlyList<User>> GetForTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default) =>
-        await db.Users.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Email.Value).ToListAsync(cancellationToken);
+        (await db.Users.AsNoTracking().Where(x => x.TenantId == tenantId).ToListAsync(cancellationToken))
+            .OrderBy(x => x.Email.Value)
+            .ToArray();
     public Task<bool> ExistsEmailAsync(TenantId tenantId, EmailAddress email, CancellationToken cancellationToken = default) => db.Users.AnyAsync(x => x.TenantId == tenantId && x.Email == email, cancellationToken);
     public void Add(User user) => db.Users.Add(user);
 }
