@@ -52,7 +52,7 @@ Development Bypass 결과는 격리된 개발 검증의 증거이며, 운영 IdP
 
 처음에는 두 테스트가 각각 WPF `Application`을 생성해 두 번째 테스트가 실패했다. 근본 원인은 같은 테스트 프로세스에서 WPF `Application`을 두 번 만들 수 없는 실행 제약이었다. 두 검증을 하나의 STA Application 수명 안으로 합쳐 재실행했고 WPF 테스트는 통과했다.
 
-## 3. Release 검증 결과
+## 3. 이전 Release 검증 결과
 
 다음 명령을 저장소 루트에서 순서대로 실행했다.
 
@@ -67,6 +67,8 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 - 전체 테스트: 290개 통과, 실패 0개, 건너뜀 0개
 - WPF Desktop 테스트: 1개 통과, 실패 0개
 - ApiHost 통합 테스트: 48개 통과, 실패 0개
+
+위 수치는 이전 검증 시점의 기준 결과이다. 현재 병합된 로컬 `main`의 최신 결과는 4.4절에 기록한다.
 
 `System.Security.Cryptography.Pkcs` 보안 advisory 경고는 고정 버전 `9.0.21`을 중앙 패키지 버전으로 지정하고 ApiHost에 PrivateAssets 참조를 추가한 뒤 사라졌다.
 
@@ -124,6 +126,8 @@ WPF 전용 테스트도 다음 경계가 확인되었다.
 
 ### 4.3 실제 WPF 창 조작 재검증
 
+이 절의 결과는 이전 검증 환경에서 확보한 WPF 화면 조작 증거이다. 현재 Codex 실행 환경에서는 데스크톱 조작 권한이 승인되지 않아 동일 조작을 다시 수행하지 못했으므로, 현재 실행의 통과 결과로 중복 집계하지 않는다.
+
 최신 `origin/main` 커밋 `b21b1b2ff9e6abe2d7d5a62c205227bc2c2cb3b1`을 별도 작업공간에서 `EDAN.Tensor.Desktop`으로 실행하고 Windows UI Automation으로 실제 창을 조작했다. 토큰 원문과 비밀번호는 출력하거나 기록하지 않았다.
 
 - 실제 `EDAN.Tensor` 창이 생성되었고 프로세스가 응답 상태였다.
@@ -135,6 +139,17 @@ WPF 전용 테스트도 다음 경계가 확인되었다.
 
 이 검증으로 실제 WPF의 연결·입력·화면 선택·조회·인증 오류 표시 범위를 통과 처리한다. 운영 데이터에 영향을 주는 생성·수정·삭제·수동 재시도와 403·404·409·422·5xx별 화면 검증은 격리된 테스트 데이터와 각 오류를 의도적으로 만들 수 있는 외부 조건이 필요하므로 별도 운영 시나리오 검증으로 남긴다.
 
+### 4.4 현재 병합된 로컬 `main` 재검증
+
+현재 로컬 `main`은 원격 `main`을 병합한 커밋 `e0143d0b1b5cdabfa437d9eedda3e0ac2fd6cec7`에서 다음 명령을 실제 실행했다.
+
+- `dotnet restore EDAN.Tensor.sln`: 종료 코드 0. NuGet 취약성 조회 서비스에 연결하지 못한 `NU1900` 경고가 발생했으므로 네트워크 기반 취약성 조회는 미완료로 기록한다.
+- `dotnet build EDAN.Tensor.sln --no-restore --configuration Release`: 종료 코드 0, 오류 0개. 동일한 `NU1900` 경고가 남아 경고 0건으로 기록하지 않는다.
+- `dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release`: 종료 코드 0, 성공 283개, 실패 0개, 건너뜀 0개.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1 -ApiPort 54517 -WorkerPort 54518`: ApiHost health·database health·OpenAPI·Swagger UI·개발 우회 Tenant API와 WorkerHost health·database health가 모두 HTTP 200을 반환했다. 두 Host 표준 오류는 0바이트였고 임시 Smoke 디렉터리는 제거되었다.
+
+현재 실행 환경에서는 데스크톱 조작 권한이 승인되지 않아 WPF 창의 실제 클릭·입력·생성·수정·삭제·재시도 조작은 다시 수행하지 못했다. 4.3절은 이전 환경의 증거이고, 현재 환경의 WPF 조작 검증은 미완료로 유지한다.
+
 ## 5. 동시 라이선스 발급 회귀 수정
 
 Windows CI에서 개발 라이선스를 동시에 발급하는 테스트가 같은 JSON 파일을 서로 다른 저장소 인스턴스로 읽는 순간에 파일 잠금 예외를 재현했다. 근본 원인은 저장소 인스턴스마다 별도의 잠금을 사용해 같은 경로의 읽기·쓰기를 조정하지 못한 것이었다.
@@ -143,7 +158,7 @@ Windows CI에서 개발 라이선스를 동시에 발급하는 테스트가 같�
 
 ## 6. 아직 별도 시나리오 확인이 필요한 항목
 
-실제 WPF 창의 연결·입력·15개 화면 선택·조회·인증 오류 표시까지는 4.3에서 확인했다. 다음 항목은 운영 데이터 변경 위험 또는 별도 오류 재현 조건이 있어 조회 검증과 분리한다.
+실제 WPF 창의 연결·입력·15개 화면 선택·조회·인증 오류 표시는 4.3절의 이전 환경 증거로 확인되었다. 현재 환경에서 다시 확인해야 하는 조작과 운영 데이터 변경 위험 또는 별도 오류 재현 조건이 필요한 항목은 다음과 같다.
 
 - 생성·수정·삭제·재시도 버튼을 격리된 테스트 데이터로 실제 실행하는 조작
 - 403·404·409·422·5xx 응답이 화면 상태와 오류 설명에 반영되는지 확인
