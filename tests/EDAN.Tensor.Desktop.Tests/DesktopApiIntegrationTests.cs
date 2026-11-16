@@ -42,6 +42,65 @@ public sealed class DesktopApiIntegrationTests
         }
     }
 
+    /// <summary>15개 WPF 화면의 조회 경로가 동일한 실제 API Host와 연결됩니다.</summary>
+    [Fact]
+    public async Task AllRegisteredScreensRefreshAgainstRealApiHost()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"edan-desktop-screens-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+
+        try
+        {
+            using var factory = new DesktopApiHostFactory(root);
+            using var discoveryClient = factory.CreateClient();
+            using var discoverySession = new DesktopApiSession(discoveryClient);
+            await discoverySession.ConnectAsync();
+
+            var tenantScreen = new TenantManagementViewModel(discoverySession);
+            await tenantScreen.RefreshAsync();
+            var tenant = Assert.Single(tenantScreen.TargetOptions);
+            using var sessionClient = factory.CreateClient();
+            using var session = new DesktopApiSession(sessionClient)
+            {
+                TenantIdText = tenant.Id.ToString("D")
+            };
+            await session.ConnectAsync();
+
+            RegistryScreenViewModel[] screens =
+            [
+                tenantScreen,
+                new OrganizationManagementViewModel(session),
+                new ProjectManagementViewModel(session),
+                new UserInvitationManagementViewModel(session),
+                new MembershipManagementViewModel(session),
+                new AuthorizationPolicyManagementViewModel(session),
+                new AuthorizationAuditManagementViewModel(session),
+                new StorageQuotaManagementViewModel(session),
+                new DataSetManagementViewModel(session),
+                new DataSetSchemaManagementViewModel(session),
+                new DataSetStorageManagementViewModel(session),
+                new DataSetValidationManagementViewModel(session),
+                new WorkerTaskMonitoringViewModel(session),
+                new DeadLetterQueueManagementViewModel(session),
+                new ExternalDeliveryMonitoringViewModel(session)
+            ];
+
+            foreach (var screen in screens)
+            {
+                await screen.RefreshAsync();
+                Assert.NotEmpty(screen.Fields);
+                Assert.DoesNotContain("API 연결 전", screen.StatusMessage, StringComparison.Ordinal);
+            }
+
+            Assert.Equal(15, screens.Length);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
     /// <summary>실제 임시 SQLite 데이터베이스와 개발 전용 인증을 사용하는 API Host를 생성합니다.</summary>
     private sealed class DesktopApiHostFactory(string root) : WebApplicationFactory<Program>
     {
