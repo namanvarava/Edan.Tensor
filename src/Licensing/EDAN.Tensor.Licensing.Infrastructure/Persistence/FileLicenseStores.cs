@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using EDAN_Tensor_Licensing_Application.Abstractions;
 using EDAN_Tensor_Licensing_Contracts;
@@ -7,8 +8,10 @@ namespace EDAN_Tensor_Licensing_Infrastructure.Persistence;
 /// <summary>개발 라이선스 공개 토큰을 로컬 파일에 한 번 저장합니다.</summary>
 public sealed class FileDevelopmentLicenseStore(string path) : IDevelopmentLicenseStore
 {
+    // 같은 파일을 사용하는 저장소 인스턴스가 읽기와 쓰기를 교차 수행하지 않도록 경로별 잠금을 공유합니다.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> PathGates = new(StringComparer.OrdinalIgnoreCase);
     private readonly string path = Path.GetFullPath(path);
-    private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly SemaphoreSlim gate = PathGates.GetOrAdd(Path.GetFullPath(path), static _ => new SemaphoreSlim(1, 1));
 
     /// <inheritdoc />
     public async Task<IssuedLicense?> GetAsync(CancellationToken cancellationToken = default)

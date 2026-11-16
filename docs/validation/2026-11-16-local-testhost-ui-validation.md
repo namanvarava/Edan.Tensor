@@ -70,7 +70,13 @@ dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release
 
 `System.Security.Cryptography.Pkcs` 보안 advisory 경고는 고정 버전 `9.0.21`을 중앙 패키지 버전으로 지정하고 ApiHost에 PrivateAssets 참조를 추가한 뒤 사라졌다.
 
-## 4. 아직 수동 확인이 필요한 항목
+## 4. 동시 라이선스 발급 회귀 수정
+
+Windows CI에서 개발 라이선스를 동시에 발급하는 테스트가 같은 JSON 파일을 서로 다른 저장소 인스턴스로 읽는 순간에 파일 잠금 예외를 재현했다. 근본 원인은 저장소 인스턴스마다 별도의 잠금을 사용해 같은 경로의 읽기·쓰기를 조정하지 못한 것이었다.
+
+파일의 전체 경로를 기준으로 프로세스 내부의 `SemaphoreSlim`을 공유하도록 수정했다. 이 수정은 저장소 공개 API와 파일 형식을 바꾸지 않으며, 같은 개발 라이선스 파일을 사용하는 동시 발급 요청만 순서대로 처리한다. 대상 회귀 테스트는 실제 Windows 실행에서 1개 통과했다.
+
+## 5. 아직 수동 확인이 필요한 항목
 
 Release 빌드 산출물로 `EDAN.Tensor Desktop` 프로세스와 `EDAN.Tensor` 창 생성을 확인했다. 다만 이 작업 환경에서는 데스크톱 조작 승인이 없어 창 내부를 클릭하거나 입력할 수 없었으므로 다음은 자동 성공으로 표시하지 않는다.
 
@@ -88,6 +94,6 @@ dotnet run --project .\src\Client\EDAN.Tensor.Desktop\EDAN.Tensor.Desktop.csproj
 
 그 다음 개발용 API URL, 테스트 Tenant ID, 만료되지 않은 Access Token을 입력하고 각 화면의 조회 명령부터 실행한다. 생성·수정·삭제·재시도는 테스트 데이터와 대상 ID를 확인한 뒤 실행해야 한다.
 
-## 5. 외부 환경 경계
+## 6. 외부 환경 경계
 
 비운영 Keycloak의 HTTPS Metadata·JWKS·Issuer·Audience·키 회전과 API Tenant 경계는 별도 Issue #84 증거를 따른다. 운영 IdP, 운영 DB, 실제 외부 수신 시스템, 배포 환경과 GitHub 보호 규칙은 로컬 TestHost와 WPF 자동 검증의 결과로 성공 처리하지 않는다.
