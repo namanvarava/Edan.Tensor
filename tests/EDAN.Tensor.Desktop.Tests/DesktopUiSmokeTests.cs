@@ -19,14 +19,26 @@ public sealed class DesktopUiSmokeTests
             try
             {
                 var app = new App();
-            app.InitializeComponent();
+                app.InitializeComponent();
                 var window = new MainWindow();
                 var viewModel = Assert.IsType<MainWindowViewModel>(window.DataContext);
                 Assert.Equal(15, viewModel.Screens.Count);
                 Assert.Equal(15, viewModel.Screens.Select(x => x.ScreenId).Distinct(StringComparer.Ordinal).Count());
                 Assert.Equal("PLT-TNT-001", viewModel.Screens[0].ScreenId);
                 Assert.Equal("WRK-XDL-001", viewModel.Screens[^1].ScreenId);
+                Assert.Equal(15, window.Resources.Values.OfType<DataTemplate>().Count());
                 Assert.NotNull(window.Content);
+
+                foreach (var screen in viewModel.Screens)
+                {
+                    viewModel.SelectedScreen = screen;
+
+                    Assert.Same(screen, viewModel.SelectedScreen);
+                    Assert.NotEmpty(screen.ScreenId);
+                    Assert.NotEmpty(screen.Title);
+                    Assert.NotEmpty(screen.ViewModel.Actions);
+                }
+
                 window.Close();
                 app.Shutdown();
             }
@@ -44,4 +56,5 @@ public sealed class DesktopUiSmokeTests
         Assert.True(completed.Wait(TimeSpan.FromSeconds(30)), "WPF smoke thread did not complete.");
         if (failure is not null) throw new Xunit.Sdk.XunitException("WPF UI smoke failed.", failure);
     }
+
 }
