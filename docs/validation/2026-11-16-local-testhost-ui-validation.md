@@ -108,6 +108,20 @@ WPF 전용 테스트도 다음 경계가 확인되었다.
 
 따라서 현재 브랜치에서 확인된 코드 상태는 Release 빌드 성공까지이며, 전체 테스트와 현재 셸의 Host HTTP smoke는 환경 미검증으로 남는다. 이 둘을 완료로 바꾸려면 동일한 Windows PowerShell 세션에서 복원·Host·테스트를 실행하거나, 로컬 TestHost와 WPF 실행을 허용하는 데스크톱 환경에서 다시 실행해야 한다.
 
+### 4.2 최신 원격 main 전용 작업공간 재검증
+
+이전 4.1의 실행 환경 경계를 분리하기 위해 원격 `main`의 최신 커밋 `e19a38af94e4780dfa373a8754089025f96262be`를 별도 작업공간에서 다시 검증했다. 사용자 작업공간의 변경과 섞지 않았으며, 다음 결과를 실제 명령 종료 코드와 출력으로 확인했다.
+
+- `dotnet restore .\EDAN.Tensor.sln --verbosity minimal -m:1 -p:RestoreDisableParallel=true -p:NuGetAudit=false`: 종료 코드 0.
+- `dotnet build .\EDAN.Tensor.sln --no-restore --configuration Release -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false -v:minimal`: 40개 프로젝트, 경고 0건, 오류 0건, 종료 코드 0.
+- `dotnet test .\EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "console;verbosity=minimal"`: 290개 통과, 실패 0개, 건너뜀 0개, 종료 코드 0.
+- `dotnet test .\tests\EDAN.Tensor.Desktop.Tests\EDAN.Tensor.Desktop.Tests.csproj --no-build --no-restore --configuration Release --logger "console;verbosity=normal"`: WPF STA Registry smoke 1개 통과, 실패 0개, 종료 코드 0.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\host-smoke.ps1 -ApiPort 54517 -WorkerPort 54518`: ApiHost health·database health·OpenAPI·Swagger UI·Development Bypass Tenant API와 WorkerHost health·database health가 모두 HTTP 200을 반환했다. 두 Host 표준 오류는 각각 0바이트였고 임시 Smoke 디렉터리는 실행 후 제거되었다.
+
+이 재검증으로 이전 4.1에서 기록한 부모 셸의 TestHost 통신 실패와 Host HTTP 미검증은 최신 원격 `main` 자체의 재현 결함이 아니라 해당 실행 경계에서 발생한 것으로 분리했다. 따라서 자동화 가능한 Release·통합·WPF Registry·Host smoke 범위는 통과 증거를 확보했다.
+
+다만 실제 WPF 창의 마우스 클릭·키보드 입력, 생성·수정·삭제·재시도 조작, 401·403·404·409·422·5xx 화면 표시 확인은 별도 데스크톱 조작 권한이 필요한 수동 범위이므로 여전히 자동 통과로 판정하지 않는다. 이 범위는 6절의 수동 절차로만 완료 처리한다.
+
 ## 5. 동시 라이선스 발급 회귀 수정
 
 Windows CI에서 개발 라이선스를 동시에 발급하는 테스트가 같은 JSON 파일을 서로 다른 저장소 인스턴스로 읽는 순간에 파일 잠금 예외를 재현했다. 근본 원인은 저장소 인스턴스마다 별도의 잠금을 사용해 같은 경로의 읽기·쓰기를 조정하지 못한 것이었다.
