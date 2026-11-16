@@ -22,6 +22,7 @@ using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using DataSetValidationTaskHandler = workerhost::EDAN.Tensor.WorkerHost.Handlers.DataSetValidationTaskHandler;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Infrastructure.Invitations;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.DataSet.Infrastructure.Validation;
 using EDAN.Tensor.HostServices.Services;
@@ -32,6 +33,123 @@ namespace EDAN.Tensor.ApiHost.IntegrationTests;
 /// <summary>API Host의 OpenAPI, 다중 Tenant 소속 및 데이터 기반 권한 경계를 검증합니다.</summary>
 public sealed class PlatformApiIntegrationTests
 {
+    /// <summary>초대 생성·조회·재전송·수락과 Tenant 관리자 경계를 실제 HTTP 요청으로 검증합니다.</summary>
+    [Fact]
+    public async Task InvitationHttpSmokeCoversTokenLifecycleAndTenantBoundary()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new { code = $"INV-{suffix}", name = "초대 lifecycle Tenant" });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new { subjectId = "invitation-admin", role = "Administrator" })).StatusCode);
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "invitation-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        using var invitationResponse = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/users/invitations", new
+        {
+            email = $"invite-{suffix}@example.com",
+            displayName = "초대 사용자",
+            lifetimeDays = 7
+        });
+        Assert.True(invitationResponse.StatusCode == HttpStatusCode.Created,
+            await invitationResponse.Content.ReadAsStringAsync());
+        var invitationId = await ReadGuidAsync(invitationResponse, "invitationId");
+        var delivery = factory.Services.GetRequiredService<DevelopmentInvitationDelivery>();
+        Assert.True(delivery.TryGetToken(invitationId, out var token));
+
+        using var listResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/invitations?status=Pending&page=1&pageSize=10");
+        Assert.True(listResponse.StatusCode == HttpStatusCode.OK,
+            await listResponse.Content.ReadAsStringAsync());
+        Assert.Equal(1, await ReadArrayLengthAsync(listResponse));
+
+        using var resendResponse = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/invitations/{invitationId}/resend", new { lifetimeDays = 7 });
+        Assert.Equal(HttpStatusCode.OK, resendResponse.StatusCode);
+        Assert.True(delivery.TryGetToken(invitationId, out var resentToken));
+        Assert.NotEqual(token, resentToken);
+
+        using var acceptResponse = await client.PostAsJsonAsync("/api/platform/invitations/accept", new { token = resentToken });
+        Assert.Equal(HttpStatusCode.OK, acceptResponse.StatusCode);
+        using var userResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/users?status=Active&page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, userResponse.StatusCode);
+        Assert.Equal(1, await ReadArrayLengthAsync(userResponse));
+
+        using var secondInvitation = await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/users/invitations", new
+        {
+            email = $"revoke-{suffix}@example.com",
+            displayName = "철회 사용자"
+        });
+        Assert.True(secondInvitation.StatusCode == HttpStatusCode.Created,
+            await secondInvitation.Content.ReadAsStringAsync());
+        var secondInvitationId = await ReadGuidAsync(secondInvitation, "invitationId");
+        using var revokeResponse = await client.PostAsync($"/api/platform/tenants/{tenantId}/invitations/{secondInvitationId}/revoke", null);
+        Assert.Equal(HttpStatusCode.NoContent, revokeResponse.StatusCode);
+        using var revokedResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/invitations?status=Revoked");
+        Assert.Equal(HttpStatusCode.OK, revokedResponse.StatusCode);
+        Assert.Equal(1, await ReadArrayLengthAsync(revokedResponse));
+
+        using var wrongTenantResponse = await client.GetAsync($"/api/platform/tenants/{Guid.NewGuid()}/invitations");
+        Assert.NotEqual(HttpStatusCode.OK, wrongTenantResponse.StatusCode);
+    }
+
+    /// <summary>성공한 Worker 작업에 raw bytes를 저장하고 Tenant 경계 안에서 다시 스트리밍합니다.</summary>
+    [Fact]
+    public async Task WorkerRawResultHttpSmokeStoresAndStreamsBytes()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "platform-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new { code = $"RES-{suffix}", name = "Worker 결과 Tenant" });
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new { subjectId = "result-admin", role = "Administrator" })).StatusCode);
+
+        var taskId = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<WorkerDbContext>();
+            var repository = new WorkerTaskRepository(db);
+            var task = WorkerTask.Create(tenantId, "integration.raw-result", $"raw-{suffix}", "payload://raw", DateTimeOffset.UtcNow);
+            db.WorkerTasks.Add(task);
+            await db.SaveChangesAsync();
+            var leaseId = Guid.NewGuid();
+            var acquired = await repository.TryAcquireLeaseAsync(tenantId, task.Id, "integration-worker", leaseId, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(5));
+            Assert.NotNull(acquired);
+            Assert.True(await repository.TryStartAsync(tenantId, task.Id, leaseId, acquired!.FencingToken, DateTimeOffset.UtcNow));
+            Assert.True(await repository.TryCompleteAsync(tenantId, task.Id, leaseId, acquired.FencingToken, DateTimeOffset.UtcNow));
+            taskId = task.Id;
+        }
+
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "result-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        using var body = new ByteArrayContent(Encoding.UTF8.GetBytes("EDAN raw result"));
+        body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+        using var storeResponse = await client.PutAsync($"/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result/raw", body);
+        Assert.Equal(HttpStatusCode.OK, storeResponse.StatusCode);
+
+        using var metadataResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result");
+        Assert.Equal(HttpStatusCode.OK, metadataResponse.StatusCode);
+        using var rawResponse = await client.GetAsync($"/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result/raw");
+        Assert.Equal(HttpStatusCode.OK, rawResponse.StatusCode);
+        Assert.Equal("EDAN raw result", Encoding.UTF8.GetString(await rawResponse.Content.ReadAsByteArrayAsync()));
+        Assert.Equal("text/plain", rawResponse.Content.Headers.ContentType?.MediaType);
+
+        using var wrongTenantResponse = await client.GetAsync($"/api/platform/tenants/{Guid.NewGuid()}/worker/tasks/{taskId}/result/raw");
+        Assert.NotEqual(HttpStatusCode.OK, wrongTenantResponse.StatusCode);
+    }
+
     [Fact]
     public void FactoriesUseSeparateDatabasesBeforeServiceRegistration()
     {
@@ -81,6 +199,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/integrity/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archives/{archiveId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/retention", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs", document, StringComparison.Ordinal);
@@ -90,11 +209,17 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/authorization-audit/archive-jobs/{jobId}/verify", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas/diff", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/schemas/{version}/rollback", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/archive", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/restore", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/storage/reset", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/{dataSetId}/activate", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}/revisions", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validation-profiles/{profileId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/datasets/validations/{executionId}/details", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage", document, StringComparison.Ordinal);
@@ -102,6 +227,10 @@ public sealed class PlatformApiIntegrationTests
         Assert.Contains("/api/platform/tenants/{tenantId}/storage-usage/quota-events", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/users/{userId}/status", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/cancel", document, StringComparison.Ordinal);
+        Assert.Contains("/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/retry", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/dead-letters/{taskId}/replay", document, StringComparison.Ordinal);
         Assert.Contains("/api/platform/tenants/{tenantId}/worker/deliveries", document, StringComparison.Ordinal);
@@ -2031,8 +2160,13 @@ public sealed class PlatformApiIntegrationTests
 
     private static async Task<Guid> ReadIdAsync(HttpResponseMessage response)
     {
+        return await ReadGuidAsync(response, "id");
+    }
+
+    private static async Task<Guid> ReadGuidAsync(HttpResponseMessage response, string propertyName)
+    {
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return document.RootElement.GetProperty("id").GetGuid();
+        return document.RootElement.GetProperty(propertyName).GetGuid();
     }
 
     /// <summary>짧은 통합 검증 작업에서 Lease 갱신을 계속 허용합니다.</summary>
@@ -2056,6 +2190,8 @@ public sealed class PlatformApiIntegrationTests
             Path.GetTempPath(), $"edan-tensor-dataset-{Guid.NewGuid():N}.db");
         private readonly string _dataSetContentDatabasePath = Path.Combine(
             Path.GetTempPath(), $"edan-tensor-dataset-content-{Guid.NewGuid():N}.db");
+        private readonly string _workerResultPath = Path.Combine(
+            Path.GetTempPath(), $"edan-tensor-worker-results-{Guid.NewGuid():N}");
 
         /// <summary>Factory가 현재 호스트에 주입한 네 개의 SQLite 경로를 선언 순서대로 반환합니다.</summary>
         public IReadOnlyList<string> ConfiguredDatabases =>
@@ -2076,6 +2212,7 @@ public sealed class PlatformApiIntegrationTests
                     ["ConnectionStrings:WorkerDatabase"] = $"Data Source={_workerDatabasePath};Cache=Shared;Pooling=False",
                     ["ConnectionStrings:DataSetDatabase"] = $"Data Source={_dataSetDatabasePath};Cache=Shared;Pooling=False",
                     ["ConnectionStrings:DataSetContentDatabase"] = $"Data Source={_dataSetContentDatabasePath};Cache=Shared;Pooling=False",
+                    ["WorkerResults:RootPath"] = _workerResultPath,
                     ["DataSetContent:MaxUploadBytes"] = "1024",
                     ["DataSetContent:Quota:TenantLimitBytes"] = "50",
                     ["DataSetContent:Quota:OrganizationLimitBytes"] = "100",
@@ -2129,6 +2266,8 @@ public sealed class PlatformApiIntegrationTests
                 File.Delete(_dataSetContentDatabasePath);
             if (disposing && Directory.Exists(_archivePath))
                 Directory.Delete(_archivePath, recursive: true);
+            if (disposing && Directory.Exists(_workerResultPath))
+                Directory.Delete(_workerResultPath, recursive: true);
         }
     }
 }

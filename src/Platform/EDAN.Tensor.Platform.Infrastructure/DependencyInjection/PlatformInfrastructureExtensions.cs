@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Infrastructure.Invitations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,9 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IInvitationRepository, InvitationRepository>();
+        services.AddSingleton<IInvitationTokenService, InvitationTokenService>();
+        services.AddSingleton<IInvitationDelivery, NoOpInvitationDelivery>();
         services.AddScoped<ITenantMembershipRepository, TenantMembershipRepository>();
         services.AddScoped<IScopedMembershipRepository, ScopedMembershipRepository>();
         services.AddScoped<IAuthorizationPolicyRepository, AuthorizationPolicyRepository>();

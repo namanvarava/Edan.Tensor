@@ -3,6 +3,7 @@ using EDAN.Tensor.Worker.Application.Execution;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using EDAN.Tensor.Worker.Infrastructure.Execution;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
+using EDAN.Tensor.Worker.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +13,7 @@ namespace EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
 public static class WorkerInfrastructureExtensions
 {
     public static IServiceCollection AddWorkerInfrastructure(
-        this IServiceCollection services, Action<DbContextOptionsBuilder> configureDatabase)
+        this IServiceCollection services, Action<DbContextOptionsBuilder> configureDatabase, string? workerResultPath = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureDatabase);
@@ -24,6 +25,8 @@ public static class WorkerInfrastructureExtensions
         services.AddScoped<IExternalDeliveryRepository, ExternalDeliveryRepository>();
         services.AddSingleton<IWorkerTaskLeaseRenewer, WorkerTaskLeaseRenewer>();
         services.AddScoped<WorkerTaskProgressReporter>();
+        services.AddSingleton<IWorkerResultStore>(_ => new FileSystemWorkerResultStore(
+            workerResultPath ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "WorkerResults")));
         return services;
     }
 

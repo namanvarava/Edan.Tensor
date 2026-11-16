@@ -157,6 +157,12 @@ public sealed class WorkerTaskRepository(WorkerDbContext db) : IWorkerTaskReposi
         MutateAsync(tenantId, taskId, task => task.Fail(leaseId, fencingToken, errorCode, nowUtc, retryAtUtc), cancellationToken);
     public Task<bool> TryHandoffAsync(Guid tenantId, Guid taskId, Guid leaseId, long fencingToken, string checkpoint, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
         MutateAsync(tenantId, taskId, task => task.Handoff(leaseId, fencingToken, checkpoint, nowUtc), cancellationToken);
+    public Task<bool> TryOperatorCancelAsync(Guid tenantId, Guid taskId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.CancelByOperator(nowUtc), cancellationToken);
+    public Task<bool> TryForceRetryAsync(Guid tenantId, Guid taskId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.ForceRetry(nowUtc), cancellationToken);
+    public Task<bool> TryAttachResultReferenceAsync(Guid tenantId, Guid taskId, string resultReference, CancellationToken cancellationToken = default) =>
+        MutateAsync(tenantId, taskId, task => task.AttachResultReference(resultReference), cancellationToken);
 
     private async Task<bool> MutateAsync(Guid tenantId, Guid taskId, Action<WorkerTask> mutation, CancellationToken cancellationToken)
     {

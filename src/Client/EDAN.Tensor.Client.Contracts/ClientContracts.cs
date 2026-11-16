@@ -17,6 +17,10 @@ public sealed record TenantDirectoryContract(Guid Id, string Code, string Name, 
 public sealed record OrganizationDirectoryContract(Guid Id, Guid TenantId, string Code, string Name, string Status);
 public sealed record ProjectDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string Code, string Name, string Status);
 public sealed record UserDirectoryContract(Guid Id, Guid TenantId, string Email, string DisplayName, string Status);
+public sealed record InvitationContract(Guid Id, Guid TenantId, Guid UserId, string Email, string DisplayName, string Status,
+    DateTimeOffset CreatedAtUtc, DateTimeOffset ExpiresAtUtc, DateTimeOffset? AcceptedAtUtc,
+    DateTimeOffset? RevokedAtUtc, int ResendCount);
+public sealed record InvitationPageContract(int TotalCount, int Page, int PageSize, IReadOnlyList<InvitationContract> Items);
 public sealed record TenantMembershipDirectoryContract(Guid Id, Guid TenantId, string SubjectId, string Role, string Status);
 public sealed record OrganizationMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, string SubjectId, string Role, string Status);
 public sealed record ProjectMembershipDirectoryContract(Guid Id, Guid TenantId, Guid OrganizationId, Guid ProjectId, string SubjectId, string Role, string Status);
@@ -123,6 +127,8 @@ public sealed record DataSetPageContract(
 
 public sealed record DataSetSchemaRevisionPageContract(
     Guid DataSetId, int? CurrentSchemaVersion, IReadOnlyList<DataSetSchemaRevisionContract> Items);
+public sealed record DataSetSchemaDiffContract(
+    int FromVersion, int ToVersion, string FromSchemaJson, string ToSchemaJson, bool Changed);
 
 public sealed record ExternalDeliveryContract(
     Guid Id, Guid TenantId, string TargetUri, string IdempotencyKey, string Status,
@@ -140,7 +146,9 @@ public sealed record CreateTenantRequestContract(string Code, string Name);
 public sealed record CreateOrganizationRequestContract(string Code, string Name);
 public sealed record CreateProjectRequestContract(string Code, string Name);
 public sealed record InviteUserRequestContract(string Email, string DisplayName);
+public sealed record InvitationLifetimeRequestContract(int? LifetimeDays = null);
 public sealed record UpdateDirectoryEntryRequestContract(string? Name, string? Status);
+public sealed record SetUserStatusRequestContract(string Status);
 public sealed record GrantTenantMembershipRequestContract(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequestContract(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequestContract(string SubjectId, string Role);
@@ -163,6 +171,7 @@ public sealed record UpdateStorageQuotaPolicyRequestContract(
 public sealed record SetStorageQuotaPolicyEnabledRequestContract(bool IsEnabled, long ExpectedVersion);
 public sealed record CreateDataSetValidationProfileRequestContract(string Name, string DefinitionJson);
 public sealed record CreateDataSetValidationRevisionRequestContract(string DefinitionJson);
+public sealed record UpdateDataSetValidationProfileRequestContract(string Name);
 public sealed record CreateExternalDeliveryRequestContract(
     string TargetUri, System.Text.Json.JsonElement Payload, int MaxAttempts = 5);
 public sealed record VerifyAuthorizationAuditIntegrityRequestContract(
@@ -323,6 +332,7 @@ public sealed record WorkerTaskStatusContract(
 
 public sealed record WorkerTaskStatusPageContract(
     int TotalCount, int Page, int PageSize, IReadOnlyList<WorkerTaskStatusContract> Items);
+public sealed record WorkerTaskResultContract(Guid TaskId, string TaskType, string Status, string ResultReference);
 
 /// <summary>Worker DLQ 항목의 운영 메타데이터입니다.</summary>
 public sealed record WorkerDeadLetterContract(

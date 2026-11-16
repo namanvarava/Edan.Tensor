@@ -3,8 +3,10 @@ using EDAN.Tensor.ApiHost.BackgroundServices;
 using EDAN.Tensor.ApiHost.Endpoints;
 using EDAN.Tensor.ApiHost.Security;
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Infrastructure.DependencyInjection;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Infrastructure.Invitations;
 using EDAN.Tensor.Worker.Application.Execution;
 using EDAN.Tensor.Worker.Application.ExternalDelivery;
 using EDAN.Tensor.Worker.Infrastructure.DependencyInjection;
@@ -64,6 +66,11 @@ if (!Path.IsPathRooted(archivePath))
 
 builder.Services.AddPlatformInfrastructure(
     options => options.UseSqlite(sqliteConnection.ConnectionString), archivePath);
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<DevelopmentInvitationDelivery>();
+    builder.Services.AddSingleton<IInvitationDelivery>(sp => sp.GetRequiredService<DevelopmentInvitationDelivery>());
+}
 
 // Worker 작업 저장소는 Platform 메타데이터와 분리된 전용 연결을 사용합니다.
 var workerConnectionString = builder.Configuration.GetConnectionString("WorkerDatabase")
@@ -76,10 +83,14 @@ if (!Path.IsPathRooted(workerSqliteConnection.DataSource) && workerSqliteConnect
     if (!string.IsNullOrWhiteSpace(workerDirectory))
         Directory.CreateDirectory(workerDirectory);
 }
+var workerResultPath = builder.Configuration["WorkerResults:RootPath"] ?? "App_Data/WorkerResults";
+if (!Path.IsPathRooted(workerResultPath))
+    workerResultPath = Path.Combine(builder.Environment.ContentRootPath, workerResultPath);
+Directory.CreateDirectory(workerResultPath);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddWorkerInfrastructure(options =>
     options.UseSqlite(workerSqliteConnection.ConnectionString,
-        sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
+        sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)), workerResultPath);
 
 // DataSet 메타데이터는 Platform·Worker와 분리된 전용 SQLite 데이터베이스에 저장합니다.
 var dataSetConnectionString = builder.Configuration.GetConnectionString("DataSetDatabase")
@@ -135,6 +146,7 @@ builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
 builder.Services.AddScoped<WorkerTaskDeadLetterService>();
 builder.Services.AddScoped<WorkerTaskEnqueueService>();
 builder.Services.AddScoped<WorkerTaskQueryService>();
+builder.Services.AddScoped<WorkerTaskCommandService>();
 var deliveryHosts = builder.Configuration.GetSection("ExternalDelivery:AllowedHosts")
     .GetChildren().Select(section => section.Value).OfType<string>()
     .ToHashSet(StringComparer.OrdinalIgnoreCase);

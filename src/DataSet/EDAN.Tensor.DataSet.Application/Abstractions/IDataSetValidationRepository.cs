@@ -10,7 +10,8 @@ public interface IDataSetValidationRepository
         => throw new NotSupportedException("검증 프로필 목록 조회가 구현되지 않았습니다.");
 
     Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
-        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        Guid? profileId, DataSetValidationStatus? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        string? failureCode, int page, int pageSize,
         CancellationToken cancellationToken = default)
         => throw new NotSupportedException("검증 실행 목록 조회가 구현되지 않았습니다.");
 
@@ -24,6 +25,11 @@ public interface IDataSetValidationRepository
     Task<DataSetValidationProfileSnapshot> AddProfileRevisionAsync(
         Guid tenantId, Guid profileId, string definitionJson, DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
+
+    Task<DataSetValidationProfileSnapshot?> UpdateProfileAsync(
+        Guid tenantId, Guid profileId, string name, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteProfileAsync(Guid tenantId, Guid profileId, CancellationToken cancellationToken = default);
 
     /// <summary>검증 실행을 저장하고 동시 중복 요청은 기존 키의 실행으로 수렴시킵니다.</summary>
     Task<DataSetValidationExecutionSnapshot> CreateExecutionAsync(

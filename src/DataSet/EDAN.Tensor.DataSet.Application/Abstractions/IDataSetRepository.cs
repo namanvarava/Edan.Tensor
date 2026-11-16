@@ -12,6 +12,7 @@ public interface IDataSetRepository
         CancellationToken cancellationToken = default)
         => throw new NotSupportedException("DataSet 페이지 조회가 구현되지 않았습니다.");
     void Add(DataSetAggregate dataSet);
+    void Remove(DataSetAggregate dataSet);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

@@ -332,6 +332,44 @@ public sealed class TensorApiClientTests
         Assert.Equal(membershipId, page.Items[0].Id);
     }
 
+    [Fact]
+    public async Task LifecycleClientCommandsUseTenantScopedRoutes()
+    {
+        var tenantId = Guid.NewGuid();
+        var dataSetId = Guid.NewGuid();
+        var cancelTaskId = Guid.NewGuid();
+        var retryTaskId = Guid.NewGuid();
+        var calls = 0;
+        var handler = new RecordingHandler((request, _) =>
+        {
+            Assert.Equal(tenantId.ToString("D"), request.Headers.GetValues("X-Tenant-Id").Single());
+            var expected = calls++ switch
+            {
+                0 => (HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/datasets/{dataSetId:D}/archive"),
+                1 => (HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/datasets/{dataSetId:D}/restore"),
+                2 => (HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/datasets/{dataSetId:D}/storage/reset"),
+                3 => (HttpMethod.Delete, $"/api/platform/tenants/{tenantId:D}/datasets/{dataSetId:D}"),
+                4 => (HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/worker/tasks/{cancelTaskId:D}/cancel"),
+                5 => (HttpMethod.Post, $"/api/platform/tenants/{tenantId:D}/worker/tasks/{retryTaskId:D}/retry"),
+                _ => throw new InvalidOperationException("예상하지 않은 Client 호출입니다.")
+            };
+            Assert.Equal(expected.Item1, request.Method);
+            Assert.Equal(expected.Item2, request.RequestUri!.AbsolutePath);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.example.test") };
+        var client = new TensorApiClient(httpClient);
+
+        await client.ArchiveDataSetAsync(tenantId, dataSetId);
+        await client.RestoreDataSetAsync(tenantId, dataSetId);
+        await client.ResetDataSetStorageAsync(tenantId, dataSetId);
+        await client.DeleteDataSetAsync(tenantId, dataSetId);
+        await client.CancelWorkerTaskAsync(tenantId, cancelTaskId);
+        await client.RetryWorkerTaskAsync(tenantId, retryTaskId);
+
+        Assert.Equal(6, calls);
+    }
+
     private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK) =>
         new(statusCode)
         {

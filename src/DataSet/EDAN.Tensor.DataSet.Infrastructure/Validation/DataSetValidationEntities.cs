@@ -20,6 +20,8 @@ public sealed class DataSetValidationProfile
     public string Name { get; private set; } = string.Empty;
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
+    public void Rename(string name) => Name = ValidateText(name, 160, nameof(name));
+
     private static string ValidateText(string value, int maxLength, string parameterName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);

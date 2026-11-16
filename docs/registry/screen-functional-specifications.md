@@ -947,19 +947,19 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 
 | ScreenId | 실제 확인된 API 범위 | 실제 상태 | 조사 결과의 핵심 |
 |---|---|---|---|
-| PLT-TNT-001 | tenant 생성·활성화·mine membership | PartiallyImplemented | 전체 tenant 목록·상세·검색 API 없음 |
-| PLT-ORG-001 | organization 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
-| PLT-PJT-001 | project 생성 | PartiallyImplemented | 목록·상세·수정·상태 API 없음 |
-| PLT-USR-001 | user invitation 생성 | PartiallyImplemented | 초대 목록·상세·재발송·취소·만료 API 없음 |
+| PLT-TNT-001 | tenant 생성·활성화·directory·mine membership | Implemented | directory는 PlatformAdministrator의 search/status/page/pageSize 계약이며 mine은 활성 소속 배열 |
+| PLT-ORG-001 | organization 생성·목록·상세·수정·상태 | Implemented | ID/date filter는 실제 source contract에 없음 |
+| PLT-PJT-001 | project 생성·목록·상세·수정·상태 | Implemented | ID/date filter는 실제 source contract에 없음 |
+| PLT-USR-001 | user invitation 생성·invitation 검색·재전송·철회·token 수락·directory 검색·상태 변경 | Implemented | Invitation aggregate는 token hash만 저장하고 raw token은 Delivery Adapter로 전달 |
 | PLT-MBR-001 | tenant/org/project membership 부여·목록·mine 조회·역할 변경·회수 | Implemented | query-enabled 목록은 subject/status/page/pageSize를 지원; mine은 활성 배열 |
 | PLT-AUTH-001 | authorization policy 생성·목록·필터·평가·수정·enabled 변경 | Implemented | evaluation과 tenant-scoped page filter route 추가 |
-| PLT-AUD-001 | audit query·integrity·archive·schedule·job·retention·job 목록 | Implemented | archive job page route 추가; raw archive export는 없음 |
-| PLT-QTA-001 | quota CRUD·enabled·history·scope/enabled filter | Implemented | target/plan query는 실제 계약에 없음 |
-| DSET-DSM-001 | dataset 생성·목록·상세·content·activate | PartiallyImplemented | collection filter 구현; 수정·삭제·보관·복구 API 없음 |
-| DSET-SCHM-001 | schema 추가·상세·전용 revisions 목록 | Implemented | version/date filter·diff·rollback API는 없음 |
-| DSET-STO-001 | content·dataset/tenant usage·history·quota events 필터 | PartiallyImplemented | storage lifecycle 및 aggregate 상세 filter 없음 |
-| DSET-VLD-001 | profile/revision·profile/execution 목록·validation 실행·상세·details·삭제 | PartiallyImplemented | profile lifecycle 및 date/failure filter 없음 |
-| WRK-TSK-001 | worker task 생성·목록·상세 | PartiallyImplemented | cancel·retry·result download API 없음 |
+| PLT-AUD-001 | audit query·integrity·archive·archive download·schedule·job·retention·job 목록 | Implemented | archive download는 tenant 및 checksum 검증 후 제공 |
+| PLT-QTA-001 | quota CRUD·enabled·history·scope/target/enabled filter | Implemented | PlanCode는 응답 필드이며 별도 query 의미는 없음 |
+| DSET-DSM-001 | dataset 생성·목록·상세·content·activate·rename·archive·restore·delete | Implemented | lifecycle route와 storage reset 연결 |
+| DSET-SCHM-001 | schema 추가·상세·전용 revisions 목록·diff·rollback | Implemented | version/date filter는 실제 계약에 없음 |
+| DSET-STO-001 | content·dataset/tenant usage·history·quota events·storage reset | Implemented | aggregate usage list filter는 실제 계약에 없음 |
+| DSET-VLD-001 | profile/revision·profile/execution 목록·validation 실행·상세·details·삭제·profile lifecycle | Implemented | date/failureCode execution filter와 profile update/delete 연결 |
+| WRK-TSK-001 | worker task 생성·목록·상세·cancel·force retry·result metadata/reference·raw result upload/download | Implemented | IWorkerResultStore와 개발용 파일 Adapter가 Tenant·Task 경계를 검증한 뒤 bytes를 스트리밍 |
 | WRK-DLQ-001 | DLQ 목록·필터·replay·replay history | Implemented | taskId/status는 item/detail 계약 |
 | WRK-XDL-001 | external delivery 생성·목록·상세·필터·수동 retry | Implemented | safe projection만 반환하고 payload는 비노출 |
 
@@ -972,7 +972,8 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 - `DSET-SCHM-001`은 `GET /datasets/{dataSetId}/schemas`의 `TotalCount`, `Page`, `PageSize`, `Items[Version; SchemaJson; CreatedAtUtc]` page contract를 사용한다.
 - `DSET-STO-001` history는 from/to/take, quota event는 scope/eventType/from/to/take를 사용한다.
 - `DSET-VLD-001` profile list는 search/page/pageSize, execution list는 dataSetId/profileId/status/page/pageSize를 사용한다.
-- `WRK-TSK-001`, `WRK-DLQ-001`, `WRK-XDL-001`은 각각 task list, DLQ filter/replay history, delivery list/filter/manual retry route를 제공하며 payload는 반환하지 않는다.
+- `PLT-USR-001`은 invitation metadata page, resend, revoke, token-only accept를 제공하며 raw token을 API 응답에 넣지 않는다.
+- `WRK-TSK-001`, `WRK-DLQ-001`, `WRK-XDL-001`은 각각 task list/raw result, DLQ filter/replay history, delivery list/filter/manual retry route를 제공하며 payload와 checkpoint 본문은 반환하지 않는다.
 - `DSET-VLD-001` 실행 생성은 `Idempotency-Key`와 dataset version/schema/profile revision을 요구하고, 실행 상세와 details는 서로 다른 응답 구조를 사용한다.
 - `WRK-DLQ-001` replay는 `Replay-Request-Id` GUID를 요구하고 원본 task를 보존한 새 task ID를 반환한다.
 - `WRK-XDL-001` 응답은 내부 payload를 반환하지 않는다. 자동 retry는 Worker 내부 동작이며 admin 수동 retry는 `POST /worker/deliveries/{deliveryId}/retry`에서 새 worker task를 등록한다.
@@ -981,7 +982,7 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 
 - 외부 JWT issuer/audience/lifetime/signing key 검증, `TenantMember`/`PlatformAdministrator` 정책, `X-Tenant-Id`와 route tenant 비교, active membership 및 TenantAdministrator 검증을 실제 소스에서 확인했다.
 - API Application Service의 DI 등록과 WPF View/ViewModel의 `IDesktopScreenService` → `DesktopApiSession` 바인딩을 실제 소스에서 확인했다. API 서비스 등록을 UI 바인딩으로 추정하지 않는다.
-- `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 현재 변경분에서 경고 0개·오류 0개로 완료했다. 전체 `dotnet test EDAN.Tensor.sln --configuration Release --no-build --no-restore -m:1`은 VSTest가 testhost에 90초 내 연결하지 못해 중단(exit 1)되었으므로 이번 변경의 테스트를 통과로 기록하지 않았다.
+- `dotnet build EDAN.Tensor.sln --configuration Release --no-restore -m:1`은 오류 0건으로 완료했다. 원격 GitHub Actions run `43736265722`에서 전체 `dotnet test`, HTTP smoke 2건, WPF UI smoke 1건이 모두 통과했다. 로컬 testhost 연결 실패는 별도 환경 미확인으로 기록한다.
 - 테스트 및 상세 격차·우선순위·UI 단계 판단은 [screen-implementation-gaps.md](screen-implementation-gaps.md)에 고정했다.
 
 ### 9.3 조사 후 관리 원칙
@@ -1015,5 +1016,14 @@ Idempotency-Key 필수. 동일 키에 다른 TargetUri·Payload·MaxAttempts 사
 | WRK-TSK-001 | task collection의 taskType/status/UTC 기간/page 필터 |
 | WRK-DLQ-001 | DLQ type/error/UTC 기간 필터와 replay history page |
 | WRK-XDL-001 | delivery collection filter와 admin manual retry |
+
+### 9.6 2026-11-16 확정·구현 계약
+
+| 화면 | 추가 구현 계약 |
+|---|---|
+| PLT-USR-001 | `Invitation` aggregate, SHA-256 token hash, Pending/Accepted/Expired/Revoked lifecycle, 개발 전달 Adapter, resend/revoke/accept API |
+| WRK-TSK-001 | `IWorkerResultStore`, 개발용 `FileSystemWorkerResultStore`, 성공 작업의 raw result 저장·metadata·streaming API, 64 MiB 상한 |
+
+HTTP smoke와 WPF STA smoke는 별도 테스트 프로젝트/CI 단계에 등록했고, 원격 CI run `43736265722`에서 통과했다. action-level UI 명령은 해당 smoke 범위에 포함되지 않으므로 관련 UI 검증 행은 `NotRun`으로 유지한다.
 
 이 추가 계약은 UI에서 실제 typed Client 호출과 공통 대상 선택·구조화 Request DTO 입력으로 연결되어 있다. 다만 WPF 화면의 직접 실행 smoke는 테스트host 연결 실패로 확인하지 못했으므로 화면 Registry 상태는 `InDevelopment`를 유지한다.

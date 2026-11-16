@@ -116,6 +116,30 @@ public sealed class DataSet : AggregateRoot<DataSetId>
         Version++;
     }
 
+    /// <summary>보관된 DataSet을 다시 활성 상태로 복원합니다.</summary>
+    public void Restore()
+    {
+        if (Status != DataSetStatus.Archived)
+            throw new BusinessRuleViolationException("dataset.invalid_restore", "보관 상태의 DataSet만 복원할 수 있습니다.");
+        if (_schemaRevisions.Count == 0)
+            throw new BusinessRuleViolationException("dataset.schema_required", "DataSet을 복원하려면 스키마가 필요합니다.");
+        Status = DataSetStatus.Active;
+        Version++;
+    }
+
+    /// <summary>기존 스키마 revision을 새 revision으로 복제하여 안전하게 rollback합니다.</summary>
+    public DataSetSchemaRevision RollbackSchema(int version, DateTimeOffset createdAtUtc)
+    {
+        EnsureNotArchived();
+        var source = _schemaRevisions.SingleOrDefault(x => x.Version == version)
+            ?? throw new BusinessRuleViolationException("dataset.schema_not_found", "요청한 스키마 revision을 찾을 수 없습니다.");
+        return AddSchema(source.SchemaJson, createdAtUtc);
+    }
+
+    /// <summary>지정한 스키마 revision을 반환합니다.</summary>
+    public DataSetSchemaRevision? GetSchema(int version) =>
+        _schemaRevisions.SingleOrDefault(x => x.Version == version);
+
     private void EnsureNotArchived()
     {
         if (Status == DataSetStatus.Archived)

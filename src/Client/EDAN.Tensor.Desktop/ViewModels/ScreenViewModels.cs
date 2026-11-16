@@ -265,22 +265,50 @@ public sealed class UserInvitationManagementViewModel(IDesktopScreenService sess
         {
             var result = await Session.Client!.InviteUserAsync(tenantId, request!);
             LastResultIdText = result.Id.ToString("D");
-            AddField("생성된 사용자 ID", result.Id.ToString("D"));
-            StatusMessage = "사용자 초대를 요청했습니다.";
+            AddField("생성된 초대 ID", result.Id.ToString("D"));
+            StatusMessage = "사용자 초대를 요청했습니다. raw token은 전달 Adapter가 관리합니다.";
         }
         catch (Exception exception) { ShowException(exception); }
     }
 
     protected override async Task ExecuteSecondaryCommandAsync(string operation)
     {
-        if (operation != "user-update") return;
         Fields.Clear();
-        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var userId)
-            || !TryParseExplicitPayload<UpdateDirectoryEntryRequestContract>(out var request)) return;
+        if (!TryGetTenant(out var tenantId)) return;
         try
         {
-            await Session.Client!.UpdateUserAsync(tenantId, userId, request!);
-            StatusMessage = "사용자 수정을 요청했습니다.";
+            if (operation == "user-update")
+            {
+                if (!TryGetTargetId(out var userId) || !TryParseExplicitPayload<UpdateDirectoryEntryRequestContract>(out var request)) return;
+                await Session.Client!.UpdateUserAsync(tenantId, userId, request!);
+                StatusMessage = "사용자 수정을 요청했습니다.";
+            }
+            else if (operation == "invitation-list")
+            {
+                if (!TryGetPage(out var page, out var pageSize)) return;
+                var result = await Session.Client!.GetInvitationsAsync(tenantId, SearchText, page: page, pageSize: pageSize);
+                foreach (var invitation in result.Items)
+                {
+                    AddField(invitation.Email, $"{invitation.Status} · 만료 {invitation.ExpiresAtUtc:u}");
+                    AddTargetOption(invitation.Id, $"초대 선택: {invitation.Email}");
+                }
+                StatusMessage = $"{result.Items.Count}개의 초대를 조회했습니다.";
+            }
+            else if (operation == "invitation-resend")
+            {
+                if (!TryGetTargetId(out var invitationId)) return;
+                var request = TryParseExplicitPayload<InvitationLifetimeRequestContract>(out var parsed)
+                    ? parsed : new InvitationLifetimeRequestContract();
+                var result = await Session.Client!.ResendInvitationAsync(tenantId, invitationId, request);
+                LastResultIdText = result.Id.ToString("D");
+                StatusMessage = "초대 token을 새로 발급해 전달 Adapter로 재전송했습니다.";
+            }
+            else if (operation == "invitation-revoke")
+            {
+                if (!TryGetTargetId(out var invitationId)) return;
+                await Session.Client!.RevokeInvitationAsync(tenantId, invitationId);
+                StatusMessage = "초대를 철회했습니다.";
+            }
         }
         catch (Exception exception) { ShowException(exception); }
     }
@@ -760,6 +788,35 @@ public sealed class DataSetManagementViewModel(IDesktopScreenService session)
         }
         catch (Exception exception) { ShowException(exception); }
     }
+
+    protected override async Task ExecuteSecondaryCommandAsync(string operation)
+    {
+        Fields.Clear();
+        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var dataSetId)) return;
+        try
+        {
+            switch (operation)
+            {
+                case "dataset-rename":
+                    await Session.Client!.RenameDataSetAsync(tenantId, dataSetId, GetInputText("Name"));
+                    StatusMessage = "DataSet 이름 변경을 요청했습니다.";
+                    break;
+                case "dataset-archive":
+                    await Session.Client!.ArchiveDataSetAsync(tenantId, dataSetId);
+                    StatusMessage = "DataSet 보관을 요청했습니다.";
+                    break;
+                case "dataset-restore":
+                    await Session.Client!.RestoreDataSetAsync(tenantId, dataSetId);
+                    StatusMessage = "DataSet 복원을 요청했습니다.";
+                    break;
+                case "dataset-delete":
+                    await Session.Client!.DeleteDataSetAsync(tenantId, dataSetId);
+                    StatusMessage = "DataSet 삭제를 요청했습니다.";
+                    break;
+            }
+        }
+        catch (Exception exception) { ShowException(exception); }
+    }
 }
 
 public sealed class DataSetSchemaManagementViewModel(IDesktopScreenService session)
@@ -796,6 +853,38 @@ public sealed class DataSetSchemaManagementViewModel(IDesktopScreenService sessi
             LastResultIdText = result.DataSetId.ToString("D");
             AddField("등록된 schema version", result.SchemaVersion.ToString());
             StatusMessage = "DataSet schema revision 등록을 요청했습니다.";
+        }
+        catch (Exception exception) { ShowException(exception); }
+    }
+
+    protected override async Task ExecuteSecondaryCommandAsync(string operation)
+    {
+        Fields.Clear();
+        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var dataSetId)) return;
+        if (!int.TryParse(GetInputText(operation == "schema-rollback" ? "Version" : "FromVersion"), out var fromVersion)
+            || fromVersion < 1)
+        {
+            AddField("스키마 버전", "유효한 양의 정수가 필요합니다.");
+            StatusMessage = "스키마 버전 입력 오류";
+            return;
+        }
+        try
+        {
+            if (operation == "schema-rollback")
+            {
+                var result = await Session.Client!.RollbackDataSetSchemaAsync(tenantId, dataSetId, fromVersion);
+                AddField("새 schema version", result.SchemaVersion.ToString());
+                StatusMessage = "DataSet schema rollback을 요청했습니다.";
+            }
+            else if (operation == "schema-diff"
+                && int.TryParse(GetInputText("ToVersion"), out var toVersion) && toVersion > 0)
+            {
+                var diff = await Session.Client!.GetDataSetSchemaDiffAsync(tenantId, dataSetId, fromVersion, toVersion);
+                AddField("비교 결과", diff.Changed ? "변경됨" : "동일함");
+                AddField("From", diff.FromSchemaJson);
+                AddField("To", diff.ToSchemaJson);
+                StatusMessage = "DataSet schema 비교를 완료했습니다.";
+            }
         }
         catch (Exception exception) { ShowException(exception); }
     }
@@ -873,6 +962,10 @@ public sealed class DataSetStorageManagementViewModel(IDesktopScreenService sess
                         await content.CopyToAsync(output);
                     AddField("다운로드 파일", downloadPath);
                     StatusMessage = "DataSet 콘텐츠 다운로드를 완료했습니다.";
+                    break;
+                case "dataset-storage-reset":
+                    await Session.Client!.ResetDataSetStorageAsync(tenantId, dataSetId);
+                    StatusMessage = "DataSet 저장소 초기화를 요청했습니다.";
                     break;
                 case "quota-events":
                     var events = await Session.Client!.GetTenantQuotaEventHistoryAsync(tenantId, 100);
@@ -985,6 +1078,19 @@ public sealed class DataSetValidationManagementViewModel(IDesktopScreenService s
                     AddField("Revision", revision.Revision.ToString());
                     StatusMessage = "검증 프로필 revision을 추가했습니다.";
                     break;
+                case "validation-profile-update":
+                    if (!TryGetTargetId(out var updateProfileId)) return;
+                    var updatedProfile = await Session.Client!.UpdateDataSetValidationProfileAsync(tenantId,
+                        updateProfileId, new UpdateDataSetValidationProfileRequestContract(GetInputText("Name")));
+                    AddField("Profile ID", updatedProfile.Id.ToString("D"));
+                    AddField("이름", updatedProfile.Name);
+                    StatusMessage = "검증 프로필 이름을 변경했습니다.";
+                    break;
+                case "validation-profile-delete":
+                    if (!TryGetTargetId(out var deleteProfileId)) return;
+                    await Session.Client!.DeleteDataSetValidationProfileAsync(tenantId, deleteProfileId);
+                    StatusMessage = "검증 프로필 삭제를 요청했습니다.";
+                    break;
                 case "validation-delete":
                     if (!TryGetTargetId(out var executionId)) return;
                     await Session.Client!.DeleteDataSetValidationAsync(tenantId, executionId);
@@ -1043,6 +1149,40 @@ public sealed class WorkerTaskMonitoringViewModel(IDesktopScreenService session)
             AddField("생성된 작업 ID", result.Id.ToString("D"));
             AddField("상태", result.Status);
             StatusMessage = "Worker 작업 등록을 요청했습니다.";
+        }
+        catch (Exception exception) { ShowException(exception); }
+    }
+
+    protected override async Task ExecuteSecondaryCommandAsync(string operation)
+    {
+        Fields.Clear();
+        if (!TryGetTenant(out var tenantId) || !TryGetTargetId(out var taskId)) return;
+        try
+        {
+            switch (operation)
+            {
+                case "worker-task-cancel":
+                    await Session.Client!.CancelWorkerTaskAsync(tenantId, taskId);
+                    StatusMessage = "Worker 작업 취소를 요청했습니다.";
+                    break;
+                case "worker-task-retry":
+                    await Session.Client!.RetryWorkerTaskAsync(tenantId, taskId);
+                    StatusMessage = "Worker 작업 강제 재시도를 요청했습니다.";
+                    break;
+                case "worker-task-result":
+                    var result = await Session.Client!.GetWorkerTaskResultAsync(tenantId, taskId);
+                    if (result is null)
+                    {
+                        AddField("결과", "저장된 결과 참조가 없습니다.");
+                        StatusMessage = "Worker 결과 없음";
+                    }
+                    else
+                    {
+                        AddField("결과 참조", result.ResultReference);
+                        StatusMessage = "Worker 결과 참조를 조회했습니다.";
+                    }
+                    break;
+            }
         }
         catch (Exception exception) { ShowException(exception); }
     }

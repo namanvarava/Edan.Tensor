@@ -149,6 +149,121 @@ public sealed class DataSetManagementService(
         catch (DomainException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
     }
 
+    public Task<Result> RenameAsync(DataSetId id, Guid tenantId, string name,
+        CancellationToken cancellationToken = default) => MutateAsync(id, tenantId,
+        dataSet => dataSet.Rename(name), cancellationToken);
+
+    public Task<Result> ArchiveAsync(DataSetId id, Guid tenantId,
+        CancellationToken cancellationToken = default) => MutateAsync(id, tenantId,
+        dataSet => dataSet.Archive(), cancellationToken);
+
+    public Task<Result> RestoreAsync(DataSetId id, Guid tenantId,
+        CancellationToken cancellationToken = default) => MutateAsync(id, tenantId,
+        dataSet => dataSet.Restore(), cancellationToken);
+
+    public async Task<Result> DeleteAsync(DataSetId id, Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null)
+            return Result.Failure(new Error("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."));
+        var adapter = adapters.Resolve(dataSet.StorageAdapter);
+        if (adapter is null)
+            return Result.Failure(new Error("dataset.adapter_unavailable", "DataSet 저장소 어댑터를 사용할 수 없습니다."));
+        try
+        {
+            await adapter.ReleaseAsync(new DataSetStorageAllocation(dataSet.Id, dataSet.Scope),
+                dataSet.StorageReference, cancellationToken);
+            repository.Remove(dataSet);
+            await repository.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Result.Failure(new Error("dataset.delete_failed", ex.Message));
+        }
+    }
+
+    /// <summary>물리 저장소를 새 참조로 교체하여 콘텐츠를 초기화합니다.</summary>
+    public async Task<Result> ResetStorageAsync(DataSetId id, Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null)
+            return Result.Failure(new Error("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."));
+        var adapter = adapters.Resolve(dataSet.StorageAdapter);
+        if (adapter is null)
+            return Result.Failure(new Error("dataset.adapter_unavailable", "DataSet 저장소 어댑터를 사용할 수 없습니다."));
+        var allocation = new DataSetStorageAllocation(dataSet.Id, dataSet.Scope);
+        StorageReference? replacement = null;
+        try
+        {
+            replacement = await adapter.AllocateAsync(allocation, cancellationToken);
+            var previous = dataSet.StorageReference;
+            dataSet.ChangeStorageReference(replacement);
+            await repository.SaveChangesAsync(cancellationToken);
+            await adapter.ReleaseAsync(allocation, previous, cancellationToken);
+            return Result.Success();
+        }
+        catch (DomainException ex)
+        {
+            if (replacement is not null) await adapter.ReleaseAsync(allocation, replacement, CancellationToken.None);
+            return Result.Failure(new Error(ex.Code, ex.Message));
+        }
+        catch (ArgumentException ex)
+        {
+            if (replacement is not null) await adapter.ReleaseAsync(allocation, replacement, CancellationToken.None);
+            return Result.Failure(new Error("dataset.validation", ex.Message));
+        }
+    }
+
+    public async Task<Result<int>> RollbackSchemaAsync(DataSetId id, Guid tenantId, int version,
+        DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null) return Failure<int>("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다.");
+        try
+        {
+            var revision = dataSet.RollbackSchema(version, nowUtc);
+            await repository.SaveChangesAsync(cancellationToken);
+            return Result<int>.Success(revision.Version);
+        }
+        catch (DomainException ex) { return Failure<int>(ex.Code, ex.Message); }
+        catch (ArgumentException ex) { return Failure<int>("dataset.validation", ex.Message); }
+    }
+
+    public async Task<Result<DataSetSchemaDiff>> GetSchemaDiffAsync(DataSetId id, Guid tenantId,
+        int fromVersion, int toVersion, CancellationToken cancellationToken = default)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null) return Result<DataSetSchemaDiff>.Failure(new Error("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."));
+        var from = dataSet.GetSchema(fromVersion);
+        var to = dataSet.GetSchema(toVersion);
+        if (from is null || to is null)
+            return Result<DataSetSchemaDiff>.Failure(new Error("dataset.schema_not_found", "요청한 스키마 revision을 찾을 수 없습니다."));
+        return Result<DataSetSchemaDiff>.Success(new DataSetSchemaDiff(from.Version, to.Version,
+            from.SchemaJson, to.SchemaJson, !string.Equals(from.SchemaJson, to.SchemaJson, StringComparison.Ordinal)));
+    }
+
+    private async Task<Result> MutateAsync(DataSetId id, Guid tenantId, Action<DataSetAggregate> mutation,
+        CancellationToken cancellationToken)
+    {
+        var dataSet = await repository.GetAsync(id, tenantId, cancellationToken);
+        if (dataSet is null)
+            return Result.Failure(new Error("dataset.not_found", "Tenant 범위에서 DataSet을 찾을 수 없습니다."));
+        try
+        {
+            mutation(dataSet);
+            await repository.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (DomainException ex) { return Result.Failure(new Error(ex.Code, ex.Message)); }
+        catch (ArgumentException ex) { return Result.Failure(new Error("dataset.validation", ex.Message)); }
+    }
+
     private static Result<T> Failure<T>(string code, string message) =>
         Result<T>.Failure(new Error(code, message));
 }
+
+public sealed record DataSetSchemaDiff(int FromVersion, int ToVersion, string FromSchemaJson,
+    string ToSchemaJson, bool Changed);

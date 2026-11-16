@@ -33,7 +33,8 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
     }
 
     public async Task<DataSetValidationExecutionPage> GetExecutionsAsync(Guid tenantId, Guid? dataSetId,
-        Guid? profileId, DataSetValidationStatus? status, int page, int pageSize,
+        Guid? profileId, DataSetValidationStatus? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc,
+        string? failureCode, int page, int pageSize,
         CancellationToken cancellationToken = default)
     {
         ValidatePage(page, pageSize);
@@ -41,8 +42,12 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         if (dataSetId.HasValue) query = query.Where(x => x.DataSetId == dataSetId.Value);
         if (profileId.HasValue) query = query.Where(x => x.ProfileId == profileId.Value);
         if (status.HasValue) query = query.Where(x => x.Status == status.Value.ToString());
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = (await query.ToListAsync(cancellationToken))
+        if (!string.IsNullOrWhiteSpace(failureCode)) query = query.Where(x => x.FailureCode == failureCode.Trim());
+        var executions = await query.ToListAsync(cancellationToken);
+        if (fromUtc.HasValue) executions = executions.Where(x => x.CreatedAtUtc >= fromUtc.Value.ToUniversalTime()).ToList();
+        if (toUtc.HasValue) executions = executions.Where(x => x.CreatedAtUtc <= toUtc.Value.ToUniversalTime()).ToList();
+        var totalCount = executions.Count;
+        var items = executions
             .OrderByDescending(x => x.CreatedAtUtc)
             .ThenBy(x => x.Id)
             .Skip(checked((page - 1) * pageSize)).Take(pageSize)
@@ -95,6 +100,37 @@ public sealed class EfDataSetValidationRepository(DataSetDbContext dbContext) : 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new DataSetValidationProfileSnapshot(profile.Id, tenantId, profile.Name,
             next.Revision, next.DefinitionJson, next.CreatedAtUtc);
+    }
+
+    public async Task<DataSetValidationProfileSnapshot?> UpdateProfileAsync(
+        Guid tenantId, Guid profileId, string name, CancellationToken cancellationToken = default)
+    {
+        var profile = await dbContext.ValidationProfiles
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == profileId, cancellationToken);
+        if (profile is null) return null;
+        profile.Rename(name);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        var revision = await dbContext.ValidationProfileRevisions.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.ProfileId == profileId)
+            .OrderByDescending(x => x.Revision).FirstAsync(cancellationToken);
+        return new DataSetValidationProfileSnapshot(profile.Id, profile.TenantId, profile.Name,
+            revision.Revision, revision.DefinitionJson, revision.CreatedAtUtc);
+    }
+
+    public async Task<bool> DeleteProfileAsync(Guid tenantId, Guid profileId,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await dbContext.ValidationProfiles
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == profileId, cancellationToken);
+        if (profile is null) return false;
+        if (await dbContext.ValidationExecutions.AnyAsync(x => x.TenantId == tenantId && x.ProfileId == profileId,
+                cancellationToken))
+            throw new InvalidOperationException("검증 실행이 참조하는 프로필은 삭제할 수 없습니다.");
+        dbContext.ValidationProfileRevisions.RemoveRange(
+            dbContext.ValidationProfileRevisions.Where(x => x.TenantId == tenantId && x.ProfileId == profileId));
+        dbContext.ValidationProfiles.Remove(profile);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<DataSetValidationExecutionSnapshot> CreateExecutionAsync(

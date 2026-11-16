@@ -18,13 +18,13 @@ public static class DataSetValidationEndpoints
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
 
-        memberGroup.MapGet("/validation-profiles", async (Guid tenantId, string? search, int page, int pageSize,
+        memberGroup.MapGet("/validation-profiles", async (Guid tenantId, string? search, int? page, int? pageSize,
             DataSetValidationService service, CancellationToken token) =>
         {
             try
             {
-                var result = await service.GetProfilesAsync(tenantId, search, page == 0 ? 1 : page,
-                    pageSize == 0 ? 50 : pageSize, token);
+                var result = await service.GetProfilesAsync(tenantId, search, page is > 0 ? page.Value : 1,
+                    pageSize is > 0 ? pageSize.Value : 50, token);
                 return Results.Ok(new
                 {
                     result.TotalCount,
@@ -41,13 +41,15 @@ public static class DataSetValidationEndpoints
         }).WithName("GetDataSetValidationProfiles");
 
         memberGroup.MapGet("/validations", async (Guid tenantId, Guid? dataSetId, Guid? profileId,
-            DataSetValidationStatus? status, int page, int pageSize,
+            DataSetValidationStatus? status, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, string? failureCode,
+            int? page, int? pageSize,
             DataSetValidationService service, CancellationToken token) =>
         {
             try
             {
                 var result = await service.GetExecutionsAsync(tenantId, dataSetId, profileId, status,
-                    page == 0 ? 1 : page, pageSize == 0 ? 50 : pageSize, token);
+                    fromUtc, toUtc, failureCode, page is > 0 ? page.Value : 1,
+                    pageSize is > 0 ? pageSize.Value : 50, token);
                 return Results.Ok(new
                 {
                     result.TotalCount,
@@ -116,6 +118,33 @@ public static class DataSetValidationEndpoints
                     ? Results.NotFound(new { result.Error.Code, result.Error.Description })
                     : Results.BadRequest(new { result.Error.Code, result.Error.Description });
         }).WithName("CreateDataSetValidationProfileRevision");
+
+        adminGroup.MapPut("/validation-profiles/{profileId:guid}", async (
+            Guid tenantId, Guid profileId, UpdateDataSetValidationProfileRequest request,
+            DataSetValidationService service, CancellationToken token) =>
+        {
+            var result = await service.UpdateProfileAsync(tenantId, profileId, request.Name, token);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : result.Error.Code == "dataset.validation.profile_not_found"
+                    ? Results.NotFound(new { result.Error.Code, result.Error.Description })
+                    : Results.BadRequest(new { result.Error.Code, result.Error.Description });
+        }).WithName("UpdateDataSetValidationProfile");
+
+        adminGroup.MapDelete("/validation-profiles/{profileId:guid}", async (
+            Guid tenantId, Guid profileId, DataSetValidationService service, CancellationToken token) =>
+        {
+            try
+            {
+                var deleted = await service.DeleteProfileAsync(tenantId, profileId, token);
+                return deleted ? Results.NoContent() : Results.NotFound(new ApiError(
+                    "dataset.validation.profile_not_found", "Tenant 범위에서 검증 프로필을 찾을 수 없습니다."));
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Results.Conflict(new ApiError("dataset.validation.profile_conflict", exception.Message));
+            }
+        }).WithName("DeleteDataSetValidationProfile");
 
         adminGroup.MapPost("/{dataSetId:guid}/validations", async (
             Guid tenantId, Guid dataSetId, HttpRequest httpRequest,
@@ -214,6 +243,7 @@ public static class DataSetValidationEndpoints
 
     /// <summary>Tenant 관리자가 추가할 검증 프로필 revision 입력입니다.</summary>
     public sealed record CreateDataSetValidationRevisionRequest(string DefinitionJson);
+    public sealed record UpdateDataSetValidationProfileRequest(string Name);
 
     /// <summary>고정된 DataSet·스키마·프로필 revision으로 검증 실행을 예약하는 입력입니다.</summary>
     public sealed record CreateDataSetValidationRequest(

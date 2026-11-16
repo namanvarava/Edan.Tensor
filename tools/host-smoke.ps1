@@ -52,8 +52,9 @@ function Wait-ForHttpSuccess {
         [string]$Name
     )
 
-    for ($attempt = 0; $attempt -lt 60; $attempt++) {
-        Start-Sleep -Milliseconds 250
+    # 새 SQLite 데이터베이스를 생성하고 네 개의 스키마를 Migration하는 시간을 고려합니다.
+    for ($attempt = 0; $attempt -lt 120; $attempt++) {
+        Start-Sleep -Milliseconds 500
         try {
             $response = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 2
             if ($response.StatusCode -eq 200) {
@@ -77,11 +78,40 @@ function Stop-SmokeProcess {
         return
     }
 
-    if (-not $Process.HasExited) {
+    try {
+        $Process.Refresh()
+        if ($Process.HasExited) {
+            return
+        }
+
         # Windows PowerShell 5.1에는 Kill(bool) 오버로드가 없으며 DLL Host는 자식 프로세스를 만들지 않습니다.
         $Process.Kill()
         $Process.WaitForExit(10000) | Out-Null
     }
+    catch [InvalidOperationException] {
+        # 상태 확인과 종료 사이에 Host가 먼저 끝났으면 정리 작업을 성공으로 처리합니다.
+        return
+    }
+}
+
+function Read-SmokeProcessError {
+    param([Diagnostics.Process]$Process)
+
+    if ($null -eq $Process) {
+        return ""
+    }
+
+    try {
+        if ($null -ne $Process.StandardError) {
+            return $Process.StandardError.ReadToEnd()
+        }
+    }
+    catch [InvalidOperationException] {
+        # 프로세스가 시작되지 않았거나 표준 오류 스트림이 연결되지 않았으면 빈 로그로 처리합니다.
+        return ""
+    }
+
+    return ""
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
@@ -154,12 +184,20 @@ finally {
     Stop-SmokeProcess $workerProcess
     Stop-SmokeProcess $apiProcess
 
-    $apiError = if ($null -ne $apiProcess) { $apiProcess.StandardError.ReadToEnd() } else { "" }
-    $workerError = if ($null -ne $workerProcess) { $workerProcess.StandardError.ReadToEnd() } else { "" }
+    $apiError = Read-SmokeProcessError $apiProcess
+    $workerError = Read-SmokeProcessError $workerProcess
     $apiErrorBytes = [Text.Encoding]::UTF8.GetByteCount($apiError)
     $workerErrorBytes = [Text.Encoding]::UTF8.GetByteCount($workerError)
     Write-Output "ApiHost stderr 바이트: $apiErrorBytes"
     Write-Output "WorkerHost stderr 바이트: $workerErrorBytes"
+    if ($apiErrorBytes -gt 0) {
+        Write-Output "ApiHost stderr 내용:"
+        Write-Output $apiError
+    }
+    if ($workerErrorBytes -gt 0) {
+        Write-Output "WorkerHost stderr 내용:"
+        Write-Output $workerError
+    }
 
     if (Test-Path -LiteralPath $smokeRoot) {
         Remove-Item -LiteralPath $smokeRoot -Recurse -Force

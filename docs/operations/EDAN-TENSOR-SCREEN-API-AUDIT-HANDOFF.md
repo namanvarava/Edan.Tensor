@@ -378,3 +378,15 @@ Screen Registry에 등록된 15개 화면의 기능 명세를 실제 소스 코�
 - [소스 개발 표준](../standards/EDAN-SOURCE-DEVELOPMENT-STANDARD.md)
 
 이 문서는 다른 계정이 작업을 재개하기 위한 실행 지시서다. 실제 소스 상태와 최신 브랜치 상태가 본 문서의 과거 기준과 다르면 최신 저장소를 우선한다.
+
+## 16. 2026-11-16 후속 구현 진행 기록
+
+사용자 승인에 따라 조사 후 남아 있던 확정 필요 항목을 `main-auto`에서 실제 구현 범위로 전환했다.
+
+- `PLT-USR-001`: `Invitation` aggregate, token hash 저장, Pending/Accepted/Expired/Revoked 전이, resend/revoke/token-only accept API, Delivery Adapter 및 typed Client 연결
+- `WRK-TSK-001`: `IWorkerResultStore`, 개발용 파일 저장 Adapter, 성공 작업 raw result 저장·metadata·streaming API, Tenant/Task 경계 및 64 MiB 상한
+- HTTP smoke: Invitation lifecycle와 Worker raw result bytes의 실제 요청 테스트를 `EDAN.Tensor.ApiHost.IntegrationTests`에 추가
+- WPF smoke: STA 스레드에서 `App`·`MainWindow`·15개 Registry 화면 DataTemplate 로딩을 검증하는 `EDAN.Tensor.Desktop.Tests` 추가
+- CI: 전체 테스트 외에 HTTP smoke와 WPF smoke 단계를 명시적으로 추가
+
+API Host의 임시 SQLite migration 기동과 Release build를 확인했다. GitHub Actions run `43736265722`에서 전체 Build/Test, HTTP smoke 2건, WPF UI smoke 1건이 통과했다. 로컬 VSTest testhost는 연결되지 않았지만 원격 검증 결과를 CSV에 반영했으며, action-level UI 조작 행은 smoke 범위 밖이므로 `NotRun`을 유지한다. 상세 계약은 [invitation-and-worker-result-contract.md](../architecture/invitation-and-worker-result-contract.md)에 기록한다.
