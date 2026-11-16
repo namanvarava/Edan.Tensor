@@ -248,3 +248,18 @@ WPF 실행 파일은 실행 중인 창으로 확인했지만, 창 접근 직전�
 - 생성·수정·삭제·재시도·외부 전달: 미수행
 - 401·403·404·409·422·5xx의 화면 표시: 미검증
 - 실제 WPF 조작 결과의 독립 재현: 현재 데스크톱 조작 권한 미승인으로 미검증
+
+## 12. WPF ViewModel과 실제 TestHost API 통합 검증
+
+화면 렌더링 검증과 서버 호출 경계를 분리하기 위해 `DesktopApiIntegrationTests`를 추가했다. 테스트는 임시 SQLite 네 개를 사용하는 실제 `ApiHost`를 생성하고, `DesktopApiSession`에 해당 HTTP 클라이언트를 주입한 뒤 `TenantManagementViewModel.RefreshAsync`를 실행한다.
+
+다음 결과를 확인했다.
+
+- WPF 세션이 실제 `TensorApiClient`를 생성하고 API 요청을 전송했다.
+- 실제 ApiHost의 Development Bypass 인증이 요청을 승인했다.
+- 실제 SQLite Platform 데이터베이스에서 Tenant 멤버십 1건을 조회했다.
+- 조회된 Tenant ID가 비어 있지 않고 역할이 `Administrator`로 표시되었다.
+- 화면 상태가 `1개의 활성 Tenant 소속을 조회했습니다.`로 갱신되었다.
+- 테스트는 임시 데이터베이스와 HTTP 클라이언트를 사용하며 검증 후 임시 디렉터리를 삭제한다.
+
+이번 검증은 15개 화면 중 테넌트 화면의 실제 ViewModel→Client→ApiHost→SQLite 경로를 대표 검증한 결과다. 따라서 15개 화면의 모든 변경 명령과 실제 독립 WPF 클릭·입력 검증을 완료했다고 판정하지 않는다. 나머지 화면의 조회·생성·수정·삭제·재시도 및 오류 화면 표시는 별도 검증 범위로 유지한다.
