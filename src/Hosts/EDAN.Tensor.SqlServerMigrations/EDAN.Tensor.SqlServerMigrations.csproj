@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.SqlServerMigrations</AssemblyName>
+    <RootNamespace>EDAN.Tensor.SqlServerMigrations</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/EDAN.Tensor.Platform.Infrastructure/EDAN.Tensor.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" />
+    <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="SqlServerMigrationsMarker.cs" />
+    <Compile Include="Migrations/**/*.cs" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/SqlServer/**/*.cs"
+             Link="Persistence/Migrations/SqlServer/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Migrations/SqlServer/**/*.cs"
+             Link="Migrations/SqlServer/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

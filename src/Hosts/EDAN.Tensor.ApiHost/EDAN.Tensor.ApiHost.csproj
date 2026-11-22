@@ -12,13 +12,19 @@
     <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Application/EDAN.Tensor.DataSet.Application.csproj" />
     <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
     <ProjectReference Include="../EDAN.Tensor.HostServices/EDAN.Tensor.HostServices.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.PostgreSqlMigrations/EDAN.Tensor.PostgreSqlMigrations.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.SqlServerMigrations/EDAN.Tensor.SqlServerMigrations.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Persistence/Migrations/PostgreSql/**/*.cs" />
+    <Compile Remove="Migrations/**/*.cs" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.OpenApi" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

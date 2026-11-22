@@ -21,6 +21,10 @@ using EDAN.Tensor.HostServices.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.EntityFrameworkCore.SqlServer;
+using EDAN.Tensor.PostgreSqlMigrations;
+using EDAN.Tensor.SqlServerMigrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,13 +43,19 @@ if (builder.Environment.IsDevelopment())
         .SetApplicationName("EDAN.Tensor.ApiHost");
 }
 
-// SQLite는 로컬 개발용 기본 메타데이터 저장소이며 운영 환경에서는 연결 문자열을 환경 설정으로 교체합니다.
+// SQLite는 기본 저장소로 유지하고, PostgreSQL은 환경 설정으로 선택합니다.
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+var migrationsAssembly = GetMigrationsAssembly(databaseProvider);
 var connectionString = builder.Configuration.GetConnectionString("PlatformDatabase")
     ?? throw new InvalidOperationException("PlatformDatabase 연결 문자열이 설정되지 않았습니다.");
+var platformDatabaseConnection = ResolveDatabaseConnection(connectionString, databaseProvider, builder.Environment.ContentRootPath);
 
-// 상대 경로는 API Host의 콘텐츠 루트를 기준으로 절대 경로로 변환합니다.
-var sqliteConnection = new SqliteConnectionStringBuilder(connectionString);
-if (!Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSource != ":memory:")
+// SQLite 상대 경로만 API Host의 콘텐츠 루트를 기준으로 절대 경로로 변환합니다.
+var sqliteConnection = IsPostgreSql(databaseProvider) || IsSqlServer(databaseProvider)
+    ? null
+    : new SqliteConnectionStringBuilder(connectionString);
+if (sqliteConnection is not null
+    && !Path.IsPathRooted(sqliteConnection.DataSource) && sqliteConnection.DataSource != ":memory:")
 {
     sqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqliteConnection.DataSource);
     var databaseDirectory = Path.GetDirectoryName(sqliteConnection.DataSource);
@@ -65,47 +75,33 @@ if (!Path.IsPathRooted(archivePath))
     archivePath = Path.Combine(builder.Environment.ContentRootPath, archivePath);
 
 builder.Services.AddPlatformInfrastructure(
-    options => options.UseSqlite(sqliteConnection.ConnectionString), archivePath);
+    options => ConfigureDatabase(options, databaseProvider, platformDatabaseConnection,
+        migrationsAssembly,
+        historyTable: "__EFMigrationsHistory_Platform"), archivePath);
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<DevelopmentInvitationDelivery>();
     builder.Services.AddSingleton<IInvitationDelivery>(sp => sp.GetRequiredService<DevelopmentInvitationDelivery>());
 }
 
-// Worker 작업 저장소는 Platform 메타데이터와 분리된 전용 연결을 사용합니다.
+// Worker 작업 저장소는 별도 연결을 지원하며 PostgreSQL에서는 같은 운영 후보 DB를 공유할 수 있습니다.
 var workerConnectionString = builder.Configuration.GetConnectionString("WorkerDatabase")
-    ?? "Data Source=edan-worker.db";
-var workerSqliteConnection = new SqliteConnectionStringBuilder(workerConnectionString);
-if (!Path.IsPathRooted(workerSqliteConnection.DataSource) && workerSqliteConnection.DataSource != ":memory:")
-{
-    workerSqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, workerSqliteConnection.DataSource);
-    var workerDirectory = Path.GetDirectoryName(workerSqliteConnection.DataSource);
-    if (!string.IsNullOrWhiteSpace(workerDirectory))
-        Directory.CreateDirectory(workerDirectory);
-}
+    ?? (IsPostgreSql(databaseProvider) || IsSqlServer(databaseProvider) ? connectionString : "Data Source=edan-worker.db");
 var workerResultPath = builder.Configuration["WorkerResults:RootPath"] ?? "App_Data/WorkerResults";
 if (!Path.IsPathRooted(workerResultPath))
     workerResultPath = Path.Combine(builder.Environment.ContentRootPath, workerResultPath);
 Directory.CreateDirectory(workerResultPath);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddWorkerInfrastructure(options =>
-    options.UseSqlite(workerSqliteConnection.ConnectionString,
-        sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)), workerResultPath);
+    ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(workerConnectionString, databaseProvider, builder.Environment.ContentRootPath),
+        migrationsAssembly ?? typeof(WorkerDbContext).Assembly.FullName, "__EFMigrationsHistory_Worker"), workerResultPath);
 
-// DataSet 메타데이터는 Platform·Worker와 분리된 전용 SQLite 데이터베이스에 저장합니다.
+// DataSet 메타데이터는 별도 연결을 지원하며 PostgreSQL에서는 같은 운영 후보 DB를 공유할 수 있습니다.
 var dataSetConnectionString = builder.Configuration.GetConnectionString("DataSetDatabase")
-    ?? "Data Source=App_Data/edan-tensor-dataset.db;Cache=Shared";
-var dataSetSqliteConnection = new SqliteConnectionStringBuilder(dataSetConnectionString);
-if (!Path.IsPathRooted(dataSetSqliteConnection.DataSource) && dataSetSqliteConnection.DataSource != ":memory:")
-{
-    dataSetSqliteConnection.DataSource = Path.Combine(builder.Environment.ContentRootPath, dataSetSqliteConnection.DataSource);
-    var dataSetDirectory = Path.GetDirectoryName(dataSetSqliteConnection.DataSource);
-    if (!string.IsNullOrWhiteSpace(dataSetDirectory))
-        Directory.CreateDirectory(dataSetDirectory);
-}
+    ?? (IsPostgreSql(databaseProvider) || IsSqlServer(databaseProvider) ? connectionString : "Data Source=App_Data/edan-tensor-dataset.db;Cache=Shared");
 builder.Services.AddDataSetInfrastructure(options =>
-    options.UseSqlite(dataSetSqliteConnection.ConnectionString,
-        sqlite => sqlite.MigrationsAssembly(typeof(DataSetDbContext).Assembly.FullName)));
+    ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(dataSetConnectionString, databaseProvider, builder.Environment.ContentRootPath),
+        migrationsAssembly ?? typeof(DataSetDbContext).Assembly.FullName, "__EFMigrationsHistory_DataSet"));
 
 // 콘텐츠 본문은 DataSet 메타데이터와 분리된 전용 SQLite DB에 저장합니다.
 var dataSetContentConnectionString = builder.Configuration.GetConnectionString("DataSetContentDatabase")
@@ -237,5 +233,73 @@ app.MapGet("/health/database", async (DatabaseHealthService health, Cancellation
 
 app.MapGet("/", () => Results.Ok(new { Product = "EDAN Tensor", Service = "ApiHost", Status = "Foundation" }));
 app.Run();
+
+static bool IsPostgreSql(string provider) =>
+    provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase);
+
+static bool IsSqlServer(string provider) =>
+    provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("MSSQL", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("SQL Server", StringComparison.OrdinalIgnoreCase);
+
+static string? GetMigrationsAssembly(string provider) =>
+    IsPostgreSql(provider) ? typeof(PostgreSqlMigrationsMarker).Assembly.FullName :
+    IsSqlServer(provider) ? typeof(SqlServerMigrationsMarker).Assembly.FullName : null;
+
+static string ResolveDatabaseConnection(string connectionString, string provider, string contentRoot)
+{
+    if (IsPostgreSql(provider) || IsSqlServer(provider))
+        return connectionString;
+
+    var sqlite = new SqliteConnectionStringBuilder(connectionString);
+    if (!Path.IsPathRooted(sqlite.DataSource) && sqlite.DataSource != ":memory:")
+    {
+        sqlite.DataSource = Path.Combine(contentRoot, sqlite.DataSource);
+        var directory = Path.GetDirectoryName(sqlite.DataSource);
+        if (!string.IsNullOrWhiteSpace(directory))
+            Directory.CreateDirectory(directory);
+    }
+    return sqlite.ConnectionString;
+}
+
+static DbContextOptionsBuilder ConfigureDatabase(
+    DbContextOptionsBuilder options,
+    string provider,
+    string connectionString,
+    string? migrationsAssembly = null,
+    string? historyTable = null)
+{
+    if (IsPostgreSql(provider))
+    {
+        options.UseNpgsql(connectionString, npgsql =>
+        {
+            if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+                npgsql.MigrationsAssembly(migrationsAssembly);
+            if (!string.IsNullOrWhiteSpace(historyTable))
+                npgsql.MigrationsHistoryTable(historyTable);
+        });
+        return options;
+    }
+
+    if (IsSqlServer(provider))
+    {
+        options.UseSqlServer(connectionString, sqlServer =>
+        {
+            if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+                sqlServer.MigrationsAssembly(migrationsAssembly);
+            if (!string.IsNullOrWhiteSpace(historyTable))
+                sqlServer.MigrationsHistoryTable(historyTable);
+        });
+        return options;
+    }
+
+    options.UseSqlite(connectionString, sqlite =>
+    {
+        if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+            sqlite.MigrationsAssembly(migrationsAssembly);
+    });
+    return options;
+}
 
 public partial class Program { }

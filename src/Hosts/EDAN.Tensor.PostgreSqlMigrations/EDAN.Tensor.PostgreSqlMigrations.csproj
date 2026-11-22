@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.PostgreSqlMigrations</AssemblyName>
+    <RootNamespace>EDAN.Tensor.PostgreSqlMigrations</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/EDAN.Tensor.Platform.Infrastructure/EDAN.Tensor.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" />
+    <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="PostgreSqlMigrationsMarker.cs" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/**/*.cs"
+             Link="Persistence/Migrations/PostgreSql/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Migrations/**/*.cs"
+             Link="Migrations/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

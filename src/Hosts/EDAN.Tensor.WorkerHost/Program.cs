@@ -16,33 +16,39 @@ using EDAN.Tensor.WorkerHost.BackgroundServices;
 using EDAN.Tensor.WorkerHost.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.EntityFrameworkCore.SqlServer;
+using EDAN.Tensor.PostgreSqlMigrations;
+using EDAN.Tensor.SqlServerMigrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Worker와 API는 동일한 Platform·DataSet·콘텐츠·Worker DB 연결을 공유해야 합니다.
 var platformConnectionString = builder.Configuration.GetConnectionString("PlatformDatabase")
     ?? throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 PlatformDatabase 연결 문자열이 필요합니다.");
-var platformSqlite = ResolveSqliteConnection(platformConnectionString, builder.Environment.ContentRootPath);
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+var migrationsAssembly = GetMigrationsAssembly(databaseProvider);
 var archivePath = builder.Configuration["AuthorizationAuditArchive:RootPath"]
     ?? "App_Data/AuthorizationAuditArchives";
 if (!Path.IsPathRooted(archivePath))
     archivePath = Path.Combine(builder.Environment.ContentRootPath, archivePath);
 builder.Services.AddPlatformInfrastructure(
-    options => options.UseSqlite(platformSqlite),
+    options => ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(platformConnectionString, databaseProvider, builder.Environment.ContentRootPath),
+        migrationsAssembly,
+        historyTable: "__EFMigrationsHistory_Platform"),
     archivePath);
 
 var dataSetConnectionString = builder.Configuration.GetConnectionString("DataSetDatabase")
-    ?? throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 DataSetDatabase 연결 문자열이 필요합니다.");
-var dataSetSqlite = ResolveSqliteConnection(dataSetConnectionString, builder.Environment.ContentRootPath);
+    ?? (IsPostgreSql(databaseProvider) || IsSqlServer(databaseProvider) ? platformConnectionString : throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 DataSetDatabase 연결 문자열이 필요합니다."));
 builder.Services.AddDataSetInfrastructure(options =>
-    options.UseSqlite(dataSetSqlite,
-        sqlite => sqlite.MigrationsAssembly(typeof(DataSetDbContext).Assembly.FullName)));
+    ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(dataSetConnectionString, databaseProvider, builder.Environment.ContentRootPath),
+        migrationsAssembly ?? typeof(DataSetDbContext).Assembly.FullName, "__EFMigrationsHistory_DataSet"));
 builder.Services.AddDataSetApplication();
 builder.Services.AddScoped<IDataSetScopeValidator, WorkerDataSetScopeValidator>();
 
 var contentConnectionString = builder.Configuration.GetConnectionString("DataSetContentDatabase")
     ?? throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 DataSetContentDatabase 연결 문자열이 필요합니다.");
-var contentSqlite = ResolveSqliteConnection(contentConnectionString, builder.Environment.ContentRootPath);
+var contentSqlite = ResolveDatabaseConnection(contentConnectionString, "Sqlite", builder.Environment.ContentRootPath);
 var maxContentBytes = builder.Configuration.GetValue<long?>("DataSetContent:MaxUploadBytes") ?? 67_108_864;
 builder.Services.AddDataSetSqliteStorage(contentSqlite, maxContentBytes);
 builder.Services.AddSingleton(new SqliteDatabaseHealthProbe(contentSqlite));
@@ -50,11 +56,10 @@ builder.Services.AddSingleton<WorkerDatabaseHealthService>();
 
 var workerConnectionString = builder.Configuration.GetConnectionString("WorkerDatabase")
     ?? builder.Configuration.GetConnectionString("Worker")
-    ?? throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 WorkerDatabase 연결 문자열이 필요합니다.");
-var workerSqlite = ResolveSqliteConnection(workerConnectionString, builder.Environment.ContentRootPath);
+    ?? (IsPostgreSql(databaseProvider) || IsSqlServer(databaseProvider) ? platformConnectionString : throw new InvalidOperationException("WorkerHost에는 API Host와 동일한 WorkerDatabase 연결 문자열이 필요합니다."));
 builder.Services.AddWorkerInfrastructure(options =>
-    options.UseSqlite(workerSqlite,
-        sqlite => sqlite.MigrationsAssembly(typeof(WorkerDbContext).Assembly.FullName)));
+    ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(workerConnectionString, databaseProvider, builder.Environment.ContentRootPath),
+        migrationsAssembly ?? typeof(WorkerDbContext).Assembly.FullName, "__EFMigrationsHistory_Worker"));
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DataSetStorageUsageSnapshotService>();
@@ -114,8 +119,24 @@ app.MapGet("/health/database", async (WorkerDatabaseHealthService health, Cancel
 });
 app.Run();
 
-static string ResolveSqliteConnection(string connectionString, string contentRoot)
+static bool IsPostgreSql(string provider) =>
+    provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase);
+
+static bool IsSqlServer(string provider) =>
+    provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("MSSQL", StringComparison.OrdinalIgnoreCase)
+    || provider.Equals("SQL Server", StringComparison.OrdinalIgnoreCase);
+
+static string? GetMigrationsAssembly(string provider) =>
+    IsPostgreSql(provider) ? typeof(PostgreSqlMigrationsMarker).Assembly.FullName :
+    IsSqlServer(provider) ? typeof(SqlServerMigrationsMarker).Assembly.FullName : null;
+
+static string ResolveDatabaseConnection(string connectionString, string provider, string contentRoot)
 {
+    if (IsPostgreSql(provider) || IsSqlServer(provider))
+        return connectionString;
+
     var sqlite = new SqliteConnectionStringBuilder(connectionString);
     if (!Path.IsPathRooted(sqlite.DataSource) && sqlite.DataSource != ":memory:")
     {
@@ -125,6 +146,45 @@ static string ResolveSqliteConnection(string connectionString, string contentRoo
             Directory.CreateDirectory(directory);
     }
     return sqlite.ConnectionString;
+}
+
+static DbContextOptionsBuilder ConfigureDatabase(
+    DbContextOptionsBuilder options,
+    string provider,
+    string connectionString,
+    string? migrationsAssembly = null,
+    string? historyTable = null)
+{
+    if (IsPostgreSql(provider))
+    {
+        options.UseNpgsql(connectionString, npgsql =>
+        {
+            if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+                npgsql.MigrationsAssembly(migrationsAssembly);
+            if (!string.IsNullOrWhiteSpace(historyTable))
+                npgsql.MigrationsHistoryTable(historyTable);
+        });
+        return options;
+    }
+
+    if (IsSqlServer(provider))
+    {
+        options.UseSqlServer(connectionString, sqlServer =>
+        {
+            if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+                sqlServer.MigrationsAssembly(migrationsAssembly);
+            if (!string.IsNullOrWhiteSpace(historyTable))
+                sqlServer.MigrationsHistoryTable(historyTable);
+        });
+        return options;
+    }
+
+    options.UseSqlite(connectionString, sqlite =>
+    {
+        if (!string.IsNullOrWhiteSpace(migrationsAssembly))
+            sqlite.MigrationsAssembly(migrationsAssembly);
+    });
+    return options;
 }
 
 public partial class Program { }
