@@ -6,10 +6,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       Database__Provider: ${Database__Provider:-Sqlite}
-      ConnectionStrings__Platform: ${ConnectionStrings__Platform:?Set ConnectionStrings__Platform}
-      ConnectionStrings__Worker: ${ConnectionStrings__Worker:?Set ConnectionStrings__Worker}
-      ConnectionStrings__DataSet: ${ConnectionStrings__DataSet:?Set ConnectionStrings__DataSet}
-      ConnectionStrings__DataSetContent: ${ConnectionStrings__DataSetContent:?Set ConnectionStrings__DataSetContent}
+      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
+      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
+      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:?Set ConnectionStrings__DataSetDatabase}
+      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:?Set ConnectionStrings__DataSetContentDatabase}
       Authentication__Mode: ${Authentication__Mode:-External}
       Authentication__MetadataAddress: ${Authentication__MetadataAddress:?Set Authentication__MetadataAddress}
       Authentication__Issuer: ${Authentication__Issuer:?Set Authentication__Issuer}
@@ -25,10 +25,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       Database__Provider: ${Database__Provider:-Sqlite}
-      ConnectionStrings__Platform: ${ConnectionStrings__Platform:?Set ConnectionStrings__Platform}
-      ConnectionStrings__Worker: ${ConnectionStrings__Worker:?Set ConnectionStrings__Worker}
-      ConnectionStrings__DataSet: ${ConnectionStrings__DataSet:?Set ConnectionStrings__DataSet}
-      ConnectionStrings__DataSetContent: ${ConnectionStrings__DataSetContent:?Set ConnectionStrings__DataSetContent}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
+      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
+      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:?Set ConnectionStrings__DataSetDatabase}
+      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:?Set ConnectionStrings__DataSetContentDatabase}
+    ports:
+      - "${WORKER_PORT:-5001}:8080"
     depends_on:
       - api
     restart: unless-stopped
