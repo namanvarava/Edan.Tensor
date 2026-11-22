@@ -3,6 +3,9 @@
     <ProjectReference Include="../EDAN.Tensor.HostServices/EDAN.Tensor.HostServices.csproj" />
     <ProjectReference Include="../EDAN.Tensor.PostgreSqlMigrations/EDAN.Tensor.PostgreSqlMigrations.csproj" />
     <ProjectReference Include="../EDAN.Tensor.SqlServerMigrations/EDAN.Tensor.SqlServerMigrations.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.OracleMigrations/EDAN.Tensor.OracleMigrations.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" />
   </ItemGroup><ItemGroup><PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" /></ItemGroup></Project>

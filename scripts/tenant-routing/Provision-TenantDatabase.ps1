@@ -22,7 +22,7 @@ if (-not $SkipMigration) {
     switch ($Provider) {
         'PostgreSQL' { & (Join-Path $RepositoryRoot 'scripts\postgresql\Apply-Migrations.ps1') -Apply }
         'SqlServer' { & (Join-Path $RepositoryRoot 'scripts\sqlserver\Apply-Migrations.ps1') -Apply }
-        'Oracle' { throw 'Oracle Migration Provisioning은 Oracle 전용 마이그레이션 프로젝트가 준비된 뒤 활성화해야 합니다.' }
+        'Oracle' { & (Join-Path $RepositoryRoot 'scripts\oracle\Apply-Migrations.ps1') -Apply }
         'SQLite' { Write-Host 'SQLite는 API의 개발용 마이그레이션 경로를 사용합니다.' }
     }
     if ($LASTEXITCODE -ne 0) { throw "${Provider} Migration 적용에 실패했습니다. 종료 코드: $LASTEXITCODE" }

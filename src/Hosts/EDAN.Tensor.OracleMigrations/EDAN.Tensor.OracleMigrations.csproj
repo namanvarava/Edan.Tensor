@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>EDAN.Tensor.OracleMigrations</AssemblyName>
+    <RootNamespace>EDAN.Tensor.OracleMigrations</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/EDAN.Tensor.Platform.Infrastructure/EDAN.Tensor.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" />
+    <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="OracleMigrationsMarker.cs" />
+    <Compile Include="Migrations/**/*.cs" />
+  </ItemGroup>
+</Project>
