@@ -8,7 +8,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
 public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, ITenantDatabaseResolver resolver) : ITenantDatabaseRoutineExecutor
 {
-    private static readonly Regex Identifier = new("^[A-Za-z_][A-Za-z0-9_$#]*$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex Identifier = new("^[A-Za-z_][A-Za-z0-9_$#]*(\\.[A-Za-z_][A-Za-z0-9_$#]*)?$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public async Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
     {
@@ -17,13 +17,15 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
         var allowed = await platformDb.TenantDatabaseRoutineAllowlists.AnyAsync(x => x.TenantId == tenantId && x.Kind == kind && x.SchemaName == schemaName && x.RoutineName == routineName && x.IsEnabled, cancellationToken);
         if (!allowed) throw new UnauthorizedAccessException("허용 목록에 등록되지 않은 루틴입니다.");
         var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
-        if (resolution.Provider is TenantDatabaseProvider.SQLite or TenantDatabaseProvider.Oracle)
-            throw new NotSupportedException("현재 루틴 실행은 PostgreSQL·SQL Server만 지원합니다.");
+        if (resolution.Provider == TenantDatabaseProvider.SQLite)
+            throw new NotSupportedException("SQLite는 저장 프로시저/함수를 지원하지 않습니다.");
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandType = CommandType.Text;
         var names = parameters.Keys.Select((_, i) => "@p" + i).ToArray();
-        command.CommandText = resolution.Provider == TenantDatabaseProvider.SqlServer
+        command.CommandText = resolution.Provider == TenantDatabaseProvider.Oracle
+            ? $"BEGIN {schemaName}.{routineName}({string.Join(", ", names)}); END;"
+            : resolution.Provider == TenantDatabaseProvider.SqlServer
             ? $"EXEC [{schemaName}].[{routineName}] {string.Join(", ", names)}"
             : kind == TenantDatabaseRoutineKind.Function
                 ? $"SELECT * FROM \"{schemaName}\".\"{routineName}\"({string.Join(", ", names)})"

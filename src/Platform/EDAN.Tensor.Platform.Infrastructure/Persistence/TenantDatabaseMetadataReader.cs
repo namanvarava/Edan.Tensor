@@ -15,7 +15,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
             TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, obj_description((quote_ident(table_schema)||'.'||quote_ident(table_name))::regclass) FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY table_schema, table_name",
             TenantDatabaseProvider.SqlServer => "SELECT s.name, t.name, CAST(ep.value AS nvarchar(max)) FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id LEFT JOIN sys.extended_properties ep ON ep.major_id=t.object_id AND ep.minor_id=0 AND ep.name='MS_Description' ORDER BY s.name, t.name",
             TenantDatabaseProvider.SQLite => "SELECT 'main', name, NULL FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-            TenantDatabaseProvider.Oracle => throw new NotSupportedException("Oracle 메타데이터 어댑터는 Oracle Provider 단계에서 활성화해야 합니다."),
+            TenantDatabaseProvider.Oracle => "SELECT OWNER, TABLE_NAME, COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = UPPER(:schema) ORDER BY TABLE_NAME",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
         var result = new List<TenantDatabaseTableDescriptor>();
@@ -37,7 +37,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
             TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, column_name, data_type, is_nullable, ordinal_position, NULL FROM information_schema.columns WHERE table_schema = @schema AND table_name = @table ORDER BY ordinal_position",
             TenantDatabaseProvider.SQLite => "SELECT @schema, @table, name, type, CASE WHEN notnull=1 THEN 'NO' ELSE 'YES' END, cid + 1, NULL FROM pragma_table_info(@table) ORDER BY cid",
             TenantDatabaseProvider.SqlServer => "SELECT s.name, t.name, c.name, ty.name, CASE WHEN c.is_nullable=1 THEN 'YES' ELSE 'NO' END, c.column_id, CAST(ep.value AS nvarchar(max)) FROM sys.columns c JOIN sys.tables t ON t.object_id=c.object_id JOIN sys.schemas s ON s.schema_id=t.schema_id JOIN sys.types ty ON ty.user_type_id=c.user_type_id LEFT JOIN sys.extended_properties ep ON ep.major_id=c.object_id AND ep.minor_id=c.column_id AND ep.name='MS_Description' WHERE s.name=@schema AND t.name=@table ORDER BY c.column_id",
-            TenantDatabaseProvider.Oracle => throw new NotSupportedException("Oracle 메타데이터 어댑터는 Oracle Provider 단계에서 활성화해야 합니다."),
+            TenantDatabaseProvider.Oracle => "SELECT OWNER, TABLE_NAME, COLUMN_NAME, DATA_TYPE, NULLABLE, COLUMN_ID, COMMENTS FROM ALL_TAB_COLUMNS c LEFT JOIN ALL_COL_COMMENTS cc ON cc.OWNER=c.OWNER AND cc.TABLE_NAME=c.TABLE_NAME AND cc.COLUMN_NAME=c.COLUMN_NAME WHERE c.OWNER=UPPER(:schema) AND c.TABLE_NAME=UPPER(:table) ORDER BY c.COLUMN_ID",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
         AddParameter(command, "schema", schemaName);

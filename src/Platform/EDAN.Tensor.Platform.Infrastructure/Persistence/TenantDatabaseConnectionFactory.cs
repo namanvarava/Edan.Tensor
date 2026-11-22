@@ -4,6 +4,7 @@ using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.Data.Sqlite;
 using Microsoft.Data.SqlClient;
 using Npgsql;
+using Oracle.ManagedDataAccess.Client;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
@@ -18,8 +19,7 @@ public sealed class TenantDatabaseConnectionFactory(ITenantDatabaseResolver reso
             TenantDatabaseProvider.SQLite => new SqliteConnection(resolution.ConnectionString),
             TenantDatabaseProvider.PostgreSQL => new NpgsqlConnection(resolution.ConnectionString),
             TenantDatabaseProvider.SqlServer => new SqlConnection(resolution.ConnectionString),
-            TenantDatabaseProvider.Oracle => throw new NotSupportedException(
-                "Oracle 연결은 Oracle.ManagedDataAccess.Core 어댑터 설치 후 활성화해야 합니다."),
+            TenantDatabaseProvider.Oracle => new OracleConnection(resolution.ConnectionString),
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
 
