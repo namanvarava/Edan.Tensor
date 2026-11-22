@@ -27,6 +27,9 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<AuthorizationAuditArchiveSchedule> AuthorizationAuditArchiveSchedules => Set<AuthorizationAuditArchiveSchedule>();
     public DbSet<StorageQuotaPolicy> StorageQuotaPolicies => Set<StorageQuotaPolicy>();
     public DbSet<StorageQuotaPolicyChangeAuditEntry> StorageQuotaPolicyChangeAuditEntries => Set<StorageQuotaPolicyChangeAuditEntry>();
+    public DbSet<TenantDatabaseBinding> TenantDatabaseBindings => Set<TenantDatabaseBinding>();
+    public DbSet<TenantDatabaseRoutineAllowlist> TenantDatabaseRoutineAllowlists => Set<TenantDatabaseRoutineAllowlist>();
+    public DbSet<TenantDatabaseMutationAudit> TenantDatabaseMutationAudits => Set<TenantDatabaseMutationAudit>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,6 +52,66 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureAuthorizationAuditArchiveJobs(modelBuilder);
         ConfigureAuthorizationAuditArchiveSchedule(modelBuilder);
         ConfigureStorageQuotaPolicies(modelBuilder);
+        ConfigureTenantDatabaseBinding(modelBuilder);
+        ConfigureTenantDatabaseRoutineAllowlist(modelBuilder);
+        ConfigureTenantDatabaseMutationAudit(modelBuilder);
+    }
+
+    private static void ConfigureTenantDatabaseBinding(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TenantDatabaseBinding>();
+        entity.ToTable("platform_tenant_database_bindings");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseBindingId>(value => new TenantDatabaseBindingId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.Provider).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Username).HasMaxLength(256).IsRequired();
+        entity.Property(x => x.SecretKey).HasMaxLength(256).IsRequired();
+        entity.Property(x => x.ServerAddress).HasMaxLength(255);
+        entity.Property(x => x.Port);
+        entity.Property(x => x.DatabaseName).HasMaxLength(255);
+        entity.Property(x => x.SchemaName).HasMaxLength(255);
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.MigrationVersion).HasMaxLength(128);
+        entity.Property(x => x.LastHealthAtUtc);
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.Property(x => x.UpdatedAtUtc);
+        entity.HasIndex(x => new { x.TenantId, x.Status }).IsUnique()
+            .HasFilter("\"Status\" = 'Active'");
+        entity.HasIndex(x => new { x.TenantId, x.Provider });
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureTenantDatabaseRoutineAllowlist(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TenantDatabaseRoutineAllowlist>();
+        entity.ToTable("platform_tenant_database_routine_allowlists");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseRoutineAllowlistId>(value => new TenantDatabaseRoutineAllowlistId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.SchemaName).HasMaxLength(255).IsRequired();
+        entity.Property(x => x.RoutineName).HasMaxLength(255).IsRequired();
+        entity.Property(x => x.IsEnabled).IsRequired();
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasIndex(x => new { x.TenantId, x.SchemaName, x.RoutineName, x.Kind }).IsUnique();
+    }
+
+    private static void ConfigureTenantDatabaseMutationAudit(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TenantDatabaseMutationAudit>();
+        entity.ToTable("platform_tenant_database_mutation_audits");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseMutationAuditId>(value => new TenantDatabaseMutationAuditId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ResultJson);
+        entity.Property(x => x.Error).HasMaxLength(2000);
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)

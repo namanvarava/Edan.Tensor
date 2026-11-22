@@ -14,6 +14,7 @@
     <ProjectReference Include="../EDAN.Tensor.HostServices/EDAN.Tensor.HostServices.csproj" />
     <ProjectReference Include="../EDAN.Tensor.PostgreSqlMigrations/EDAN.Tensor.PostgreSqlMigrations.csproj" />
     <ProjectReference Include="../EDAN.Tensor.SqlServerMigrations/EDAN.Tensor.SqlServerMigrations.csproj" />
+    <ProjectReference Include="../EDAN.Tensor.OracleMigrations/EDAN.Tensor.OracleMigrations.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Persistence/Migrations/PostgreSql/**/*.cs" />
@@ -25,6 +26,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -4,6 +4,9 @@ using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
+using Microsoft.EntityFrameworkCore;
+using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Application.Abstractions;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -64,6 +67,150 @@ public static class PlatformEndpoints
             .RequireAuthorization("TenantMember")
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database-binding", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
+        {
+            var binding = await db.TenantDatabaseBindings.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId)
+                    && x.Status == TenantDatabaseBindingStatus.Active, token);
+            return binding is null
+                ? Results.NotFound(new ApiError("platform.database_binding.not_found", "활성 DB 바인딩을 찾을 수 없습니다."))
+                : Results.Ok(new
+                {
+                    BindingId = binding.Id.Value,
+                    TenantId = binding.TenantId.Value,
+                    Provider = binding.Provider.ToString(),
+                    binding.Username,
+                    binding.ServerAddress,
+                    binding.Port,
+                    binding.DatabaseName,
+                    binding.SchemaName,
+                    binding.Status,
+                    binding.MigrationVersion,
+                    binding.LastHealthAtUtc
+                });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/activate", async (Guid tenantId, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            var binding = await db.TenantDatabaseBindings.SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Provisioning, token);
+            if (binding is null) return Results.NotFound(new ApiError("platform.database_binding.provisioning_not_found", "활성화할 Provisioning 바인딩을 찾을 수 없습니다."));
+            binding.Activate(clock.GetUtcNow());
+            await db.SaveChangesAsync(token);
+            return Results.Ok(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/health", async (Guid tenantId, ITenantDatabaseConnectionFactory factory, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            try
+            {
+                await using var connection = await factory.OpenAsync(new TenantId(tenantId), token);
+                var binding = await db.TenantDatabaseBindings.SingleAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Active, token);
+                binding.RecordHealth(clock.GetUtcNow());
+                await db.SaveChangesAsync(token);
+                return Results.Ok(new { Status = "Healthy", Provider = connection.GetType().Name, CheckedAtUtc = clock.GetUtcNow() });
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.Data.Common.DbException or TimeoutException)
+            {
+                return Results.Problem("테넌트 DB 연결 확인에 실패했습니다.", statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding", async (
+            Guid tenantId,
+            CreateTenantDatabaseBindingRequest request,
+            PlatformDbContext db,
+            TimeProvider clock,
+            CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseProvider>(request.Provider, true, out var provider))
+                return ValidationError("지원하지 않는 DB Provider입니다.");
+
+            if (!await db.Tenants.AnyAsync(x => x.Id == new TenantId(tenantId), token))
+                return Results.NotFound(new ApiError("platform.tenant.not_found", "테넌트를 찾을 수 없습니다."));
+
+            var tenant = new TenantId(tenantId);
+            var active = await db.TenantDatabaseBindings.AnyAsync(
+                x => x.TenantId == tenant && x.Status == TenantDatabaseBindingStatus.Active, token);
+            if (active)
+                return Results.Conflict(new ApiError("platform.database_binding.active_exists", "활성 DB 바인딩이 이미 존재합니다."));
+
+            var binding = TenantDatabaseBinding.Create(
+                new TenantDatabaseBindingId(Guid.NewGuid()), tenant, provider, request.Username,
+                request.SecretKey, request.ServerAddress, request.Port, request.DatabaseName,
+                request.SchemaName, clock.GetUtcNow());
+            db.TenantDatabaseBindings.Add(binding);
+            await db.SaveChangesAsync(token);
+            return Results.Json(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() }, statusCode: StatusCodes.Status201Created);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/metadata/tables", async (
+            Guid tenantId, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+        {
+            var tables = await reader.ListTablesAsync(new TenantId(tenantId), token);
+            return Results.Ok(tables);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/metadata/columns", async (
+            Guid tenantId, string schema, string table, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+        {
+            var columns = await reader.ListColumnsAsync(new TenantId(tenantId), schema, table, token);
+            return Results.Ok(columns);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/routines/allowlist", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
+        {
+            var items = await db.TenantDatabaseRoutineAllowlists.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId))
+                .OrderBy(x => x.SchemaName).ThenBy(x => x.RoutineName)
+                .Select(x => new { x.Id, x.Kind, x.SchemaName, x.RoutineName, x.IsEnabled, x.CreatedAtUtc, x.UpdatedAtUtc })
+                .ToListAsync(token);
+            return Results.Ok(items);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database/routines/allowlist", async (Guid tenantId, CreateRoutineAllowlistRequest request, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseRoutineKind>(request.Kind, true, out var kind))
+                return ValidationError("지원하지 않는 루틴 유형입니다.");
+            var tenant = new TenantId(tenantId);
+            var exists = await db.TenantDatabaseRoutineAllowlists.AnyAsync(x => x.TenantId == tenant && x.Kind == kind && x.SchemaName == request.SchemaName && x.RoutineName == request.RoutineName, token);
+            if (exists) return Results.Conflict(new ApiError("platform.database_routine.duplicate", "동일한 루틴 허용 항목이 이미 존재합니다."));
+            var item = TenantDatabaseRoutineAllowlist.Create(new TenantDatabaseRoutineAllowlistId(Guid.NewGuid()), tenant, kind, request.SchemaName, request.RoutineName, clock.GetUtcNow());
+            db.TenantDatabaseRoutineAllowlists.Add(item);
+            await db.SaveChangesAsync(token);
+            return Results.Json(new { Id = item.Id.Value, item.Kind, item.SchemaName, item.RoutineName, item.IsEnabled }, statusCode: StatusCodes.Status201Created);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database/routines/execute", async (Guid tenantId, ExecuteRoutineRequest request, ITenantDatabaseRoutineExecutor executor, CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseRoutineKind>(request.Kind, true, out var kind))
+                return ValidationError("지원하지 않는 루틴 유형입니다.");
+            var result = await executor.ExecuteAsync(new TenantId(tenantId), kind, request.SchemaName, request.RoutineName, request.Parameters ?? new Dictionary<string, string?>(), token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database/mutations/execute", async (Guid tenantId, ExecuteMutationRequest request, ITenantDatabaseMutationCoordinator coordinator, CancellationToken token) =>
+        {
+            var steps = request.Steps.Select(x => new TenantDatabaseMutationStep(
+                new TenantId(x.TenantId ?? tenantId), x.Kind, x.SchemaName, x.RoutineName,
+                x.Parameters ?? new Dictionary<string, string?>(), x.Compensation is null ? null : new TenantDatabaseMutationStep(
+                    new TenantId(x.Compensation.TenantId ?? x.TenantId ?? tenantId), x.Compensation.Kind, x.Compensation.SchemaName, x.Compensation.RoutineName,
+                    x.Compensation.Parameters ?? new Dictionary<string, string?>()))).ToArray();
+            return Results.Ok(await coordinator.ExecuteAsync(new TenantId(tenantId), request.IdempotencyKey, steps, token));
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/mutations/audits", async (Guid tenantId, PlatformDbContext db, int? page, int? pageSize, CancellationToken token) =>
+        {
+            var take = Math.Clamp(pageSize ?? 50, 1, 200);
+            var skip = Math.Max(page ?? 1, 1) - 1;
+            var items = await db.TenantDatabaseMutationAudits.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId))
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .Skip(skip * take).Take(take)
+                .Select(x => new { x.Id, x.IdempotencyKey, x.Status, x.Succeeded, x.Compensated, x.Error, x.CreatedAtUtc, x.CompletedAtUtc })
+                .ToListAsync(token);
+            return Results.Ok(items);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
@@ -836,6 +983,13 @@ public static class PlatformEndpoints
 
 public sealed record ApiError(string Code, string Description);
 public sealed record CreateTenantRequest(string Code, string Name);
+public sealed record CreateTenantDatabaseBindingRequest(string Provider, string Username, string SecretKey,
+    string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
+public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
+public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
+public sealed record ExecuteMutationRequest(string IdempotencyKey, IReadOnlyList<MutationStepRequest> Steps);
+public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation);
+public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);

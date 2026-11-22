@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using EDAN.Tensor.PostgreSqlMigrations;
 using EDAN.Tensor.SqlServerMigrations;
+using EDAN.Tensor.OracleMigrations;
+using Oracle.EntityFrameworkCore;
 
 namespace EDAN.Tensor.ApiHost.Persistence;
 
@@ -54,6 +56,16 @@ public static class DesignTimeDbContextFactorySupport
             {
                 sqlServer.MigrationsAssembly(typeof(SqlServerMigrationsMarker).Assembly.FullName!);
                 sqlServer.MigrationsHistoryTable(historyTable);
+            });
+            return options;
+        }
+
+        if (provider.Equals("Oracle", StringComparison.OrdinalIgnoreCase))
+        {
+            options.UseOracle(connection, oracle =>
+            {
+                oracle.MigrationsAssembly(typeof(OracleMigrationsMarker).Assembly.FullName!);
+                oracle.MigrationsHistoryTable(historyTable);
             });
             return options;
         }

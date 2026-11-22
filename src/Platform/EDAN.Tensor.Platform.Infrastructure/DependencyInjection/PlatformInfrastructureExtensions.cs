@@ -38,6 +38,12 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IPlatformUnitOfWork, PlatformUnitOfWork>();
+        services.AddScoped<ITenantDatabaseResolver, TenantDatabaseResolver>();
+        services.AddScoped<ITenantDatabaseConnectionFactory, TenantDatabaseConnectionFactory>();
+        services.AddScoped<ITenantDatabaseMetadataReader, TenantDatabaseMetadataReader>();
+        services.AddScoped<ITenantDatabaseRoutineExecutor, TenantDatabaseRoutineExecutor>();
+        services.AddScoped<ITenantDatabaseMutationCoordinator, TenantDatabaseMutationCoordinator>();
+        services.AddSingleton<ITenantDatabaseSecretResolver, EnvironmentTenantDatabaseSecretResolver>();
         return services;
     }
 }

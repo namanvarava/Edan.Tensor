@@ -1,0 +1,34 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Database__Provider: ${Database__Provider:-Sqlite}
+      ConnectionStrings__Platform: ${ConnectionStrings__Platform:?Set ConnectionStrings__Platform}
+      ConnectionStrings__Worker: ${ConnectionStrings__Worker:?Set ConnectionStrings__Worker}
+      ConnectionStrings__DataSet: ${ConnectionStrings__DataSet:?Set ConnectionStrings__DataSet}
+      ConnectionStrings__DataSetContent: ${ConnectionStrings__DataSetContent:?Set ConnectionStrings__DataSetContent}
+      Authentication__Mode: ${Authentication__Mode:-External}
+      Authentication__MetadataAddress: ${Authentication__MetadataAddress:?Set Authentication__MetadataAddress}
+      Authentication__Issuer: ${Authentication__Issuer:?Set Authentication__Issuer}
+      Authentication__Audience: ${Authentication__Audience:-edan-tensor-api}
+    ports:
+      - "${API_PORT:-5000}:8080"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Database__Provider: ${Database__Provider:-Sqlite}
+      ConnectionStrings__Platform: ${ConnectionStrings__Platform:?Set ConnectionStrings__Platform}
+      ConnectionStrings__Worker: ${ConnectionStrings__Worker:?Set ConnectionStrings__Worker}
+      ConnectionStrings__DataSet: ${ConnectionStrings__DataSet:?Set ConnectionStrings__DataSet}
+      ConnectionStrings__DataSetContent: ${ConnectionStrings__DataSetContent:?Set ConnectionStrings__DataSetContent}
+    depends_on:
+      - api
+    restart: unless-stopped

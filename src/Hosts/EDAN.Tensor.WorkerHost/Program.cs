@@ -20,6 +20,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Microsoft.EntityFrameworkCore.SqlServer;
 using EDAN.Tensor.PostgreSqlMigrations;
 using EDAN.Tensor.SqlServerMigrations;
+using EDAN.Tensor.OracleMigrations;
+using Oracle.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,7 @@ builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client
 builder.Services.AddWorkerTaskHandler<DataSetStorageUsageSnapshotTaskHandler>(DataSetStorageUsageSnapshotWorker.TaskType);
 builder.Services.AddWorkerTaskHandler<DataSetValidationTaskHandler>(DataSetValidationTaskContract.TaskType);
 builder.Services.AddWorkerTaskHandler<ExternalDeliveryTaskHandler>(ExternalDeliveryTaskContract.TaskType);
+builder.Services.AddWorkerTaskHandler<TenantDatabaseMutationTaskHandler>(TenantDatabaseMutationTaskHandler.TaskType);
 builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
 // 업무별 Handler는 배포 구성에서 AddWorkerTaskHandler<THandler>(taskType)로 등록합니다.
@@ -128,13 +131,16 @@ static bool IsSqlServer(string provider) =>
     || provider.Equals("MSSQL", StringComparison.OrdinalIgnoreCase)
     || provider.Equals("SQL Server", StringComparison.OrdinalIgnoreCase);
 
+static bool IsOracle(string provider) => provider.Equals("Oracle", StringComparison.OrdinalIgnoreCase);
+
 static string? GetMigrationsAssembly(string provider) =>
     IsPostgreSql(provider) ? typeof(PostgreSqlMigrationsMarker).Assembly.FullName :
-    IsSqlServer(provider) ? typeof(SqlServerMigrationsMarker).Assembly.FullName : null;
+    IsSqlServer(provider) ? typeof(SqlServerMigrationsMarker).Assembly.FullName :
+    IsOracle(provider) ? typeof(OracleMigrationsMarker).Assembly.FullName : null;
 
 static string ResolveDatabaseConnection(string connectionString, string provider, string contentRoot)
 {
-    if (IsPostgreSql(provider) || IsSqlServer(provider))
+    if (IsPostgreSql(provider) || IsSqlServer(provider) || IsOracle(provider))
         return connectionString;
 
     var sqlite = new SqliteConnectionStringBuilder(connectionString);
@@ -175,6 +181,16 @@ static DbContextOptionsBuilder ConfigureDatabase(
                 sqlServer.MigrationsAssembly(migrationsAssembly);
             if (!string.IsNullOrWhiteSpace(historyTable))
                 sqlServer.MigrationsHistoryTable(historyTable);
+        });
+        return options;
+    }
+
+    if (IsOracle(provider))
+    {
+        options.UseOracle(connectionString, oracle =>
+        {
+            if (!string.IsNullOrWhiteSpace(migrationsAssembly)) oracle.MigrationsAssembly(migrationsAssembly);
+            if (!string.IsNullOrWhiteSpace(historyTable)) oracle.MigrationsHistoryTable(historyTable);
         });
         return options;
     }

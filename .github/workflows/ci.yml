@@ -9,7 +9,7 @@ permissions:
 jobs:
   build-and-test:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'namanvarava')
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -21,6 +21,35 @@ jobs:
         run: dotnet restore EDAN.Tensor.sln
       - name: Build
         run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+      - name: Provider migration and container definition check
+        shell: pwsh
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.*
+          $env:PATH = "$env:USERPROFILE/.dotnet/tools;$env:PATH"
+          $env:Database__Provider = 'Oracle'
+          $env:ConnectionStrings__Platform = 'User Id=ci;Password=ci;Data Source=localhost:1521/FREE'
+          $env:ConnectionStrings__Worker = $env:ConnectionStrings__Platform
+          $env:ConnectionStrings__DataSet = $env:ConnectionStrings__Platform
+          $env:ConnectionStrings__DataSetContent = $env:ConnectionStrings__Platform
+          $migrationProject = 'src/Hosts/EDAN.Tensor.OracleMigrations/EDAN.Tensor.OracleMigrations.csproj'
+          $startupProject = 'src/Hosts/EDAN.Tensor.ApiHost/EDAN.Tensor.ApiHost.csproj'
+          foreach ($context in @('PlatformDbContext', 'WorkerDbContext', 'DataSetDbContext')) {
+            dotnet ef migrations script --project $migrationProject --startup-project $startupProject --context $context --configuration Release --no-build --idempotent --output "$env:RUNNER_TEMP/$context.oracle.sql"
+            if ($LASTEXITCODE -ne 0) { throw "Oracle migration script generation failed for $context" }
+            if ((Get-Item "$env:RUNNER_TEMP/$context.oracle.sql").Length -eq 0) { throw "Empty migration script for $context" }
+          }
+          if (Get-Command docker -ErrorAction SilentlyContinue) {
+            $env:ConnectionStrings__Platform = 'Host=localhost;Database=platform;Username=ci;Password=ci'
+            $env:ConnectionStrings__Worker = $env:ConnectionStrings__Platform
+            $env:ConnectionStrings__DataSet = $env:ConnectionStrings__Platform
+            $env:ConnectionStrings__DataSetContent = $env:ConnectionStrings__Platform
+            $env:Authentication__MetadataAddress = 'https://idp.example.test/realms/ci/.well-known/openid-configuration'
+            $env:Authentication__Issuer = 'https://idp.example.test/realms/ci'
+            docker compose -f docker-compose.tenant-routing.yml config --quiet
+            if ($LASTEXITCODE -ne 0) { throw 'Docker Compose definition is invalid' }
+          } else {
+            Write-Host 'Docker CLI is unavailable; compose runtime validation is deferred.'
+          }
       - name: Test
         run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-${{ github.run_id }}.trx"
       - name: HTTP smoke
