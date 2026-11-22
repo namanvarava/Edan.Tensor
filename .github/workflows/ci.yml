@@ -43,6 +43,8 @@ jobs:
             $env:ConnectionStrings__Worker = $env:ConnectionStrings__Platform
             $env:ConnectionStrings__DataSet = $env:ConnectionStrings__Platform
             $env:ConnectionStrings__DataSetContent = $env:ConnectionStrings__Platform
+            $env:Authentication__MetadataAddress = 'https://idp.example.test/realms/ci/.well-known/openid-configuration'
+            $env:Authentication__Issuer = 'https://idp.example.test/realms/ci'
             docker compose -f docker-compose.tenant-routing.yml config --quiet
             if ($LASTEXITCODE -ne 0) { throw 'Docker Compose definition is invalid' }
           } else {
