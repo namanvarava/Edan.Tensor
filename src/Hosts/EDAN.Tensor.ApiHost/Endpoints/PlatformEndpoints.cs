@@ -156,6 +156,14 @@ public static class PlatformEndpoints
             return Results.Json(new { Id = item.Id.Value, item.Kind, item.SchemaName, item.RoutineName, item.IsEnabled }, statusCode: StatusCodes.Status201Created);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/database/routines/execute", async (Guid tenantId, ExecuteRoutineRequest request, ITenantDatabaseRoutineExecutor executor, CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseRoutineKind>(request.Kind, true, out var kind))
+                return ValidationError("지원하지 않는 루틴 유형입니다.");
+            var result = await executor.ExecuteAsync(new TenantId(tenantId), kind, request.SchemaName, request.RoutineName, request.Parameters ?? new Dictionary<string, string?>(), token);
+            return Results.Ok(result);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
             var result = await service.GetTenantAsync(new TenantId(tenantId), token);
@@ -930,6 +938,7 @@ public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record CreateTenantDatabaseBindingRequest(string Provider, string Username, string SecretKey,
     string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
 public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
+public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
