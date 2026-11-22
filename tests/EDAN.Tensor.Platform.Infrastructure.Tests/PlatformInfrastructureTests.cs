@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
 using EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,34 @@ namespace EDAN.Tensor.Platform.Infrastructure.Tests;
 
 public sealed class PlatformInfrastructureTests
 {
+    [Fact]
+    public async Task TenantMutationCoordinatorReplaysPersistedResultForSameIdempotencyKey()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("MUTATION-A"), "변경 감사 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var executor = new CountingRoutineExecutor();
+        var coordinator = new TenantDatabaseMutationCoordinator(executor, db, TimeProvider.System);
+        var step = new TenantDatabaseMutationStep(tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "apply_change", new Dictionary<string, string?>());
+
+        var first = await coordinator.ExecuteAsync(tenant.Id, "mutation-once", [step]);
+        var second = await coordinator.ExecuteAsync(tenant.Id, "mutation-once", [step]);
+
+        Assert.True(first.Succeeded);
+        Assert.Equal(first.Succeeded, second.Succeeded);
+        Assert.Equal(first.Compensated, second.Compensated);
+        Assert.Equal(first.Steps.Count, second.Steps.Count);
+        Assert.Equal(first.Steps[0], second.Steps[0]);
+        Assert.Equal(1, executor.CallCount);
+        Assert.Equal("Succeeded", await db.TenantDatabaseMutationAudits.Where(x => x.TenantId == tenant.Id).Select(x => x.Status).SingleAsync());
+    }
+
     [Fact]
     public async Task SqlitePersistsActiveTenantDatabaseBindingWithoutSecretValue()
     {
@@ -351,6 +380,17 @@ public sealed class PlatformInfrastructureTests
         Assert.Equal("tenant-admin", persisted.ActorSubjectId);
         Assert.Contains("Allow", persisted.BeforeJson, StringComparison.Ordinal);
         Assert.Contains("Deny", persisted.AfterJson, StringComparison.Ordinal);
+    }
+
+    private sealed class CountingRoutineExecutor : ITenantDatabaseRoutineExecutor
+    {
+        public int CallCount { get; private set; }
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
+        }
     }
 
     private static PlatformDbContext CreateContext()
