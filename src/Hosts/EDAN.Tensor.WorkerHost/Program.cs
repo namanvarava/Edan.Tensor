@@ -79,6 +79,7 @@ builder.Services.AddHttpClient<ExternalDeliveryService>((serviceProvider, client
 builder.Services.AddWorkerTaskHandler<DataSetStorageUsageSnapshotTaskHandler>(DataSetStorageUsageSnapshotWorker.TaskType);
 builder.Services.AddWorkerTaskHandler<DataSetValidationTaskHandler>(DataSetValidationTaskContract.TaskType);
 builder.Services.AddWorkerTaskHandler<ExternalDeliveryTaskHandler>(ExternalDeliveryTaskContract.TaskType);
+builder.Services.AddWorkerTaskHandler<TenantDatabaseMutationTaskHandler>(TenantDatabaseMutationTaskHandler.TaskType);
 builder.Services.AddHostedService<DataSetStorageUsageSnapshotWorker>();
 builder.Services.AddSingleton<WorkerExecutionRegistry>();
 // 업무별 Handler는 배포 구성에서 AddWorkerTaskHandler<THandler>(taskType)로 등록합니다.
