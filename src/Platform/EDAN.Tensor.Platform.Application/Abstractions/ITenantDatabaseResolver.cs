@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Domain.Model;
+using System.Data.Common;
 
 namespace EDAN.Tensor.Platform.Application.Abstractions;
 
@@ -22,4 +23,10 @@ public interface ITenantDatabaseResolver
 public interface ITenantDatabaseSecretResolver
 {
     Task<TenantDatabaseCredential> ResolveAsync(string secretKey, CancellationToken cancellationToken = default);
+}
+
+/// <summary>해석된 테넌트 바인딩으로 요청 범위의 DB 연결을 생성합니다.</summary>
+public interface ITenantDatabaseConnectionFactory
+{
+    Task<DbConnection> OpenAsync(TenantId tenantId, CancellationToken cancellationToken = default);
 }
