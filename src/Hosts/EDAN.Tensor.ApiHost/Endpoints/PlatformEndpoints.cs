@@ -158,6 +158,13 @@ public static class PlatformEndpoints
             return Results.Ok(columns);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapGet("/{tenantId:guid}/database/metadata/routines", async (
+            Guid tenantId, string schema, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+        {
+            var routines = await reader.ListRoutinesAsync(new TenantId(tenantId), schema, token);
+            return Results.Ok(routines);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}/database/routines/allowlist", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
         {
             var items = await db.TenantDatabaseRoutineAllowlists.AsNoTracking()

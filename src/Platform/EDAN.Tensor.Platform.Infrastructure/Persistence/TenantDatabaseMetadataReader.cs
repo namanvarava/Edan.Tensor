@@ -25,6 +25,32 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         return result;
     }
 
+    public async Task<IReadOnlyList<TenantDatabaseRoutineDescriptor>> ListRoutinesAsync(TenantId tenantId, string schemaName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(schemaName))
+            throw new ArgumentException("스키마 이름이 필요합니다.", nameof(schemaName));
+        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = resolution.Provider switch
+        {
+            TenantDatabaseProvider.PostgreSQL => "SELECT routine_schema, routine_name, routine_type, routine_definition FROM information_schema.routines WHERE routine_schema = @schema ORDER BY routine_name",
+            TenantDatabaseProvider.SqlServer => "SELECT s.name, o.name, CASE WHEN o.type IN ('P','PC') THEN 'PROCEDURE' ELSE 'FUNCTION' END, CAST(ep.value AS nvarchar(max)) FROM sys.objects o JOIN sys.schemas s ON s.schema_id=o.schema_id LEFT JOIN sys.extended_properties ep ON ep.major_id=o.object_id AND ep.minor_id=0 AND ep.name='MS_Description' WHERE s.name=@schema AND o.type IN ('P','PC','FN','IF','TF','FS','FT') ORDER BY o.name",
+            TenantDatabaseProvider.SQLite => "SELECT @schema, NULL, NULL, NULL WHERE 1 = 0",
+            TenantDatabaseProvider.Oracle => "SELECT OWNER, CASE WHEN PROCEDURE_NAME IS NULL THEN OBJECT_NAME ELSE OBJECT_NAME || '.' || PROCEDURE_NAME END, CASE WHEN OBJECT_TYPE = 'PACKAGE' THEN 'PACKAGE' WHEN PROCEDURE_NAME IS NULL AND OBJECT_TYPE = 'FUNCTION' THEN 'FUNCTION' WHEN PROCEDURE_NAME IS NULL THEN 'PROCEDURE' ELSE 'PACKAGE_PROCEDURE' END, NULL FROM ALL_PROCEDURES WHERE OWNER = UPPER(:schema) AND OBJECT_TYPE IN ('PROCEDURE','FUNCTION','PACKAGE') ORDER BY OBJECT_NAME, PROCEDURE_NAME",
+            _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
+        };
+        AddParameter(command, "schema", schemaName);
+        var result = new List<TenantDatabaseRoutineDescriptor>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            if (reader.IsDBNull(1)) continue;
+            result.Add(new(reader.GetString(0), reader.GetString(1), reader.IsDBNull(2) ? "UNKNOWN" : reader.GetValue(2)?.ToString() ?? "UNKNOWN", reader.IsDBNull(3) ? null : reader.GetValue(3)?.ToString()));
+        }
+        return result;
+    }
+
     public async Task<IReadOnlyList<TenantDatabaseColumnDescriptor>> ListColumnsAsync(TenantId tenantId, string schemaName, string tableName, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(schemaName) || string.IsNullOrWhiteSpace(tableName))
