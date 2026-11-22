@@ -25,6 +25,38 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         return result;
     }
 
+    public async Task<IReadOnlyList<TenantDatabaseColumnDescriptor>> ListColumnsAsync(TenantId tenantId, string schemaName, string tableName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(schemaName) || string.IsNullOrWhiteSpace(tableName))
+            throw new ArgumentException("스키마와 테이블 이름이 필요합니다.");
+        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = resolution.Provider switch
+        {
+            TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, column_name, data_type, is_nullable, ordinal_position, NULL FROM information_schema.columns WHERE table_schema = @schema AND table_name = @table ORDER BY ordinal_position",
+            TenantDatabaseProvider.SQLite => "SELECT @schema, @table, name, type, CASE WHEN notnull=1 THEN 'NO' ELSE 'YES' END, cid + 1, NULL FROM pragma_table_info(@table) ORDER BY cid",
+            TenantDatabaseProvider.SqlServer => "SELECT s.name, t.name, c.name, ty.name, CASE WHEN c.is_nullable=1 THEN 'YES' ELSE 'NO' END, c.column_id, CAST(ep.value AS nvarchar(max)) FROM sys.columns c JOIN sys.tables t ON t.object_id=c.object_id JOIN sys.schemas s ON s.schema_id=t.schema_id JOIN sys.types ty ON ty.user_type_id=c.user_type_id LEFT JOIN sys.extended_properties ep ON ep.major_id=c.object_id AND ep.minor_id=c.column_id AND ep.name='MS_Description' WHERE s.name=@schema AND t.name=@table ORDER BY c.column_id",
+            TenantDatabaseProvider.Oracle => throw new NotSupportedException("Oracle 메타데이터 어댑터는 Oracle Provider 단계에서 활성화해야 합니다."),
+            _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
+        };
+        AddParameter(command, "schema", schemaName);
+        AddParameter(command, "table", tableName);
+        var result = new List<TenantDatabaseColumnDescriptor>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            result.Add(new(reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), string.Equals(reader.GetValue(4)?.ToString(), "YES", StringComparison.OrdinalIgnoreCase), reader.IsDBNull(5) ? null : Convert.ToInt32(reader.GetValue(5)), reader.IsDBNull(6) ? null : reader.GetValue(6)?.ToString()));
+        return result;
+    }
+
+    private static void AddParameter(System.Data.Common.DbCommand command, string name, string value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "@" + name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
     private sealed class StaticResolver(TenantDatabaseResolution value) : ITenantDatabaseResolver
     {
         public Task<TenantDatabaseResolution> ResolveAsync(TenantId _, CancellationToken __ = default) => Task.FromResult(value);

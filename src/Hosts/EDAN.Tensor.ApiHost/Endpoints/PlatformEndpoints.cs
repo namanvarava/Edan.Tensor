@@ -126,6 +126,13 @@ public static class PlatformEndpoints
             return Results.Ok(tables);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapGet("/{tenantId:guid}/database/metadata/columns", async (
+            Guid tenantId, string schema, string table, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+        {
+            var columns = await reader.ListColumnsAsync(new TenantId(tenantId), schema, table, token);
+            return Results.Ok(columns);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
             var result = await service.GetTenantAsync(new TenantId(tenantId), token);
