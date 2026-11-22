@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using EDAN.Tensor.Worker.Domain.Model;
 using EDAN.Tensor.Worker.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
@@ -55,6 +56,8 @@ public sealed class WorkerProcessCrashRecoveryTests
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+            start.StandardOutputEncoding = Encoding.UTF8;
+            start.StandardErrorEncoding = Encoding.UTF8;
             start.ArgumentList.Add(probe);
             start.ArgumentList.Add(databasePath);
             start.ArgumentList.Add(tenantId.ToString());
@@ -62,7 +65,7 @@ public sealed class WorkerProcessCrashRecoveryTests
             child = Process.Start(start) ?? throw new InvalidOperationException("검증 프로세스가 시작되지 않았습니다.");
             errors = child.StandardError.ReadToEndAsync();
             var ready = await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
-            Assert.Equal("체크포인트-저장-완료", ready);
+            Assert.Equal("CHECKPOINT_SAVED", ready);
 
             Guid oldLeaseId;
             long oldToken;

@@ -29,6 +29,6 @@ if (!await repository.TrySaveCheckpointAsync(
     throw new InvalidOperationException("검증 프로세스가 체크포인트를 저장하지 못했습니다.");
 
 // 준비 신호는 모든 영속 쓰기가 성공한 뒤에만 출력되며 부모 프로세스는 이 신호를 받은 다음 자식을 종료합니다.
-Console.WriteLine("체크포인트-저장-완료");
+Console.WriteLine("CHECKPOINT_SAVED");
 await Console.Out.FlushAsync();
 await Task.Delay(Timeout.InfiniteTimeSpan);
