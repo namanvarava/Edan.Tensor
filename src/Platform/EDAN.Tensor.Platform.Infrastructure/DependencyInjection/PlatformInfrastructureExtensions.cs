@@ -40,6 +40,7 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IPlatformUnitOfWork, PlatformUnitOfWork>();
         services.AddScoped<ITenantDatabaseResolver, TenantDatabaseResolver>();
         services.AddScoped<ITenantDatabaseConnectionFactory, TenantDatabaseConnectionFactory>();
+        services.AddScoped<ITenantDatabaseMetadataReader, TenantDatabaseMetadataReader>();
         services.AddSingleton<ITenantDatabaseSecretResolver, EnvironmentTenantDatabaseSecretResolver>();
         return services;
     }

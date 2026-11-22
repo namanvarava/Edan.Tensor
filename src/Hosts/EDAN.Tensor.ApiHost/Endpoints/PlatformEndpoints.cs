@@ -6,6 +6,7 @@ using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 using EDAN.Tensor.Platform.Infrastructure.Persistence;
+using EDAN.Tensor.Platform.Application.Abstractions;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -116,6 +117,13 @@ public static class PlatformEndpoints
             db.TenantDatabaseBindings.Add(binding);
             await db.SaveChangesAsync(token);
             return Results.Json(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() }, statusCode: StatusCodes.Status201Created);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/metadata/tables", async (
+            Guid tenantId, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+        {
+            var tables = await reader.ListTablesAsync(new TenantId(tenantId), token);
+            return Results.Ok(tables);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
