@@ -189,6 +189,16 @@ public static class PlatformEndpoints
             return Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/database/mutations/execute", async (Guid tenantId, ExecuteMutationRequest request, ITenantDatabaseMutationCoordinator coordinator, CancellationToken token) =>
+        {
+            var steps = request.Steps.Select(x => new TenantDatabaseMutationStep(
+                new TenantId(x.TenantId ?? tenantId), x.Kind, x.SchemaName, x.RoutineName,
+                x.Parameters ?? new Dictionary<string, string?>(), x.Compensation is null ? null : new TenantDatabaseMutationStep(
+                    new TenantId(x.Compensation.TenantId ?? x.TenantId ?? tenantId), x.Compensation.Kind, x.Compensation.SchemaName, x.Compensation.RoutineName,
+                    x.Compensation.Parameters ?? new Dictionary<string, string?>()))).ToArray();
+            return Results.Ok(await coordinator.ExecuteAsync(steps, token));
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
             var result = await service.GetTenantAsync(new TenantId(tenantId), token);
@@ -964,6 +974,9 @@ public sealed record CreateTenantDatabaseBindingRequest(string Provider, string 
     string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
 public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
 public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
+public sealed record ExecuteMutationRequest(IReadOnlyList<MutationStepRequest> Steps);
+public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation);
+public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
