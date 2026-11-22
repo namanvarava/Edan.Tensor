@@ -38,6 +38,8 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IPlatformUnitOfWork, PlatformUnitOfWork>();
+        services.AddScoped<ITenantDatabaseResolver, TenantDatabaseResolver>();
+        services.AddSingleton<ITenantDatabaseSecretResolver, EnvironmentTenantDatabaseSecretResolver>();
         return services;
     }
 }

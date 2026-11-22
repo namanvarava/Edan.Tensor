@@ -353,7 +353,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
 
                     b.ToTable("platform_authorization_policies", null, t =>
                         {
-                            t.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "\"ProjectId\" IS NULL OR \"OrganizationId\" IS NOT NULL");
+                            t.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "ProjectId IS NULL OR OrganizationId IS NOT NULL");
                         });
                 });
 
