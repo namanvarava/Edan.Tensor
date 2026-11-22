@@ -4,6 +4,8 @@ using EDAN.Tensor.Platform.Application.UseCases;
 using EDAN.Tensor.Platform.Domain.Model;
 using EDAN.Tensor.SharedKernel.Exceptions;
 using EDAN.Tensor.SharedKernel.Results;
+using Microsoft.EntityFrameworkCore;
+using EDAN.Tensor.Platform.Infrastructure.Persistence;
 
 namespace EDAN.Tensor.ApiHost.Endpoints;
 
@@ -64,6 +66,57 @@ public static class PlatformEndpoints
             .RequireAuthorization("TenantMember")
             .AddEndpointFilter<TenantRouteAuthorizationFilter>()
             .AddEndpointFilter<TenantMembershipAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database-binding", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
+        {
+            var binding = await db.TenantDatabaseBindings.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId)
+                    && x.Status == TenantDatabaseBindingStatus.Active, token);
+            return binding is null
+                ? Results.NotFound(new ApiError("platform.database_binding.not_found", "활성 DB 바인딩을 찾을 수 없습니다."))
+                : Results.Ok(new
+                {
+                    BindingId = binding.Id.Value,
+                    TenantId = binding.TenantId.Value,
+                    Provider = binding.Provider.ToString(),
+                    binding.Username,
+                    binding.ServerAddress,
+                    binding.Port,
+                    binding.DatabaseName,
+                    binding.SchemaName,
+                    binding.Status,
+                    binding.MigrationVersion,
+                    binding.LastHealthAtUtc
+                });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding", async (
+            Guid tenantId,
+            CreateTenantDatabaseBindingRequest request,
+            PlatformDbContext db,
+            TimeProvider clock,
+            CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseProvider>(request.Provider, true, out var provider))
+                return ValidationError("지원하지 않는 DB Provider입니다.");
+
+            if (!await db.Tenants.AnyAsync(x => x.Id == new TenantId(tenantId), token))
+                return Results.NotFound(new ApiError("platform.tenant.not_found", "테넌트를 찾을 수 없습니다."));
+
+            var tenant = new TenantId(tenantId);
+            var active = await db.TenantDatabaseBindings.AnyAsync(
+                x => x.TenantId == tenant && x.Status == TenantDatabaseBindingStatus.Active, token);
+            if (active)
+                return Results.Conflict(new ApiError("platform.database_binding.active_exists", "활성 DB 바인딩이 이미 존재합니다."));
+
+            var binding = TenantDatabaseBinding.Create(
+                new TenantDatabaseBindingId(Guid.NewGuid()), tenant, provider, request.Username,
+                request.SecretKey, request.ServerAddress, request.Port, request.DatabaseName,
+                request.SchemaName, clock.GetUtcNow());
+            db.TenantDatabaseBindings.Add(binding);
+            await db.SaveChangesAsync(token);
+            return Results.Json(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() }, statusCode: StatusCodes.Status201Created);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
@@ -836,6 +889,8 @@ public static class PlatformEndpoints
 
 public sealed record ApiError(string Code, string Description);
 public sealed record CreateTenantRequest(string Code, string Name);
+public sealed record CreateTenantDatabaseBindingRequest(string Provider, string Username, string SecretKey,
+    string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);

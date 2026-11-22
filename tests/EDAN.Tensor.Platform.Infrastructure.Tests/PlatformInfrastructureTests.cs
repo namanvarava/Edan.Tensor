@@ -12,6 +12,32 @@ namespace EDAN.Tensor.Platform.Infrastructure.Tests;
 public sealed class PlatformInfrastructureTests
 {
     [Fact]
+    public async Task SqlitePersistsActiveTenantDatabaseBindingWithoutSecretValue()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("BINDING-A"), "바인딩 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var binding = TenantDatabaseBinding.Create(
+            new TenantDatabaseBindingId(Guid.NewGuid()), tenant.Id, TenantDatabaseProvider.PostgreSQL,
+            "edan", "secret/platform-a", "192.168.56.101", 5432, "edan_platform", "public", DateTimeOffset.UtcNow);
+        binding.Activate(DateTimeOffset.UtcNow, "initial");
+        db.TenantDatabaseBindings.Add(binding);
+        await db.SaveChangesAsync();
+
+        var persisted = await db.TenantDatabaseBindings.SingleAsync(x => x.TenantId == tenant.Id);
+        Assert.Equal(TenantDatabaseBindingStatus.Active, persisted.Status);
+        Assert.Equal("secret/platform-a", persisted.SecretKey);
+        Assert.DoesNotContain("password", string.Join('|', persisted.SecretKey), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void ModelDefinesTenantScopedUniqueIndexes()
     {
         using var db = CreateContext();

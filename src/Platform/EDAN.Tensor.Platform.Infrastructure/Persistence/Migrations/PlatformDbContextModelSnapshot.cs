@@ -12,12 +12,11 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
     [DbContext(typeof(PlatformDbContext))]
     public partial class PlatformDbContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
-        {
-            ConfigureTargetModel(modelBuilder);
-        }
+        /// <summary>기존 커스텀 마이그레이션이 참조하는 기준 모델 진입점입니다.</summary>
+        public static void ConfigureTargetModel(ModelBuilder modelBuilder) =>
+            new PlatformDbContextModelSnapshot().BuildModel(modelBuilder);
 
-        public static void ConfigureTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -353,7 +352,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
 
                     b.ToTable("platform_authorization_policies", null, t =>
                         {
-                            t.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "ProjectId IS NULL OR OrganizationId IS NOT NULL");
+                            t.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "\"ProjectId\" IS NULL OR \"OrganizationId\" IS NOT NULL");
                         });
                 });
 
@@ -841,6 +840,73 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                     b.ToTable("platform_tenants", (string)null);
                 });
 
+            modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DatabaseName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("LastHealthAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MigrationVersion")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Port")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SchemaName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecretKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ServerAddress")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Provider");
+
+                    b.HasIndex("TenantId", "Status")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Active'");
+
+                    b.ToTable("platform_tenant_database_bindings", (string)null);
+                });
+
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1117,6 +1183,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("PolicyId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
+                {
+                    b.HasOne("EDAN.Tensor.Platform.Domain.Model.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
