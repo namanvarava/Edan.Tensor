@@ -29,6 +29,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<StorageQuotaPolicyChangeAuditEntry> StorageQuotaPolicyChangeAuditEntries => Set<StorageQuotaPolicyChangeAuditEntry>();
     public DbSet<TenantDatabaseBinding> TenantDatabaseBindings => Set<TenantDatabaseBinding>();
     public DbSet<TenantDatabaseRoutineAllowlist> TenantDatabaseRoutineAllowlists => Set<TenantDatabaseRoutineAllowlist>();
+    public DbSet<TenantDatabaseMutationAudit> TenantDatabaseMutationAudits => Set<TenantDatabaseMutationAudit>();
 
     /// <summary>테넌트 경계와 업무 코드의 고유 제약을 데이터 모델에 반영합니다.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,6 +54,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureStorageQuotaPolicies(modelBuilder);
         ConfigureTenantDatabaseBinding(modelBuilder);
         ConfigureTenantDatabaseRoutineAllowlist(modelBuilder);
+        ConfigureTenantDatabaseMutationAudit(modelBuilder);
     }
 
     private static void ConfigureTenantDatabaseBinding(ModelBuilder modelBuilder)
@@ -94,6 +96,22 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
         entity.HasIndex(x => new { x.TenantId, x.SchemaName, x.RoutineName, x.Kind }).IsUnique();
+    }
+
+    private static void ConfigureTenantDatabaseMutationAudit(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TenantDatabaseMutationAudit>();
+        entity.ToTable("platform_tenant_database_mutation_audits");
+        entity.HasKey(x => x.Id);
+        entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseMutationAuditId>(value => new TenantDatabaseMutationAuditId(value), id => id.Value));
+        entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
+        entity.Property(x => x.IdempotencyKey).HasMaxLength(200).IsRequired();
+        entity.Property(x => x.Status).HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ResultJson);
+        entity.Property(x => x.Error).HasMaxLength(2000);
+        entity.Property(x => x.CreatedAtUtc).IsRequired();
+        entity.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureTenant(ModelBuilder modelBuilder)

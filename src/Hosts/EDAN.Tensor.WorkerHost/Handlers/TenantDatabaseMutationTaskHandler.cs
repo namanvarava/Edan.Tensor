@@ -19,7 +19,7 @@ public sealed class TenantDatabaseMutationTaskHandler(ITenantDatabaseMutationCoo
         var bytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
         var request = JsonSerializer.Deserialize<MutationPayload>(bytes) ?? throw new InvalidOperationException("테넌트 DB 변경 Payload가 비어 있습니다.");
         var steps = request.Steps.Select(x => new TenantDatabaseMutationStep(new TenantId(x.TenantId), x.Kind, x.SchemaName, x.RoutineName, x.Parameters ?? new Dictionary<string, string?>())).ToArray();
-        return Task.FromResult<IWorkerTaskExecution>(new MutationExecution(coordinator.ExecuteAsync(steps, cancellationToken)));
+        return Task.FromResult<IWorkerTaskExecution>(new MutationExecution(coordinator.ExecuteAsync(new TenantId(task.TenantId), task.IdempotencyKey, steps, cancellationToken)));
     }
 
     private sealed class MutationExecution(Task<TenantDatabaseMutationResult> run) : IWorkerTaskExecution

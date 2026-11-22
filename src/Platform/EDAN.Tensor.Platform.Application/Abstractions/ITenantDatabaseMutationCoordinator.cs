@@ -8,5 +8,5 @@ public sealed record TenantDatabaseMutationResult(bool Succeeded, bool Compensat
 
 public interface ITenantDatabaseMutationCoordinator
 {
-    Task<TenantDatabaseMutationResult> ExecuteAsync(IReadOnlyList<TenantDatabaseMutationStep> steps, CancellationToken cancellationToken = default);
+    Task<TenantDatabaseMutationResult> ExecuteAsync(TenantId ownerTenantId, string idempotencyKey, IReadOnlyList<TenantDatabaseMutationStep> steps, CancellationToken cancellationToken = default);
 }

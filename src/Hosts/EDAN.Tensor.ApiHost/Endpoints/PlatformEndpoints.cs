@@ -196,7 +196,20 @@ public static class PlatformEndpoints
                 x.Parameters ?? new Dictionary<string, string?>(), x.Compensation is null ? null : new TenantDatabaseMutationStep(
                     new TenantId(x.Compensation.TenantId ?? x.TenantId ?? tenantId), x.Compensation.Kind, x.Compensation.SchemaName, x.Compensation.RoutineName,
                     x.Compensation.Parameters ?? new Dictionary<string, string?>()))).ToArray();
-            return Results.Ok(await coordinator.ExecuteAsync(steps, token));
+            return Results.Ok(await coordinator.ExecuteAsync(new TenantId(tenantId), request.IdempotencyKey, steps, token));
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database/mutations/audits", async (Guid tenantId, PlatformDbContext db, int? page, int? pageSize, CancellationToken token) =>
+        {
+            var take = Math.Clamp(pageSize ?? 50, 1, 200);
+            var skip = Math.Max(page ?? 1, 1) - 1;
+            var items = await db.TenantDatabaseMutationAudits.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId))
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .Skip(skip * take).Take(take)
+                .Select(x => new { x.Id, x.IdempotencyKey, x.Status, x.Succeeded, x.Compensated, x.Error, x.CreatedAtUtc, x.CompletedAtUtc })
+                .ToListAsync(token);
+            return Results.Ok(items);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
@@ -974,7 +987,7 @@ public sealed record CreateTenantDatabaseBindingRequest(string Provider, string 
     string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
 public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
 public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
-public sealed record ExecuteMutationRequest(IReadOnlyList<MutationStepRequest> Steps);
+public sealed record ExecuteMutationRequest(string IdempotencyKey, IReadOnlyList<MutationStepRequest> Steps);
 public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation);
 public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
