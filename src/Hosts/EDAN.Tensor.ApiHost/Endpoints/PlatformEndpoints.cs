@@ -91,6 +91,31 @@ public static class PlatformEndpoints
                 });
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/activate", async (Guid tenantId, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            var binding = await db.TenantDatabaseBindings.SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Provisioning, token);
+            if (binding is null) return Results.NotFound(new ApiError("platform.database_binding.provisioning_not_found", "활성화할 Provisioning 바인딩을 찾을 수 없습니다."));
+            binding.Activate(clock.GetUtcNow());
+            await db.SaveChangesAsync(token);
+            return Results.Ok(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/health", async (Guid tenantId, ITenantDatabaseConnectionFactory factory, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            try
+            {
+                await using var connection = await factory.OpenAsync(new TenantId(tenantId), token);
+                var binding = await db.TenantDatabaseBindings.SingleAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Active, token);
+                binding.RecordHealth(clock.GetUtcNow());
+                await db.SaveChangesAsync(token);
+                return Results.Ok(new { Status = "Healthy", Provider = connection.GetType().Name, CheckedAtUtc = clock.GetUtcNow() });
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.Data.Common.DbException or TimeoutException)
+            {
+                return Results.Problem("테넌트 DB 연결 확인에 실패했습니다.", statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapPost("/{tenantId:guid}/database-binding", async (
             Guid tenantId,
             CreateTenantDatabaseBindingRequest request,
