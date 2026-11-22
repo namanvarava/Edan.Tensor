@@ -12,9 +12,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
     [DbContext(typeof(PlatformDbContext))]
     public partial class PlatformDbContextModelSnapshot : ModelSnapshot
     {
-        /// <summary>기존 커스텀 마이그레이션이 참조하는 기준 모델 진입점입니다.</summary>
-        public static void ConfigureTargetModel(ModelBuilder modelBuilder) =>
-            new PlatformDbContextModelSnapshot().BuildModel(modelBuilder);
+        public static void ConfigureTargetModel(ModelBuilder modelBuilder) => new PlatformDbContextModelSnapshot().BuildModel(modelBuilder);
 
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -907,6 +905,46 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                     b.ToTable("platform_tenant_database_bindings", (string)null);
                 });
 
+            modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoutineName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SchemaName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchemaName", "RoutineName", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("platform_tenant_database_routine_allowlists", (string)null);
+                });
+
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1188,6 +1226,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
+                {
+                    b.HasOne("EDAN.Tensor.Platform.Domain.Model.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
                 {
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Tenant", null)
                         .WithMany()

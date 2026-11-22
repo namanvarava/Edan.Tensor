@@ -133,6 +133,29 @@ public static class PlatformEndpoints
             return Results.Ok(columns);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapGet("/{tenantId:guid}/database/routines/allowlist", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
+        {
+            var items = await db.TenantDatabaseRoutineAllowlists.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId))
+                .OrderBy(x => x.SchemaName).ThenBy(x => x.RoutineName)
+                .Select(x => new { x.Id, x.Kind, x.SchemaName, x.RoutineName, x.IsEnabled, x.CreatedAtUtc, x.UpdatedAtUtc })
+                .ToListAsync(token);
+            return Results.Ok(items);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapPost("/{tenantId:guid}/database/routines/allowlist", async (Guid tenantId, CreateRoutineAllowlistRequest request, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        {
+            if (!Enum.TryParse<TenantDatabaseRoutineKind>(request.Kind, true, out var kind))
+                return ValidationError("지원하지 않는 루틴 유형입니다.");
+            var tenant = new TenantId(tenantId);
+            var exists = await db.TenantDatabaseRoutineAllowlists.AnyAsync(x => x.TenantId == tenant && x.Kind == kind && x.SchemaName == request.SchemaName && x.RoutineName == request.RoutineName, token);
+            if (exists) return Results.Conflict(new ApiError("platform.database_routine.duplicate", "동일한 루틴 허용 항목이 이미 존재합니다."));
+            var item = TenantDatabaseRoutineAllowlist.Create(new TenantDatabaseRoutineAllowlistId(Guid.NewGuid()), tenant, kind, request.SchemaName, request.RoutineName, clock.GetUtcNow());
+            db.TenantDatabaseRoutineAllowlists.Add(item);
+            await db.SaveChangesAsync(token);
+            return Results.Json(new { Id = item.Id.Value, item.Kind, item.SchemaName, item.RoutineName, item.IsEnabled }, statusCode: StatusCodes.Status201Created);
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}", async (Guid tenantId, PlatformDirectoryService service, CancellationToken token) =>
         {
             var result = await service.GetTenantAsync(new TenantId(tenantId), token);
@@ -906,6 +929,7 @@ public sealed record ApiError(string Code, string Description);
 public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record CreateTenantDatabaseBindingRequest(string Provider, string Username, string SecretKey,
     string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
+public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);
