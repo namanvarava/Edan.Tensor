@@ -39,10 +39,10 @@ jobs:
             if ((Get-Item "$env:RUNNER_TEMP/$context.oracle.sql").Length -eq 0) { throw "Empty migration script for $context" }
           }
           if (Get-Command docker -ErrorAction SilentlyContinue) {
-            $env:ConnectionStrings__Platform = 'Host=localhost;Database=platform;Username=ci;Password=ci'
-            $env:ConnectionStrings__Worker = $env:ConnectionStrings__Platform
-            $env:ConnectionStrings__DataSet = $env:ConnectionStrings__Platform
-            $env:ConnectionStrings__DataSetContent = $env:ConnectionStrings__Platform
+            $env:ConnectionStrings__PlatformDatabase = 'Host=localhost;Database=platform;Username=ci;Password=ci'
+            $env:ConnectionStrings__WorkerDatabase = $env:ConnectionStrings__PlatformDatabase
+            $env:ConnectionStrings__DataSetDatabase = $env:ConnectionStrings__PlatformDatabase
+            $env:ConnectionStrings__DataSetContentDatabase = 'Data Source=/tmp/edan-tensor-dataset-content.db;Cache=Shared'
             $env:Authentication__MetadataAddress = 'https://idp.example.test/realms/ci/.well-known/openid-configuration'
             $env:Authentication__Issuer = 'https://idp.example.test/realms/ci'
             docker compose -f docker-compose.tenant-routing.yml config --quiet
