@@ -253,7 +253,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     {
         var entity = modelBuilder.Entity<AuthorizationPolicy>();
         entity.ToTable("platform_authorization_policies", table =>
-            table.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "ProjectId IS NULL OR OrganizationId IS NOT NULL"));
+            table.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "\"ProjectId\" IS NULL OR \"OrganizationId\" IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyId>(value => new AuthorizationPolicyId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
