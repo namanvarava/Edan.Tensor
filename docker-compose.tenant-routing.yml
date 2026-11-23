@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    extra_hosts:
+      - "idp.edan.test:192.168.56.101"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       Database__Provider: ${Database__Provider:-Sqlite}
