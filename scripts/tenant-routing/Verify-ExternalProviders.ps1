@@ -10,9 +10,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Invoke-CheckedEndpoint {
-    param([string]$Name, [string]$Uri, [hashtable]$Headers = @{}, [int]$ExpectedStatus = 200)
+    param([string]$Name, [string]$Uri, [hashtable]$Headers = @{}, [int]$ExpectedStatus = 200, [ValidateSet('GET','POST')][string]$Method = 'GET')
     try {
-        $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Headers $Headers -TimeoutSec 20
+        $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Method $Method -Headers $Headers -TimeoutSec 20
         if ([int]$response.StatusCode -ne $ExpectedStatus) { throw "HTTP $([int]$response.StatusCode), expected $ExpectedStatus" }
         [pscustomobject]@{ Check = $Name; Result = "PASS"; Detail = "HTTP $([int]$response.StatusCode)" }
     }
@@ -40,7 +40,10 @@ $tokenPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
 try {
     $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPtr)
     if ([string]::IsNullOrWhiteSpace($token)) { throw "Bearer 토큰이 필요합니다." }
-    $headers = @{ Authorization = "Bearer $token" }
+    $headers = @{
+        Authorization = "Bearer $token"
+        'X-Tenant-Id' = $TenantId.ToString()
+    }
     $results = @(
         (Test-TcpPort $ProviderHost $ProviderPorts[0])
         (Test-TcpPort $ProviderHost $ProviderPorts[1])
@@ -49,7 +52,7 @@ try {
         (Invoke-CheckedEndpoint "API database health" "$ApiBaseUrl/health/database")
         (Invoke-CheckedEndpoint "Worker health" "$WorkerBaseUrl/health")
         (Invoke-CheckedEndpoint "Worker database health" "$WorkerBaseUrl/health/database")
-        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health" $headers)
+        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health" $headers 200 'POST')
         (Invoke-CheckedEndpoint "Table metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/tables" $headers)
         (Invoke-CheckedEndpoint "Routine metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/routines?schema=$([uri]::EscapeDataString($Schema))" $headers)
     )
