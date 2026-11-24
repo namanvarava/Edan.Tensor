@@ -10,13 +10,9 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_strqtaplcyid_tntid",
-                table: "edpf_strqta_plcy");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_strqta_plcy\" DROP CONSTRAINT \"AK_edpf_strqta_plcy_strqtaplcyid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_authaudarcjobid_tntid",
-                table: "edpf_authaud_arcjob");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_authaud_arcjob\" DROP CONSTRAINT \"AK_edpf_authaud_arcjob_authaudarcjobid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
             migrationBuilder.RenameColumn(
                 name: "tntrtnalwid",
