@@ -24,7 +24,8 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandType = CommandType.Text;
-        var names = parameters.Keys.Select((_, i) => "@p" + i).ToArray();
+        var parameterPrefix = resolution.Provider == TenantDatabaseProvider.Oracle ? ":p" : "@p";
+        var names = parameters.Keys.Select((_, i) => parameterPrefix + i).ToArray();
         command.CommandText = BuildCommandText(resolution.Provider, kind, schemaName, routineName, names);
         foreach (var value in parameters.Values)
         {
