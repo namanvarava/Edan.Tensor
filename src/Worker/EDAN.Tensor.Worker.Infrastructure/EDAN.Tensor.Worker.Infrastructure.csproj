@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="../EDAN.Tensor.Worker.Domain/EDAN.Tensor.Worker.Domain.csproj" />
     <ProjectReference Include="../EDAN.Tensor.Worker.Application/EDAN.Tensor.Worker.Application.csproj" />
+    <ProjectReference Include="../../Platform/EDAN.Tensor.SharedKernel/EDAN.Tensor.SharedKernel.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />

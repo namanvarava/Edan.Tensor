@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PostgreSqlMigrationsMarker.cs" />
+    <Compile Include="Migrations/**/*.cs" />
     <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/**/*.cs"
              Link="Persistence/Migrations/PostgreSql/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../EDAN.Tensor.ApiHost/Migrations/**/*.cs"

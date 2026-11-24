@@ -1,4 +1,5 @@
 using EDAN.Tensor.Worker.Domain.Model;
+using EDAN.Tensor.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
@@ -15,6 +16,27 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     {
         base.OnModelCreating(modelBuilder);
         ConfigureModel(modelBuilder);
+        ApplyDatabaseObjectNames(modelBuilder);
+    }
+
+    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var tableName = entityType.GetTableName();
+            if (string.IsNullOrWhiteSpace(tableName)) continue;
+            entityType.FindPrimaryKey()?.SetName($"{tableName}_PK");
+            var indexNumber = 1;
+            foreach (var index in entityType.GetIndexes().OrderBy(index => index.Name))
+                index.SetDatabaseName($"{tableName}_N{indexNumber++:D2}");
+            foreach (var foreignKey in entityType.GetForeignKeys())
+                foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
+            foreach (var property in entityType.GetProperties())
+            {
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                if (columnName is not null) property.SetColumnName(columnName);
+            }
+        }
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
@@ -48,7 +70,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<WorkerTask>();
-        entity.ToTable("worker_tasks");
+        entity.ToTable("edwk_wkrtsk");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).ValueGeneratedOnAdd();
         entity.Property(x => x.TenantId).IsRequired();
@@ -84,7 +106,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
 
         var replay = modelBuilder.Entity<WorkerTaskReplayRecord>();
-        replay.ToTable("worker_task_replays");
+        replay.ToTable("edwk_wkrrpl");
         replay.HasKey(x => x.Id);
         replay.Property(x => x.TenantId).IsRequired();
         replay.Property(x => x.OriginalTaskId).IsRequired();
@@ -99,7 +121,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
             .HasFilter("\"ReplayRequestId\" <> '00000000-0000-0000-0000-000000000000'");
 
         var taskType = modelBuilder.Entity<WorkerTaskTypeCatalogEntry>();
-        taskType.ToTable("worker_task_types");
+        taskType.ToTable("edwk_wkrtyp");
         taskType.HasKey(x => x.TaskType);
         taskType.Property(x => x.TaskType).HasMaxLength(120).IsRequired();
         taskType.Property(x => x.Description).HasMaxLength(500);
@@ -108,7 +130,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         taskType.Property(x => x.Version).IsConcurrencyToken();
 
         var delivery = modelBuilder.Entity<ExternalDelivery>();
-        delivery.ToTable("external_deliveries");
+        delivery.ToTable("edwk_wkrdlv");
         delivery.HasKey(x => x.Id);
         delivery.Property(x => x.Id).ValueGeneratedNever();
         delivery.Property(x => x.TenantId).IsRequired();

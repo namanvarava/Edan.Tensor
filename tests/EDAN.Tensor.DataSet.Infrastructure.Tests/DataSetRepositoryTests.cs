@@ -77,7 +77,7 @@ public sealed class DataSetRepositoryTests
         var entity = db.Model.FindEntityType(typeof(DataSetAggregate))!;
         Assert.Contains(entity.GetIndexes(), index =>
             index.Properties.Select(property => property.GetColumnName()).SequenceEqual(
-                new[] { "TenantId", "OrganizationId", "ProjectId" }));
+                new[] { "tntid", "orgid", "prjid" }));
     }
 
     [Fact]

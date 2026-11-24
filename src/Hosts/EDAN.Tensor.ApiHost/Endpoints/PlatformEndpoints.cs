@@ -206,6 +206,16 @@ public static class PlatformEndpoints
             return Results.Ok(await coordinator.ExecuteAsync(new TenantId(tenantId), request.IdempotencyKey, steps, token));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
+        tenantGroup.MapPost("/{tenantId:guid}/database/consistency/verify", async (Guid tenantId, VerifyConsistencyRequest request, ITenantDatabaseConsistencyChecker checker, CancellationToken token) =>
+        {
+            if (request.Checks is null || request.Checks.Count < 2)
+                return ValidationError("정합성 검증에는 두 개 이상의 Provider 검사가 필요합니다.");
+            var checks = request.Checks.Select(x => new TenantDatabaseConsistencyCheck(
+                new TenantId(x.TenantId ?? tenantId), x.Kind, x.SchemaName, x.RoutineName,
+                x.Parameters ?? new Dictionary<string, string?>())).ToArray();
+            return Results.Ok(await checker.VerifyAsync(checks, token));
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
         tenantGroup.MapGet("/{tenantId:guid}/database/mutations/audits", async (Guid tenantId, PlatformDbContext db, int? page, int? pageSize, CancellationToken token) =>
         {
             var take = Math.Clamp(pageSize ?? 50, 1, 200);
@@ -995,6 +1005,8 @@ public sealed record CreateTenantDatabaseBindingRequest(string Provider, string 
 public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
 public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record ExecuteMutationRequest(string IdempotencyKey, IReadOnlyList<MutationStepRequest> Steps);
+public sealed record VerifyConsistencyRequest(IReadOnlyList<ConsistencyCheckRequest> Checks);
+public sealed record ConsistencyCheckRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation);
 public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
