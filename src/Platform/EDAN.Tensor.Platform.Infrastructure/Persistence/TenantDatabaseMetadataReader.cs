@@ -1,5 +1,6 @@
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
+using Oracle.ManagedDataAccess.Client;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
@@ -10,6 +11,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
+        ConfigureProviderCommand(command, resolution.Provider);
         command.CommandText = resolution.Provider switch
         {
             TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, obj_description((quote_ident(table_schema)||'.'||quote_ident(table_name))::regclass) FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY table_schema, table_name",
@@ -32,6 +34,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
+        ConfigureProviderCommand(command, resolution.Provider);
         command.CommandText = resolution.Provider switch
         {
             TenantDatabaseProvider.PostgreSQL => "SELECT routine_schema, routine_name, routine_type, routine_definition FROM information_schema.routines WHERE routine_schema = @schema ORDER BY routine_name",
@@ -58,6 +61,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
+        ConfigureProviderCommand(command, resolution.Provider);
         command.CommandText = resolution.Provider switch
         {
             TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, column_name, data_type, is_nullable, ordinal_position, NULL FROM information_schema.columns WHERE table_schema = @schema AND table_name = @table ORDER BY ordinal_position",
@@ -83,6 +87,12 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         parameter.ParameterName = provider == TenantDatabaseProvider.Oracle ? name : "@" + name;
         parameter.Value = value;
         command.Parameters.Add(parameter);
+    }
+
+    private static void ConfigureProviderCommand(System.Data.Common.DbCommand command, TenantDatabaseProvider provider)
+    {
+        if (provider == TenantDatabaseProvider.Oracle && command is OracleCommand oracleCommand)
+            oracleCommand.BindByName = true;
     }
 
     private sealed class StaticResolver(TenantDatabaseResolution value) : ITenantDatabaseResolver
