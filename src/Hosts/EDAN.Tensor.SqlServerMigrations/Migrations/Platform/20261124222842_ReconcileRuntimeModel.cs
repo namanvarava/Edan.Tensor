@@ -10,13 +10,9 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_strqtaplcyid_tntid",
-                table: "edpf_strqta_plcy");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_strqta_plcy_strqtaplcyid_tntid' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_strqta_plcy]')) ALTER TABLE [dbo].[edpf_strqta_plcy] DROP CONSTRAINT [AK_edpf_strqta_plcy_strqtaplcyid_tntid];");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_authaudarcjobid_tntid",
-                table: "edpf_authaud_arcjob");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_authaud_arcjob_authaudarcjobid_tntid' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_authaud_arcjob]')) ALTER TABLE [dbo].[edpf_authaud_arcjob] DROP CONSTRAINT [AK_edpf_authaud_arcjob_authaudarcjobid_tntid];");
 
             migrationBuilder.RenameColumn(
                 name: "tntrtnalwid",
