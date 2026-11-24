@@ -10,13 +10,11 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_strqtaplcyid_tntid",
-                table: "edpf_strqta_plcy");
+            migrationBuilder.Sql(
+                "ALTER TABLE edpf_strqta_plcy DROP CONSTRAINT IF EXISTS \"AK_edpf_strqta_plcy_strqtaplcyid_tntid\";");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_authaudarcjobid_tntid",
-                table: "edpf_authaud_arcjob");
+            migrationBuilder.Sql(
+                "ALTER TABLE edpf_authaud_arcjob DROP CONSTRAINT IF EXISTS \"AK_edpf_authaud_arcjob_authaudarcjobid_tntid\";");
 
             migrationBuilder.RenameColumn(
                 name: "tntrtnalwid",
