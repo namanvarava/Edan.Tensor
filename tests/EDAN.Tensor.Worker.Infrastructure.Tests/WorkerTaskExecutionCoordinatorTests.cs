@@ -249,7 +249,14 @@ public sealed class WorkerTaskExecutionCoordinatorTests
             coordinator.ExecuteAsync(tenantId, task.Id, "worker-test",
                 TimeSpan.FromSeconds(3), cancellation.Token));
 
-        var persisted = await repository.GetAsync(tenantId, task.Id);
+        WorkerTask? persisted = null;
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            persisted = await repository.GetAsync(tenantId, task.Id);
+            if (persisted?.Status == WorkerTaskStatus.RetryScheduled)
+                break;
+            await Task.Delay(50);
+        }
         Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted!.Status);
         Assert.Equal("worker.execution.cancelled", persisted.LastErrorCode);
         Assert.Null(persisted.LeaseId);
