@@ -27,17 +27,19 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudarcattmid");
+                        .HasColumnName("auth_aud_arc_attmid");
 
                     b.Property<int>("AttemptNumber")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("attm_num");
 
                     b.Property<DateTimeOffset?>("FinishedAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("fnsh_utc");
+                        .HasColumnName("fin_utc");
 
                     b.Property<bool?>("IsSuccessful")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("succ_yn");
 
                     b.Property<Guid>("JobId")
                         .HasColumnType("uniqueidentifier")
@@ -50,7 +52,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<string>("ResultCode")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("result_code");
 
                     b.Property<DateTimeOffset>("StartedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -77,10 +80,11 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudarcjobid");
+                        .HasColumnName("auth_aud_arc_jobid");
 
                     b.Property<Guid?>("ArchiveId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("arcid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int")
@@ -96,13 +100,16 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<string>("FailureReason")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("fail_rsn");
 
                     b.Property<DateTimeOffset>("FromUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("from_utc");
 
                     b.Property<int>("RecordCount")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("rec_cnt");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
@@ -111,10 +118,12 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<string>("Sha256")
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("sha256");
 
                     b.Property<int?>("SizeBytes")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("size_byt");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -127,7 +136,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .HasColumnName("tntid");
 
                     b.Property<DateTimeOffset>("ToUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("to_utc");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -148,10 +158,11 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudarcschdid");
+                        .HasColumnName("auth_aud_arc_schdid");
 
                     b.Property<int>("IntervalHours")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("int_hr");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit")
@@ -159,18 +170,19 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<DateTimeOffset?>("LastRunAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("last_run_utc");
+                        .HasColumnName("last_utc");
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("lease_exp_utc");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("leaseid");
 
                     b.Property<DateTimeOffset>("NextRunAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("nxt_run_utc");
+                        .HasColumnName("nxt_utc");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -198,28 +210,32 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudid");
+                        .HasColumnName("auth_audid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("act");
 
                     b.Property<bool>("IsAllowed")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("allow_yn");
 
                     b.Property<string>("MatchedPolicyId")
                         .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasColumnType("nvarchar(36)")
+                        .HasColumnName("plcyid");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("occr_utc");
+                        .HasColumnName("occ_utc");
 
                     b.Property<string>("ReasonCode")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("rsn_cd");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
@@ -230,7 +246,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("Scope")
                         .IsRequired()
                         .HasMaxLength(600)
-                        .HasColumnType("nvarchar(600)");
+                        .HasColumnType("nvarchar(600)")
+                        .HasColumnName("scp");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
@@ -259,7 +276,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudrtnchgid");
+                        .HasColumnName("auth_aud_rtn_chgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -287,7 +304,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("occr_utc");
+                        .HasColumnName("occ_utc");
 
                     b.Property<Guid>("PolicyId")
                         .HasColumnType("uniqueidentifier")
@@ -311,18 +328,20 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authaudrtnid");
+                        .HasColumnName("auth_aud_rtnid");
 
                     b.Property<bool>("IsLegalHold")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("legal_hold_yn");
 
                     b.Property<string>("LegalHoldReason")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("legal_hold_rsn");
 
                     b.Property<int>("RetentionDays")
                         .HasColumnType("int")
-                        .HasColumnName("rtn_days");
+                        .HasColumnName("rtn_day");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -335,7 +354,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("upd_subid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -356,12 +376,13 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authplcyid");
+                        .HasColumnName("auth_plcyid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("act");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -370,7 +391,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("Effect")
                         .IsRequired()
                         .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("eff");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit")
@@ -381,7 +403,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .HasColumnName("orgid");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("pri");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uniqueidentifier")
@@ -425,7 +448,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("authplcychgid");
+                        .HasColumnName("auth_plcy_chgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -453,7 +476,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("occr_utc");
+                        .HasColumnName("occ_utc");
 
                     b.Property<Guid>("PolicyId")
                         .HasColumnType("uniqueidentifier")
@@ -559,13 +582,13 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)")
-                        .HasColumnName("cd");
+                        .HasColumnName("orgcd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("nm");
+                        .HasColumnName("orgnm");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -594,7 +617,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("orgmbrid");
+                        .HasColumnName("org_mbrid");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier")
@@ -648,7 +671,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("plcykey");
 
                     b.Property<Guid?>("ScopeOrganizationId")
                         .HasColumnType("uniqueidentifier")
@@ -665,7 +689,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("val");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -703,13 +728,13 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)")
-                        .HasColumnName("cd");
+                        .HasColumnName("prjcd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("nm");
+                        .HasColumnName("prjnm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier")
@@ -745,7 +770,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("prjmbrid");
+                        .HasColumnName("prj_mbrid");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier")
@@ -800,7 +825,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("nm");
+                        .HasColumnName("rsrcnm");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
@@ -849,40 +874,47 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("strqtaplcyid");
+                        .HasColumnName("str_qta_plcyid");
 
                     b.Property<long?>("DataSetLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("dset_lmt_byt");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit")
                         .HasColumnName("ena_yn");
 
                     b.Property<long?>("OrganizationLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_lmt_byt");
 
                     b.Property<string>("PlanCode")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("plan_cd");
 
                     b.Property<long?>("ProjectLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("prj_lmt_byt");
 
                     b.Property<string>("Scope")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("nvarchar(24)");
+                        .HasColumnType("nvarchar(24)")
+                        .HasColumnName("scp");
 
                     b.Property<Guid>("TargetId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tgtid");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("tntid");
 
                     b.Property<long?>("TenantLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("tnt_lmt_byt");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -891,7 +923,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("upd_subid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -899,7 +932,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .HasColumnName("ver");
 
                     b.Property<int>("WarningThresholdPercent")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("warn_thr_pct");
 
                     b.HasKey("Id")
                         .HasName("edpf_strqta_plcy_PK");
@@ -919,7 +953,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("strqtaplcychgid");
+                        .HasColumnName("str_qta_plcy_chgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -947,7 +981,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("datetimeoffset")
-                        .HasColumnName("occr_utc");
+                        .HasColumnName("occ_utc");
 
                     b.Property<Guid>("PolicyId")
                         .HasColumnType("uniqueidentifier")
@@ -979,7 +1013,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)")
-                        .HasColumnName("cd");
+                        .HasColumnName("tntcd");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -989,7 +1023,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("nm");
+                        .HasColumnName("tntnm");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1011,7 +1045,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tntdbndid");
+                        .HasColumnName("tnt_dbndid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -1093,7 +1127,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tntmutaudid");
+                        .HasColumnName("tnt_mut_audid");
 
                     b.Property<bool?>("Compensated")
                         .HasColumnType("bit");
@@ -1146,7 +1180,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tntrtnalwid");
+                        .HasColumnName("tnt_rtn_alwid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -1194,7 +1228,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tntmbrid");
+                        .HasColumnName("tnt_mbrid");
 
                     b.Property<string>("Role")
                         .IsRequired()

@@ -26,7 +26,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("wkrdlvid");
+                        .HasColumnName("wkr_dlvid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int")
@@ -100,7 +100,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("wkrtskid");
+                        .HasColumnName("wkr_tskid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int")
@@ -151,7 +151,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("leaseid");
 
                     b.Property<int>("MaxAttempts")
                         .HasColumnType("int")
@@ -164,7 +165,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<string>("PayloadReference")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("pld_ref");
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
@@ -198,7 +200,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<string>("TaskType")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("tsktyp");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -244,7 +247,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("wkrrplid");
+                        .HasColumnName("wkr_rplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -293,7 +296,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                 {
                     b.Property<string>("TaskType")
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("tsktyp");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
