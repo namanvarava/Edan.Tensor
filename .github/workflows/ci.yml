@@ -26,17 +26,36 @@ jobs:
         run: |
           dotnet tool install --global dotnet-ef --version 10.*
           $env:PATH = "$env:USERPROFILE/.dotnet/tools;$env:PATH"
-          $env:Database__Provider = 'Oracle'
-          $env:ConnectionStrings__Platform = 'User Id=ci;Password=ci;Data Source=localhost:1521/FREE'
-          $env:ConnectionStrings__Worker = $env:ConnectionStrings__Platform
-          $env:ConnectionStrings__DataSet = $env:ConnectionStrings__Platform
-          $env:ConnectionStrings__DataSetContent = $env:ConnectionStrings__Platform
-          $migrationProject = 'src/Hosts/EDAN.Tensor.OracleMigrations/EDAN.Tensor.OracleMigrations.csproj'
           $startupProject = 'src/Hosts/EDAN.Tensor.ApiHost/EDAN.Tensor.ApiHost.csproj'
-          foreach ($context in @('PlatformDbContext', 'WorkerDbContext', 'DataSetDbContext')) {
-            dotnet ef migrations script --project $migrationProject --startup-project $startupProject --context $context --configuration Release --no-build --idempotent --output "$env:RUNNER_TEMP/$context.oracle.sql"
-            if ($LASTEXITCODE -ne 0) { throw "Oracle migration script generation failed for $context" }
-            if ((Get-Item "$env:RUNNER_TEMP/$context.oracle.sql").Length -eq 0) { throw "Empty migration script for $context" }
+          $contexts = @('PlatformDbContext', 'WorkerDbContext', 'DataSetDbContext')
+          $providers = @(
+            @{ Name = 'PostgreSQL'; Project = 'src/Hosts/EDAN.Tensor.PostgreSqlMigrations/EDAN.Tensor.PostgreSqlMigrations.csproj'; Connection = 'Host=localhost;Port=5432;Database=ci;Username=ci;Password=ci' },
+            @{ Name = 'SqlServer'; Project = 'src/Hosts/EDAN.Tensor.SqlServerMigrations/EDAN.Tensor.SqlServerMigrations.csproj'; Connection = 'Server=localhost,1433;Database=ci;User Id=ci;Password=ci;TrustServerCertificate=True' },
+            @{ Name = 'Oracle'; Project = 'src/Hosts/EDAN.Tensor.OracleMigrations/EDAN.Tensor.OracleMigrations.csproj'; Connection = 'User Id=ci;Password=ci;Data Source=localhost:1521/FREE' }
+          )
+          foreach ($provider in $providers) {
+            $env:Database__Provider = $provider.Name
+            $env:ConnectionStrings__PlatformDatabase = $provider.Connection
+            $env:ConnectionStrings__WorkerDatabase = $provider.Connection
+            $env:ConnectionStrings__DataSetDatabase = $provider.Connection
+            $env:ConnectionStrings__DataSetContentDatabase = $provider.Connection
+            foreach ($context in $contexts) {
+              $output = "$env:RUNNER_TEMP/$context.$($provider.Name).sql"
+              dotnet ef migrations script --project $provider.Project --startup-project $startupProject --context $context --configuration Release --no-build --idempotent --output $output
+              if ($LASTEXITCODE -ne 0) { throw "$($provider.Name) migration script generation failed for $context" }
+              if ((Get-Item $output).Length -eq 0) { throw "Empty $($provider.Name) migration script for $context" }
+            }
+          }
+          $env:Database__Provider = 'Sqlite'
+          $env:ConnectionStrings__PlatformDatabase = 'Data Source=:memory:'
+          $env:ConnectionStrings__WorkerDatabase = $env:ConnectionStrings__PlatformDatabase
+          $env:ConnectionStrings__DataSetDatabase = $env:ConnectionStrings__PlatformDatabase
+          $env:ConnectionStrings__DataSetContentDatabase = 'Data Source=:memory:'
+          foreach ($context in $contexts) {
+            $output = "$env:RUNNER_TEMP/$context.Sqlite.sql"
+            dotnet ef migrations script --project $startupProject --startup-project $startupProject --context $context --configuration Release --no-build --output $output
+            if ($LASTEXITCODE -ne 0) { throw "SQLite migration script generation failed for $context" }
+            if ((Get-Item $output).Length -eq 0) { throw "Empty SQLite migration script for $context" }
           }
           if (Get-Command docker -ErrorAction SilentlyContinue) {
             $env:ConnectionStrings__PlatformDatabase = 'Host=localhost;Database=platform;Username=ci;Password=ci'
