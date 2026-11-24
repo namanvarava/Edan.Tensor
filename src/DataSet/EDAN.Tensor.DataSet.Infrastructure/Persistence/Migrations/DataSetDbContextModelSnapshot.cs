@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DataSetDbContext))]
-    partial class DataSetDbContextModelSnapshot : ModelSnapshot
+    public partial class DataSetDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -26,7 +26,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<string>("ContentFormat")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ctt_fmt");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TEXT")
@@ -36,7 +37,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("TEXT")
-                        .HasColumnName("nm");
+                        .HasColumnName("dsetnm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("TEXT")
@@ -55,7 +56,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<string>("StorageAdapter")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("str_adp");
 
                     b.Property<string>("StorageReference")
                         .IsRequired()
@@ -89,45 +91,52 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasColumnName("dsetqtathrevtid")
+                        .HasColumnName("dset_qta_thr_evtid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(16)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("event_type");
 
                     b.Property<long>("LimitBytes")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("limit_bytes");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
                         .HasColumnType("TEXT")
-                        .HasColumnName("occr_utc");
+                        .HasColumnName("occ_utc");
 
                     b.Property<Guid>("PolicyId")
                         .HasColumnType("TEXT")
                         .HasColumnName("plcyid");
 
                     b.Property<long>("PolicyVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("policy_version");
 
                     b.Property<string>("Scope")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("scp");
 
                     b.Property<Guid>("TargetId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tgtid");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("TEXT")
                         .HasColumnName("tntid");
 
                     b.Property<long>("UsedBytes")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("used_bytes");
 
                     b.Property<double>("UtilizationPercent")
-                        .HasColumnType("REAL");
+                        .HasColumnType("REAL")
+                        .HasColumnName("utilization_percent");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetqta_threvt_PK");
@@ -146,25 +155,28 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasColumnName("dsetstrusgsnpid")
+                        .HasColumnName("dset_str_usg_snpid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<DateTimeOffset>("CapturedAtUtc")
                         .HasColumnType("TEXT")
-                        .HasColumnName("capt_utc");
+                        .HasColumnName("cap_utc");
 
                     b.Property<long>("DataSetCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("data_set_count");
 
                     b.Property<DateTimeOffset>("PeriodStartUtc")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("period_strt_utc");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("TEXT")
                         .HasColumnName("tntid");
 
                     b.Property<long>("UsedBytes")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("used_bytes");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetstr_usgsnp_PK");
@@ -184,14 +196,14 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasColumnName("dsetvlddtlid")
+                        .HasColumnName("dset_vld_dtlid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT")
-                        .HasColumnName("cd");
+                        .HasColumnName("dset_vld_dtlcd");
 
                     b.Property<string>("DetailReference")
                         .IsRequired()
@@ -206,7 +218,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<string>("FieldName")
                         .HasMaxLength(128)
                         .HasColumnType("TEXT")
-                        .HasColumnName("fld_nm");
+                        .HasColumnName("fldnm");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -216,7 +228,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("RowNumber")
                         .HasColumnType("INTEGER")
-                        .HasColumnName("row_no");
+                        .HasColumnName("row_num");
 
                     b.Property<string>("Severity")
                         .IsRequired()
@@ -246,7 +258,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasColumnName("dsetvldexcid");
+                        .HasColumnName("dset_vld_excid");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
                         .HasColumnType("TEXT")
@@ -261,7 +273,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .HasColumnName("dsetid");
 
                     b.Property<int>("DetailItemCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("dtl_item_cnt");
 
                     b.Property<string>("DetailReference")
                         .IsRequired()
@@ -270,21 +283,26 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .HasColumnName("dtl_ref");
 
                     b.Property<bool>("DetailTruncated")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("dtl_trunc_yn");
 
                     b.Property<int>("ErrorCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("err_cnt");
 
                     b.Property<int>("ExpectedDataSetVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("exp_dset_ver");
 
                     b.Property<string>("FailureCode")
                         .HasMaxLength(200)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("fail_cd");
 
                     b.Property<string>("FailureMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("fail_msg");
 
                     b.Property<long>("FencingToken")
                         .IsConcurrencyToken()
@@ -297,22 +315,26 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .HasColumnName("idem_key");
 
                     b.Property<int>("ProcessedRecords")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("proc_rec_cnt");
 
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("TEXT")
                         .HasColumnName("prfid");
 
                     b.Property<int>("ProfileRevision")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("prf_rev");
 
                     b.Property<string>("RuleCountsJson")
                         .IsRequired()
                         .HasMaxLength(1048576)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rule_cnt_json");
 
                     b.Property<int>("SchemaVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("schm_ver");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -325,7 +347,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.Property<int>("TotalRecords")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("tot_rec_cnt");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -333,7 +356,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .HasColumnName("ver");
 
                     b.Property<int>("WarningCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("warn_cnt");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetvld_exc_PK");
@@ -357,7 +381,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasColumnName("dsetvldprfid");
+                        .HasColumnName("dset_vld_prfid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TEXT")
@@ -367,7 +391,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("TEXT")
-                        .HasColumnName("nm");
+                        .HasColumnName("dset_vld_prfnm");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("TEXT")
@@ -400,7 +424,8 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<string>("DefinitionJson")
                         .IsRequired()
                         .HasMaxLength(1048576)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("def_json");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("TEXT")
@@ -420,7 +445,7 @@ namespace EDAN.Tensor.DataSet.Infrastructure.Persistence.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasColumnName("dsetvldseenkeyid")
+                        .HasColumnName("dset_vld_seen_keyid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     b.Property<Guid>("ExecutionId")

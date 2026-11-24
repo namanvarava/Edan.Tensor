@@ -54,7 +54,8 @@ public sealed class WorkerProcessCrashRecoveryTests
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(probe)!
             };
             start.StandardOutputEncoding = Encoding.UTF8;
             start.StandardErrorEncoding = Encoding.UTF8;
@@ -65,6 +66,8 @@ public sealed class WorkerProcessCrashRecoveryTests
             child = Process.Start(start) ?? throw new InvalidOperationException("검증 프로세스가 시작되지 않았습니다.");
             errors = child.StandardError.ReadToEndAsync();
             var ready = await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            if (ready is null && child.HasExited)
+                Assert.Fail($"프로세스 검증 프로그램이 준비 신호 전에 종료되었습니다: {await errors}");
             Assert.Equal("CHECKPOINT_SAVED", ready);
 
             Guid oldLeaseId;

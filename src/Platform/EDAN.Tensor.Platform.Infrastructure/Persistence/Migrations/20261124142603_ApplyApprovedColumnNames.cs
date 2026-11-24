@@ -11,6 +11,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(
+                name: "Key",
+                table: "edpf_plcy",
+                newName: "plcykey");
+
+            migrationBuilder.RenameColumn(
+                name: "Value",
+                table: "edpf_plcy",
+                newName: "val");
+
+            migrationBuilder.RenameColumn(
                 name: "TenantId",
                 table: "edpf_usr",
                 newName: "tntid");

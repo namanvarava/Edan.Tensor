@@ -21,7 +21,7 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT")
-                        .HasColumnName("wkrdlvid");
+                        .HasColumnName("wkr_dlvid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("INTEGER")
@@ -95,7 +95,7 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasColumnName("wkrtskid");
+                        .HasColumnName("wkr_tskid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("INTEGER")
@@ -146,7 +146,8 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                         .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("leaseid");
 
                     b.Property<int>("MaxAttempts")
                         .HasColumnType("INTEGER")
@@ -159,7 +160,8 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                     b.Property<string>("PayloadReference")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("pld_ref");
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
@@ -193,7 +195,8 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                     b.Property<string>("TaskType")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tsktyp");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("TEXT")
@@ -239,7 +242,7 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasColumnName("wkrrplid");
+                        .HasColumnName("wkr_rplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TEXT")
@@ -288,7 +291,8 @@ namespace EDAN.Tensor.Worker.Infrastructure.Persistence.Migrations
                 {
                     b.Property<string>("TaskType")
                         .HasMaxLength(120)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tsktyp");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)

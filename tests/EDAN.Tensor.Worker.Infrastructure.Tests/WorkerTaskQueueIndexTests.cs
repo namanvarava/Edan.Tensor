@@ -21,7 +21,7 @@ public sealed class WorkerTaskQueueIndexTests
             SELECT COUNT(*)
             FROM sqlite_master
             WHERE type = 'index'
-              AND name = 'IX_worker_tasks_Status_ReadyAtUtcUnixMilliseconds_TenantId';
+              AND name = 'edwk_wkrtsk_N04';
             """;
 
         var indexCount = Convert.ToInt32(await command.ExecuteScalarAsync());
