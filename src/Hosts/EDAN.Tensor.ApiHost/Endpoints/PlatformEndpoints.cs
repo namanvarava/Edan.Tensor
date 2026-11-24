@@ -70,13 +70,13 @@ public static class PlatformEndpoints
 
         tenantGroup.MapGet("/{tenantId:guid}/database-binding", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
         {
-            var bindings = await db.TenantDatabaseBindings.AsNoTracking()
+            var binding = await db.TenantDatabaseBindings.AsNoTracking()
                 .Where(x => x.TenantId == new TenantId(tenantId)
                     && x.Status == TenantDatabaseBindingStatus.Active)
-                .OrderBy(x => x.CreatedAtUtc).ToListAsync(token);
-            return bindings.Count == 0
+                .OrderBy(x => x.CreatedAtUtc).FirstOrDefaultAsync(token);
+            return binding is null
                 ? Results.NotFound(new ApiError("platform.database_binding.not_found", "활성 DB 바인딩을 찾을 수 없습니다."))
-                : Results.Ok(bindings.Select(binding => new
+                : Results.Ok(new
                 {
                     BindingId = binding.Id.Value,
                     TenantId = binding.TenantId.Value,
@@ -89,7 +89,29 @@ public static class PlatformEndpoints
                     binding.Status,
                     binding.MigrationVersion,
                     binding.LastHealthAtUtc
-                }));
+                });
+        }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
+
+        tenantGroup.MapGet("/{tenantId:guid}/database-bindings", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
+        {
+            var bindings = await db.TenantDatabaseBindings.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Active)
+                .OrderBy(x => x.CreatedAtUtc)
+                .Select(binding => new
+                {
+                    BindingId = binding.Id.Value,
+                    TenantId = binding.TenantId.Value,
+                    Provider = binding.Provider.ToString(),
+                    binding.Username,
+                    binding.ServerAddress,
+                    binding.Port,
+                    binding.DatabaseName,
+                    binding.SchemaName,
+                    binding.Status,
+                    binding.MigrationVersion,
+                    binding.LastHealthAtUtc
+                }).ToListAsync(token);
+            return Results.Ok(bindings);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapPost("/{tenantId:guid}/database-binding/activate", async (Guid tenantId, Guid? bindingId, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
