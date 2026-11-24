@@ -19,7 +19,7 @@ public sealed class TenantDatabaseMutationTaskHandler(IServiceScopeFactory scope
         var payload = task.PayloadReference["tenant-mutation:".Length..];
         var bytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
         var request = JsonSerializer.Deserialize<MutationPayload>(bytes) ?? throw new InvalidOperationException("테넌트 DB 변경 Payload가 비어 있습니다.");
-        var steps = request.Steps.Select(x => new TenantDatabaseMutationStep(new TenantId(x.TenantId), x.Kind, x.SchemaName, x.RoutineName, x.Parameters ?? new Dictionary<string, string?>())).ToArray();
+        var steps = request.Steps.Select(x => new TenantDatabaseMutationStep(new TenantId(x.TenantId), x.Kind, x.SchemaName, x.RoutineName, x.Parameters ?? new Dictionary<string, string?>(), BindingId: x.BindingId is { } bindingId ? new TenantDatabaseBindingId(bindingId) : null)).ToArray();
         return Task.FromResult<IWorkerTaskExecution>(new MutationExecution(RunAsync(scopeFactory, task, steps, cancellationToken)));
     }
 
@@ -43,5 +43,5 @@ public sealed class TenantDatabaseMutationTaskHandler(IServiceScopeFactory scope
     }
 
     private sealed record MutationPayload(IReadOnlyList<MutationStep> Steps);
-    private sealed record MutationStep(Guid TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
+    private sealed record MutationStep(Guid TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, Guid? BindingId = null);
 }

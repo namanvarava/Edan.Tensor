@@ -7,7 +7,8 @@ public sealed record TenantDatabaseConsistencyCheck(
     TenantDatabaseRoutineKind Kind,
     string SchemaName,
     string RoutineName,
-    IReadOnlyDictionary<string, string?> Parameters);
+    IReadOnlyDictionary<string, string?> Parameters,
+    TenantDatabaseBindingId? BindingId = null);
 
 public sealed record TenantDatabaseConsistencyProviderResult(
     TenantId TenantId,
@@ -15,7 +16,8 @@ public sealed record TenantDatabaseConsistencyProviderResult(
     string Fingerprint,
     int AffectedRows,
     IReadOnlyList<IReadOnlyDictionary<string, object?>> Rows,
-    string? Error);
+    string? Error,
+    TenantDatabaseBindingId? BindingId = null);
 
 public sealed record TenantDatabaseConsistencyResult(
     string Status,

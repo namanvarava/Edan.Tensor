@@ -70,12 +70,13 @@ public static class PlatformEndpoints
 
         tenantGroup.MapGet("/{tenantId:guid}/database-binding", async (Guid tenantId, PlatformDbContext db, CancellationToken token) =>
         {
-            var binding = await db.TenantDatabaseBindings.AsNoTracking()
-                .SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId)
-                    && x.Status == TenantDatabaseBindingStatus.Active, token);
-            return binding is null
+            var bindings = await db.TenantDatabaseBindings.AsNoTracking()
+                .Where(x => x.TenantId == new TenantId(tenantId)
+                    && x.Status == TenantDatabaseBindingStatus.Active)
+                .OrderBy(x => x.CreatedAtUtc).ToListAsync(token);
+            return bindings.Count == 0
                 ? Results.NotFound(new ApiError("platform.database_binding.not_found", "활성 DB 바인딩을 찾을 수 없습니다."))
-                : Results.Ok(new
+                : Results.Ok(bindings.Select(binding => new
                 {
                     BindingId = binding.Id.Value,
                     TenantId = binding.TenantId.Value,
@@ -88,12 +89,14 @@ public static class PlatformEndpoints
                     binding.Status,
                     binding.MigrationVersion,
                     binding.LastHealthAtUtc
-                });
+                }));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        tenantGroup.MapPost("/{tenantId:guid}/database-binding/activate", async (Guid tenantId, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/activate", async (Guid tenantId, Guid? bindingId, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
         {
-            var binding = await db.TenantDatabaseBindings.SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Provisioning, token);
+            var binding = await db.TenantDatabaseBindings.SingleOrDefaultAsync(x => x.TenantId == new TenantId(tenantId)
+                && x.Status == TenantDatabaseBindingStatus.Provisioning
+                && (!bindingId.HasValue || x.Id == new TenantDatabaseBindingId(bindingId.Value)), token);
             if (binding is null) return Results.NotFound(new ApiError("platform.database_binding.provisioning_not_found", "활성화할 Provisioning 바인딩을 찾을 수 없습니다."));
             binding.Activate(clock.GetUtcNow());
             await db.SaveChangesAsync(token);
@@ -130,11 +133,6 @@ public static class PlatformEndpoints
                 return Results.NotFound(new ApiError("platform.tenant.not_found", "테넌트를 찾을 수 없습니다."));
 
             var tenant = new TenantId(tenantId);
-            var active = await db.TenantDatabaseBindings.AnyAsync(
-                x => x.TenantId == tenant && x.Status == TenantDatabaseBindingStatus.Active, token);
-            if (active)
-                return Results.Conflict(new ApiError("platform.database_binding.active_exists", "활성 DB 바인딩이 이미 존재합니다."));
-
             var binding = TenantDatabaseBinding.Create(
                 new TenantDatabaseBindingId(Guid.NewGuid()), tenant, provider, request.Username,
                 request.SecretKey, request.ServerAddress, request.Port, request.DatabaseName,
@@ -202,7 +200,7 @@ public static class PlatformEndpoints
                 new TenantId(x.TenantId ?? tenantId), x.Kind, x.SchemaName, x.RoutineName,
                 x.Parameters ?? new Dictionary<string, string?>(), x.Compensation is null ? null : new TenantDatabaseMutationStep(
                     new TenantId(x.Compensation.TenantId ?? x.TenantId ?? tenantId), x.Compensation.Kind, x.Compensation.SchemaName, x.Compensation.RoutineName,
-                    x.Compensation.Parameters ?? new Dictionary<string, string?>()))).ToArray();
+                    x.Compensation.Parameters ?? new Dictionary<string, string?>(), null, x.Compensation.BindingId is { } cb ? new TenantDatabaseBindingId(cb) : null), x.BindingId is { } b ? new TenantDatabaseBindingId(b) : null)).ToArray();
             return Results.Ok(await coordinator.ExecuteAsync(new TenantId(tenantId), request.IdempotencyKey, steps, token));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
@@ -212,7 +210,7 @@ public static class PlatformEndpoints
                 return ValidationError("정합성 검증에는 두 개 이상의 Provider 검사가 필요합니다.");
             var checks = request.Checks.Select(x => new TenantDatabaseConsistencyCheck(
                 new TenantId(x.TenantId ?? tenantId), x.Kind, x.SchemaName, x.RoutineName,
-                x.Parameters ?? new Dictionary<string, string?>())).ToArray();
+                x.Parameters ?? new Dictionary<string, string?>(), x.BindingId is { } b ? new TenantDatabaseBindingId(b) : null)).ToArray();
             return Results.Ok(await checker.VerifyAsync(checks, token));
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
@@ -1006,9 +1004,10 @@ public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaNam
 public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
 public sealed record ExecuteMutationRequest(string IdempotencyKey, IReadOnlyList<MutationStepRequest> Steps);
 public sealed record VerifyConsistencyRequest(IReadOnlyList<ConsistencyCheckRequest> Checks);
-public sealed record ConsistencyCheckRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
-public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation);
-public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
+public sealed record ConsistencyCheckRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, Guid? BindingId = null);
+public sealed record MutationStepRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, MutationCompensationRequest? Compensation, Guid? BindingId = null);
+public sealed record MutationCompensationRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, Guid? BindingId = null);
+
 public sealed record GrantTenantMembershipRequest(string SubjectId, string Role);
 public sealed record GrantOrganizationMembershipRequest(string SubjectId, string Role);
 public sealed record GrantProjectMembershipRequest(string SubjectId, string Role);

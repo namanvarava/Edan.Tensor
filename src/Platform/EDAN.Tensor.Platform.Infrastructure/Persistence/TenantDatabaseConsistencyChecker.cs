@@ -24,16 +24,17 @@ public sealed class TenantDatabaseConsistencyChecker(ITenantDatabaseRoutineExecu
         {
             try
             {
-                var execution = await executor.ExecuteAsync(check.TenantId, check.Kind, check.SchemaName,
-                    check.RoutineName, check.Parameters, cancellationToken);
+                var execution = check.BindingId is { } bindingId
+                    ? await executor.ExecuteAsync(bindingId, check.TenantId, check.Kind, check.SchemaName, check.RoutineName, check.Parameters, cancellationToken)
+                    : await executor.ExecuteAsync(check.TenantId, check.Kind, check.SchemaName, check.RoutineName, check.Parameters, cancellationToken);
                 var normalized = Normalize(execution.Rows);
                 results.Add(new(check.TenantId, true, Fingerprint(normalized), execution.AffectedRows,
-                    execution.Rows, null));
+                    execution.Rows, null, check.BindingId));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 results.Add(new(check.TenantId, false, string.Empty, 0,
-                    Array.Empty<IReadOnlyDictionary<string, object?>>(), ex.Message));
+                    Array.Empty<IReadOnlyDictionary<string, object?>>(), ex.Message, check.BindingId));
             }
         }
 

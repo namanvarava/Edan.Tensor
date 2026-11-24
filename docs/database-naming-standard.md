@@ -110,6 +110,14 @@ own local transaction. The coordinator records step state, retries transient
 failures, applies idempotency keys, and invokes a compensation step when the
 overall operation cannot complete. A distributed two-phase commit is not used.
 
+For an operation that targets more than one database binding, every mutation
+step must include the persisted `bindingId`. The same identifier may be used
+for a compensation step. This prevents a later default-binding change from
+rerouting a retry or compensation to a different provider. The legacy form
+without `bindingId` remains supported for a tenant with one default active
+binding. Consistency checks use the same binding identifiers, so PostgreSQL,
+SQL Server, Oracle, and SQLite results can be compared for the same tenant.
+
 ## 5. Consistency policy
 
 Consistency checks compare allowlisted, read-only routine results using a stable
