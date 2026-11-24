@@ -18,6 +18,8 @@ services:
       Authentication__Audience: ${Authentication__Audience:-edan-tensor-api}
     ports:
       - "${API_PORT:-5000}:8080"
+    volumes:
+      - "./app-data:/app/App_Data"
     restart: unless-stopped
 
   worker:
