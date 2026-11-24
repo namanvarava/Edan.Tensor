@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory = $true)][Guid]$TenantId,
     [Parameter(Mandatory = $true)][string]$Schema,
     [string]$ProviderHost = "localhost",
-    [int[]]$ProviderPorts = @(5432, 1433, 1521)
+    [int[]]$ProviderPorts = @(5432, 1433, 1521),
+    [string]$TokenFile
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,10 +36,18 @@ function Test-TcpPort {
     finally { $client.Dispose() }
 }
 
-$secureToken = Read-Host "Bearer 토큰 입력(화면에 표시되지 않음)" -AsSecureString
-$tokenPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
+$secureToken = $null
+$tokenPtr = [IntPtr]::Zero
 try {
-    $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPtr)
+    if ([string]::IsNullOrWhiteSpace($TokenFile)) {
+        $secureToken = Read-Host "Bearer 토큰 입력(화면에 표시되지 않음)" -AsSecureString
+        $tokenPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureToken)
+        $token = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($tokenPtr)
+    }
+    else {
+        if (-not (Test-Path -LiteralPath $TokenFile)) { throw "토큰 파일을 찾을 수 없습니다: $TokenFile" }
+        $token = ((Get-Content -LiteralPath $TokenFile -Raw | ConvertFrom-Json).access_token).ToString()
+    }
     if ([string]::IsNullOrWhiteSpace($token)) { throw "Bearer 토큰이 필요합니다." }
     $headers = @{
         Authorization = "Bearer $token"
@@ -60,6 +69,6 @@ try {
     if ($results.Result -contains "FAIL") { exit 1 }
 }
 finally {
-    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($tokenPtr)
+    if ($tokenPtr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($tokenPtr) }
     Remove-Variable token, secureToken -ErrorAction SilentlyContinue
 }
