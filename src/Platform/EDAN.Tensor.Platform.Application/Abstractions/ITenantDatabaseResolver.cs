@@ -32,4 +32,6 @@ public interface ITenantDatabaseSecretResolver
 public interface ITenantDatabaseConnectionFactory
 {
     Task<DbConnection> OpenAsync(TenantId tenantId, CancellationToken cancellationToken = default);
+    Task<DbConnection> OpenAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, CancellationToken cancellationToken = default)
+        => OpenAsync(tenantId, cancellationToken);
 }
