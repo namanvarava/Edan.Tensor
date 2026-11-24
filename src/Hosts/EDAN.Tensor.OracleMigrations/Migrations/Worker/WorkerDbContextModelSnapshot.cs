@@ -26,7 +26,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkrdlvid");
+                        .HasColumnName("wkr_dlvid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("NUMBER(10)")
@@ -100,7 +100,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkrtskid");
+                        .HasColumnName("wkr_tskid");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("NUMBER(10)")
@@ -151,7 +151,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("leaseid");
 
                     b.Property<int>("MaxAttempts")
                         .HasColumnType("NUMBER(10)")
@@ -164,7 +165,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<string>("PayloadReference")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("pld_ref");
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
@@ -198,7 +200,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<string>("TaskType")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("NVARCHAR2(120)");
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("tsktyp");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("RAW(16)")
@@ -244,7 +247,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkrrplid");
+                        .HasColumnName("wkr_rplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
@@ -293,7 +296,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 {
                     b.Property<string>("TaskType")
                         .HasMaxLength(120)
-                        .HasColumnType("NVARCHAR2(120)");
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("tsktyp");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
