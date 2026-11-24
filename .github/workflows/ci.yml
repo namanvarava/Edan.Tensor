@@ -44,6 +44,8 @@ jobs:
               dotnet ef migrations script --project $provider.Project --startup-project $startupProject --context $context --configuration Release --no-build --idempotent --output $output
               if ($LASTEXITCODE -ne 0) { throw "$($provider.Name) migration script generation failed for $context" }
               if ((Get-Item $output).Length -eq 0) { throw "Empty $($provider.Name) migration script for $context" }
+              dotnet ef migrations has-pending-model-changes --project $provider.Project --startup-project $startupProject --context $context --configuration Release --no-build
+              if ($LASTEXITCODE -ne 0) { throw "$($provider.Name) has pending model changes for $context" }
             }
           }
           $env:Database__Provider = 'Sqlite'
@@ -56,6 +58,8 @@ jobs:
             dotnet ef migrations script --project $startupProject --startup-project $startupProject --context $context --configuration Release --no-build --output $output
             if ($LASTEXITCODE -ne 0) { throw "SQLite migration script generation failed for $context" }
             if ((Get-Item $output).Length -eq 0) { throw "Empty SQLite migration script for $context" }
+            dotnet ef migrations has-pending-model-changes --project $startupProject --startup-project $startupProject --context $context --configuration Release --no-build
+            if ($LASTEXITCODE -ne 0) { throw "SQLite has pending model changes for $context" }
           }
           if (Get-Command docker -ErrorAction SilentlyContinue) {
             $env:ConnectionStrings__PlatformDatabase = 'Host=localhost;Database=platform;Username=ci;Password=ci'
