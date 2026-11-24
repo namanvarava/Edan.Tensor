@@ -64,13 +64,26 @@ internal static class TenantDatabaseConnectionString
 public sealed class EnvironmentTenantDatabaseSecretResolver(IConfiguration configuration)
     : ITenantDatabaseSecretResolver
 {
-    public Task<TenantDatabaseCredential> ResolveAsync(string secretKey, CancellationToken cancellationToken = default)
+    public async Task<TenantDatabaseCredential> ResolveAsync(string secretKey, CancellationToken cancellationToken = default)
     {
-        var username = configuration[$"TenantDatabaseSecrets:{secretKey}:Username"];
-        var password = configuration[$"TenantDatabaseSecrets:{secretKey}:Password"]
-            ?? Environment.GetEnvironmentVariable(secretKey);
+        var username = await ReadSecretPartAsync(
+            $"TenantDatabaseSecrets:{secretKey}:UsernameFile",
+            $"TenantDatabaseSecrets:{secretKey}:Username",
+            cancellationToken);
+        var password = await ReadSecretPartAsync(
+            $"TenantDatabaseSecrets:{secretKey}:PasswordFile",
+            $"TenantDatabaseSecrets:{secretKey}:Password",
+            cancellationToken) ?? Environment.GetEnvironmentVariable(secretKey);
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             throw new InvalidOperationException($"DB Secret을 찾을 수 없습니다: {secretKey}");
-        return Task.FromResult(new TenantDatabaseCredential(username, password));
+        return new TenantDatabaseCredential(username.Trim(), password.Trim());
+    }
+
+    private async Task<string?> ReadSecretPartAsync(string fileKey, string valueKey, CancellationToken cancellationToken)
+    {
+        var file = configuration[fileKey];
+        if (!string.IsNullOrWhiteSpace(file) && File.Exists(file))
+            return await File.ReadAllTextAsync(file, cancellationToken);
+        return configuration[valueKey];
     }
 }

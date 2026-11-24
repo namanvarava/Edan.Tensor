@@ -74,6 +74,28 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task TenantMutationCoordinatorRetriesTransientRoutineFailure()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("MUTATION-RETRY"), "재시도 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var executor = new TransientRoutineExecutor(2);
+        var coordinator = new TenantDatabaseMutationCoordinator(executor, db, TimeProvider.System);
+        var step = new TenantDatabaseMutationStep(tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "retry_change", new Dictionary<string, string?>());
+
+        var result = await coordinator.ExecuteAsync(tenant.Id, "mutation-retry", [step]);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(3, executor.CallCount);
+    }
+
+    [Fact]
     public async Task SqlitePersistsActiveTenantDatabaseBindingWithoutSecretValue()
     {
         await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
@@ -435,6 +457,18 @@ public sealed class PlatformInfrastructureTests
             RoutineNames.Add(routineName);
             if (routineName == failingRoutine)
                 throw new InvalidOperationException("simulated step failure");
+            return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
+        }
+    }
+
+    private sealed class TransientRoutineExecutor(int failuresBeforeSuccess) : ITenantDatabaseRoutineExecutor
+    {
+        public int CallCount { get; private set; }
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            if (CallCount <= failuresBeforeSuccess) throw new IOException("simulated transient failure");
             return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
         }
     }

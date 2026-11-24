@@ -1,12 +1,21 @@
 using System.Text.Json;
+using System.Data.Common;
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 
-public sealed class TenantDatabaseMutationCoordinator(ITenantDatabaseRoutineExecutor executor, PlatformDbContext db, TimeProvider clock) : ITenantDatabaseMutationCoordinator
+public sealed class TenantDatabaseMutationCoordinator(
+    ITenantDatabaseRoutineExecutor executor,
+    PlatformDbContext db,
+    TimeProvider clock,
+    IConfiguration? configuration = null) : ITenantDatabaseMutationCoordinator
 {
+    private const int DefaultMaxAttempts = 3;
+    private const int DefaultRetryDelayMilliseconds = 250;
+
     public async Task<TenantDatabaseMutationResult> ExecuteAsync(TenantId ownerTenantId, string idempotencyKey, IReadOnlyList<TenantDatabaseMutationStep> steps, CancellationToken cancellationToken = default)
     {
         if (steps.Count == 0) throw new ArgumentException("최소 하나의 변경 단계가 필요합니다.", nameof(steps));
@@ -23,7 +32,7 @@ public sealed class TenantDatabaseMutationCoordinator(ITenantDatabaseRoutineExec
         {
             try
             {
-                await executor.ExecuteAsync(steps[i].TenantId, steps[i].Kind, steps[i].SchemaName, steps[i].RoutineName, steps[i].Parameters, cancellationToken);
+                await ExecuteWithRetryAsync(steps[i], cancellationToken);
                 results.Add(new(i, true, false, null)); completed.Add((i, steps[i]));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -36,7 +45,7 @@ public sealed class TenantDatabaseMutationCoordinator(ITenantDatabaseRoutineExec
                     try
                     {
                         var c = item.Step.Compensation;
-                        await executor.ExecuteAsync(c.TenantId, c.Kind, c.SchemaName, c.RoutineName, c.Parameters, cancellationToken);
+                        await ExecuteWithRetryAsync(c, cancellationToken);
                         results.Add(new(item.Index, true, true, null));
                     }
                     catch (Exception compensationError) when (compensationError is not OperationCanceledException)
@@ -55,4 +64,34 @@ public sealed class TenantDatabaseMutationCoordinator(ITenantDatabaseRoutineExec
         await db.SaveChangesAsync(cancellationToken);
         return succeeded;
     }
+
+    private async Task ExecuteWithRetryAsync(TenantDatabaseMutationStep step, CancellationToken cancellationToken)
+    {
+        var maxAttempts = ReadInt("TenantDatabaseMutation:MaxAttempts", DefaultMaxAttempts, 1, 10);
+        var delayMilliseconds = ReadInt("TenantDatabaseMutation:RetryDelayMilliseconds", DefaultRetryDelayMilliseconds, 0, 30_000);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await executor.ExecuteAsync(step.TenantId, step.Kind, step.SchemaName, step.RoutineName, step.Parameters, cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts && IsTransient(ex))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(delayMilliseconds * attempt), cancellationToken);
+            }
+        }
+    }
+
+    private int ReadInt(string key, int fallback, int minimum, int maximum) =>
+        Math.Clamp(int.TryParse(configuration?[key], out var value) ? value : fallback, minimum, maximum);
+
+    private static bool IsTransient(Exception exception) => exception switch
+    {
+        TimeoutException => true,
+        IOException => true,
+        DbException => true,
+        _ => exception.InnerException is not null && IsTransient(exception.InnerException)
+    };
 }

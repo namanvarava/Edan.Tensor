@@ -4,6 +4,12 @@ param(
     [Parameter(Mandatory)] [ValidateSet('SQLite','PostgreSQL','SqlServer','Oracle')] [string] $Provider,
     [Parameter(Mandatory)] [string] $ApiBaseUrl,
     [Parameter(Mandatory)] [string] $BearerToken,
+    [Parameter(Mandatory)] [string] $Username,
+    [Parameter(Mandatory)] [string] $SecretKey,
+    [Parameter(Mandatory)] [string] $ServerAddress,
+    [Parameter(Mandatory)] [int] $Port,
+    [Parameter(Mandatory)] [string] $DatabaseName,
+    [Parameter(Mandatory)] [string] $SchemaName,
     [string] $RepositoryRoot = (Join-Path $PSScriptRoot '..\..'),
     [switch] $SkipMigration
 )
@@ -28,6 +34,16 @@ if (-not $SkipMigration) {
     if ($LASTEXITCODE -ne 0) { throw "${Provider} Migration 적용에 실패했습니다. 종료 코드: $LASTEXITCODE" }
 }
 
+$binding = [ordered]@{
+    Provider = $Provider
+    Username = $Username
+    SecretKey = $SecretKey
+    ServerAddress = $ServerAddress
+    Port = $Port
+    DatabaseName = $DatabaseName
+    SchemaName = $SchemaName
+}
+Invoke-Json 'POST' $bindingUri $binding | Out-Null
 Invoke-Json 'POST' "$bindingUri/activate" $null | Out-Null
 $health = Invoke-Json 'POST' "$bindingUri/health" $null
 if ($health.Status -ne 'Healthy') { throw '테넌트 DB Health Check가 성공하지 않았습니다.' }
