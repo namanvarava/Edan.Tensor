@@ -47,15 +47,15 @@ internal static class TenantDatabaseConnectionString
             string.IsNullOrWhiteSpace(binding.DatabaseName))
             throw new InvalidOperationException("서버 주소와 DB 이름이 필요한 Provider입니다.");
 
-        var port = binding.Port is null ? string.Empty : $":{binding.Port.Value}";
+        var sqlServerPort = binding.Port is null ? string.Empty : $",{binding.Port.Value}";
         return binding.Provider switch
         {
             TenantDatabaseProvider.PostgreSQL =>
                 $"Host={binding.ServerAddress};Port={binding.Port ?? 5432};Database={binding.DatabaseName};Username={credential.Username};Password={credential.Password};Ssl Mode=Prefer",
             TenantDatabaseProvider.SqlServer =>
-                $"Server={binding.ServerAddress}{port};Database={binding.DatabaseName};User Id={credential.Username};Password={credential.Password};TrustServerCertificate=True",
+                $"Server={binding.ServerAddress}{sqlServerPort};Database={binding.DatabaseName};User Id={credential.Username};Password={credential.Password};TrustServerCertificate=True",
             TenantDatabaseProvider.Oracle =>
-                $"User Id={credential.Username};Password={credential.Password};Data Source={binding.ServerAddress}{port}/{binding.DatabaseName}",
+                $"User Id={credential.Username};Password={credential.Password};Data Source={binding.ServerAddress}:{binding.Port ?? 1521}/{binding.DatabaseName}",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {binding.Provider}")
         };
     }
