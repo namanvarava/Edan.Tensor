@@ -5,7 +5,10 @@ param(
     [Parameter(Mandatory = $true)][string]$Schema,
     [string]$ProviderHost = "localhost",
     [int[]]$ProviderPorts = @(5432, 1433, 1521),
-    [string]$TokenFile
+    [string]$TokenFile,
+    [ValidateSet('Procedure','Function','OraclePackageProcedure')][string]$RoutineKind,
+    [string]$RoutineName,
+    [string]$RoutineParametersJson = '{}'
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,6 +18,18 @@ function Invoke-CheckedEndpoint {
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Method $Method -Headers $Headers -TimeoutSec 20
         if ([int]$response.StatusCode -ne $ExpectedStatus) { throw "HTTP $([int]$response.StatusCode), expected $ExpectedStatus" }
+        [pscustomobject]@{ Check = $Name; Result = "PASS"; Detail = "HTTP $([int]$response.StatusCode)" }
+    }
+    catch {
+        [pscustomobject]@{ Check = $Name; Result = "FAIL"; Detail = $_.Exception.Message }
+    }
+}
+
+function Invoke-CheckedJsonEndpoint {
+    param([string]$Name, [string]$Uri, [hashtable]$Headers, [object]$Body)
+    try {
+        $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Method POST -Headers $Headers -ContentType 'application/json' -Body ($Body | ConvertTo-Json -Depth 10) -TimeoutSec 20
+        if ([int]$response.StatusCode -lt 200 -or [int]$response.StatusCode -ge 300) { throw "HTTP $([int]$response.StatusCode)" }
         [pscustomobject]@{ Check = $Name; Result = "PASS"; Detail = "HTTP $([int]$response.StatusCode)" }
     }
     catch {
@@ -65,6 +80,12 @@ try {
         (Invoke-CheckedEndpoint "Table metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/tables" $headers)
         (Invoke-CheckedEndpoint "Routine metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/routines?schema=$([uri]::EscapeDataString($Schema))" $headers)
     )
+    if (-not [string]::IsNullOrWhiteSpace($RoutineKind) -or -not [string]::IsNullOrWhiteSpace($RoutineName)) {
+        if ([string]::IsNullOrWhiteSpace($RoutineKind) -or [string]::IsNullOrWhiteSpace($RoutineName)) { throw "RoutineKind와 RoutineName은 함께 지정해야 합니다." }
+        try { $routineParameters = $RoutineParametersJson | ConvertFrom-Json -AsHashtable } catch { throw "RoutineParametersJson이 올바른 JSON 객체가 아닙니다." }
+        $routineBody = [ordered]@{ Kind = $RoutineKind; SchemaName = $Schema; RoutineName = $RoutineName; Parameters = $routineParameters }
+        $results += Invoke-CheckedJsonEndpoint "Routine execution" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/routines/execute" $headers $routineBody
+    }
     $results | Format-Table -AutoSize
     if ($results.Result -contains "FAIL") { exit 1 }
 }
