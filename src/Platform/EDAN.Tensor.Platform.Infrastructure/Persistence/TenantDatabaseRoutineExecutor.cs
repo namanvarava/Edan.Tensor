@@ -12,7 +12,8 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
 
     public async Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
     {
-        if (!Identifier.IsMatch(schemaName) || !Identifier.IsMatch(routineName))
+        if (!Identifier.IsMatch(schemaName) || !Identifier.IsMatch(routineName) ||
+            routineName.Contains('.') && kind != TenantDatabaseRoutineKind.OraclePackageProcedure)
             throw new ArgumentException("루틴 식별자는 안전한 영문 식별자여야 합니다.");
         var allowed = await platformDb.TenantDatabaseRoutineAllowlists.AnyAsync(x => x.TenantId == tenantId && x.Kind == kind && x.SchemaName == schemaName && x.RoutineName == routineName && x.IsEnabled, cancellationToken);
         if (!allowed) throw new UnauthorizedAccessException("허용 목록에 등록되지 않은 루틴입니다.");
@@ -23,13 +24,7 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
         await using var command = connection.CreateCommand();
         command.CommandType = CommandType.Text;
         var names = parameters.Keys.Select((_, i) => "@p" + i).ToArray();
-        command.CommandText = resolution.Provider == TenantDatabaseProvider.Oracle
-            ? $"BEGIN {schemaName}.{routineName}({string.Join(", ", names)}); END;"
-            : resolution.Provider == TenantDatabaseProvider.SqlServer
-            ? $"EXEC [{schemaName}].[{routineName}] {string.Join(", ", names)}"
-            : kind == TenantDatabaseRoutineKind.Function
-                ? $"SELECT * FROM \"{schemaName}\".\"{routineName}\"({string.Join(", ", names)})"
-                : $"CALL \"{schemaName}\".\"{routineName}\"({string.Join(", ", names)})";
+        command.CommandText = BuildCommandText(resolution.Provider, kind, schemaName, routineName, names);
         foreach (var value in parameters.Values)
         {
             var parameter = command.CreateParameter(); parameter.ParameterName = names[command.Parameters.Count]; parameter.Value = (object?)value ?? DBNull.Value; command.Parameters.Add(parameter);
@@ -50,6 +45,27 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
             return new(0, rows);
         }
         return new(0, rows);
+    }
+
+    internal static string BuildCommandText(TenantDatabaseProvider provider, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyList<string> parameterNames)
+    {
+        var parameters = string.Join(", ", parameterNames);
+        return provider switch
+        {
+            TenantDatabaseProvider.Oracle when kind == TenantDatabaseRoutineKind.Function
+                => $"SELECT {schemaName}.{routineName}({parameters}) FROM DUAL",
+            TenantDatabaseProvider.Oracle
+                => $"BEGIN {schemaName}.{routineName}({parameters}); END;",
+            TenantDatabaseProvider.SqlServer when kind == TenantDatabaseRoutineKind.Function
+                => $"SELECT [{schemaName}].[{routineName}]({parameters}) AS [Result]",
+            TenantDatabaseProvider.SqlServer
+                => $"EXEC [{schemaName}].[{routineName}] {parameters}",
+            TenantDatabaseProvider.PostgreSQL when kind == TenantDatabaseRoutineKind.Function
+                => $"SELECT * FROM \"{schemaName}\".\"{routineName}\"({parameters})",
+            TenantDatabaseProvider.PostgreSQL
+                => $"CALL \"{schemaName}\".\"{routineName}\"({parameters})",
+            _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {provider}")
+        };
     }
 
     private sealed class StaticResolver(TenantDatabaseResolution value) : ITenantDatabaseResolver
