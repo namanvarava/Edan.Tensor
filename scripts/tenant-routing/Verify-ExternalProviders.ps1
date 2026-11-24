@@ -8,7 +8,8 @@ param(
     [string]$TokenFile,
     [ValidateSet('Procedure','Function','OraclePackageProcedure')][string]$RoutineKind,
     [string]$RoutineName,
-    [string]$RoutineParametersJson = '{}'
+    [string]$RoutineParametersJson = '{}',
+    [string]$ConsistencyChecksJson
 )
 
 $ErrorActionPreference = "Stop"
@@ -85,6 +86,12 @@ try {
         try { $routineParameters = $RoutineParametersJson | ConvertFrom-Json -AsHashtable } catch { throw "RoutineParametersJson이 올바른 JSON 객체가 아닙니다." }
         $routineBody = [ordered]@{ Kind = $RoutineKind; SchemaName = $Schema; RoutineName = $RoutineName; Parameters = $routineParameters }
         $results += Invoke-CheckedJsonEndpoint "Routine execution" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/routines/execute" $headers $routineBody
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ConsistencyChecksJson)) {
+        try { $consistencyChecks = $ConsistencyChecksJson | ConvertFrom-Json } catch { throw "ConsistencyChecksJson이 올바른 JSON 배열이 아닙니다." }
+        if ($consistencyChecks -isnot [System.Collections.IEnumerable] -or $consistencyChecks -is [string]) { throw "ConsistencyChecksJson은 JSON 배열이어야 합니다." }
+        $consistencyBody = [ordered]@{ Checks = @($consistencyChecks) }
+        $results += Invoke-CheckedJsonEndpoint "Provider consistency" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/consistency/verify" $headers $consistencyBody
     }
     $results | Format-Table -AutoSize
     if ($results.Result -contains "FAIL") { exit 1 }
