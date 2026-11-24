@@ -17,7 +17,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
             TenantDatabaseProvider.PostgreSQL => "SELECT table_schema, table_name, obj_description((quote_ident(table_schema)||'.'||quote_ident(table_name))::regclass) FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY table_schema, table_name",
             TenantDatabaseProvider.SqlServer => "SELECT s.name, t.name, CAST(ep.value AS nvarchar(max)) FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id LEFT JOIN sys.extended_properties ep ON ep.major_id=t.object_id AND ep.minor_id=0 AND ep.name='MS_Description' ORDER BY s.name, t.name",
             TenantDatabaseProvider.SQLite => "SELECT 'main', name, NULL FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-            TenantDatabaseProvider.Oracle => "SELECT OWNER, TABLE_NAME, COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = UPPER(:schema) ORDER BY TABLE_NAME",
+            TenantDatabaseProvider.Oracle => "SELECT OWNER, TABLE_NAME, COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA') ORDER BY TABLE_NAME",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
         var result = new List<TenantDatabaseTableDescriptor>();
