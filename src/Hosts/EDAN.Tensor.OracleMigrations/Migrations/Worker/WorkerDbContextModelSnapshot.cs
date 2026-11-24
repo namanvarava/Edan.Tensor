@@ -25,50 +25,62 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
             modelBuilder.Entity("EDAN.Tensor.Worker.Domain.Model.ExternalDelivery", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrdlvid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasMaxLength(1048576)
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("pld");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("NVARCHAR2(24)");
+                        .HasColumnType("NVARCHAR2(24)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TargetUri")
                         .IsRequired()
                         .HasMaxLength(2048)
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("tgt_uri");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrdlv_PK");
@@ -87,53 +99,67 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrtskid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<string>("Checkpoint")
                         .HasMaxLength(4000)
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("ckpt");
 
                     b.Property<long>("CheckpointVersion")
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ckpt_ver");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<long>("CreatedAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("crt_utc_ms");
 
                     b.Property<long>("FencingToken")
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("fence_tkn");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("lease_exp_utc");
 
                     b.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
                         .HasColumnType("RAW(16)");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<DateTimeOffset?>("NextAttemptAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("nxt_attm_utc");
 
                     b.Property<string>("PayloadReference")
                         .IsRequired()
@@ -142,26 +168,32 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("prgrs_msg");
 
                     b.Property<int>("ProgressPercent")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("prgrs_pct");
 
                     b.Property<string>("ProgressStage")
                         .HasMaxLength(120)
-                        .HasColumnType("NVARCHAR2(120)");
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("prgrs_stg");
 
                     b.Property<long>("ReadyAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ready_utc_ms");
 
                     b.Property<string>("ResultReference")
                         .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("rslt_ref");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("NVARCHAR2(32)");
+                        .HasColumnType("NVARCHAR2(32)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TaskType")
                         .IsRequired()
@@ -169,15 +201,18 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnType("NVARCHAR2(120)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.Property<string>("WorkerId")
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("wkrid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrtsk_PK");
@@ -208,19 +243,24 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrrplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<Guid>("OriginalTaskId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("orig_tskid");
 
                     b.Property<Guid>("ReplayRequestId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("rpl_reqid");
 
                     b.Property<Guid>("ReplayTaskId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("rpl_tskid");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
@@ -228,7 +268,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrrpl_PK");
@@ -256,17 +297,21 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("desc");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("BOOLEAN");
+                        .HasColumnType("BOOLEAN")
+                        .HasColumnName("ena_yn");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("upd_utc");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.HasKey("TaskType")
                         .HasName("edwk_wkrtyp_PK");

@@ -25,50 +25,62 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Worker.Domain.Model.ExternalDelivery", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("wkrdlvid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasMaxLength(1048576)
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("pld");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("nvarchar(24)");
+                        .HasColumnType("nvarchar(24)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TargetUri")
                         .IsRequired()
                         .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(2048)")
+                        .HasColumnName("tgt_uri");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("ver");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrdlv_PK");
@@ -87,53 +99,67 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("wkrtskid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<string>("Checkpoint")
                         .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("ckpt");
 
                     b.Property<long>("CheckpointVersion")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("ckpt_ver");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("crt_utc");
 
                     b.Property<long>("CreatedAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("crt_utc_ms");
 
                     b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("fence_tkn");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("lease_exp_utc");
 
                     b.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<DateTimeOffset?>("NextAttemptAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("nxt_attm_utc");
 
                     b.Property<string>("PayloadReference")
                         .IsRequired()
@@ -142,26 +168,32 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("prgrs_msg");
 
                     b.Property<int>("ProgressPercent")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("prgrs_pct");
 
                     b.Property<string>("ProgressStage")
                         .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("prgrs_stg");
 
                     b.Property<long>("ReadyAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ready_utc_ms");
 
                     b.Property<string>("ResultReference")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rslt_ref");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TaskType")
                         .IsRequired()
@@ -169,15 +201,18 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnType("nvarchar(120)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("ver");
 
                     b.Property<string>("WorkerId")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("wkrid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrtsk_PK");
@@ -208,19 +243,24 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("wkrrplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("crt_utc");
 
                     b.Property<Guid>("OriginalTaskId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("orig_tskid");
 
                     b.Property<Guid>("ReplayRequestId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("rpl_reqid");
 
                     b.Property<Guid>("ReplayTaskId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("rpl_tskid");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
@@ -228,7 +268,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("tntid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrrpl_PK");
@@ -256,17 +297,21 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("desc");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("ena_yn");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("upd_utc");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("ver");
 
                     b.HasKey("TaskType")
                         .HasName("edwk_wkrtyp_PK");

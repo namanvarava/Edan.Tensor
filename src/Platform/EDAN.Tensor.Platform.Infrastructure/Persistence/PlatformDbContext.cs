@@ -1,4 +1,5 @@
 using EDAN.Tensor.Platform.Domain.Model;
+using EDAN.Tensor.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -70,6 +71,11 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
                 index.SetDatabaseName($"{tableName}_N{indexNumber++:D2}");
             foreach (var foreignKey in entityType.GetForeignKeys())
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
+            foreach (var property in entityType.GetProperties())
+            {
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                if (columnName is not null) property.SetColumnName(columnName);
+            }
         }
     }
 

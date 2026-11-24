@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using DataSetAggregate = EDAN.Tensor.DataSet.Domain.Model.DataSet;
 using EDAN.Tensor.DataSet.Infrastructure.Validation;
+using EDAN.Tensor.SharedKernel;
 
 namespace EDAN.Tensor.DataSet.Infrastructure.Persistence;
 
@@ -37,6 +38,11 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
                 index.SetDatabaseName($"{tableName}_N{indexNumber++:D2}");
             foreach (var foreignKey in entityType.GetForeignKeys())
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
+            foreach (var property in entityType.GetProperties())
+            {
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                if (columnName is not null) property.SetColumnName(columnName);
+            }
         }
     }
 

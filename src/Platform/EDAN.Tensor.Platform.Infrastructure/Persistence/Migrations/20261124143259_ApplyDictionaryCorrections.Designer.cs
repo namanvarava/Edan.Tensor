@@ -5,64 +5,67 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
+namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PlatformDbContext))]
-    [Migration("20261124141419_ApplyApprovedTableNamesPg")]
-    partial class ApplyApprovedTableNamesPg
+    [Migration("20261124143259_ApplyDictionaryCorrections")]
+    partial class ApplyDictionaryCorrections
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
-
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveAttempt", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudarcattmid");
 
                     b.Property<int>("AttemptNumber")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("FinishedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("fnsh_utc");
 
                     b.Property<bool?>("IsSuccessful")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("JobId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("jobid");
 
                     b.Property<string>("Operation")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ResultCode")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("StartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("strt_utc");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_arcattm_PK");
 
-                    b.HasIndex("JobId", "TenantId");
+                    b.HasIndex("JobId", "TenantId")
+                        .HasDatabaseName("edpf_authaud_arcattm_N01");
 
-                    b.HasIndex("TenantId", "JobId", "StartedAtUtc");
+                    b.HasIndex("TenantId", "JobId", "StartedAtUtc")
+                        .HasDatabaseName("edpf_authaud_arcattm_N02");
 
                     b.ToTable("edpf_authaud_arcattm", (string)null);
                 });
@@ -71,60 +74,69 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudarcjobid");
 
                     b.Property<Guid?>("ArchiveId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("FailureReason")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("FromUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("RecordCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Sha256")
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("SizeBytes")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<DateTimeOffset>("ToUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ver");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_arcjob_PK");
 
-                    b.HasIndex("TenantId", "CreatedAtUtc");
+                    b.HasIndex("TenantId", "CreatedAtUtc")
+                        .HasDatabaseName("edpf_authaud_arcjob_N01");
 
                     b.ToTable("edpf_authaud_arcjob", (string)null);
                 });
@@ -133,39 +145,49 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudarcschdid");
 
                     b.Property<int>("IntervalHours")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ena_yn");
 
                     b.Property<DateTimeOffset?>("LastRunAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("last_run_utc");
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("lease_exp_utc");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("NextRunAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nxt_run_utc");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ver");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_arcschd_PK");
 
                     b.HasIndex("TenantId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_authaud_arcschd_N01");
 
-                    b.HasIndex("IsEnabled", "NextRunAtUtc");
+                    b.HasIndex("IsEnabled", "NextRunAtUtc")
+                        .HasDatabaseName("edpf_authaud_arcschd_N02");
 
                     b.ToTable("edpf_authaud_arcschd", (string)null);
                 });
@@ -173,51 +195,59 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsAllowed")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("MatchedPolicyId")
                         .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("occr_utc");
 
                     b.Property<string>("ReasonCode")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rsrc_typ");
 
                     b.Property<string>("Scope")
                         .IsRequired()
                         .HasMaxLength(600)
-                        .HasColumnType("character varying(600)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("subid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_PK");
 
-                    b.HasIndex("SubjectId", "OccurredAtUtc");
+                    b.HasIndex("SubjectId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_authaud_N01");
 
-                    b.HasIndex("TenantId", "OccurredAtUtc");
+                    b.HasIndex("TenantId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_authaud_N02");
 
                     b.ToTable("edpf_authaud", (string)null);
                 });
@@ -226,40 +256,50 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudrtnchgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("act_subid");
 
                     b.Property<string>("AfterJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("aft_json");
 
                     b.Property<string>("BeforeJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("bef_json");
 
                     b.Property<string>("ChangeType")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chg_typ");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("occr_utc");
 
                     b.Property<Guid>("PolicyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("plcyid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_rtnchg_PK");
 
-                    b.HasIndex("TenantId", "OccurredAtUtc");
+                    b.HasIndex("TenantId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_authaud_rtnchg_N01");
 
                     b.ToTable("edpf_authaud_rtnchg", (string)null);
                 });
@@ -268,37 +308,44 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authaudrtnid");
 
                     b.Property<bool>("IsLegalHold")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("LegalHoldReason")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("RetentionDays")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("rtn_days");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("upd_utc");
 
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ver");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authaud_rtn_PK");
 
                     b.HasIndex("TenantId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_authaud_rtn_N01");
 
                     b.ToTable("edpf_authaud_rtn", (string)null);
                 });
@@ -306,53 +353,65 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicy", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authplcyid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("Effect")
                         .IsRequired()
                         .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ena_yn");
 
                     b.Property<Guid?>("OrganizationId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgid");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("ProjectId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prjid");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rsrc_typ");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("subid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authplcy_PK");
 
-                    b.HasIndex("OrganizationId", "TenantId");
+                    b.HasIndex("OrganizationId", "TenantId")
+                        .HasDatabaseName("edpf_authplcy_N01");
 
-                    b.HasIndex("ProjectId", "OrganizationId", "TenantId");
+                    b.HasIndex("ProjectId", "OrganizationId", "TenantId")
+                        .HasDatabaseName("edpf_authplcy_N02");
 
-                    b.HasIndex("TenantId", "SubjectId", "Action", "ResourceType", "IsEnabled");
+                    b.HasIndex("TenantId", "SubjectId", "Action", "ResourceType", "IsEnabled")
+                        .HasDatabaseName("edpf_authplcy_N03");
 
                     b.ToTable("edpf_authplcy", null, t =>
                         {
@@ -363,42 +422,53 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicyChangeAuditEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("authplcychgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("act_subid");
 
                     b.Property<string>("AfterJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("aft_json");
 
                     b.Property<string>("BeforeJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("bef_json");
 
                     b.Property<string>("ChangeType")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chg_typ");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("occr_utc");
 
                     b.Property<Guid>("PolicyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("plcyid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_authplcy_chg_PK");
 
-                    b.HasIndex("PolicyId", "OccurredAtUtc");
+                    b.HasIndex("PolicyId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_authplcy_chg_N01");
 
-                    b.HasIndex("TenantId", "OccurredAtUtc");
+                    b.HasIndex("TenantId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_authplcy_chg_N02");
 
                     b.ToTable("edpf_authplcy_chg", (string)null);
                 });
@@ -406,61 +476,73 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("invid");
 
                     b.Property<DateTimeOffset?>("AcceptedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("dspnm");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("eml");
 
                     b.Property<DateTimeOffset>("ExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("ResendCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("RevokedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("usrid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_inv_PK");
 
                     b.HasAlternateKey("Id", "TenantId");
 
                     b.HasIndex("TokenHash")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_inv_N01");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("edpf_inv_N02");
 
-                    b.HasIndex("TenantId", "UserId");
+                    b.HasIndex("TenantId", "UserId")
+                        .HasDatabaseName("edpf_inv_N03");
 
-                    b.HasIndex("TenantId", "Status", "CreatedAtUtc");
+                    b.HasIndex("TenantId", "Status", "CreatedAtUtc")
+                        .HasDatabaseName("edpf_inv_N04");
 
                     b.ToTable("edpf_inv", (string)null);
                 });
@@ -468,32 +550,40 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Organization", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgid");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("cd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nm");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_org_PK");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("edpf_org_N01");
 
                     b.HasIndex("TenantId", "Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_org_N02");
 
                     b.ToTable("edpf_org", (string)null);
                 });
@@ -501,35 +591,44 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.OrganizationMembership", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgmbrid");
 
                     b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgid");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("role");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("subid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_orgmbr_PK");
 
-                    b.HasIndex("OrganizationId", "TenantId");
+                    b.HasIndex("OrganizationId", "TenantId")
+                        .HasDatabaseName("edpf_orgmbr_N01");
 
                     b.HasIndex("TenantId", "OrganizationId", "SubjectId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_orgmbr_N02");
 
                     b.ToTable("edpf_orgmbr", (string)null);
                 });
@@ -537,46 +636,54 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Policy", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("plcyid");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ena_yn");
 
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ScopeOrganizationId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("organization_id");
 
                     b.Property<Guid?>("ScopeProjectId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("project_id");
 
                     b.Property<Guid>("ScopeTenantId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("tenant_id");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ver");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_plcy_PK");
 
-                    b.HasIndex("ScopeTenantId");
+                    b.HasIndex("ScopeTenantId")
+                        .HasDatabaseName("edpf_plcy_N01");
 
-                    b.HasIndex("Key", "Version");
+                    b.HasIndex("Key", "Version")
+                        .HasDatabaseName("edpf_plcy_N02");
 
-                    b.HasIndex("ScopeOrganizationId", "ScopeTenantId");
+                    b.HasIndex("ScopeOrganizationId", "ScopeTenantId")
+                        .HasDatabaseName("edpf_plcy_N03");
 
-                    b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId");
+                    b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
+                        .HasDatabaseName("edpf_plcy_N04");
 
                     b.ToTable("edpf_plcy", null, t =>
                         {
@@ -587,37 +694,47 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Project", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prjid");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("cd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nm");
 
                     b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgid");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_prj_PK");
 
                     b.HasIndex("OrganizationId", "Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_prj_N01");
 
-                    b.HasIndex("OrganizationId", "TenantId");
+                    b.HasIndex("OrganizationId", "TenantId")
+                        .HasDatabaseName("edpf_prj_N02");
 
-                    b.HasIndex("TenantId", "OrganizationId");
+                    b.HasIndex("TenantId", "OrganizationId")
+                        .HasDatabaseName("edpf_prj_N03");
 
                     b.ToTable("edpf_prj", (string)null);
                 });
@@ -625,38 +742,48 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.ProjectMembership", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prjmbrid");
 
                     b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("orgid");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prjid");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("role");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("subid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_prjmbr_PK");
 
-                    b.HasIndex("ProjectId", "OrganizationId", "TenantId");
+                    b.HasIndex("ProjectId", "OrganizationId", "TenantId")
+                        .HasDatabaseName("edpf_prjmbr_N01");
 
                     b.HasIndex("TenantId", "OrganizationId", "ProjectId", "SubjectId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_prjmbr_N02");
 
                     b.ToTable("edpf_prjmbr", (string)null);
                 });
@@ -664,42 +791,50 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Resource", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rsrcid");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nm");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("rsrc_typ");
 
                     b.Property<Guid?>("ScopeOrganizationId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("organization_id");
 
                     b.Property<Guid?>("ScopeProjectId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("project_id");
 
                     b.Property<Guid>("ScopeTenantId")
-                        .HasColumnType("uuid")
+                        .HasColumnType("TEXT")
                         .HasColumnName("tenant_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_rsrc_PK");
 
-                    b.HasIndex("ScopeTenantId");
+                    b.HasIndex("ScopeTenantId")
+                        .HasDatabaseName("edpf_rsrc_N01");
 
-                    b.HasIndex("ScopeOrganizationId", "ScopeTenantId");
+                    b.HasIndex("ScopeOrganizationId", "ScopeTenantId")
+                        .HasDatabaseName("edpf_rsrc_N02");
 
-                    b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId");
+                    b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
+                        .HasDatabaseName("edpf_rsrc_N03");
 
                     b.ToTable("edpf_rsrc", null, t =>
                         {
@@ -711,60 +846,68 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("strqtaplcyid");
 
                     b.Property<long?>("DataSetLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ena_yn");
 
                     b.Property<long?>("OrganizationLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PlanCode")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long?>("ProjectLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Scope")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("character varying(24)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("TargetId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<long?>("TenantLimitBytes")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("upd_utc");
 
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ver");
 
                     b.Property<int>("WarningThresholdPercent")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_strqta_plcy_PK");
 
-                    b.HasIndex("TenantId", "IsEnabled");
+                    b.HasIndex("TenantId", "IsEnabled")
+                        .HasDatabaseName("edpf_strqta_plcy_N01");
 
                     b.HasIndex("TenantId", "Scope", "TargetId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_strqta_plcy_N02");
 
                     b.ToTable("edpf_strqta_plcy", (string)null);
                 });
@@ -773,42 +916,53 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("strqtaplcychgid");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("act_subid");
 
                     b.Property<string>("AfterJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("aft_json");
 
                     b.Property<string>("BeforeJson")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("bef_json");
 
                     b.Property<string>("ChangeType")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("chg_typ");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("occr_utc");
 
                     b.Property<Guid>("PolicyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("plcyid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_strqta_plcychg_PK");
 
-                    b.HasIndex("PolicyId", "TenantId");
+                    b.HasIndex("PolicyId", "TenantId")
+                        .HasDatabaseName("edpf_strqta_plcychg_N01");
 
-                    b.HasIndex("TenantId", "OccurredAtUtc");
+                    b.HasIndex("TenantId", "OccurredAtUtc")
+                        .HasDatabaseName("edpf_strqta_plcychg_N02");
 
                     b.ToTable("edpf_strqta_plcychg", (string)null);
                 });
@@ -816,30 +970,37 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("cd");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("character varying(160)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("nm");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_tnt_PK");
 
                     b.HasIndex("Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_tnt_N01");
 
                     b.ToTable("edpf_tnt", (string)null);
                 });
@@ -847,65 +1008,80 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntdbndid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("DatabaseName")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("db_nm");
 
                     b.Property<DateTimeOffset?>("LastHealthAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("MigrationVersion")
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("Port")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("port");
 
                     b.Property<string>("Provider")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("prvdr");
 
                     b.Property<string>("SchemaName")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("schm_nm");
 
                     b.Property<string>("SecretKey")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("scrt_key");
 
                     b.Property<string>("ServerAddress")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("svr_addr");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<DateTimeOffset?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("upd_utc");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("usrnm");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_tntdbnd_PK");
 
-                    b.HasIndex("TenantId", "Provider");
+                    b.HasIndex("TenantId", "Provider")
+                        .HasDatabaseName("edpf_tntdbnd_N01");
 
                     b.HasIndex("TenantId", "Status")
                         .IsUnique()
+                        .HasDatabaseName("edpf_tntdbnd_N02")
                         .HasFilter("\"Status\" = 'Active'");
 
                     b.ToTable("edpf_tntdbnd", (string)null);
@@ -914,44 +1090,52 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseMutationAudit", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntmutaudid");
 
                     b.Property<bool?>("Compensated")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("ResultJson")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<bool?>("Succeeded")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_tntmut_aud_PK");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_tntmut_aud_N01");
 
                     b.ToTable("edpf_tntmut_aud", (string)null);
                 });
@@ -959,39 +1143,47 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntrtnalwid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("crt_utc");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ena_yn");
 
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RoutineName")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SchemaName")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("schm_nm");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
                     b.Property<DateTimeOffset?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("upd_utc");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_tntrtnalw_PK");
 
                     b.HasIndex("TenantId", "SchemaName", "RoutineName", "Kind")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_tntrtnalw_N01");
 
                     b.ToTable("edpf_tntrtnalw", (string)null);
                 });
@@ -999,30 +1191,37 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntmbrid");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("role");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<string>("SubjectId")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("subid");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_tntmbr_PK");
 
                     b.HasIndex("TenantId", "SubjectId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_tntmbr_N01");
 
                     b.ToTable("edpf_tntmbr", (string)null);
                 });
@@ -1030,30 +1229,37 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("usrid");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("dspnm");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
-                        .HasColumnType("character varying(320)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("eml");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("tntid");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edpf_usr_PK");
 
                     b.HasIndex("TenantId", "Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edpf_usr_N01");
 
                     b.ToTable("edpf_usr", (string)null);
                 });
@@ -1064,14 +1270,16 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_arcattm_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveJob", null)
                         .WithMany()
                         .HasForeignKey("JobId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_arcattm_FKJobId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveJob", b =>
@@ -1080,7 +1288,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_arcjob_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveSchedule", b =>
@@ -1089,7 +1298,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_arcschd_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditEntry", b =>
@@ -1098,7 +1308,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionChange", b =>
@@ -1107,7 +1318,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_rtnchg_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionPolicy", b =>
@@ -1116,7 +1328,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authaud_rtn_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicy", b =>
@@ -1125,19 +1338,22 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authplcy_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_authplcy_FKOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ProjectId", "OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_authplcy_FKProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicyChangeAuditEntry", b =>
@@ -1146,7 +1362,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_authplcy_chg_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Invitation", b =>
@@ -1155,13 +1372,15 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_inv_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_inv_FKUserId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Organization", b =>
@@ -1170,7 +1389,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_org_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.OrganizationMembership", b =>
@@ -1180,7 +1400,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .HasForeignKey("OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_orgmbr_FKOrganizationId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Policy", b =>
@@ -1189,19 +1410,22 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("ScopeTenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_plcy_FKScopeTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_plcy_FKScopeOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_plcy_FKScopeProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Project", b =>
@@ -1210,14 +1434,16 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_prj_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_prj_FKOrganizationId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.ProjectMembership", b =>
@@ -1227,7 +1453,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .HasForeignKey("ProjectId", "OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_prjmbr_FKProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Resource", b =>
@@ -1236,19 +1463,22 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("ScopeTenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_rsrc_FKScopeTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_rsrc_FKScopeOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("edpf_rsrc_FKScopeProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicy", b =>
@@ -1257,7 +1487,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_strqta_plcy_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicyChangeAuditEntry", b =>
@@ -1266,14 +1497,16 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_strqta_plcychg_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicy", null)
                         .WithMany()
                         .HasForeignKey("PolicyId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_strqta_plcychg_FKPolicyId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
@@ -1282,7 +1515,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_tntdbnd_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseMutationAudit", b =>
@@ -1291,7 +1525,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_tntmut_aud_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
@@ -1300,7 +1535,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_tntrtnalw_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
@@ -1309,7 +1545,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_tntmbr_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.User", b =>
@@ -1318,7 +1555,8 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("edpf_usr_FKTenantId");
                 });
 #pragma warning restore 612, 618
         }

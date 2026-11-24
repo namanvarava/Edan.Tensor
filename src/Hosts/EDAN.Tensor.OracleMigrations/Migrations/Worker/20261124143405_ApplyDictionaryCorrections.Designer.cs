@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Oracle.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
-namespace EDAN.Tensor.ApiHost.Persistence.Migrations.PostgreSql.Worker
+namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
 {
     [DbContext(typeof(WorkerDbContext))]
-    [Migration("20261124141805_ApplyApprovedNamingConstraints")]
-    partial class ApplyApprovedNamingConstraints
+    [Migration("20261124143405_ApplyDictionaryCorrections")]
+    partial class ApplyDictionaryCorrections
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,57 +21,69 @@ namespace EDAN.Tensor.ApiHost.Persistence.Migrations.PostgreSql.Worker
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Domain.Model.ExternalDelivery", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrdlvid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("integer");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasMaxLength(1048576)
-                        .HasColumnType("character varying(1048576)");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("pld");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("character varying(24)");
+                        .HasColumnType("NVARCHAR2(24)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TargetUri")
                         .IsRequired()
                         .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("tgt_uri");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrdlv_PK");
@@ -90,97 +102,120 @@ namespace EDAN.Tensor.ApiHost.Persistence.Migrations.PostgreSql.Worker
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrtskid");
 
                     b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("attm_cnt");
 
                     b.Property<string>("Checkpoint")
                         .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("NCLOB")
+                        .HasColumnName("ckpt");
 
                     b.Property<long>("CheckpointVersion")
-                        .HasColumnType("bigint");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ckpt_ver");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
-                    b.Property<int>("CreatedAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                    b.Property<long>("CreatedAtUtcUnixMilliseconds")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("crt_utc_ms");
 
                     b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("fence_tkn");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<string>("LastErrorCode")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("last_err_cd");
 
                     b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("lease_exp_utc");
 
-                    b.Property<int?>("LeaseExpiresAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                    b.Property<long?>("LeaseExpiresAtUtcUnixMilliseconds")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("lease_exp_utc_ms");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)");
 
                     b.Property<int>("MaxAttempts")
-                        .HasColumnType("integer");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("max_attm_cnt");
 
                     b.Property<DateTimeOffset?>("NextAttemptAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("nxt_attm_utc");
 
                     b.Property<string>("PayloadReference")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("NVARCHAR2(500)");
 
                     b.Property<string>("ProgressMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("prgrs_msg");
 
                     b.Property<int>("ProgressPercent")
-                        .HasColumnType("integer");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("prgrs_pct");
 
                     b.Property<string>("ProgressStage")
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("prgrs_stg");
 
-                    b.Property<int>("ReadyAtUtcUnixMilliseconds")
-                        .HasColumnType("INTEGER");
+                    b.Property<long>("ReadyAtUtcUnixMilliseconds")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ready_utc_ms");
 
                     b.Property<string>("ResultReference")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("rslt_ref");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("NVARCHAR2(32)")
+                        .HasColumnName("st");
 
                     b.Property<string>("TaskType")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("NVARCHAR2(120)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.Property<string>("WorkerId")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("wkrid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrtsk_PK");
@@ -211,27 +246,33 @@ namespace EDAN.Tensor.ApiHost.Persistence.Migrations.PostgreSql.Worker
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("wkrrplid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<Guid>("OriginalTaskId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("orig_tskid");
 
                     b.Property<Guid>("ReplayRequestId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("rpl_reqid");
 
                     b.Property<Guid>("ReplayTaskId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("rpl_tskid");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.HasKey("Id")
                         .HasName("edwk_wkrrpl_PK");
@@ -255,21 +296,25 @@ namespace EDAN.Tensor.ApiHost.Persistence.Migrations.PostgreSql.Worker
                 {
                     b.Property<string>("TaskType")
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasColumnType("NVARCHAR2(120)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("desc");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("BOOLEAN")
+                        .HasColumnName("ena_yn");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("upd_utc");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.HasKey("TaskType")
                         .HasName("edwk_wkrtyp_PK");

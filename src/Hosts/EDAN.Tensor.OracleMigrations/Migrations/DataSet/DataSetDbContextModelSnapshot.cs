@@ -25,7 +25,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
             modelBuilder.Entity("EDAN.Tensor.DataSet.Domain.Model.DataSet", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("dsetid");
 
                     b.Property<string>("ContentFormat")
                         .IsRequired()
@@ -33,25 +34,28 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .HasColumnType("NVARCHAR2(24)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("NVARCHAR2(160)");
+                        .HasColumnType("NVARCHAR2(160)")
+                        .HasColumnName("nm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("OrganizationId");
+                        .HasColumnName("orgid");
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("ProjectId");
+                        .HasColumnName("prjid");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("NVARCHAR2(24)");
+                        .HasColumnType("NVARCHAR2(24)")
+                        .HasColumnName("st");
 
                     b.Property<string>("StorageAdapter")
                         .IsRequired()
@@ -62,15 +66,16 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("NVARCHAR2(256)")
-                        .HasColumnName("StorageReference");
+                        .HasColumnName("str_ref");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("TenantId");
+                        .HasColumnName("tntid");
 
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ver");
 
                     b.HasKey("Id")
                         .HasName("edds_dset_PK");
@@ -89,6 +94,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("NUMBER(19)")
+                        .HasColumnName("dsetqtathrevtid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -102,10 +108,12 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .HasColumnType("NUMBER(19)");
 
                     b.Property<DateTimeOffset>("OccurredAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("occr_utc");
 
                     b.Property<Guid>("PolicyId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("plcyid");
 
                     b.Property<long>("PolicyVersion")
                         .HasColumnType("NUMBER(19)");
@@ -119,7 +127,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .HasColumnType("RAW(16)");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("UsedBytes")
                         .HasColumnType("NUMBER(19)");
@@ -144,12 +153,14 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("NUMBER(19)")
+                        .HasColumnName("dsetstrusgsnpid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<DateTimeOffset>("CapturedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("capt_utc");
 
                     b.Property<long>("DataSetCount")
                         .HasColumnType("NUMBER(19)");
@@ -158,7 +169,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<long>("UsedBytes")
                         .HasColumnType("NUMBER(19)");
@@ -181,6 +193,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("NUMBER(19)")
+                        .HasColumnName("dsetvlddtlid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -188,35 +201,43 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("cd");
 
                     b.Property<string>("DetailReference")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("NVARCHAR2(128)");
+                        .HasColumnType("NVARCHAR2(128)")
+                        .HasColumnName("dtl_ref");
 
                     b.Property<Guid>("ExecutionId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("excid");
 
                     b.Property<string>("FieldName")
                         .HasMaxLength(128)
-                        .HasColumnType("NVARCHAR2(128)");
+                        .HasColumnType("NVARCHAR2(128)")
+                        .HasColumnName("fld_nm");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)");
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("msg");
 
                     b.Property<int>("RowNumber")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("row_no");
 
                     b.Property<string>("Severity")
                         .IsRequired()
                         .HasMaxLength(16)
-                        .HasColumnType("NVARCHAR2(16)");
+                        .HasColumnType("NVARCHAR2(16)")
+                        .HasColumnName("sev");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetvld_dtl_PK");
@@ -227,7 +248,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.HasIndex("ExecutionId", "RowNumber", "Code", "FieldName")
                         .IsUnique()
                         .HasDatabaseName("edds_dsetvld_dtl_N02")
-                        .HasFilter("\"FieldName\" IS NOT NULL");
+                        .HasFilter("\"fld_nm\" IS NOT NULL");
 
                     b.ToTable("edds_dsetvld_dtl", (string)null);
                 });
@@ -236,16 +257,20 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("dsetvldexcid");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("cmp_utc");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<Guid>("DataSetId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("dsetid");
 
                     b.Property<int>("DetailItemCount")
                         .HasColumnType("NUMBER(10)");
@@ -253,7 +278,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<string>("DetailReference")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("NVARCHAR2(128)");
+                        .HasColumnType("NVARCHAR2(128)")
+                        .HasColumnName("dtl_ref");
 
                     b.Property<bool>("DetailTruncated")
                         .HasColumnType("BOOLEAN");
@@ -274,17 +300,20 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
 
                     b.Property<long>("FencingToken")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("fence_tkn");
 
                     b.Property<string>("IdempotencyKey")
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("idem_key");
 
                     b.Property<int>("ProcessedRecords")
                         .HasColumnType("NUMBER(10)");
 
                     b.Property<Guid>("ProfileId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("prfid");
 
                     b.Property<int>("ProfileRevision")
                         .HasColumnType("NUMBER(10)");
@@ -300,17 +329,20 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("NVARCHAR2(24)");
+                        .HasColumnType("NVARCHAR2(24)")
+                        .HasColumnName("st");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.Property<int>("TotalRecords")
                         .HasColumnType("NUMBER(10)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("ver");
 
                     b.Property<int>("WarningCount")
                         .HasColumnType("NUMBER(10)");
@@ -325,7 +357,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("edds_dsetvld_exc_N02")
-                        .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+                        .HasFilter("\"idem_key\" IS NOT NULL");
 
                     b.HasIndex("TenantId", "DataSetId", "CreatedAtUtc")
                         .HasDatabaseName("edds_dsetvld_exc_N03");
@@ -337,18 +369,22 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("dsetvldprfid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("NVARCHAR2(160)");
+                        .HasColumnType("NVARCHAR2(160)")
+                        .HasColumnName("nm");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetvld_prf_PK");
@@ -363,13 +399,16 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationProfileRevision", b =>
                 {
                     b.Property<Guid>("ProfileId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("prfid");
 
                     b.Property<int>("Revision")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("rev");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                        .HasColumnName("crt_utc");
 
                     b.Property<string>("DefinitionJson")
                         .IsRequired()
@@ -377,7 +416,8 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                         .HasColumnType("NCLOB");
 
                     b.Property<Guid>("TenantId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("tntid");
 
                     b.HasKey("ProfileId", "Revision")
                         .HasName("edds_dsetvld_prfrev_PK");
@@ -393,22 +433,26 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("NUMBER(19)")
+                        .HasColumnName("dsetvldseenkeyid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<Guid>("ExecutionId")
-                        .HasColumnType("RAW(16)");
+                        .HasColumnType("RAW(16)")
+                        .HasColumnName("excid");
 
                     b.Property<string>("KeyHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("NVARCHAR2(64)");
+                        .HasColumnType("NVARCHAR2(64)")
+                        .HasColumnName("key_hash");
 
                     b.Property<string>("RuleCode")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("NVARCHAR2(200)");
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("rule_cd");
 
                     b.HasKey("Id")
                         .HasName("edds_dsetvld_seenkey_PK");
@@ -425,21 +469,25 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                     b.OwnsMany("EDAN.Tensor.DataSet.Domain.Model.DataSetSchemaRevision", "SchemaRevisions", b1 =>
                         {
                             b1.Property<Guid>("DataSetId")
-                                .HasColumnType("RAW(16)");
+                                .HasColumnType("RAW(16)")
+                                .HasColumnName("dsetid");
 
                             b1.Property<int>("Version")
                                 .ValueGeneratedOnAdd()
-                                .HasColumnType("NUMBER(10)");
+                                .HasColumnType("NUMBER(10)")
+                                .HasColumnName("ver");
 
                             OraclePropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Version"));
 
                             b1.Property<DateTimeOffset>("CreatedAtUtc")
-                                .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                                .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
+                                .HasColumnName("crt_utc");
 
                             b1.Property<string>("SchemaJson")
                                 .IsRequired()
                                 .HasMaxLength(1048576)
-                                .HasColumnType("NCLOB");
+                                .HasColumnType("NCLOB")
+                                .HasColumnName("schm_json");
 
                             b1.HasKey("DataSetId", "Version")
                                 .HasName("edds_dsetschm_rev_PK");

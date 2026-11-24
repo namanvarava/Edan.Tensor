@@ -1,4 +1,5 @@
 using EDAN.Tensor.Worker.Domain.Model;
+using EDAN.Tensor.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
 namespace EDAN.Tensor.Worker.Infrastructure.Persistence;
@@ -30,6 +31,11 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
                 index.SetDatabaseName($"{tableName}_N{indexNumber++:D2}");
             foreach (var foreignKey in entityType.GetForeignKeys())
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
+            foreach (var property in entityType.GetProperties())
+            {
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                if (columnName is not null) property.SetColumnName(columnName);
+            }
         }
     }
 
