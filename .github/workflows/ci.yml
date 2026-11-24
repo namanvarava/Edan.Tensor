@@ -53,7 +53,7 @@ jobs:
           $env:ConnectionStrings__DataSetContentDatabase = 'Data Source=:memory:'
           foreach ($context in $contexts) {
             $output = "$env:RUNNER_TEMP/$context.Sqlite.sql"
-            dotnet ef migrations script --project $startupProject --startup-project $startupProject --context $context --configuration Release --no-build --idempotent --output $output
+            dotnet ef migrations script --project $startupProject --startup-project $startupProject --context $context --configuration Release --no-build --output $output
             if ($LASTEXITCODE -ne 0) { throw "SQLite migration script generation failed for $context" }
             if ((Get-Item $output).Length -eq 0) { throw "Empty SQLite migration script for $context" }
           }
