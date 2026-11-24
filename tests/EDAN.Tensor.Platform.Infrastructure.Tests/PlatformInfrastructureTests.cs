@@ -96,6 +96,34 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task TenantMutationCoordinatorRoutesStepsToExplicitBindings()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("MUTATION-MULTI"), "복수 바인딩 변경 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var firstBinding = new TenantDatabaseBindingId(Guid.NewGuid());
+        var secondBinding = new TenantDatabaseBindingId(Guid.NewGuid());
+        var executor = new BindingTrackingRoutineExecutor();
+        var coordinator = new TenantDatabaseMutationCoordinator(executor, db, TimeProvider.System);
+        var steps = new[]
+        {
+            new TenantDatabaseMutationStep(tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "apply_one", new Dictionary<string, string?>(), BindingId: firstBinding),
+            new TenantDatabaseMutationStep(tenant.Id, TenantDatabaseRoutineKind.Procedure, "dbo", "apply_two", new Dictionary<string, string?>(), BindingId: secondBinding)
+        };
+
+        var result = await coordinator.ExecuteAsync(tenant.Id, "mutation-multi-binding", steps);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal([firstBinding, secondBinding], executor.BindingIds);
+    }
+
+    [Fact]
     public async Task TenantDatabaseConsistencyCheckerNormalizesEquivalentProviderRows()
     {
         var executor = new ConsistencyRoutineExecutor();
@@ -519,6 +547,20 @@ public sealed class PlatformInfrastructureTests
             var value = ReturnDifferentValue && callCount > 1 ? "different" : "same";
             IReadOnlyDictionary<string, object?> row = new Dictionary<string, object?> { ["result"] = value, ["count"] = 1 };
             return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, [row]));
+        }
+    }
+
+    private sealed class BindingTrackingRoutineExecutor : ITenantDatabaseRoutineExecutor
+    {
+        public List<TenantDatabaseBindingId> BindingIds { get; } = [];
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        {
+            BindingIds.Add(bindingId);
+            return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
         }
     }
 

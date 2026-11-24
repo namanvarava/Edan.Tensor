@@ -17,9 +17,10 @@ public sealed class TenantDatabaseResolver(
 
         var binding = await db.TenantDatabaseBindings
             .AsNoTracking()
-            .SingleOrDefaultAsync(
-                x => x.TenantId == tenantId && x.Status == TenantDatabaseBindingStatus.Active,
-                cancellationToken);
+            .Where(
+                x => x.TenantId == tenantId && x.Status == TenantDatabaseBindingStatus.Active)
+            .OrderBy(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (binding is null)
             throw new InvalidOperationException($"활성 DB 바인딩이 없는 테넌트입니다: {tenantId.Value}");
@@ -33,6 +34,18 @@ public sealed class TenantDatabaseResolver(
             connectionString,
             binding.SchemaName,
             binding.SecretKey);
+    }
+
+    public async Task<TenantDatabaseResolution> ResolveAsync(
+        TenantDatabaseBindingId bindingId,
+        CancellationToken cancellationToken = default)
+    {
+        var binding = await db.TenantDatabaseBindings.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == bindingId && x.Status == TenantDatabaseBindingStatus.Active, cancellationToken)
+            ?? throw new InvalidOperationException($"활성 DB 바인딩이 없는 바인딩입니다: {bindingId.Value}");
+        var credential = await secretResolver.ResolveAsync(binding.SecretKey, cancellationToken);
+        return new TenantDatabaseResolution(binding.Id, binding.TenantId, binding.Provider,
+            TenantDatabaseConnectionString.Build(binding, credential), binding.SchemaName, binding.SecretKey);
     }
 }
 

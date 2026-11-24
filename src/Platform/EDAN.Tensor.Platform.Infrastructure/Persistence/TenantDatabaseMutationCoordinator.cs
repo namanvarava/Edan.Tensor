@@ -74,7 +74,10 @@ public sealed class TenantDatabaseMutationCoordinator(
         {
             try
             {
-                await executor.ExecuteAsync(step.TenantId, step.Kind, step.SchemaName, step.RoutineName, step.Parameters, cancellationToken);
+                if (step.BindingId is { } bindingId)
+                    await executor.ExecuteAsync(bindingId, step.TenantId, step.Kind, step.SchemaName, step.RoutineName, step.Parameters, cancellationToken);
+                else
+                    await executor.ExecuteAsync(step.TenantId, step.Kind, step.SchemaName, step.RoutineName, step.Parameters, cancellationToken);
                 return;
             }
             catch (Exception ex) when (attempt < maxAttempts && IsTransient(ex))

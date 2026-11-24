@@ -17,6 +17,9 @@ public sealed record TenantDatabaseCredential(string Username, string Password);
 public interface ITenantDatabaseResolver
 {
     Task<TenantDatabaseResolution> ResolveAsync(TenantId tenantId, CancellationToken cancellationToken = default);
+
+    Task<TenantDatabaseResolution> ResolveAsync(TenantDatabaseBindingId bindingId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("바인딩 ID 기반 DB 해석을 지원하지 않습니다.");
 }
 
 /// <summary>Secret 참조 키를 실제 연결 자격증명으로 해석하는 경계입니다.</summary>

@@ -12,13 +12,18 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
     private static readonly Regex Identifier = new("^[A-Za-z_][A-Za-z0-9_$#]*(\\.[A-Za-z_][A-Za-z0-9_$#]*)?$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public async Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        => await ExecuteCoreAsync(await resolver.ResolveAsync(tenantId, cancellationToken), tenantId, kind, schemaName, routineName, parameters, cancellationToken);
+
+    public async Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        => await ExecuteCoreAsync(await resolver.ResolveAsync(bindingId, cancellationToken), tenantId, kind, schemaName, routineName, parameters, cancellationToken);
+
+    private async Task<TenantDatabaseRoutineExecutionResult> ExecuteCoreAsync(TenantDatabaseResolution resolution, TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken)
     {
         if (!Identifier.IsMatch(schemaName) || !Identifier.IsMatch(routineName) ||
             routineName.Contains('.') && kind != TenantDatabaseRoutineKind.OraclePackageProcedure)
             throw new ArgumentException("루틴 식별자는 안전한 영문 식별자여야 합니다.");
         var allowed = await platformDb.TenantDatabaseRoutineAllowlists.AnyAsync(x => x.TenantId == tenantId && x.Kind == kind && x.SchemaName == schemaName && x.RoutineName == routineName && x.IsEnabled, cancellationToken);
         if (!allowed) throw new UnauthorizedAccessException("허용 목록에 등록되지 않은 루틴입니다.");
-        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
         if (resolution.Provider == TenantDatabaseProvider.SQLite)
             throw new NotSupportedException("SQLite는 저장 프로시저/함수를 지원하지 않습니다.");
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
