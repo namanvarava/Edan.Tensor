@@ -96,6 +96,41 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task TenantDatabaseConsistencyCheckerNormalizesEquivalentProviderRows()
+    {
+        var executor = new ConsistencyRoutineExecutor();
+        var checker = new TenantDatabaseConsistencyChecker(executor);
+        var checks = new[]
+        {
+            new TenantDatabaseConsistencyCheck(new TenantId(Guid.NewGuid()), TenantDatabaseRoutineKind.Function, "public", "read_state", new Dictionary<string, string?>()),
+            new TenantDatabaseConsistencyCheck(new TenantId(Guid.NewGuid()), TenantDatabaseRoutineKind.Function, "dbo", "read_state", new Dictionary<string, string?>())
+        };
+
+        var result = await checker.VerifyAsync(checks);
+
+        Assert.Equal("Consistent", result.Status);
+        Assert.Equal(2, result.Providers.Count);
+        Assert.All(result.Providers, provider => Assert.True(provider.Succeeded));
+    }
+
+    [Fact]
+    public async Task TenantDatabaseConsistencyCheckerReportsInconsistentResults()
+    {
+        var executor = new ConsistencyRoutineExecutor { ReturnDifferentValue = true };
+        var checker = new TenantDatabaseConsistencyChecker(executor);
+        var checks = new[]
+        {
+            new TenantDatabaseConsistencyCheck(new TenantId(Guid.NewGuid()), TenantDatabaseRoutineKind.Function, "public", "read_state", new Dictionary<string, string?>()),
+            new TenantDatabaseConsistencyCheck(new TenantId(Guid.NewGuid()), TenantDatabaseRoutineKind.Function, "dbo", "read_state", new Dictionary<string, string?>())
+        };
+
+        var result = await checker.VerifyAsync(checks);
+
+        Assert.Equal("Inconsistent", result.Status);
+        Assert.NotEqual(result.Providers[0].Fingerprint, result.Providers[1].Fingerprint);
+    }
+
+    [Fact]
     public async Task SqlitePersistsActiveTenantDatabaseBindingWithoutSecretValue()
     {
         await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
@@ -470,6 +505,20 @@ public sealed class PlatformInfrastructureTests
             CallCount++;
             if (CallCount <= failuresBeforeSuccess) throw new IOException("simulated transient failure");
             return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
+        }
+    }
+
+    private sealed class ConsistencyRoutineExecutor : ITenantDatabaseRoutineExecutor
+    {
+        public bool ReturnDifferentValue { get; init; }
+        private int callCount;
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        {
+            callCount++;
+            var value = ReturnDifferentValue && callCount > 1 ? "different" : "same";
+            IReadOnlyDictionary<string, object?> row = new Dictionary<string, object?> { ["result"] = value, ["count"] = 1 };
+            return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, [row]));
         }
     }
 

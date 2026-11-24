@@ -43,6 +43,7 @@ public static class PlatformInfrastructureExtensions
         services.AddScoped<ITenantDatabaseMetadataReader, TenantDatabaseMetadataReader>();
         services.AddScoped<ITenantDatabaseRoutineExecutor, TenantDatabaseRoutineExecutor>();
         services.AddScoped<ITenantDatabaseMutationCoordinator, TenantDatabaseMutationCoordinator>();
+        services.AddScoped<ITenantDatabaseConsistencyChecker, TenantDatabaseConsistencyChecker>();
         services.AddSingleton<ITenantDatabaseSecretResolver, EnvironmentTenantDatabaseSecretResolver>();
         return services;
     }
