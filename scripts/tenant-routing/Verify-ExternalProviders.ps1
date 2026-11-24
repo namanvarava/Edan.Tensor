@@ -16,10 +16,21 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Invoke-CheckedEndpoint {
-    param([string]$Name, [string]$Uri, [hashtable]$Headers = @{}, [int]$ExpectedStatus = 200, [ValidateSet('GET','POST')][string]$Method = 'GET')
+    param(
+        [string]$Name,
+        [string]$Uri,
+        [hashtable]$Headers = @{},
+        [int]$ExpectedStatus = 200,
+        [ValidateSet('GET','POST')][string]$Method = 'GET',
+        [string]$ExpectedBodyStatus
+    )
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -Method $Method -Headers $Headers -TimeoutSec 20
         if ([int]$response.StatusCode -ne $ExpectedStatus) { throw "HTTP $([int]$response.StatusCode), expected $ExpectedStatus" }
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedBodyStatus)) {
+            $body = $response.Content | ConvertFrom-Json
+            if ($body.status -ne $ExpectedBodyStatus) { throw "응답 status '$($body.status)'이며 '$ExpectedBodyStatus'가 아닙니다." }
+        }
         [pscustomobject]@{ Check = $Name; Result = "PASS"; Detail = "HTTP $([int]$response.StatusCode)" }
     }
     catch {
@@ -76,11 +87,11 @@ try {
         (Test-TcpPort $ProviderHost $ProviderPorts[0])
         (Test-TcpPort $ProviderHost $ProviderPorts[1])
         (Test-TcpPort $ProviderHost $ProviderPorts[2])
-        (Invoke-CheckedEndpoint "API health" "$ApiBaseUrl/health")
-        (Invoke-CheckedEndpoint "API database health" "$ApiBaseUrl/health/database")
-        (Invoke-CheckedEndpoint "Worker health" "$WorkerBaseUrl/health")
-        (Invoke-CheckedEndpoint "Worker database health" "$WorkerBaseUrl/health/database")
-        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health$bindingQuery" $headers 200 'POST')
+        (Invoke-CheckedEndpoint "API health" "$ApiBaseUrl/health" @{} 200 'GET' 'Healthy')
+        (Invoke-CheckedEndpoint "API database health" "$ApiBaseUrl/health/database" @{} 200 'GET' 'Connected')
+        (Invoke-CheckedEndpoint "Worker health" "$WorkerBaseUrl/health" @{} 200 'GET' 'Healthy')
+        (Invoke-CheckedEndpoint "Worker database health" "$WorkerBaseUrl/health/database" @{} 200 'GET' 'Connected')
+        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health$bindingQuery" $headers 200 'POST' 'Healthy')
         (Invoke-CheckedEndpoint "Table metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/tables$bindingQuery" $headers)
         (Invoke-CheckedEndpoint "Routine metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/routines$routineQuery" $headers)
     )
