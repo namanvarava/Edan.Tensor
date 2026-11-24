@@ -70,14 +70,17 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edwk_wkrdlv_PK");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edwk_wkrdlv_N01");
 
-                    b.HasIndex("TenantId", "Status", "CreatedAtUtc");
+                    b.HasIndex("TenantId", "Status", "CreatedAtUtc")
+                        .HasDatabaseName("edwk_wkrdlv_N02");
 
-                    b.ToTable("external_deliveries", (string)null);
+                    b.ToTable("edwk_wkrdlv", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Domain.Model.WorkerTask", b =>
@@ -176,22 +179,29 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edwk_wkrtsk_PK");
 
-                    b.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds");
+                    b.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds")
+                        .HasDatabaseName("edwk_wkrtsk_N01");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edwk_wkrtsk_N02");
 
-                    b.HasIndex("TenantId", "LeaseId");
+                    b.HasIndex("TenantId", "LeaseId")
+                        .HasDatabaseName("edwk_wkrtsk_N03");
 
-                    b.HasIndex("Status", "ReadyAtUtcUnixMilliseconds", "TenantId");
+                    b.HasIndex("Status", "ReadyAtUtcUnixMilliseconds", "TenantId")
+                        .HasDatabaseName("edwk_wkrtsk_N04");
 
-                    b.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds");
+                    b.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds")
+                        .HasDatabaseName("edwk_wkrtsk_N05");
 
-                    b.HasIndex("TenantId", "Status", "CreatedAtUtcUnixMilliseconds", "Id");
+                    b.HasIndex("TenantId", "Status", "CreatedAtUtcUnixMilliseconds", "Id")
+                        .HasDatabaseName("edwk_wkrtsk_N06");
 
-                    b.ToTable("worker_tasks", (string)null);
+                    b.ToTable("edwk_wkrtsk", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Infrastructure.Persistence.WorkerTaskReplayRecord", b =>
@@ -220,18 +230,22 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("edwk_wkrrpl_PK");
 
                     b.HasIndex("TenantId", "ReplayTaskId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("edwk_wkrrpl_N01");
 
-                    b.HasIndex("TenantId", "OriginalTaskId", "CreatedAtUtc");
+                    b.HasIndex("TenantId", "OriginalTaskId", "CreatedAtUtc")
+                        .HasDatabaseName("edwk_wkrrpl_N02");
 
                     b.HasIndex("TenantId", "OriginalTaskId", "ReplayRequestId")
                         .IsUnique()
+                        .HasDatabaseName("edwk_wkrrpl_N03")
                         .HasFilter("\"ReplayRequestId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                    b.ToTable("worker_task_replays", (string)null);
+                    b.ToTable("edwk_wkrrpl", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Infrastructure.Persistence.WorkerTaskTypeCatalogEntry", b =>
@@ -254,9 +268,10 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bigint");
 
-                    b.HasKey("TaskType");
+                    b.HasKey("TaskType")
+                        .HasName("edwk_wkrtyp_PK");
 
-                    b.ToTable("worker_task_types", (string)null);
+                    b.ToTable("edwk_wkrtyp", (string)null);
                 });
 #pragma warning restore 612, 618
         }

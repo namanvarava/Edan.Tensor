@@ -42,6 +42,55 @@ itself. Physical schema changes are applied only by reviewed provider migrations
 The canonical project membership identifier is `prjmbrid` in code and migration
 specifications.
 
+## 3. Approved table mapping
+
+The following mapping is the canonical physical-name target. The current name
+is retained only during the compatibility migration window.
+
+| Area | Current table | Approved physical table |
+|---|---|---|
+| Platform | platform_tenants | edpf_tnt |
+| Platform | platform_organizations | edpf_org |
+| Platform | platform_projects | edpf_prj |
+| Platform | platform_users | edpf_usr |
+| Platform | platform_tenant_memberships | edpf_tntmbr |
+| Platform | platform_organization_memberships | edpf_orgmbr |
+| Platform | platform_project_memberships | edpf_prjmbr |
+| Platform | platform_resources | edpf_rsrc |
+| Platform | platform_policies | edpf_plcy |
+| Platform | platform_authorization_policies | edpf_authplcy |
+| Platform | platform_authorization_audit | edpf_authaud |
+| Platform | platform_authorization_policy_changes | edpf_authplcy_chg |
+| Platform | platform_authorization_audit_retention | edpf_authaud_rtn |
+| Platform | platform_authorization_audit_retention_changes | edpf_authaud_rtnchg |
+| Platform | platform_authorization_audit_archive_jobs | edpf_authaud_arcjob |
+| Platform | platform_authorization_audit_archive_attempts | edpf_authaud_arcattm |
+| Platform | platform_authorization_audit_archive_schedules | edpf_authaud_arcschd |
+| Platform | platform_storage_quota_policies | edpf_strqta_plcy |
+| Platform | platform_storage_quota_policy_changes | edpf_strqta_plcychg |
+| DataSet | datasets | edds_dset |
+| DataSet | dataset_schema_revisions | edds_dsetschm_rev |
+| DataSet | dataset_storage_usage_snapshots | edds_dsetstr_usgsnp |
+| DataSet | dataset_quota_threshold_events | edds_dsetqta_threvt |
+| DataSet | dataset_validation_profiles | edds_dsetvld_prf |
+| DataSet | dataset_validation_profile_revisions | edds_dsetvld_prfrev |
+| DataSet | dataset_validation_executions | edds_dsetvld_exc |
+| DataSet | dataset_validation_details | edds_dsetvld_dtl |
+| DataSet | dataset_validation_seen_keys | edds_dsetvld_seenkey |
+| DataSetContent | DataSetContent | eddc_dsetctt |
+| Worker | worker_tasks | edwk_wkrtsk |
+| Worker | worker_task_replays | edwk_wkrrpl |
+| Worker | worker_task_types | edwk_wkrtyp |
+| Worker | external_deliveries | edwk_wkrdlv |
+
+The platform binding, routine allowlist, and mutation audit tables are added by
+the current application migrations and must be included in the same mapping
+review before the rename migration is generated.
+
+| Platform | platform_tenant_database_bindings | edpf_tntdbnd |
+| Platform | platform_tenant_database_routine_allowlists | edpf_tntrtnalw |
+| Platform | platform_tenant_database_mutation_audits | edpf_tntmut_aud |
+
 ## 3. Compatibility policy
 
 - C# property names and public JSON names remain unchanged unless a separately
