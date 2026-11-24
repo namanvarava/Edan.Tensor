@@ -6,6 +6,7 @@ param(
     [string]$ProviderHost = "localhost",
     [int[]]$ProviderPorts = @(5432, 1433, 1521),
     [string]$TokenFile,
+    [Guid]$BindingId,
     [ValidateSet('Procedure','Function','OraclePackageProcedure')][string]$RoutineKind,
     [string]$RoutineName,
     [string]$RoutineParametersJson = '{}',
@@ -69,6 +70,8 @@ try {
         Authorization = "Bearer $token"
         'X-Tenant-Id' = $TenantId.ToString()
     }
+    $bindingQuery = if ($BindingId -ne [Guid]::Empty) { "?bindingId=$([uri]::EscapeDataString($BindingId.ToString()))" } else { "" }
+    $routineQuery = if ($BindingId -ne [Guid]::Empty) { "?schema=$([uri]::EscapeDataString($Schema))&bindingId=$([uri]::EscapeDataString($BindingId.ToString()))" } else { "?schema=$([uri]::EscapeDataString($Schema))" }
     $results = @(
         (Test-TcpPort $ProviderHost $ProviderPorts[0])
         (Test-TcpPort $ProviderHost $ProviderPorts[1])
@@ -77,14 +80,15 @@ try {
         (Invoke-CheckedEndpoint "API database health" "$ApiBaseUrl/health/database")
         (Invoke-CheckedEndpoint "Worker health" "$WorkerBaseUrl/health")
         (Invoke-CheckedEndpoint "Worker database health" "$WorkerBaseUrl/health/database")
-        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health" $headers 200 'POST')
-        (Invoke-CheckedEndpoint "Table metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/tables" $headers)
-        (Invoke-CheckedEndpoint "Routine metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/routines?schema=$([uri]::EscapeDataString($Schema))" $headers)
+        (Invoke-CheckedEndpoint "Tenant DB health" "$ApiBaseUrl/api/platform/tenants/$TenantId/database-binding/health$bindingQuery" $headers 200 'POST')
+        (Invoke-CheckedEndpoint "Table metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/tables$bindingQuery" $headers)
+        (Invoke-CheckedEndpoint "Routine metadata" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/metadata/routines$routineQuery" $headers)
     )
     if (-not [string]::IsNullOrWhiteSpace($RoutineKind) -or -not [string]::IsNullOrWhiteSpace($RoutineName)) {
         if ([string]::IsNullOrWhiteSpace($RoutineKind) -or [string]::IsNullOrWhiteSpace($RoutineName)) { throw "RoutineKind와 RoutineName은 함께 지정해야 합니다." }
         try { $routineParameters = $RoutineParametersJson | ConvertFrom-Json -AsHashtable } catch { throw "RoutineParametersJson이 올바른 JSON 객체가 아닙니다." }
         $routineBody = [ordered]@{ Kind = $RoutineKind; SchemaName = $Schema; RoutineName = $RoutineName; Parameters = $routineParameters }
+        if ($BindingId -ne [Guid]::Empty) { $routineBody.BindingId = $BindingId }
         $results += Invoke-CheckedJsonEndpoint "Routine execution" "$ApiBaseUrl/api/platform/tenants/$TenantId/database/routines/execute" $headers $routineBody
     }
     if (-not [string]::IsNullOrWhiteSpace($ConsistencyChecksJson)) {

@@ -125,12 +125,17 @@ public static class PlatformEndpoints
             return Results.Ok(new { BindingId = binding.Id.Value, Status = binding.Status.ToString() });
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
-        tenantGroup.MapPost("/{tenantId:guid}/database-binding/health", async (Guid tenantId, ITenantDatabaseConnectionFactory factory, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
+        tenantGroup.MapPost("/{tenantId:guid}/database-binding/health", async (Guid tenantId, Guid? bindingId, ITenantDatabaseConnectionFactory factory, PlatformDbContext db, TimeProvider clock, CancellationToken token) =>
         {
             try
             {
-                await using var connection = await factory.OpenAsync(new TenantId(tenantId), token);
-                var binding = await db.TenantDatabaseBindings.SingleAsync(x => x.TenantId == new TenantId(tenantId) && x.Status == TenantDatabaseBindingStatus.Active, token);
+                var tenant = new TenantId(tenantId);
+                await using var connection = bindingId.HasValue
+                    ? await factory.OpenAsync(new TenantDatabaseBindingId(bindingId.Value), tenant, token)
+                    : await factory.OpenAsync(tenant, token);
+                var binding = bindingId.HasValue
+                    ? await db.TenantDatabaseBindings.SingleAsync(x => x.Id == new TenantDatabaseBindingId(bindingId.Value) && x.TenantId == tenant, token)
+                    : await db.TenantDatabaseBindings.Where(x => x.TenantId == tenant && x.Status == TenantDatabaseBindingStatus.Active).OrderBy(x => x.CreatedAtUtc).FirstAsync(token);
                 binding.RecordHealth(clock.GetUtcNow());
                 await db.SaveChangesAsync(token);
                 return Results.Ok(new { Status = "Healthy", Provider = connection.GetType().Name, CheckedAtUtc = clock.GetUtcNow() });
@@ -165,23 +170,26 @@ public static class PlatformEndpoints
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/database/metadata/tables", async (
-            Guid tenantId, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+            Guid tenantId, Guid? bindingId, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
         {
-            var tables = await reader.ListTablesAsync(new TenantId(tenantId), token);
+            var tenant = new TenantId(tenantId);
+            var tables = bindingId.HasValue ? await reader.ListTablesAsync(new TenantDatabaseBindingId(bindingId.Value), tenant, token) : await reader.ListTablesAsync(tenant, token);
             return Results.Ok(tables);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/database/metadata/columns", async (
-            Guid tenantId, string schema, string table, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+            Guid tenantId, Guid? bindingId, string schema, string table, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
         {
-            var columns = await reader.ListColumnsAsync(new TenantId(tenantId), schema, table, token);
+            var tenant = new TenantId(tenantId);
+            var columns = bindingId.HasValue ? await reader.ListColumnsAsync(new TenantDatabaseBindingId(bindingId.Value), tenant, schema, table, token) : await reader.ListColumnsAsync(tenant, schema, table, token);
             return Results.Ok(columns);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
         tenantGroup.MapGet("/{tenantId:guid}/database/metadata/routines", async (
-            Guid tenantId, string schema, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
+            Guid tenantId, Guid? bindingId, string schema, ITenantDatabaseMetadataReader reader, CancellationToken token) =>
         {
-            var routines = await reader.ListRoutinesAsync(new TenantId(tenantId), schema, token);
+            var tenant = new TenantId(tenantId);
+            var routines = bindingId.HasValue ? await reader.ListRoutinesAsync(new TenantDatabaseBindingId(bindingId.Value), tenant, schema, token) : await reader.ListRoutinesAsync(tenant, schema, token);
             return Results.Ok(routines);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
@@ -212,7 +220,10 @@ public static class PlatformEndpoints
         {
             if (!Enum.TryParse<TenantDatabaseRoutineKind>(request.Kind, true, out var kind))
                 return ValidationError("지원하지 않는 루틴 유형입니다.");
-            var result = await executor.ExecuteAsync(new TenantId(tenantId), kind, request.SchemaName, request.RoutineName, request.Parameters ?? new Dictionary<string, string?>(), token);
+            var tenant = new TenantId(tenantId);
+            var result = request.BindingId is { } bindingId
+                ? await executor.ExecuteAsync(new TenantDatabaseBindingId(bindingId), tenant, kind, request.SchemaName, request.RoutineName, request.Parameters ?? new Dictionary<string, string?>(), token)
+                : await executor.ExecuteAsync(tenant, kind, request.SchemaName, request.RoutineName, request.Parameters ?? new Dictionary<string, string?>(), token);
             return Results.Ok(result);
         }).AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
 
@@ -1023,7 +1034,7 @@ public sealed record CreateTenantRequest(string Code, string Name);
 public sealed record CreateTenantDatabaseBindingRequest(string Provider, string Username, string SecretKey,
     string? ServerAddress, int? Port, string? DatabaseName, string? SchemaName);
 public sealed record CreateRoutineAllowlistRequest(string Kind, string SchemaName, string RoutineName);
-public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters);
+public sealed record ExecuteRoutineRequest(string Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, Guid? BindingId = null);
 public sealed record ExecuteMutationRequest(string IdempotencyKey, IReadOnlyList<MutationStepRequest> Steps);
 public sealed record VerifyConsistencyRequest(IReadOnlyList<ConsistencyCheckRequest> Checks);
 public sealed record ConsistencyCheckRequest(Guid? TenantId, TenantDatabaseRoutineKind Kind, string SchemaName, string RoutineName, Dictionary<string, string?>? Parameters, Guid? BindingId = null);

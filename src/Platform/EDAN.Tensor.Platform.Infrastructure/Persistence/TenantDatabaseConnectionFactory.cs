@@ -14,6 +14,19 @@ public sealed class TenantDatabaseConnectionFactory(ITenantDatabaseResolver reso
     public async Task<DbConnection> OpenAsync(TenantId tenantId, CancellationToken cancellationToken = default)
     {
         var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        return await OpenAsync(resolution, cancellationToken);
+    }
+
+    public async Task<DbConnection> OpenAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, CancellationToken cancellationToken = default)
+    {
+        var resolution = await resolver.ResolveAsync(bindingId, cancellationToken);
+        if (resolution.TenantId != tenantId)
+            throw new InvalidOperationException("DB 바인딩이 요청 Tenant에 속하지 않습니다.");
+        return await OpenAsync(resolution, cancellationToken);
+    }
+
+    private static async Task<DbConnection> OpenAsync(TenantDatabaseResolution resolution, CancellationToken cancellationToken)
+    {
         DbConnection connection = resolution.Provider switch
         {
             TenantDatabaseProvider.SQLite => new SqliteConnection(resolution.ConnectionString),

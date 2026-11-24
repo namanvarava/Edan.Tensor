@@ -7,8 +7,14 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence;
 public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolver) : ITenantDatabaseMetadataReader
 {
     public async Task<IReadOnlyList<TenantDatabaseTableDescriptor>> ListTablesAsync(TenantId tenantId, CancellationToken cancellationToken = default)
+        => await ListTablesCoreAsync(tenantId, resolver.ResolveAsync(tenantId, cancellationToken), cancellationToken);
+
+    public async Task<IReadOnlyList<TenantDatabaseTableDescriptor>> ListTablesAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, CancellationToken cancellationToken = default)
+        => await ListTablesCoreAsync(tenantId, resolver.ResolveAsync(bindingId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<TenantDatabaseTableDescriptor>> ListTablesCoreAsync(TenantId tenantId, Task<TenantDatabaseResolution> resolutionTask, CancellationToken cancellationToken)
     {
-        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        var resolution = await resolutionTask;
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
         ConfigureProviderCommand(command, resolution.Provider);
@@ -28,10 +34,16 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
     }
 
     public async Task<IReadOnlyList<TenantDatabaseRoutineDescriptor>> ListRoutinesAsync(TenantId tenantId, string schemaName, CancellationToken cancellationToken = default)
+        => await ListRoutinesCoreAsync(tenantId, schemaName, resolver.ResolveAsync(tenantId, cancellationToken), cancellationToken);
+
+    public async Task<IReadOnlyList<TenantDatabaseRoutineDescriptor>> ListRoutinesAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, string schemaName, CancellationToken cancellationToken = default)
+        => await ListRoutinesCoreAsync(tenantId, schemaName, resolver.ResolveAsync(bindingId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<TenantDatabaseRoutineDescriptor>> ListRoutinesCoreAsync(TenantId tenantId, string schemaName, Task<TenantDatabaseResolution> resolutionTask, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(schemaName))
             throw new ArgumentException("스키마 이름이 필요합니다.", nameof(schemaName));
-        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        var resolution = await resolutionTask;
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
         ConfigureProviderCommand(command, resolution.Provider);
@@ -55,10 +67,16 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
     }
 
     public async Task<IReadOnlyList<TenantDatabaseColumnDescriptor>> ListColumnsAsync(TenantId tenantId, string schemaName, string tableName, CancellationToken cancellationToken = default)
+        => await ListColumnsCoreAsync(tenantId, schemaName, tableName, resolver.ResolveAsync(tenantId, cancellationToken), cancellationToken);
+
+    public async Task<IReadOnlyList<TenantDatabaseColumnDescriptor>> ListColumnsAsync(TenantDatabaseBindingId bindingId, TenantId tenantId, string schemaName, string tableName, CancellationToken cancellationToken = default)
+        => await ListColumnsCoreAsync(tenantId, schemaName, tableName, resolver.ResolveAsync(bindingId, cancellationToken), cancellationToken);
+
+    private async Task<IReadOnlyList<TenantDatabaseColumnDescriptor>> ListColumnsCoreAsync(TenantId tenantId, string schemaName, string tableName, Task<TenantDatabaseResolution> resolutionTask, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(schemaName) || string.IsNullOrWhiteSpace(tableName))
             throw new ArgumentException("스키마와 테이블 이름이 필요합니다.");
-        var resolution = await resolver.ResolveAsync(tenantId, cancellationToken);
+        var resolution = await resolutionTask;
         await using var connection = await new TenantDatabaseConnectionFactory(new StaticResolver(resolution)).OpenAsync(tenantId, cancellationToken);
         await using var command = connection.CreateCommand();
         ConfigureProviderCommand(command, resolution.Provider);
@@ -98,5 +116,6 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
     private sealed class StaticResolver(TenantDatabaseResolution value) : ITenantDatabaseResolver
     {
         public Task<TenantDatabaseResolution> ResolveAsync(TenantId _, CancellationToken __ = default) => Task.FromResult(value);
+        public Task<TenantDatabaseResolution> ResolveAsync(TenantDatabaseBindingId _, CancellationToken __ = default) => Task.FromResult(value);
     }
 }
