@@ -19,10 +19,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
-            migrationBuilder.RenameColumn(
-                name: "tntmutaudid",
-                table: "edpf_tntmut_aud",
-                newName: "tnt_mut_audid");
+            migrationBuilder.Sql("BEGIN IF EXISTS (SELECT 1 FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid') AND NOT EXISTS (SELECT 1 FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid') THEN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_tntmut_aud\" RENAME COLUMN \"tntmutaudid\" TO \"tnt_mut_audid\"'; END IF; END;");
 
             migrationBuilder.RenameColumn(
                 name: "tntmbrid",

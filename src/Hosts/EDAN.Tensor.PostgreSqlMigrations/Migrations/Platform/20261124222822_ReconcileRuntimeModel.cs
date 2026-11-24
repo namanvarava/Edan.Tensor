@@ -21,10 +21,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
-            migrationBuilder.RenameColumn(
-                name: "tntmutaudid",
-                table: "edpf_tntmut_aud",
-                newName: "tnt_mut_audid");
+            migrationBuilder.Sql("DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid') AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid') THEN ALTER TABLE edpf_tntmut_aud RENAME COLUMN tntmutaudid TO tnt_mut_audid; END IF; END $$;");
 
             migrationBuilder.RenameColumn(
                 name: "tntmbrid",
