@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using EDAN.Tensor.Platform.Application.Abstractions;
 using EDAN.Tensor.Platform.Domain.Model;
@@ -27,7 +28,10 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
         command.CommandText = BuildCommandText(resolution.Provider, kind, schemaName, routineName, names);
         foreach (var value in parameters.Values)
         {
-            var parameter = command.CreateParameter(); parameter.ParameterName = names[command.Parameters.Count]; parameter.Value = (object?)value ?? DBNull.Value; command.Parameters.Add(parameter);
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = names[command.Parameters.Count];
+            parameter.Value = ConvertParameterValue(value);
+            command.Parameters.Add(parameter);
         }
         var rows = new List<IReadOnlyDictionary<string, object?>>();
         try
@@ -45,6 +49,18 @@ public sealed class TenantDatabaseRoutineExecutor(PlatformDbContext platformDb, 
             return new(0, rows);
         }
         return new(0, rows);
+    }
+
+    private static object ConvertParameterValue(string? value)
+    {
+        if (value is null) return DBNull.Value;
+        if (bool.TryParse(value, out var boolean)) return boolean;
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer)) return integer;
+        if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue)) return longValue;
+        if (decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalValue)) return decimalValue;
+        if (Guid.TryParse(value, out var guid)) return guid;
+        if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dateTimeOffset)) return dateTimeOffset;
+        return value;
     }
 
     internal static string BuildCommandText(TenantDatabaseProvider provider, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyList<string> parameterNames)
