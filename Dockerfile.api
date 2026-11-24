@@ -9,4 +9,6 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "EDAN.Tensor.ApiHost.dll"]
+COPY docker/api-entrypoint.sh /usr/local/bin/edan-api-entrypoint
+RUN chmod 0755 /usr/local/bin/edan-api-entrypoint
+ENTRYPOINT ["/usr/local/bin/edan-api-entrypoint"]
