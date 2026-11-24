@@ -41,6 +41,39 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task TenantMutationCoordinatorRunsCompensationAfterStepFailure()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+        var tenant = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("MUTATION-B"), "보상 실행 테스트", DateTimeOffset.UtcNow);
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        var executor = new FailingRoutineExecutor("fail_change");
+        var coordinator = new TenantDatabaseMutationCoordinator(executor, db, TimeProvider.System);
+        var step = new TenantDatabaseMutationStep(
+            tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "apply_change",
+            new Dictionary<string, string?>(),
+            new TenantDatabaseMutationStep(
+                tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "undo_change",
+                new Dictionary<string, string?>()));
+        var failingStep = new TenantDatabaseMutationStep(
+            tenant.Id, TenantDatabaseRoutineKind.Procedure, "public", "fail_change",
+            new Dictionary<string, string?>());
+
+        var result = await coordinator.ExecuteAsync(tenant.Id, "mutation-compensation", [step, failingStep]);
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.Compensated);
+        Assert.Contains(result.Steps, x => x.Compensation && x.Succeeded);
+        Assert.Equal("Compensated", await db.TenantDatabaseMutationAudits.Where(x => x.TenantId == tenant.Id).Select(x => x.Status).SingleAsync());
+        Assert.Equal(["apply_change", "fail_change", "undo_change"], executor.RoutineNames);
+    }
+
+    [Fact]
     public async Task SqlitePersistsActiveTenantDatabaseBindingWithoutSecretValue()
     {
         await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
@@ -389,6 +422,19 @@ public sealed class PlatformInfrastructureTests
         public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
         {
             CallCount++;
+            return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
+        }
+    }
+
+    private sealed class FailingRoutineExecutor(string failingRoutine) : ITenantDatabaseRoutineExecutor
+    {
+        public List<string> RoutineNames { get; } = [];
+
+        public Task<TenantDatabaseRoutineExecutionResult> ExecuteAsync(TenantId tenantId, TenantDatabaseRoutineKind kind, string schemaName, string routineName, IReadOnlyDictionary<string, string?> parameters, CancellationToken cancellationToken = default)
+        {
+            RoutineNames.Add(routineName);
+            if (routineName == failingRoutine)
+                throw new InvalidOperationException("simulated step failure");
             return Task.FromResult(new TenantDatabaseRoutineExecutionResult(1, Array.Empty<IReadOnlyDictionary<string, object?>>()));
         }
     }
