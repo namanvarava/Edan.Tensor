@@ -40,7 +40,7 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
             TenantDatabaseProvider.Oracle => "SELECT OWNER, CASE WHEN PROCEDURE_NAME IS NULL THEN OBJECT_NAME ELSE OBJECT_NAME || '.' || PROCEDURE_NAME END, CASE WHEN OBJECT_TYPE = 'PACKAGE' THEN 'PACKAGE' WHEN PROCEDURE_NAME IS NULL AND OBJECT_TYPE = 'FUNCTION' THEN 'FUNCTION' WHEN PROCEDURE_NAME IS NULL THEN 'PROCEDURE' ELSE 'PACKAGE_PROCEDURE' END, NULL FROM ALL_PROCEDURES WHERE OWNER = UPPER(:schema) AND OBJECT_TYPE IN ('PROCEDURE','FUNCTION','PACKAGE') ORDER BY OBJECT_NAME, PROCEDURE_NAME",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
-        AddParameter(command, "schema", schemaName);
+        AddParameter(command, "schema", schemaName, resolution.Provider);
         var result = new List<TenantDatabaseRoutineDescriptor>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -66,8 +66,8 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
             TenantDatabaseProvider.Oracle => "SELECT OWNER, TABLE_NAME, COLUMN_NAME, DATA_TYPE, NULLABLE, COLUMN_ID, COMMENTS FROM ALL_TAB_COLUMNS c LEFT JOIN ALL_COL_COMMENTS cc ON cc.OWNER=c.OWNER AND cc.TABLE_NAME=c.TABLE_NAME AND cc.COLUMN_NAME=c.COLUMN_NAME WHERE c.OWNER=UPPER(:schema) AND c.TABLE_NAME=UPPER(:table) ORDER BY c.COLUMN_ID",
             _ => throw new NotSupportedException($"지원하지 않는 Provider입니다: {resolution.Provider}")
         };
-        AddParameter(command, "schema", schemaName);
-        AddParameter(command, "table", tableName);
+        AddParameter(command, "schema", schemaName, resolution.Provider);
+        AddParameter(command, "table", tableName, resolution.Provider);
         var result = new List<TenantDatabaseColumnDescriptor>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -75,10 +75,12 @@ public sealed class TenantDatabaseMetadataReader(ITenantDatabaseResolver resolve
         return result;
     }
 
-    private static void AddParameter(System.Data.Common.DbCommand command, string name, string value)
+    private static void AddParameter(System.Data.Common.DbCommand command, string name, string value, TenantDatabaseProvider provider)
     {
         var parameter = command.CreateParameter();
-        parameter.ParameterName = "@" + name;
+        // Oracle SQL uses :name bind markers and OracleParameter expects the
+        // name without the provider-specific @ prefix used by other drivers.
+        parameter.ParameterName = provider == TenantDatabaseProvider.Oracle ? name : "@" + name;
         parameter.Value = value;
         command.Parameters.Add(parameter);
     }
