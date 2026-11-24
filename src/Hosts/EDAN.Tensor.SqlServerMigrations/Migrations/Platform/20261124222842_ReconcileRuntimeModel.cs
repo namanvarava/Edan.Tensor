@@ -19,10 +19,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
-            migrationBuilder.RenameColumn(
-                name: "tntmutaudid",
-                table: "edpf_tntmut_aud",
-                newName: "tnt_mut_audid");
+            migrationBuilder.Sql("IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'tntmutaudid') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'tnt_mut_audid') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.tntmutaudid', N'tnt_mut_audid', N'COLUMN';");
 
             migrationBuilder.RenameColumn(
                 name: "tntmbrid",
