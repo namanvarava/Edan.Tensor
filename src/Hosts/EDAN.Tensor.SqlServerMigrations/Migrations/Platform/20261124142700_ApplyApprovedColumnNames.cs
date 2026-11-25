@@ -13,6 +13,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
             migrationBuilder.Sql(@"
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_strqta_plcychg_FKPolicyId')
     ALTER TABLE [dbo].[edpf_strqta_plcychg] DROP CONSTRAINT [edpf_strqta_plcychg_FKPolicyId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_prjmbr_FKProjectId')
+    ALTER TABLE [dbo].[edpf_prjmbr] DROP CONSTRAINT [edpf_prjmbr_FKProjectId];
 ");
 
             migrationBuilder.DropUniqueConstraint(
