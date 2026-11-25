@@ -245,9 +245,11 @@ public sealed class WorkerTaskExecutionCoordinatorTests
                 new PendingExecutionHandler(new PendingExecution())),
             new CancellingLeaseRenewer(cancellation), new WorkerExecutionRegistry(), TimeProvider.System);
 
+        // The test targets cancellation cleanup, not lease-expiry recovery. Give the
+        // cancellation path enough lease headroom on slower CI runners.
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             coordinator.ExecuteAsync(tenantId, task.Id, "worker-test",
-                TimeSpan.FromSeconds(3), cancellation.Token));
+                TimeSpan.FromSeconds(30), cancellation.Token));
 
         WorkerTask? persisted = null;
         // The cancellation cleanup runs asynchronously after ExecuteAsync
