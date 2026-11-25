@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -697,56 +697,6 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntmut_aud_N01' AND
                 table: "edpf_authaud",
                 column: "Id");
 
-            migrationBuilder.CreateTable(
-                name: "edpf_tntmut_aud",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    Succeeded = table.Column<bool>(type: "bit", nullable: true),
-                    Compensated = table.Column<bool>(type: "bit", nullable: true),
-                    ResultJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Error = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CompletedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("edpf_tntmut_aud_PK", x => x.Id);
-                    table.ForeignKey(
-                        name: "edpf_tntmut_aud_FKTenantId",
-                        column: x => x.TenantId,
-                        principalTable: "edpf_tnt",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "edpf_tntrtnalw",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Kind = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    SchemaName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    RoutineName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("edpf_tntrtnalw_PK", x => x.Id);
-                    table.ForeignKey(
-                        name: "edpf_tntrtnalw_FKTenantId",
-                        column: x => x.TenantId,
-                        principalTable: "edpf_tnt",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
             migrationBuilder.AddCheckConstraint(
                 name: "CK_edpf_rsrc_project_requires_organization",
                 table: "edpf_rsrc",
@@ -756,18 +706,6 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntmut_aud_N01' AND
                 name: "CK_edpf_plcy_project_requires_organization",
                 table: "edpf_plcy",
                 sql: "project_id IS NULL OR organization_id IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "edpf_tntmut_aud_N01",
-                table: "edpf_tntmut_aud",
-                columns: new[] { "TenantId", "IdempotencyKey" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "edpf_tntrtnalw_N01",
-                table: "edpf_tntrtnalw",
-                columns: new[] { "TenantId", "SchemaName", "RoutineName", "Kind" },
-                unique: true);
 
             migrationBuilder.AddForeignKey(
                 name: "edpf_authaud_FKTenantId",

@@ -4,7 +4,7 @@ param(
     [string[]]$Contexts = @("PlatformDbContext", "WorkerDbContext", "DataSetDbContext"),
     [string]$Server = "127.0.0.1",
     [int]$Port = 1521,
-    [string]$Service = "XEPDB1",
+    [string]$Service = "FREEPDB1",
     [string]$User = "EDAN"
 )
 
