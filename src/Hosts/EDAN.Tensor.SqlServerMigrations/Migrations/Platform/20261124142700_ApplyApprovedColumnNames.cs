@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -35,740 +35,888 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authaud_arcattm_FK
     ALTER TABLE [dbo].[edpf_authaud_arcattm] DROP CONSTRAINT [edpf_authaud_arcattm_FKJobId];
 ");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_Id_TenantId",
-                table: "edpf_strqta_plcy");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_prj_Id_OrganizationId_TenantId",
-                table: "edpf_prj");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_org_Id_TenantId",
-                table: "edpf_org");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_inv_Id_TenantId",
-                table: "edpf_inv");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_Id_TenantId",
-                table: "edpf_authaud_arcjob");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_usr",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_usr",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "Email",
-                table: "edpf_usr",
-                newName: "eml");
-
-            migrationBuilder.RenameColumn(
-                name: "DisplayName",
-                table: "edpf_usr",
-                newName: "dspnm");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_usr",
-                newName: "usrid");
-
-            migrationBuilder.RenameColumn(
-                name: "UpdatedAtUtc",
-                table: "edpf_tntrtnalw",
-                newName: "upd_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_tntrtnalw",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SchemaName",
-                table: "edpf_tntrtnalw",
-                newName: "schm_nm");
-
-            migrationBuilder.RenameColumn(
-                name: "IsEnabled",
-                table: "edpf_tntrtnalw",
-                newName: "ena_yn");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_tntrtnalw",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_tntrtnalw",
-                newName: "tntrtnalwid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_tntmut_aud",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_tntmut_aud",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "IdempotencyKey",
-                table: "edpf_tntmut_aud",
-                newName: "idem_key");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_tntmut_aud",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "CompletedAtUtc",
-                table: "edpf_tntmut_aud",
-                newName: "cmp_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_tntmut_aud",
-                newName: "tntmutaudid");
-
-            migrationBuilder.RenameColumn(
-                name: "Role",
-                table: "edpf_tntmbr",
-                newName: "role");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_tntmbr",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SubjectId",
-                table: "edpf_tntmbr",
-                newName: "subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_tntmbr",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_tntmbr",
-                newName: "tntmbrid");
-
-            migrationBuilder.RenameColumn(
-                name: "Port",
-                table: "edpf_tntdbnd",
-                newName: "port");
-
-            migrationBuilder.RenameColumn(
-                name: "Username",
-                table: "edpf_tntdbnd",
-                newName: "usrnm");
-
-            migrationBuilder.RenameColumn(
-                name: "UpdatedAtUtc",
-                table: "edpf_tntdbnd",
-                newName: "upd_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_tntdbnd",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_tntdbnd",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "ServerAddress",
-                table: "edpf_tntdbnd",
-                newName: "svr_addr");
-
-            migrationBuilder.RenameColumn(
-                name: "SecretKey",
-                table: "edpf_tntdbnd",
-                newName: "scrt_key");
-
-            migrationBuilder.RenameColumn(
-                name: "SchemaName",
-                table: "edpf_tntdbnd",
-                newName: "schm_nm");
-
-            migrationBuilder.RenameColumn(
-                name: "Provider",
-                table: "edpf_tntdbnd",
-                newName: "prvdr");
-
-            migrationBuilder.RenameColumn(
-                name: "DatabaseName",
-                table: "edpf_tntdbnd",
-                newName: "db_nm");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_tntdbnd",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_tntdbnd",
-                newName: "tntdbndid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_tnt",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "Name",
-                table: "edpf_tnt",
-                newName: "nm");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_tnt",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Code",
-                table: "edpf_tnt",
-                newName: "cd");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_tnt",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_strqta_plcychg",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "PolicyId",
-                table: "edpf_strqta_plcychg",
-                newName: "plcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "OccurredAtUtc",
-                table: "edpf_strqta_plcychg",
-                newName: "occr_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "ChangeType",
-                table: "edpf_strqta_plcychg",
-                newName: "chg_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "BeforeJson",
-                table: "edpf_strqta_plcychg",
-                newName: "bef_json");
-
-            migrationBuilder.RenameColumn(
-                name: "AfterJson",
-                table: "edpf_strqta_plcychg",
-                newName: "aft_json");
-
-            migrationBuilder.RenameColumn(
-                name: "ActorSubjectId",
-                table: "edpf_strqta_plcychg",
-                newName: "act_subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_strqta_plcychg",
-                newName: "strqtaplcychgid");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                table: "edpf_strqta_plcy",
-                newName: "ver");
-
-            migrationBuilder.RenameColumn(
-                name: "UpdatedAtUtc",
-                table: "edpf_strqta_plcy",
-                newName: "upd_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_strqta_plcy",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "IsEnabled",
-                table: "edpf_strqta_plcy",
-                newName: "ena_yn");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_strqta_plcy",
-                newName: "strqtaplcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_rsrc",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "ResourceType",
-                table: "edpf_rsrc",
-                newName: "rsrc_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "Name",
-                table: "edpf_rsrc",
-                newName: "nm");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_rsrc",
-                newName: "rsrcid");
-
-            migrationBuilder.RenameColumn(
-                name: "Role",
-                table: "edpf_prjmbr",
-                newName: "role");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_prjmbr",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SubjectId",
-                table: "edpf_prjmbr",
-                newName: "subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_prjmbr",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "ProjectId",
-                table: "edpf_prjmbr",
-                newName: "prjid");
-
-            migrationBuilder.RenameColumn(
-                name: "OrganizationId",
-                table: "edpf_prjmbr",
-                newName: "orgid");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_prjmbr",
-                newName: "prjmbrid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_prj",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_prj",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "OrganizationId",
-                table: "edpf_prj",
-                newName: "orgid");
-
-            migrationBuilder.RenameColumn(
-                name: "Name",
-                table: "edpf_prj",
-                newName: "nm");
-
-            migrationBuilder.RenameColumn(
-                name: "Code",
-                table: "edpf_prj",
-                newName: "cd");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_prj",
-                newName: "prjid");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                table: "edpf_plcy",
-                newName: "ver");
-
-            migrationBuilder.RenameColumn(
-                name: "IsEnabled",
-                table: "edpf_plcy",
-                newName: "ena_yn");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_plcy",
-                newName: "plcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "Role",
-                table: "edpf_orgmbr",
-                newName: "role");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_orgmbr",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SubjectId",
-                table: "edpf_orgmbr",
-                newName: "subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_orgmbr",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "OrganizationId",
-                table: "edpf_orgmbr",
-                newName: "orgid");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_orgmbr",
-                newName: "orgmbrid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_org",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_org",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "Name",
-                table: "edpf_org",
-                newName: "nm");
-
-            migrationBuilder.RenameColumn(
-                name: "Code",
-                table: "edpf_org",
-                newName: "cd");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_org",
-                newName: "orgid");
-
-            migrationBuilder.RenameColumn(
-                name: "UserId",
-                table: "edpf_inv",
-                newName: "usrid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_inv",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_inv",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "Email",
-                table: "edpf_inv",
-                newName: "eml");
-
-            migrationBuilder.RenameColumn(
-                name: "DisplayName",
-                table: "edpf_inv",
-                newName: "dspnm");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_inv",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_inv",
-                newName: "invid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authplcy_chg",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "PolicyId",
-                table: "edpf_authplcy_chg",
-                newName: "plcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "OccurredAtUtc",
-                table: "edpf_authplcy_chg",
-                newName: "occr_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "ChangeType",
-                table: "edpf_authplcy_chg",
-                newName: "chg_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "BeforeJson",
-                table: "edpf_authplcy_chg",
-                newName: "bef_json");
-
-            migrationBuilder.RenameColumn(
-                name: "AfterJson",
-                table: "edpf_authplcy_chg",
-                newName: "aft_json");
-
-            migrationBuilder.RenameColumn(
-                name: "ActorSubjectId",
-                table: "edpf_authplcy_chg",
-                newName: "act_subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authplcy_chg",
-                newName: "authplcychgid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authplcy",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SubjectId",
-                table: "edpf_authplcy",
-                newName: "subid");
-
-            migrationBuilder.RenameColumn(
-                name: "ResourceType",
-                table: "edpf_authplcy",
-                newName: "rsrc_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "ProjectId",
-                table: "edpf_authplcy",
-                newName: "prjid");
-
-            migrationBuilder.RenameColumn(
-                name: "OrganizationId",
-                table: "edpf_authplcy",
-                newName: "orgid");
-
-            migrationBuilder.RenameColumn(
-                name: "IsEnabled",
-                table: "edpf_authplcy",
-                newName: "ena_yn");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_authplcy",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authplcy",
-                newName: "authplcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud_rtnchg",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "PolicyId",
-                table: "edpf_authaud_rtnchg",
-                newName: "plcyid");
-
-            migrationBuilder.RenameColumn(
-                name: "OccurredAtUtc",
-                table: "edpf_authaud_rtnchg",
-                newName: "occr_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "ChangeType",
-                table: "edpf_authaud_rtnchg",
-                newName: "chg_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "BeforeJson",
-                table: "edpf_authaud_rtnchg",
-                newName: "bef_json");
-
-            migrationBuilder.RenameColumn(
-                name: "AfterJson",
-                table: "edpf_authaud_rtnchg",
-                newName: "aft_json");
-
-            migrationBuilder.RenameColumn(
-                name: "ActorSubjectId",
-                table: "edpf_authaud_rtnchg",
-                newName: "act_subid");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud_rtnchg",
-                newName: "authaudrtnchgid");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                table: "edpf_authaud_rtn",
-                newName: "ver");
-
-            migrationBuilder.RenameColumn(
-                name: "UpdatedAtUtc",
-                table: "edpf_authaud_rtn",
-                newName: "upd_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud_rtn",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "RetentionDays",
-                table: "edpf_authaud_rtn",
-                newName: "rtn_days");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud_rtn",
-                newName: "authaudrtnid");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                table: "edpf_authaud_arcschd",
-                newName: "ver");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud_arcschd",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "NextRunAtUtc",
-                table: "edpf_authaud_arcschd",
-                newName: "nxt_run_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "LeaseExpiresAtUtc",
-                table: "edpf_authaud_arcschd",
-                newName: "lease_exp_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "LastRunAtUtc",
-                table: "edpf_authaud_arcschd",
-                newName: "last_run_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "IsEnabled",
-                table: "edpf_authaud_arcschd",
-                newName: "ena_yn");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud_arcschd",
-                newName: "authaudarcschdid");
-
-            migrationBuilder.RenameColumn(
-                name: "Version",
-                table: "edpf_authaud_arcjob",
-                newName: "ver");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud_arcjob",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "edpf_authaud_arcjob",
-                newName: "st");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAtUtc",
-                table: "edpf_authaud_arcjob",
-                newName: "crt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "CompletedAtUtc",
-                table: "edpf_authaud_arcjob",
-                newName: "cmp_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "AttemptCount",
-                table: "edpf_authaud_arcjob",
-                newName: "attm_cnt");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud_arcjob",
-                newName: "authaudarcjobid");
-
-            migrationBuilder.RenameColumn(
-                name: "JobId",
-                table: "edpf_authaud_arcattm",
-                newName: "jobid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud_arcattm",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "StartedAtUtc",
-                table: "edpf_authaud_arcattm",
-                newName: "strt_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "FinishedAtUtc",
-                table: "edpf_authaud_arcattm",
-                newName: "fnsh_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud_arcattm",
-                newName: "authaudarcattmid");
-
-            migrationBuilder.RenameColumn(
-                name: "TenantId",
-                table: "edpf_authaud",
-                newName: "tntid");
-
-            migrationBuilder.RenameColumn(
-                name: "SubjectId",
-                table: "edpf_authaud",
-                newName: "subid");
-
-            migrationBuilder.RenameColumn(
-                name: "ResourceType",
-                table: "edpf_authaud",
-                newName: "rsrc_typ");
-
-            migrationBuilder.RenameColumn(
-                name: "OccurredAtUtc",
-                table: "edpf_authaud",
-                newName: "occr_utc");
-
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "edpf_authaud",
-                newName: "authaudid");
+                        migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_strqta_plcy_Id_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_strqta_plcy]'))
+    ALTER TABLE [dbo].[edpf_strqta_plcy] DROP CONSTRAINT [AK_edpf_strqta_plcy_Id_TenantId];
+" );
+
+                        migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_prj_Id_OrganizationId_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_prj]'))
+    ALTER TABLE [dbo].[edpf_prj] DROP CONSTRAINT [AK_edpf_prj_Id_OrganizationId_TenantId];
+" );
+
+                        migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_org_Id_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_org]'))
+    ALTER TABLE [dbo].[edpf_org] DROP CONSTRAINT [AK_edpf_org_Id_TenantId];
+" );
+
+                        migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_inv_Id_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_inv]'))
+    ALTER TABLE [dbo].[edpf_inv] DROP CONSTRAINT [AK_edpf_inv_Id_TenantId];
+" );
+
+                        migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_authaud_arcjob_Id_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_authaud_arcjob]'))
+    ALTER TABLE [dbo].[edpf_authaud_arcjob] DROP CONSTRAINT [AK_edpf_authaud_arcjob_Id_TenantId];
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_usr]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_usr]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_usr].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_usr]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_usr]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_usr].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_usr]', N'Email') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_usr]', N'eml') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_usr].[Email]', N'eml', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_usr]', N'DisplayName') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_usr]', N'dspnm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_usr].[DisplayName]', N'dspnm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_usr]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_usr]', N'usrid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_usr].[Id]', N'usrid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'UpdatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'upd_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[UpdatedAtUtc]', N'upd_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'SchemaName') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'schm_nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[SchemaName]', N'schm_nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[IsEnabled]', N'ena_yn', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntrtnalw]', N'tntrtnalwid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntrtnalw].[Id]', N'tntrtnalwid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'IdempotencyKey') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'idem_key') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[IdempotencyKey]', N'idem_key', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'CompletedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'cmp_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[CompletedAtUtc]', N'cmp_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmut_aud]', N'tntmutaudid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmut_aud].[Id]', N'tntmutaudid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'Role') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'role') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmbr].[Role]', N'role', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmbr].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmbr].[SubjectId]', N'subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmbr].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntmbr]', N'tntmbrid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntmbr].[Id]', N'tntmbrid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'Port') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'port') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[Port]', N'port', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'Username') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'usrnm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[Username]', N'usrnm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'UpdatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'upd_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[UpdatedAtUtc]', N'upd_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'ServerAddress') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'svr_addr') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[ServerAddress]', N'svr_addr', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'SecretKey') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'scrt_key') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[SecretKey]', N'scrt_key', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'SchemaName') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'schm_nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[SchemaName]', N'schm_nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'Provider') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'prvdr') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[Provider]', N'prvdr', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'DatabaseName') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'db_nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[DatabaseName]', N'db_nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tntdbnd]', N'tntdbndid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tntdbnd].[Id]', N'tntdbndid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tnt]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tnt]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tnt].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tnt]', N'Name') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tnt]', N'nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tnt].[Name]', N'nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tnt]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tnt]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tnt].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tnt]', N'Code') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tnt]', N'cd') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tnt].[Code]', N'cd', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_tnt]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_tnt]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_tnt].[Id]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'PolicyId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'plcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[PolicyId]', N'plcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'OccurredAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'occr_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[OccurredAtUtc]', N'occr_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'ChangeType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'chg_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[ChangeType]', N'chg_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'BeforeJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'bef_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[BeforeJson]', N'bef_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'AfterJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'aft_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[AfterJson]', N'aft_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'ActorSubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'act_subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[ActorSubjectId]', N'act_subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcychg]', N'strqtaplcychgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcychg].[Id]', N'strqtaplcychgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'Version') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'ver') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcy].[Version]', N'ver', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'UpdatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'upd_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcy].[UpdatedAtUtc]', N'upd_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcy].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcy].[IsEnabled]', N'ena_yn', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_strqta_plcy]', N'strqtaplcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_strqta_plcy].[Id]', N'strqtaplcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_rsrc]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_rsrc]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_rsrc].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_rsrc]', N'ResourceType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_rsrc]', N'rsrc_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_rsrc].[ResourceType]', N'rsrc_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_rsrc]', N'Name') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_rsrc]', N'nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_rsrc].[Name]', N'nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_rsrc]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_rsrc]', N'rsrcid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_rsrc].[Id]', N'rsrcid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'Role') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'role') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[Role]', N'role', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[SubjectId]', N'subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'ProjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'prjid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[ProjectId]', N'prjid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'OrganizationId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[OrganizationId]', N'orgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prjmbr]', N'prjmbrid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prjmbr].[Id]', N'prjmbrid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'OrganizationId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[OrganizationId]', N'orgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'Name') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[Name]', N'nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'Code') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'cd') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[Code]', N'cd', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_prj]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_prj]', N'prjid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_prj].[Id]', N'prjid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_plcy]', N'Version') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_plcy]', N'ver') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_plcy].[Version]', N'ver', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_plcy]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_plcy]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_plcy].[IsEnabled]', N'ena_yn', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_plcy]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_plcy]', N'plcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_plcy].[Id]', N'plcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'Role') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'role') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[Role]', N'role', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[SubjectId]', N'subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'OrganizationId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[OrganizationId]', N'orgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_orgmbr]', N'orgmbrid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_orgmbr].[Id]', N'orgmbrid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_org]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_org]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_org].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_org]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_org]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_org].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_org]', N'Name') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_org]', N'nm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_org].[Name]', N'nm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_org]', N'Code') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_org]', N'cd') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_org].[Code]', N'cd', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_org]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_org]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_org].[Id]', N'orgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'UserId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'usrid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[UserId]', N'usrid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'Email') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'eml') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[Email]', N'eml', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'DisplayName') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'dspnm') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[DisplayName]', N'dspnm', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_inv]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_inv]', N'invid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_inv].[Id]', N'invid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'PolicyId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'plcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[PolicyId]', N'plcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'OccurredAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'occr_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[OccurredAtUtc]', N'occr_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'ChangeType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'chg_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[ChangeType]', N'chg_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'BeforeJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'bef_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[BeforeJson]', N'bef_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'AfterJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'aft_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[AfterJson]', N'aft_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'ActorSubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'act_subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[ActorSubjectId]', N'act_subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'authplcychgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy_chg].[Id]', N'authplcychgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[SubjectId]', N'subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ResourceType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'rsrc_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[ResourceType]', N'rsrc_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ProjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'prjid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[ProjectId]', N'prjid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'OrganizationId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[OrganizationId]', N'orgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[IsEnabled]', N'ena_yn', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'authplcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[Id]', N'authplcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'PolicyId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'plcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[PolicyId]', N'plcyid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'OccurredAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'occr_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[OccurredAtUtc]', N'occr_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'ChangeType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'chg_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[ChangeType]', N'chg_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'BeforeJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'bef_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[BeforeJson]', N'bef_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'AfterJson') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'aft_json') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[AfterJson]', N'aft_json', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'ActorSubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'act_subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[ActorSubjectId]', N'act_subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'authaudrtnchgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[Id]', N'authaudrtnchgid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'Version') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'ver') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtn].[Version]', N'ver', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'UpdatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'upd_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtn].[UpdatedAtUtc]', N'upd_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtn].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'RetentionDays') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'rtn_days') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtn].[RetentionDays]', N'rtn_days', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_rtn]', N'authaudrtnid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_rtn].[Id]', N'authaudrtnid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'Version') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'ver') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[Version]', N'ver', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'NextRunAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'nxt_run_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[NextRunAtUtc]', N'nxt_run_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'LeaseExpiresAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'lease_exp_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[LeaseExpiresAtUtc]', N'lease_exp_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'LastRunAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'last_run_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[LastRunAtUtc]', N'last_run_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[IsEnabled]', N'ena_yn', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcschd]', N'authaudarcschdid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcschd].[Id]', N'authaudarcschdid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'Version') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'ver') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[Version]', N'ver', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'Status') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'st') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[Status]', N'st', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'CompletedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'cmp_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[CompletedAtUtc]', N'cmp_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'AttemptCount') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'attm_cnt') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[AttemptCount]', N'attm_cnt', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcjob]', N'authaudarcjobid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcjob].[Id]', N'authaudarcjobid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'JobId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'jobid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcattm].[JobId]', N'jobid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcattm].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'StartedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'strt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcattm].[StartedAtUtc]', N'strt_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'FinishedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'fnsh_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcattm].[FinishedAtUtc]', N'fnsh_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud_arcattm]', N'authaudarcattmid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud_arcattm].[Id]', N'authaudarcattmid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud].[TenantId]', N'tntid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud].[SubjectId]', N'subid', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'ResourceType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'rsrc_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud].[ResourceType]', N'rsrc_typ', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'OccurredAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'occr_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud].[OccurredAtUtc]', N'occr_utc', 'COLUMN';
+" );
+
+                        migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'authaudid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authaud].[Id]', N'authaudid', 'COLUMN';
+" );
 
             migrationBuilder.AddUniqueConstraint(
                 name: "AK_edpf_strqta_plcy_strqtaplcyid_tntid",
@@ -1561,3 +1709,4 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authaud_arcattm_FK
         }
     }
 }
+
