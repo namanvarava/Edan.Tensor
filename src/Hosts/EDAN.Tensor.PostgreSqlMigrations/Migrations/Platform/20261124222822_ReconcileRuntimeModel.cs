@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -16,324 +16,324 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
             migrationBuilder.Sql(
                 "ALTER TABLE edpf_authaud_arcjob DROP CONSTRAINT IF EXISTS \"AK_edpf_authaud_arcjob_authaudarcjobid_tntid\";");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tntrtnalwid",
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
             migrationBuilder.Sql("DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid') AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid') THEN ALTER TABLE edpf_tntmut_aud RENAME COLUMN tntmutaudid TO tnt_mut_audid; END IF; END $$;");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tntmbrid",
                 table: "edpf_tntmbr",
                 newName: "tnt_mbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tntdbndid",
                 table: "edpf_tntdbnd",
                 newName: "tnt_dbndid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nm",
                 table: "edpf_tnt",
                 newName: "tntnm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "cd",
                 table: "edpf_tnt",
                 newName: "tntcd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occr_utc",
                 table: "edpf_strqta_plcychg",
                 newName: "occ_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "strqtaplcychgid",
                 table: "edpf_strqta_plcychg",
                 newName: "str_qta_plcy_chgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "WarningThresholdPercent",
                 table: "edpf_strqta_plcy",
                 newName: "warn_thr_pct");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "UpdatedBy",
                 table: "edpf_strqta_plcy",
                 newName: "upd_subid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "TenantLimitBytes",
                 table: "edpf_strqta_plcy",
                 newName: "tnt_lmt_byt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "TargetId",
                 table: "edpf_strqta_plcy",
                 newName: "tgtid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Scope",
                 table: "edpf_strqta_plcy",
                 newName: "scp");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "ProjectLimitBytes",
                 table: "edpf_strqta_plcy",
                 newName: "prj_lmt_byt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "PlanCode",
                 table: "edpf_strqta_plcy",
                 newName: "plan_cd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "OrganizationLimitBytes",
                 table: "edpf_strqta_plcy",
                 newName: "org_lmt_byt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "DataSetLimitBytes",
                 table: "edpf_strqta_plcy",
                 newName: "dset_lmt_byt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "strqtaplcyid",
                 table: "edpf_strqta_plcy",
                 newName: "str_qta_plcyid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nm",
                 table: "edpf_rsrc",
                 newName: "rsrcnm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "prjmbrid",
                 table: "edpf_prjmbr",
                 newName: "prj_mbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nm",
                 table: "edpf_prj",
                 newName: "prjnm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "cd",
                 table: "edpf_prj",
                 newName: "prjcd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Value",
                 table: "edpf_plcy",
                 newName: "val");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Key",
                 table: "edpf_plcy",
                 newName: "plcykey");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "orgmbrid",
                 table: "edpf_orgmbr",
                 newName: "org_mbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nm",
                 table: "edpf_org",
                 newName: "orgnm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "cd",
                 table: "edpf_org",
                 newName: "orgcd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occr_utc",
                 table: "edpf_authplcy_chg",
                 newName: "occ_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authplcychgid",
                 table: "edpf_authplcy_chg",
                 newName: "auth_plcy_chgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Priority",
                 table: "edpf_authplcy",
                 newName: "pri");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Effect",
                 table: "edpf_authplcy",
                 newName: "eff");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Action",
                 table: "edpf_authplcy",
                 newName: "act");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authplcyid",
                 table: "edpf_authplcy",
                 newName: "auth_plcyid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occr_utc",
                 table: "edpf_authaud_rtnchg",
                 newName: "occ_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudrtnchgid",
                 table: "edpf_authaud_rtnchg",
                 newName: "auth_aud_rtn_chgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "rtn_days",
                 table: "edpf_authaud_rtn",
                 newName: "rtn_day");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "UpdatedBy",
                 table: "edpf_authaud_rtn",
                 newName: "upd_subid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "LegalHoldReason",
                 table: "edpf_authaud_rtn",
                 newName: "legal_hold_rsn");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "IsLegalHold",
                 table: "edpf_authaud_rtn",
                 newName: "legal_hold_yn");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudrtnid",
                 table: "edpf_authaud_rtn",
                 newName: "auth_aud_rtnid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "LeaseId",
                 table: "edpf_authaud_arcschd",
                 newName: "leaseid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nxt_run_utc",
                 table: "edpf_authaud_arcschd",
                 newName: "nxt_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "last_run_utc",
                 table: "edpf_authaud_arcschd",
                 newName: "last_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "IntervalHours",
                 table: "edpf_authaud_arcschd",
                 newName: "int_hr");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudarcschdid",
                 table: "edpf_authaud_arcschd",
                 newName: "auth_aud_arc_schdid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Sha256",
                 table: "edpf_authaud_arcjob",
                 newName: "sha256");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "ToUtc",
                 table: "edpf_authaud_arcjob",
                 newName: "to_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "SizeBytes",
                 table: "edpf_authaud_arcjob",
                 newName: "size_byt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "RecordCount",
                 table: "edpf_authaud_arcjob",
                 newName: "rec_cnt");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "FromUtc",
                 table: "edpf_authaud_arcjob",
                 newName: "from_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "FailureReason",
                 table: "edpf_authaud_arcjob",
                 newName: "fail_rsn");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "ArchiveId",
                 table: "edpf_authaud_arcjob",
                 newName: "arcid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudarcjobid",
                 table: "edpf_authaud_arcjob",
                 newName: "auth_aud_arc_jobid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "fnsh_utc",
                 table: "edpf_authaud_arcattm",
                 newName: "fin_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "ResultCode",
                 table: "edpf_authaud_arcattm",
                 newName: "result_code");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "IsSuccessful",
                 table: "edpf_authaud_arcattm",
                 newName: "succ_yn");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "AttemptNumber",
                 table: "edpf_authaud_arcattm",
                 newName: "attm_num");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudarcattmid",
                 table: "edpf_authaud_arcattm",
                 newName: "auth_aud_arc_attmid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occr_utc",
                 table: "edpf_authaud",
                 newName: "occ_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Scope",
                 table: "edpf_authaud",
                 newName: "scp");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "ReasonCode",
                 table: "edpf_authaud",
                 newName: "rsn_cd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "MatchedPolicyId",
                 table: "edpf_authaud",
                 newName: "plcyid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "IsAllowed",
                 table: "edpf_authaud",
                 newName: "allow_yn");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "Action",
                 table: "edpf_authaud",
                 newName: "act");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "authaudid",
                 table: "edpf_authaud",
                 newName: "auth_audid");
@@ -349,7 +349,17 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 columns: new[] { "auth_aud_arc_jobid", "tntid" });
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc />        private static void RenameColumnIfNeeded(MigrationBuilder migrationBuilder, string name, string table, string newName)
+        {
+            migrationBuilder.Sql($@"DO $
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '{table}' AND column_name = '{name}')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '{table}' AND column_name = '{newName}') THEN
+        EXECUTE format('ALTER TABLE %I RENAME COLUMN %I TO %I', '{table}', '{name}', '{newName}');
+    END IF;
+END $;");
+        }
+
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropUniqueConstraint(
@@ -360,327 +370,327 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 name: "AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid",
                 table: "edpf_authaud_arcjob");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tnt_rtn_alwid",
                 table: "edpf_tntrtnalw",
                 newName: "tntrtnalwid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tnt_mut_audid",
                 table: "edpf_tntmut_aud",
                 newName: "tntmutaudid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tnt_mbrid",
                 table: "edpf_tntmbr",
                 newName: "tntmbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tnt_dbndid",
                 table: "edpf_tntdbnd",
                 newName: "tntdbndid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tntnm",
                 table: "edpf_tnt",
                 newName: "nm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tntcd",
                 table: "edpf_tnt",
                 newName: "cd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occ_utc",
                 table: "edpf_strqta_plcychg",
                 newName: "occr_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "str_qta_plcy_chgid",
                 table: "edpf_strqta_plcychg",
                 newName: "strqtaplcychgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "warn_thr_pct",
                 table: "edpf_strqta_plcy",
                 newName: "WarningThresholdPercent");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "upd_subid",
                 table: "edpf_strqta_plcy",
                 newName: "UpdatedBy");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tnt_lmt_byt",
                 table: "edpf_strqta_plcy",
                 newName: "TenantLimitBytes");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "tgtid",
                 table: "edpf_strqta_plcy",
                 newName: "TargetId");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "scp",
                 table: "edpf_strqta_plcy",
                 newName: "Scope");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "prj_lmt_byt",
                 table: "edpf_strqta_plcy",
                 newName: "ProjectLimitBytes");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "plan_cd",
                 table: "edpf_strqta_plcy",
                 newName: "PlanCode");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "org_lmt_byt",
                 table: "edpf_strqta_plcy",
                 newName: "OrganizationLimitBytes");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "dset_lmt_byt",
                 table: "edpf_strqta_plcy",
                 newName: "DataSetLimitBytes");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "str_qta_plcyid",
                 table: "edpf_strqta_plcy",
                 newName: "strqtaplcyid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "rsrcnm",
                 table: "edpf_rsrc",
                 newName: "nm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "prj_mbrid",
                 table: "edpf_prjmbr",
                 newName: "prjmbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "prjnm",
                 table: "edpf_prj",
                 newName: "nm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "prjcd",
                 table: "edpf_prj",
                 newName: "cd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "val",
                 table: "edpf_plcy",
                 newName: "Value");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "plcykey",
                 table: "edpf_plcy",
                 newName: "Key");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "org_mbrid",
                 table: "edpf_orgmbr",
                 newName: "orgmbrid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "orgnm",
                 table: "edpf_org",
                 newName: "nm");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "orgcd",
                 table: "edpf_org",
                 newName: "cd");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occ_utc",
                 table: "edpf_authplcy_chg",
                 newName: "occr_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_plcy_chgid",
                 table: "edpf_authplcy_chg",
                 newName: "authplcychgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "pri",
                 table: "edpf_authplcy",
                 newName: "Priority");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "eff",
                 table: "edpf_authplcy",
                 newName: "Effect");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "act",
                 table: "edpf_authplcy",
                 newName: "Action");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_plcyid",
                 table: "edpf_authplcy",
                 newName: "authplcyid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occ_utc",
                 table: "edpf_authaud_rtnchg",
                 newName: "occr_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_aud_rtn_chgid",
                 table: "edpf_authaud_rtnchg",
                 newName: "authaudrtnchgid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "upd_subid",
                 table: "edpf_authaud_rtn",
                 newName: "UpdatedBy");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "rtn_day",
                 table: "edpf_authaud_rtn",
                 newName: "rtn_days");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "legal_hold_yn",
                 table: "edpf_authaud_rtn",
                 newName: "IsLegalHold");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "legal_hold_rsn",
                 table: "edpf_authaud_rtn",
                 newName: "LegalHoldReason");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_aud_rtnid",
                 table: "edpf_authaud_rtn",
                 newName: "authaudrtnid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "leaseid",
                 table: "edpf_authaud_arcschd",
                 newName: "LeaseId");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "nxt_utc",
                 table: "edpf_authaud_arcschd",
                 newName: "nxt_run_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "last_utc",
                 table: "edpf_authaud_arcschd",
                 newName: "last_run_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "int_hr",
                 table: "edpf_authaud_arcschd",
                 newName: "IntervalHours");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_aud_arc_schdid",
                 table: "edpf_authaud_arcschd",
                 newName: "authaudarcschdid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "sha256",
                 table: "edpf_authaud_arcjob",
                 newName: "Sha256");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "to_utc",
                 table: "edpf_authaud_arcjob",
                 newName: "ToUtc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "size_byt",
                 table: "edpf_authaud_arcjob",
                 newName: "SizeBytes");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "rec_cnt",
                 table: "edpf_authaud_arcjob",
                 newName: "RecordCount");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "from_utc",
                 table: "edpf_authaud_arcjob",
                 newName: "FromUtc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "fail_rsn",
                 table: "edpf_authaud_arcjob",
                 newName: "FailureReason");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "arcid",
                 table: "edpf_authaud_arcjob",
                 newName: "ArchiveId");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_aud_arc_jobid",
                 table: "edpf_authaud_arcjob",
                 newName: "authaudarcjobid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "succ_yn",
                 table: "edpf_authaud_arcattm",
                 newName: "IsSuccessful");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "result_code",
                 table: "edpf_authaud_arcattm",
                 newName: "ResultCode");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "fin_utc",
                 table: "edpf_authaud_arcattm",
                 newName: "fnsh_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "attm_num",
                 table: "edpf_authaud_arcattm",
                 newName: "AttemptNumber");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_aud_arc_attmid",
                 table: "edpf_authaud_arcattm",
                 newName: "authaudarcattmid");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "scp",
                 table: "edpf_authaud",
                 newName: "Scope");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "rsn_cd",
                 table: "edpf_authaud",
                 newName: "ReasonCode");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "plcyid",
                 table: "edpf_authaud",
                 newName: "MatchedPolicyId");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "occ_utc",
                 table: "edpf_authaud",
                 newName: "occr_utc");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "allow_yn",
                 table: "edpf_authaud",
                 newName: "IsAllowed");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "act",
                 table: "edpf_authaud",
                 newName: "Action");
 
-            migrationBuilder.RenameColumn(
+            RenameColumnIfNeeded(migrationBuilder,
                 name: "auth_audid",
                 table: "edpf_authaud",
                 newName: "authaudid");
