@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Worker;
 
 [DbContext(typeof(WorkerDbContext))]
-[Migration("20261125060000_ReconcileApprovedWorkerColumnNames")]
 partial class ReconcileApprovedWorkerColumnNames
 {
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
