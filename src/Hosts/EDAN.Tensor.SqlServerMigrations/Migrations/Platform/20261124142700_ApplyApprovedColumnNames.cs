@@ -37,6 +37,21 @@ IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N01' AND object
     DROP INDEX [edpf_tntdbnd_N01] ON [dbo].[edpf_tntdbnd];
 IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object_id = OBJECT_ID(N'dbo.edpf_tntdbnd'))
     DROP INDEX [edpf_tntdbnd_N02] ON [dbo].[edpf_tntdbnd];
+
+DECLARE @dropAuthPolicyProjectFks nvarchar(max) = N'';
+SELECT @dropAuthPolicyProjectFks +=
+    N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(fk.parent_object_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id))
+    + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';'
+FROM sys.foreign_keys fk
+JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+JOIN sys.columns c ON c.object_id = fkc.parent_object_id AND c.column_id = fkc.parent_column_id
+WHERE (fk.parent_object_id = OBJECT_ID(N'dbo.edpf_authplcy') AND c.name = N'ProjectId')
+   OR (fk.referenced_object_id = OBJECT_ID(N'dbo.edpf_authplcy') AND EXISTS (
+       SELECT 1 FROM sys.foreign_key_columns rfkc
+       JOIN sys.columns rc ON rc.object_id = rfkc.referenced_object_id AND rc.column_id = rfkc.referenced_column_id
+       WHERE rfkc.constraint_object_id = fk.object_id AND rc.name = N'ProjectId'));
+IF @dropAuthPolicyProjectFks <> N''
+    EXEC sp_executesql @dropAuthPolicyProjectFks;
 ");
 
                         migrationBuilder.Sql(@"
