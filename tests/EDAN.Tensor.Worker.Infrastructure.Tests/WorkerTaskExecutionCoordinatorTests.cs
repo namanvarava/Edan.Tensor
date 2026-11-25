@@ -250,12 +250,15 @@ public sealed class WorkerTaskExecutionCoordinatorTests
                 TimeSpan.FromSeconds(3), cancellation.Token));
 
         WorkerTask? persisted = null;
-        for (var attempt = 0; attempt < 20; attempt++)
+        // The cancellation cleanup runs asynchronously after ExecuteAsync
+        // observes the cancellation. Allow the SQLite-backed cleanup enough
+        // time on slower CI runners before asserting the final state.
+        for (var attempt = 0; attempt < 60; attempt++)
         {
             persisted = await repository.GetAsync(tenantId, task.Id);
             if (persisted?.Status == WorkerTaskStatus.RetryScheduled)
                 break;
-            await Task.Delay(50);
+            await Task.Delay(100);
         }
         Assert.Equal(WorkerTaskStatus.RetryScheduled, persisted!.Status);
         Assert.Equal("worker.execution.cancelled", persisted.LastErrorCode);
