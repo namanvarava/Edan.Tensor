@@ -11,6 +11,31 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_platform_tenant_database_routine_allowlists_platform_tenants_TenantId') ALTER TABLE [platform_tenant_database_routine_allowlists] DROP CONSTRAINT [FK_platform_tenant_database_routine_allowlists_platform_tenants_TenantId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_platform_tenant_database_mutation_audits_platform_tenants_TenantId') ALTER TABLE [platform_tenant_database_mutation_audits] DROP CONSTRAINT [FK_platform_tenant_database_mutation_audits_platform_tenants_TenantId];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_platform_tenant_database_routine_allowlists_TenantId_SchemaName_RoutineName_Kind' AND object_id = OBJECT_ID(N'[platform_tenant_database_routine_allowlists]')) DROP INDEX [IX_platform_tenant_database_routine_allowlists_TenantId_SchemaName_RoutineName_Kind] ON [platform_tenant_database_routine_allowlists];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_platform_tenant_database_mutation_audits_TenantId_IdempotencyKey' AND object_id = OBJECT_ID(N'[platform_tenant_database_mutation_audits]')) DROP INDEX [IX_platform_tenant_database_mutation_audits_TenantId_IdempotencyKey] ON [platform_tenant_database_mutation_audits];
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'PK_platform_tenant_database_routine_allowlists') ALTER TABLE [platform_tenant_database_routine_allowlists] DROP CONSTRAINT [PK_platform_tenant_database_routine_allowlists];
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'PK_platform_tenant_database_mutation_audits') ALTER TABLE [platform_tenant_database_mutation_audits] DROP CONSTRAINT [PK_platform_tenant_database_mutation_audits];
+IF OBJECT_ID(N'[platform_tenant_database_routine_allowlists]', N'U') IS NOT NULL AND OBJECT_ID(N'[edpf_tntrtnalw]', N'U') IS NULL EXEC sp_rename N'[platform_tenant_database_routine_allowlists]', N'edpf_tntrtnalw';
+IF OBJECT_ID(N'[platform_tenant_database_mutation_audits]', N'U') IS NOT NULL AND OBJECT_ID(N'[edpf_tntmut_aud]', N'U') IS NULL EXEC sp_rename N'[platform_tenant_database_mutation_audits]', N'edpf_tntmut_aud';
+IF COL_LENGTH(N'dbo.edpf_tntrtnalw', N'Id') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntrtnalw', N'tnt_rtn_alwid') IS NULL EXEC sp_rename N'dbo.edpf_tntrtnalw.Id', N'tnt_rtn_alwid', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntrtnalw', N'TenantId') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntrtnalw', N'tntid') IS NULL EXEC sp_rename N'dbo.edpf_tntrtnalw.TenantId', N'tntid', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntrtnalw', N'SchemaName') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntrtnalw', N'schm_nm') IS NULL EXEC sp_rename N'dbo.edpf_tntrtnalw.SchemaName', N'schm_nm', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntrtnalw', N'CreatedAtUtc') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntrtnalw', N'crt_utc') IS NULL EXEC sp_rename N'dbo.edpf_tntrtnalw.CreatedAtUtc', N'crt_utc', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntrtnalw', N'UpdatedAtUtc') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntrtnalw', N'upd_utc') IS NULL EXEC sp_rename N'dbo.edpf_tntrtnalw.UpdatedAtUtc', N'upd_utc', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'Id') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'tnt_mut_audid') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.Id', N'tnt_mut_audid', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'TenantId') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'tntid') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.TenantId', N'tntid', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'IdempotencyKey') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'idem_key') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.IdempotencyKey', N'idem_key', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'Status') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'st') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.Status', N'st', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'CreatedAtUtc') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'crt_utc') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.CreatedAtUtc', N'crt_utc', N'COLUMN';
+IF COL_LENGTH(N'dbo.edpf_tntmut_aud', N'CompletedAtUtc') IS NOT NULL AND COL_LENGTH(N'dbo.edpf_tntmut_aud', N'cmp_utc') IS NULL EXEC sp_rename N'dbo.edpf_tntmut_aud.CompletedAtUtc', N'cmp_utc', N'COLUMN';
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'edpf_tntrtnalw_PK') ALTER TABLE [edpf_tntrtnalw] ADD CONSTRAINT [edpf_tntrtnalw_PK] PRIMARY KEY ([tnt_rtn_alwid]);
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'edpf_tntmut_aud_PK') ALTER TABLE [edpf_tntmut_aud] ADD CONSTRAINT [edpf_tntmut_aud_PK] PRIMARY KEY ([tnt_mut_audid]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntrtnalw_N01' AND object_id = OBJECT_ID(N'[edpf_tntrtnalw]')) CREATE UNIQUE INDEX [edpf_tntrtnalw_N01] ON [edpf_tntrtnalw] ([tntid], [schm_nm], [RoutineName], [Kind]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntmut_aud_N01' AND object_id = OBJECT_ID(N'[edpf_tntmut_aud]')) CREATE UNIQUE INDEX [edpf_tntmut_aud_N01] ON [edpf_tntmut_aud] ([tntid], [idem_key]);
+");
             migrationBuilder.DropForeignKey(
                 name: "FK_platform_authorization_audit_platform_tenants_TenantId",
                 table: "platform_authorization_audit");
@@ -983,6 +1008,11 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
                 principalTable: "edpf_tnt",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_tntrtnalw_FKTenantId') ALTER TABLE [edpf_tntrtnalw] ADD CONSTRAINT [edpf_tntrtnalw_FKTenantId] FOREIGN KEY ([tntid]) REFERENCES [edpf_tnt] ([Id]);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_tntmut_aud_FKTenantId') ALTER TABLE [edpf_tntmut_aud] ADD CONSTRAINT [edpf_tntmut_aud_FKTenantId] FOREIGN KEY ([tntid]) REFERENCES [edpf_tnt] ([Id]);
+");
         }
 
         /// <inheritdoc />
