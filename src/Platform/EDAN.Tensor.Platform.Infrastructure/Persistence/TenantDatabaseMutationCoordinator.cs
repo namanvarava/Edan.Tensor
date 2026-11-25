@@ -19,13 +19,31 @@ public sealed class TenantDatabaseMutationCoordinator(
     public async Task<TenantDatabaseMutationResult> ExecuteAsync(TenantId ownerTenantId, string idempotencyKey, IReadOnlyList<TenantDatabaseMutationStep> steps, CancellationToken cancellationToken = default)
     {
         if (steps.Count == 0) throw new ArgumentException("최소 하나의 변경 단계가 필요합니다.", nameof(steps));
+        if (steps.Count > 100) throw new ArgumentException("한 번의 변경 요청에는 최대 100개 단계만 허용됩니다.", nameof(steps));
         if (string.IsNullOrWhiteSpace(idempotencyKey)) throw new ArgumentException("멱등성 키가 필요합니다.", nameof(idempotencyKey));
+        if (steps.Any(x => x.TenantId != ownerTenantId ||
+            x.Compensation is { } compensation && compensation.TenantId != ownerTenantId))
+            throw new UnauthorizedAccessException("변경 단계는 요청 소유 Tenant의 DB만 대상으로 할 수 있습니다.");
         var existing = await db.TenantDatabaseMutationAudits.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == ownerTenantId && x.IdempotencyKey == idempotencyKey, cancellationToken);
         if (existing?.ResultJson is not null)
             return JsonSerializer.Deserialize<TenantDatabaseMutationResult>(existing.ResultJson) ?? throw new InvalidOperationException("변경 감사 결과를 읽을 수 없습니다.");
+        if (existing is not null)
+            throw new InvalidOperationException("동일한 멱등성 키의 변경 요청이 이미 실행 중입니다.");
         var audit = TenantDatabaseMutationAudit.Start(new TenantDatabaseMutationAuditId(Guid.NewGuid()), ownerTenantId, idempotencyKey, clock.GetUtcNow());
         db.TenantDatabaseMutationAudits.Add(audit);
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            var concurrent = await db.TenantDatabaseMutationAudits.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.TenantId == ownerTenantId && x.IdempotencyKey == idempotencyKey, cancellationToken);
+            if (concurrent?.ResultJson is not null)
+                return JsonSerializer.Deserialize<TenantDatabaseMutationResult>(concurrent.ResultJson)
+                    ?? throw new InvalidOperationException("동시 변경 감사 결과를 읽을 수 없습니다.");
+            throw new InvalidOperationException("동일한 멱등성 키의 변경 요청이 이미 실행 중입니다.");
+        }
         var results = new List<TenantDatabaseMutationStepResult>();
         var completed = new List<(int Index, TenantDatabaseMutationStep Step)>();
         for (var i = 0; i < steps.Count; i++)

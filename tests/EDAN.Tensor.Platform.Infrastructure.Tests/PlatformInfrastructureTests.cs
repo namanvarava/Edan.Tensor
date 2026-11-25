@@ -124,6 +124,26 @@ public sealed class PlatformInfrastructureTests
     }
 
     [Fact]
+    public async Task TenantMutationCoordinatorRejectsStepsForAnotherTenant()
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<PlatformDbContext>().UseSqlite(connection).Options;
+        await using var db = new PlatformDbContext(options);
+        await db.Database.MigrateAsync();
+        var owner = Tenant.Create(new TenantId(Guid.NewGuid()), new TenantCode("MUTATION-OWNER"), "소유 Tenant", DateTimeOffset.UtcNow);
+        db.Tenants.Add(owner);
+        await db.SaveChangesAsync();
+
+        var otherTenant = new TenantId(Guid.NewGuid());
+        var coordinator = new TenantDatabaseMutationCoordinator(new CountingRoutineExecutor(), db, TimeProvider.System);
+        var step = new TenantDatabaseMutationStep(otherTenant, TenantDatabaseRoutineKind.Procedure, "public", "apply_change", new Dictionary<string, string?>());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            coordinator.ExecuteAsync(owner.Id, "mutation-cross-tenant", [step]));
+    }
+
+    [Fact]
     public async Task TenantDatabaseConsistencyCheckerNormalizesEquivalentProviderRows()
     {
         var executor = new ConsistencyRoutineExecutor();
