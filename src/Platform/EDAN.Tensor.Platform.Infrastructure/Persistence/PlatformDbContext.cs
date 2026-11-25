@@ -98,7 +98,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         entity.Property(x => x.LastHealthAtUtc);
         entity.Property(x => x.CreatedAtUtc).IsRequired();
         entity.Property(x => x.UpdatedAtUtc);
-        entity.HasIndex(x => new { x.TenantId, x.Status }).IsUnique()
+        entity.HasIndex(x => new { x.TenantId, x.Provider, x.Status }).IsUnique()
             .HasFilter("\"Status\" = 'Active'");
         entity.HasIndex(x => new { x.TenantId, x.Provider });
         entity.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
