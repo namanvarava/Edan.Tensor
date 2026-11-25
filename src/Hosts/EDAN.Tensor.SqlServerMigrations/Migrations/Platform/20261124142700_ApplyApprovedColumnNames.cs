@@ -740,54 +740,6 @@ IF COL_LENGTH(N'[dbo].[edpf_authplcy_chg]', N'Id') IS NOT NULL
 " );
 
                         migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'TenantId') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'tntid') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[TenantId]', N'tntid', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'SubjectId') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'subid') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[SubjectId]', N'subid', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ResourceType') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'rsrc_typ') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[ResourceType]', N'rsrc_typ', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ProjectId') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'prjid') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[ProjectId]', N'prjid', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'OrganizationId') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'orgid') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[OrganizationId]', N'orgid', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'IsEnabled') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ena_yn') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[IsEnabled]', N'ena_yn', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'CreatedAtUtc') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'crt_utc') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
-IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'Id') IS NOT NULL
-   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'authplcyid') IS NULL
-    EXEC sp_rename N'[dbo].[edpf_authplcy].[Id]', N'authplcyid', 'COLUMN';
-" );
-
-                        migrationBuilder.Sql(@"
 IF COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'TenantId') IS NOT NULL
    AND COL_LENGTH(N'[dbo].[edpf_authaud_rtnchg]', N'tntid') IS NULL
     EXEC sp_rename N'[dbo].[edpf_authaud_rtnchg].[TenantId]', N'tntid', 'COLUMN';
