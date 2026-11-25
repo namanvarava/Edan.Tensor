@@ -6,7 +6,7 @@ param(
     [string]$ProviderHost = "localhost",
     [int[]]$ProviderPorts = @(5432, 1433, 1521),
     [string]$TokenFile,
-    [Guid]$BindingId,
+    [Guid]$BindingId = [Guid]::Empty,
     [ValidateSet('Procedure','Function','OraclePackageProcedure')][string]$RoutineKind,
     [string]$RoutineName,
     [string]$RoutineParametersJson = '{}',
