@@ -33,9 +33,9 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_rsrc_FKScopeOrgani
     ALTER TABLE [dbo].[edpf_rsrc] DROP CONSTRAINT [edpf_rsrc_FKScopeOrganizationId];
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authaud_arcattm_FKJobId')
     ALTER TABLE [dbo].[edpf_authaud_arcattm] DROP CONSTRAINT [edpf_authaud_arcattm_FKJobId];
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N01' AND object_id = OBJECT_ID(N'[dbo].[edpf_tntdbnd]'))
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N01' AND object_id = OBJECT_ID(N'dbo.edpf_tntdbnd'))
     DROP INDEX [edpf_tntdbnd_N01] ON [dbo].[edpf_tntdbnd];
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object_id = OBJECT_ID(N'[dbo].[edpf_tntdbnd]'))
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object_id = OBJECT_ID(N'dbo.edpf_tntdbnd'))
     DROP INDEX [edpf_tntdbnd_N02] ON [dbo].[edpf_tntdbnd];
 ");
 
