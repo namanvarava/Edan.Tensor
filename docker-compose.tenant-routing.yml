@@ -16,6 +16,12 @@ services:
       Authentication__MetadataAddress: ${Authentication__MetadataAddress:?Set Authentication__MetadataAddress}
       Authentication__Issuer: ${Authentication__Issuer:?Set Authentication__Issuer}
       Authentication__Audience: ${Authentication__Audience:-edan-tensor-api}
+      TenantDatabaseSecrets__PG_LOCAL__Username: ${TenantDatabaseSecrets__PG_LOCAL__Username:?Set PostgreSQL tenant username}
+      TenantDatabaseSecrets__PG_LOCAL__Password: ${TenantDatabaseSecrets__PG_LOCAL__Password:?Set PostgreSQL tenant password}
+      TenantDatabaseSecrets__MSSQL_LOCAL__Username: ${TenantDatabaseSecrets__MSSQL_LOCAL__Username:?Set SQL Server tenant username}
+      TenantDatabaseSecrets__MSSQL_LOCAL__Password: ${TenantDatabaseSecrets__MSSQL_LOCAL__Password:?Set SQL Server tenant password}
+      TenantDatabaseSecrets__ORACLE_LOCAL__Username: ${TenantDatabaseSecrets__ORACLE_LOCAL__Username:?Set Oracle tenant username}
+      TenantDatabaseSecrets__ORACLE_LOCAL__Password: ${TenantDatabaseSecrets__ORACLE_LOCAL__Password:?Set Oracle tenant password}
     ports:
       - "${API_PORT:-5000}:8080"
     volumes:
