@@ -12,13 +12,13 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey("FK_dataset_schema_revisions_datasets_DataSetId", "dataset_schema_revisions");
-            migrationBuilder.DropPrimaryKey("PK_dataset_schema_revisions", "dataset_schema_revisions");
-            migrationBuilder.RenameTable("dataset_schema_revisions", "edds_dsetschm_rev");
-            migrationBuilder.RenameColumn("DataSetId", "edds_dsetschm_rev", "dsetid");
-            migrationBuilder.RenameColumn("Version", "edds_dsetschm_rev", "ver");
-            migrationBuilder.RenameColumn("SchemaJson", "edds_dsetschm_rev", "schm_json");
-            migrationBuilder.RenameColumn("CreatedAtUtc", "edds_dsetschm_rev", "crt_utc");
+            migrationBuilder.DropForeignKey("FK_dataset_schema_revisions_datasets_DataSetId", "dataset_schema_revisions", schema: "public");
+            migrationBuilder.DropPrimaryKey("PK_dataset_schema_revisions", "dataset_schema_revisions", schema: "public");
+            migrationBuilder.RenameTable(name: "dataset_schema_revisions", schema: "public", newName: "edds_dsetschm_rev", newSchema: "public");
+            migrationBuilder.RenameColumn("DataSetId", "edds_dsetschm_rev", "dsetid", schema: "public");
+            migrationBuilder.RenameColumn("Version", "edds_dsetschm_rev", "ver", schema: "public");
+            migrationBuilder.RenameColumn("SchemaJson", "edds_dsetschm_rev", "schm_json", schema: "public");
+            migrationBuilder.RenameColumn("CreatedAtUtc", "edds_dsetschm_rev", "crt_utc", schema: "public");
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_datasets",
