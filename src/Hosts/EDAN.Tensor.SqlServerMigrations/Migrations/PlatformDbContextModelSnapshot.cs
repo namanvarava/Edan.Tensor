@@ -1115,7 +1115,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.PlatformDb
                     b.HasIndex("TenantId", "Provider")
                         .HasDatabaseName("edpf_tntdbnd_N01");
 
-                    b.HasIndex("TenantId", "Status")
+                    b.HasIndex("TenantId", "Provider", "Status")
                         .IsUnique()
                         .HasDatabaseName("edpf_tntdbnd_N02")
                         .HasFilter("\"Status\" = 'Active'");
