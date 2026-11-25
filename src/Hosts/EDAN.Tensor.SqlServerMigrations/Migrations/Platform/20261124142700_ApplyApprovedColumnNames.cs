@@ -64,6 +64,16 @@ WHERE (fk.parent_object_id = OBJECT_ID(N'dbo.edpf_authplcy') AND c.name = N'Proj
        WHERE rfkc.constraint_object_id = fk.object_id AND rc.name = N'ProjectId'));
 IF @dropAuthPolicyProjectFks <> N''
     EXEC sp_executesql @dropAuthPolicyProjectFks;
+
+DECLARE @dropAuthPolicyFks nvarchar(max) = N'';
+SELECT @dropAuthPolicyFks +=
+    N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(fk.parent_object_id)) + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id))
+    + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';'
+FROM sys.foreign_keys fk
+WHERE fk.parent_object_id = OBJECT_ID(N'dbo.edpf_authplcy')
+   OR fk.referenced_object_id = OBJECT_ID(N'dbo.edpf_authplcy');
+IF @dropAuthPolicyFks <> N''
+    EXEC sp_executesql @dropAuthPolicyFks;
 ");
 
             migrationBuilder.Sql(@"
