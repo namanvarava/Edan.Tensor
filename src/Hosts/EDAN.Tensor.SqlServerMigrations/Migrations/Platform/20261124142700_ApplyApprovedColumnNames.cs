@@ -10,6 +10,11 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_strqta_plcychg_FKPolicyId')
+    ALTER TABLE [dbo].[edpf_strqta_plcychg] DROP CONSTRAINT [edpf_strqta_plcychg_FKPolicyId];
+");
+
             migrationBuilder.DropUniqueConstraint(
                 name: "AK_edpf_strqta_plcy_Id_TenantId",
                 table: "edpf_strqta_plcy");
