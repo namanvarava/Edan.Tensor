@@ -13,7 +13,8 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
             // The approved naming migrations already applied these changes. This
             // generated reconciliation migration would rename columns that are
             // already in their final form on existing SQL Server databases.
-            return;
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+                return;
 
             migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_strqta_plcy_strqtaplcyid_tntid' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_strqta_plcy]')) ALTER TABLE [dbo].[edpf_strqta_plcy] DROP CONSTRAINT [AK_edpf_strqta_plcy_strqtaplcyid_tntid];");
 
