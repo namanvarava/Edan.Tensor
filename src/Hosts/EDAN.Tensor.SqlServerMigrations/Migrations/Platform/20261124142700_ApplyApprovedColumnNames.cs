@@ -70,57 +70,57 @@ IF @dropAuthPolicyProjectFks <> N''
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'tntid') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [tntid] uniqueidentifier NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [tntid] = [TenantId];
-    ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [tntid] uniqueidentifier NOT NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [tntid] = [TenantId];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [tntid] uniqueidentifier NOT NULL;';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'subid') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [subid] nvarchar(200) NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [subid] = [SubjectId];
-    ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [subid] nvarchar(200) NOT NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [subid] = [SubjectId];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [subid] nvarchar(200) NOT NULL;';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'rsrc_typ') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [rsrc_typ] nvarchar(80) NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [rsrc_typ] = [ResourceType];
-    ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [rsrc_typ] nvarchar(80) NOT NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [rsrc_typ] = [ResourceType];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [rsrc_typ] nvarchar(80) NOT NULL;';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'prjid') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [prjid] uniqueidentifier NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [prjid] = [ProjectId];
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [prjid] = [ProjectId];';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'orgid') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [orgid] uniqueidentifier NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [orgid] = [OrganizationId];
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [orgid] = [OrganizationId];';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ena_yn') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [ena_yn] bit NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [ena_yn] = [IsEnabled];
-    ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [ena_yn] bit NOT NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [ena_yn] = [IsEnabled];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [ena_yn] bit NOT NULL;';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'crt_utc') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [crt_utc] datetimeoffset NULL;
-    UPDATE [dbo].[edpf_authplcy] SET [crt_utc] = [CreatedAtUtc];
-    ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [crt_utc] datetimeoffset NOT NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [crt_utc] = [CreatedAtUtc];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [crt_utc] datetimeoffset NOT NULL;';
 END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'TenantId') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [TenantId];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [TenantId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'SubjectId') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [SubjectId];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [SubjectId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ResourceType') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ResourceType];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ResourceType];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ProjectId') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ProjectId];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ProjectId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'OrganizationId') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [OrganizationId];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [OrganizationId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'IsEnabled') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [IsEnabled];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [IsEnabled];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'CreatedAtUtc') IS NOT NULL
-    ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [CreatedAtUtc];
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [CreatedAtUtc];';
 ");
 
             migrationBuilder.Sql(@"
