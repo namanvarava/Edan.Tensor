@@ -33,6 +33,10 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_rsrc_FKScopeOrgani
     ALTER TABLE [dbo].[edpf_rsrc] DROP CONSTRAINT [edpf_rsrc_FKScopeOrganizationId];
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authaud_arcattm_FKJobId')
     ALTER TABLE [dbo].[edpf_authaud_arcattm] DROP CONSTRAINT [edpf_authaud_arcattm_FKJobId];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N01' AND object_id = OBJECT_ID(N'[dbo].[edpf_tntdbnd]'))
+    DROP INDEX [edpf_tntdbnd_N01] ON [dbo].[edpf_tntdbnd];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object_id = OBJECT_ID(N'[dbo].[edpf_tntdbnd]'))
+    DROP INDEX [edpf_tntdbnd_N02] ON [dbo].[edpf_tntdbnd];
 ");
 
                         migrationBuilder.Sql(@"
@@ -917,6 +921,17 @@ IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'Id') IS NOT NULL
    AND COL_LENGTH(N'[dbo].[edpf_authaud]', N'authaudid') IS NULL
     EXEC sp_rename N'[dbo].[edpf_authaud].[Id]', N'authaudid', 'COLUMN';
 " );
+
+            migrationBuilder.CreateIndex(
+                name: "edpf_tntdbnd_N01",
+                table: "edpf_tntdbnd",
+                columns: new[] { "tntid", "prvdr" });
+
+            migrationBuilder.CreateIndex(
+                name: "edpf_tntdbnd_N02",
+                table: "edpf_tntdbnd",
+                columns: new[] { "tntid", "st" },
+                unique: true);
 
             migrationBuilder.AddUniqueConstraint(
                 name: "AK_edpf_strqta_plcy_strqtaplcyid_tntid",
