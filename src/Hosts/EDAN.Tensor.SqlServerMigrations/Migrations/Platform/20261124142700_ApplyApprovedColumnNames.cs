@@ -95,6 +95,12 @@ BEGIN
     EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [rsrc_typ] = [ResourceType];';
     EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [rsrc_typ] nvarchar(80) NOT NULL;';
 END;
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'act') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[edpf_authplcy] ADD [act] nvarchar(120) NULL;
+    EXEC sp_executesql N'UPDATE [dbo].[edpf_authplcy] SET [act] = [Action];';
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] ALTER COLUMN [act] nvarchar(120) NOT NULL;';
+END;
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'prjid') IS NULL
 BEGIN
     ALTER TABLE [dbo].[edpf_authplcy] ADD [prjid] uniqueidentifier NULL;
@@ -123,6 +129,8 @@ IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'SubjectId') IS NOT NULL
     EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [SubjectId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ResourceType') IS NOT NULL
     EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ResourceType];';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'Action') IS NOT NULL
+    EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [Action];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ProjectId') IS NOT NULL
     EXEC sp_executesql N'ALTER TABLE [dbo].[edpf_authplcy] DROP COLUMN [ProjectId];';
 IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'OrganizationId') IS NOT NULL
