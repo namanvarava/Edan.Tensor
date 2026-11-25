@@ -17,6 +17,20 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_prjmbr_FKProjectId
     ALTER TABLE [dbo].[edpf_prjmbr] DROP CONSTRAINT [edpf_prjmbr_FKProjectId];
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_plcy_FKScopeProjectId')
     ALTER TABLE [dbo].[edpf_plcy] DROP CONSTRAINT [edpf_plcy_FKScopeProjectId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authplcy_FKProjectId')
+    ALTER TABLE [dbo].[edpf_authplcy] DROP CONSTRAINT [edpf_authplcy_FKProjectId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_rsrc_FKScopeProjectId')
+    ALTER TABLE [dbo].[edpf_rsrc] DROP CONSTRAINT [edpf_rsrc_FKScopeProjectId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_prj_FKOrganizationId')
+    ALTER TABLE [dbo].[edpf_prj] DROP CONSTRAINT [edpf_prj_FKOrganizationId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authplcy_FKOrganizationId')
+    ALTER TABLE [dbo].[edpf_authplcy] DROP CONSTRAINT [edpf_authplcy_FKOrganizationId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_orgmbr_FKOrganizationId')
+    ALTER TABLE [dbo].[edpf_orgmbr] DROP CONSTRAINT [edpf_orgmbr_FKOrganizationId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_plcy_FKScopeOrganizationId')
+    ALTER TABLE [dbo].[edpf_plcy] DROP CONSTRAINT [edpf_plcy_FKScopeOrganizationId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_rsrc_FKScopeOrganizationId')
+    ALTER TABLE [dbo].[edpf_rsrc] DROP CONSTRAINT [edpf_rsrc_FKScopeOrganizationId];
 ");
 
             migrationBuilder.DropUniqueConstraint(
