@@ -39,10 +39,16 @@ IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object
     DROP INDEX [edpf_tntdbnd_N02] ON [dbo].[edpf_tntdbnd];
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_platform_authorization_policies_project_requires_organization')
     ALTER TABLE [dbo].[edpf_authplcy] DROP CONSTRAINT [CK_platform_authorization_policies_project_requires_organization];
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N01' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
-    DROP INDEX [edpf_authplcy_N01] ON [dbo].[edpf_authplcy];
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N02' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
-    DROP INDEX [edpf_authplcy_N02] ON [dbo].[edpf_authplcy];
+DECLARE @dropAuthPolicyIndexes nvarchar(max) = N'';
+SELECT @dropAuthPolicyIndexes +=
+    N'DROP INDEX ' + QUOTENAME(i.name) + N' ON [dbo].[edpf_authplcy];'
+FROM sys.indexes i
+WHERE i.object_id = OBJECT_ID(N'dbo.edpf_authplcy')
+  AND i.is_primary_key = 0
+  AND i.is_unique_constraint = 0
+  AND i.name IS NOT NULL;
+IF @dropAuthPolicyIndexes <> N''
+    EXEC sp_executesql @dropAuthPolicyIndexes;
 
 DECLARE @dropAuthPolicyProjectFks nvarchar(max) = N'';
 SELECT @dropAuthPolicyProjectFks +=
@@ -951,6 +957,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N01' AND o
     CREATE INDEX [edpf_authplcy_N01] ON [dbo].[edpf_authplcy] ([orgid], [tntid]);
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N02' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
     CREATE INDEX [edpf_authplcy_N02] ON [dbo].[edpf_authplcy] ([prjid], [orgid], [tntid]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N03' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
+    CREATE INDEX [edpf_authplcy_N03] ON [dbo].[edpf_authplcy] ([tntid], [subid], [act], [rsrc_typ], [ena_yn]);
 " );
 
             migrationBuilder.CreateIndex(
