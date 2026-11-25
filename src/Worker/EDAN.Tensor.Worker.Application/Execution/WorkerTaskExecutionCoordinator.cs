@@ -113,6 +113,23 @@ public sealed class WorkerTaskExecutionCoordinator(
         await using var executionScope = execution;
         var handedOff = 0;
 
+        async Task ReleaseCancellationAsync(string errorCode)
+        {
+            // 취소 직후에는 다른 lease 상태 저장과 경합할 수 있으므로
+            // 한 번의 낙관적 동시성 실패로 작업을 Running에 남기지 않습니다.
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                if (await repository.TryFailAsync(
+                        tenantId, taskId, leaseId, fencingToken, errorCode,
+                        timeProvider.GetUtcNow(), timeProvider.GetUtcNow().AddMinutes(1),
+                        CancellationToken.None))
+                    return;
+
+                if (attempt < 2)
+                    await Task.Delay(TimeSpan.FromMilliseconds(10), CancellationToken.None);
+            }
+        }
+
         async Task<bool> HandoffAsync(CancellationToken token)
         {
             var checkpoint = await execution.RequestCheckpointAndStopAsync(token);
@@ -180,10 +197,7 @@ public sealed class WorkerTaskExecutionCoordinator(
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // 실행 중 취소되어도 Lease를 만료까지 보유하지 않고 재시도 상태로 정리합니다.
-                now = timeProvider.GetUtcNow();
-                await repository.TryFailAsync(
-                    tenantId, taskId, leaseId, fencingToken, "worker.execution.cancelled",
-                    now, now.AddMinutes(1), CancellationToken.None);
+                await ReleaseCancellationAsync("worker.execution.cancelled");
                 throw;
             }
             catch
