@@ -66,6 +66,33 @@ IF @dropAuthPolicyProjectFks <> N''
     EXEC sp_executesql @dropAuthPolicyProjectFks;
 ");
 
+            migrationBuilder.Sql(@"
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'TenantId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'tntid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[TenantId]', N'tntid', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'SubjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'subid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[SubjectId]', N'subid', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ResourceType') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'rsrc_typ') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[ResourceType]', N'rsrc_typ', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ProjectId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'prjid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[ProjectId]', N'prjid', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'OrganizationId') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'orgid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[OrganizationId]', N'orgid', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'IsEnabled') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'ena_yn') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[IsEnabled]', N'ena_yn', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'CreatedAtUtc') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'crt_utc') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[CreatedAtUtc]', N'crt_utc', 'COLUMN';
+IF COL_LENGTH(N'[dbo].[edpf_authplcy]', N'Id') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[edpf_authplcy]', N'authplcyid') IS NULL
+    EXEC sp_rename N'[dbo].[edpf_authplcy].[Id]', N'authplcyid', 'COLUMN';
+");
+
                         migrationBuilder.Sql(@"
 IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edpf_strqta_plcy_Id_TenantId' AND parent_object_id = OBJECT_ID(N'[dbo].[edpf_strqta_plcy]'))
     ALTER TABLE [dbo].[edpf_strqta_plcy] DROP CONSTRAINT [AK_edpf_strqta_plcy_Id_TenantId];
