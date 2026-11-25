@@ -435,7 +435,15 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                 column: "dsetqtathrevtid");
 
             migrationBuilder.AddPrimaryKey("edds_dsetschm_rev_PK", "edds_dsetschm_rev", new[] { "dsetid", "ver" });
-            migrationBuilder.AddForeignKey("edds_dsetschm_rev_FKDataSetId", "edds_dsetschm_rev", "dsetid", "edds_dset", "dsetid", onDelete: ReferentialAction.Cascade);
+            migrationBuilder.AddForeignKey(
+                name: "edds_dsetschm_rev_FKDataSetId",
+                table: "edds_dsetschm_rev",
+                column: "dsetid",
+                principalTable: "edds_dset",
+                principalColumn: "dsetid",
+                onDelete: ReferentialAction.Cascade,
+                schema: "public",
+                principalSchema: "public");
         }
 
         /// <inheritdoc />
