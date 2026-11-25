@@ -31,6 +31,8 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_plcy_FKScopeOrgani
     ALTER TABLE [dbo].[edpf_plcy] DROP CONSTRAINT [edpf_plcy_FKScopeOrganizationId];
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_rsrc_FKScopeOrganizationId')
     ALTER TABLE [dbo].[edpf_rsrc] DROP CONSTRAINT [edpf_rsrc_FKScopeOrganizationId];
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'edpf_authaud_arcattm_FKJobId')
+    ALTER TABLE [dbo].[edpf_authaud_arcattm] DROP CONSTRAINT [edpf_authaud_arcattm_FKJobId];
 ");
 
             migrationBuilder.DropUniqueConstraint(
