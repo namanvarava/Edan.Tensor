@@ -52,8 +52,12 @@ public sealed class TenantDatabaseConsistencyChecker(ITenantDatabaseRoutineExecu
     private static string Normalize(IReadOnlyList<IReadOnlyDictionary<string, object?>> rows)
     {
         var normalizedRows = rows.Select(row => row
+            // Provider drivers may expose different labels for the same scalar
+            // result (for example, PostgreSQL's function name vs SQL Server's
+            // "Result"). Compare the ordered values, not driver-specific labels.
             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => NormalizeValue(x.Value), StringComparer.OrdinalIgnoreCase))
+            .Select(x => NormalizeValue(x.Value))
+            .ToArray())
             .OrderBy(row => JsonSerializer.Serialize(row, JsonOptions), StringComparer.Ordinal)
             .ToArray();
         return JsonSerializer.Serialize(normalizedRows, JsonOptions);
