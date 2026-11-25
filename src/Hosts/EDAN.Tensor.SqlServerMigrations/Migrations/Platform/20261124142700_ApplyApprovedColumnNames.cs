@@ -39,6 +39,10 @@ IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_tntdbnd_N02' AND object
     DROP INDEX [edpf_tntdbnd_N02] ON [dbo].[edpf_tntdbnd];
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_platform_authorization_policies_project_requires_organization')
     ALTER TABLE [dbo].[edpf_authplcy] DROP CONSTRAINT [CK_platform_authorization_policies_project_requires_organization];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N01' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
+    DROP INDEX [edpf_authplcy_N01] ON [dbo].[edpf_authplcy];
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N02' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
+    DROP INDEX [edpf_authplcy_N02] ON [dbo].[edpf_authplcy];
 
 DECLARE @dropAuthPolicyProjectFks nvarchar(max) = N'';
 SELECT @dropAuthPolicyProjectFks +=
@@ -943,6 +947,10 @@ IF COL_LENGTH(N'[dbo].[edpf_authaud]', N'Id') IS NOT NULL
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_platform_authorization_policies_project_requires_organization')
     ALTER TABLE [dbo].[edpf_authplcy] ADD CONSTRAINT [CK_platform_authorization_policies_project_requires_organization]
         CHECK ([prjid] IS NULL OR [orgid] IS NOT NULL);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N01' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
+    CREATE INDEX [edpf_authplcy_N01] ON [dbo].[edpf_authplcy] ([orgid], [tntid]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edpf_authplcy_N02' AND object_id = OBJECT_ID(N'dbo.edpf_authplcy'))
+    CREATE INDEX [edpf_authplcy_N02] ON [dbo].[edpf_authplcy] ([prjid], [orgid], [tntid]);
 " );
 
             migrationBuilder.CreateIndex(
