@@ -351,13 +351,13 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
 
         /// <inheritdoc />        private static void RenameColumnIfNeeded(MigrationBuilder migrationBuilder, string name, string table, string newName)
         {
-            migrationBuilder.Sql($@"DO $
+            migrationBuilder.Sql($@"DO $mig$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '{table}' AND column_name = '{name}')
        AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '{table}' AND column_name = '{newName}') THEN
         EXECUTE format('ALTER TABLE %I RENAME COLUMN %I TO %I', '{table}', '{name}', '{newName}');
     END IF;
-END $;");
+END $mig$;");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
