@@ -446,9 +446,7 @@ END $$;
                 name: "edpf_prjmbr_PK",
                 table: "edpf_prjmbr");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_prj_prjid_orgid_tntid",
-                table: "edpf_prj");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edpf_prj DROP CONSTRAINT IF EXISTS \"AK_edpf_prj_prjid_orgid_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_prj_PK",
@@ -462,9 +460,7 @@ END $$;
                 name: "edpf_orgmbr_PK",
                 table: "edpf_orgmbr");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_org_orgid_tntid",
-                table: "edpf_org");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edpf_org DROP CONSTRAINT IF EXISTS \"AK_edpf_org_orgid_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_org_PK",
@@ -490,9 +486,7 @@ END $$;
                 name: "edpf_authaud_arcschd_PK",
                 table: "edpf_authaud_arcschd");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid",
-                table: "edpf_authaud_arcjob");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edpf_authaud_arcjob DROP CONSTRAINT IF EXISTS \"AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_authaud_arcjob_PK",
@@ -1474,9 +1468,7 @@ END $$;
                 name: "edw_03002_PK",
                 table: "edw_03002");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_03001_03001id_tntid",
-                table: "edw_03001");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edw_03001 DROP CONSTRAINT IF EXISTS \"AK_edw_03001_03001id_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edw_03001_PK",
@@ -1486,9 +1478,7 @@ END $$;
                 name: "edw_02002_PK",
                 table: "edw_02002");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_02001_02001id_tntid",
-                table: "edw_02001");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edw_02001 DROP CONSTRAINT IF EXISTS \"AK_edw_02001_02001id_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edw_02001_PK",
@@ -1522,9 +1512,7 @@ END $$;
                 name: "edw_01008_PK",
                 table: "edw_01008");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01007_01007id_orgid_tntid",
-                table: "edw_01007");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edw_01007 DROP CONSTRAINT IF EXISTS \"AK_edw_01007_01007id_orgid_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edw_01007_PK",
@@ -1542,9 +1530,7 @@ END $$;
                 name: "edw_01004_PK",
                 table: "edw_01004");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01003_01003id_tntid",
-                table: "edw_01003");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edw_01003 DROP CONSTRAINT IF EXISTS \"AK_edw_01003_01003id_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edw_01003_PK",
