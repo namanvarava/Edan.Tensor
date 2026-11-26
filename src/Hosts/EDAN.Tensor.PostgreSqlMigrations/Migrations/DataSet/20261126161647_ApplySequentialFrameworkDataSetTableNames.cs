@@ -22,6 +22,25 @@ DECLARE
 BEGIN
     FOR item IN
         SELECT * FROM (VALUES
+                ('edds_dsetvld_prf','nm','dset_vld_prfnm'),
+                ('edds_dsetvld_prf','dsetvldprfid','dset_vld_prfid'),
+                ('edds_dsetvld_exc','dsetvldexcid','dset_vld_excid'),
+                ('edds_dsetvld_dtl','dsetvlddtlid','dset_vld_dtlid'),
+                ('edds_dsetstr_usgsnp','dsetstrusgsnpid','dset_str_usg_snpid'),
+                ('edds_dsetqta_threvt','dsetqtathrevtid','dset_qta_thr_evtid'),
+                ('edds_dsetvld_seenkey','dsetvldseenkeyid','dset_vld_seen_keyid'),
+                ('edds_dset','nm','dsetnm')
+        ) AS v(table_name, existing_name, canonical_name)
+    LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = item.table_name)
+           AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = item.table_name AND column_name = item.existing_name)
+           AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = item.table_name AND column_name = item.canonical_name) THEN
+            EXECUTE format('ALTER TABLE %I RENAME COLUMN %I TO %I', item.table_name, item.existing_name, item.canonical_name);
+        END IF;
+    END LOOP;
+
+    FOR item IN
+        SELECT * FROM (VALUES
                 ('edds_dsetvld_seenkey','dset_vld_seen_keyid','05009id'),
                 ('edds_dsetvld_prf','dset_vld_prfnm','05005nm'),
                 ('edds_dsetvld_prf','dset_vld_prfid','05005id'),
