@@ -228,7 +228,7 @@ BEGIN
                 ('edw_03002','edpf_authaud_arcattm_N02','edw_03002_N02'),
                 ('edw_03002','edpf_authaud_arcattm_N01','edw_03002_N01'),
                 ('edw_01011','edpf_authaud_N02','edw_01011_N02'),
-                ('edw_01011','edpf_authaud_N01','edw_01011_N01'),
+                ('edw_01011','edpf_authaud_N01','edw_01011_N01')
         ) AS v(table_name, source_name, target_name)
     LOOP
         source_table := CASE item.table_name
