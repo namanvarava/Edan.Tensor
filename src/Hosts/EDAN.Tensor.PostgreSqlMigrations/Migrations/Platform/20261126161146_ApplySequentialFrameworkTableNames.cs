@@ -175,6 +175,7 @@ DO $$
 DECLARE
     item record;
     existing_name text;
+    source_table text;
 BEGIN
     FOR item IN
         SELECT * FROM (VALUES
@@ -262,6 +263,31 @@ BEGIN
                 ('edpf_tnt','edw_01001_N01','edpf_tnt_N01')
         ) AS v(table_name, source_name, target_name)
     LOOP
+        source_table := CASE item.table_name
+            WHEN 'edw_01001' THEN 'edpf_tnt'
+            WHEN 'edw_01002' THEN 'edpf_tntmbr'
+            WHEN 'edw_01003' THEN 'edpf_org'
+            WHEN 'edw_01004' THEN 'edpf_usr'
+            WHEN 'edw_01005' THEN 'edpf_orgmbr'
+            WHEN 'edw_01006' THEN 'edpf_prjmbr'
+            WHEN 'edw_01007' THEN 'edpf_prj'
+            WHEN 'edw_01008' THEN 'edpf_rsrc'
+            WHEN 'edw_01009' THEN 'edpf_plcy'
+            WHEN 'edw_01010' THEN 'edpf_authplcy'
+            WHEN 'edw_01011' THEN 'edpf_authaud'
+            WHEN 'edw_01012' THEN 'edpf_authplcy_chg'
+            WHEN 'edw_01013' THEN 'edpf_authaud_rtn'
+            WHEN 'edw_01014' THEN 'edpf_authaud_rtnchg'
+            WHEN 'edw_02001' THEN 'edpf_strqta_plcy'
+            WHEN 'edw_02002' THEN 'edpf_strqta_plcychg'
+            WHEN 'edw_03001' THEN 'edpf_authaud_arcjob'
+            WHEN 'edw_03002' THEN 'edpf_authaud_arcattm'
+            WHEN 'edw_03003' THEN 'edpf_authaud_arcschd'
+            WHEN 'edw_04001' THEN 'edpf_tntdbnd'
+            WHEN 'edw_04002' THEN 'edpf_tntrtnalw'
+            WHEN 'edw_04003' THEN 'edpf_tntmut_aud'
+            ELSE item.table_name
+        END;
         IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = item.source_name)
            AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = item.target_name) THEN
             SELECT i.relname INTO existing_name
@@ -270,7 +296,7 @@ BEGIN
             JOIN pg_class t ON t.oid = x.indrelid
             JOIN pg_namespace n ON n.oid = t.relnamespace
             WHERE n.nspname = 'public'
-              AND t.relname = item.table_name
+              AND t.relname = source_table
               AND NOT x.indisprimary
             ORDER BY i.relname
             LIMIT 1;
