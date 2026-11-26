@@ -432,9 +432,7 @@ END $$;
                 name: "edpf_strqta_plcychg_PK",
                 table: "edpf_strqta_plcychg");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_str_qta_plcyid_tntid",
-                table: "edpf_strqta_plcy");
+            migrationBuilder.Sql("ALTER TABLE IF EXISTS edpf_strqta_plcy DROP CONSTRAINT IF EXISTS \"AK_edpf_strqta_plcy_str_qta_plcyid_tntid\";");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_strqta_plcy_PK",
