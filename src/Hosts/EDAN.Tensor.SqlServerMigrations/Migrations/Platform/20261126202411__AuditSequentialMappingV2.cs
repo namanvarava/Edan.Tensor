@@ -10,21 +10,19 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_03001_auth_aud_arc_jobid_tntid",
-                table: "edw_03001");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_02001_str_qta_plcyid_tntid",
-                table: "edw_02001");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01007_prjid_orgid_tntid",
-                table: "edw_01007");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01003_orgid_tntid",
-                table: "edw_01003");
+            migrationBuilder.Sql(@"
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql +
+    N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + N'.' +
+    QUOTENAME(OBJECT_NAME(parent_object_id)) + N' DROP CONSTRAINT ' + QUOTENAME(name) + N';'
+FROM sys.key_constraints
+WHERE type = 'UQ'
+  AND name IN
+  (N'AK_edw_03001_auth_aud_arc_jobid_tntid',
+   N'AK_edw_02001_str_qta_plcyid_tntid',
+   N'AK_edw_01007_prjid_orgid_tntid',
+   N'AK_edw_01003_orgid_tntid');
+IF @sql <> N'' EXEC sys.sp_executesql @sql;");
 
             migrationBuilder.RenameColumn(
                 name: "tnt_mut_audid",
