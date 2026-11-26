@@ -27,7 +27,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
-            migrationBuilder.Sql("DECLARE v_old NUMBER; v_new NUMBER; BEGIN SELECT COUNT(*) INTO v_old FROM user_tab_columns WHERE table_name = 'EDPF_TNTMUT_AUD' AND column_name = 'TNTMUTAUDID'; SELECT COUNT(*) INTO v_new FROM user_tab_columns WHERE table_name = 'EDPF_TNTMUT_AUD' AND column_name = 'TNT_MUT_AUDID'; IF v_old > 0 AND v_new = 0 THEN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_tntmut_aud\" RENAME COLUMN \"tntmutaudid\" TO \"tnt_mut_audid\"'; END IF; END;");
+            migrationBuilder.Sql("DECLARE v_old NUMBER; v_new NUMBER; BEGIN SELECT COUNT(*) INTO v_old FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid'; SELECT COUNT(*) INTO v_new FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid'; IF v_old > 0 AND v_new = 0 THEN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_tntmut_aud\" RENAME COLUMN \"tntmutaudid\" TO \"tnt_mut_audid\"'; END IF; END;");
 
             migrationBuilder.RenameColumn(
                 name: "tntmbrid",
