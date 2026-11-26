@@ -12,8 +12,46 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "edds_dsetschm_rev");
+            // Older approved-schema installs may already use compact column names.
+            // Normalize them to the migration's source names before applying the final rename.
+            migrationBuilder.Sql("""
+DO $$
+DECLARE
+    item record;
+    existing_name text;
+BEGIN
+    FOR item IN
+        SELECT * FROM (VALUES
+                ('edds_dsetvld_seenkey','dset_vld_seen_keyid','05009id'),
+                ('edds_dsetvld_prf','dset_vld_prfnm','05005nm'),
+                ('edds_dsetvld_prf','dset_vld_prfid','05005id'),
+                ('edds_dsetvld_exc','dset_vld_excid','05007id'),
+                ('edds_dsetvld_dtl','dset_vld_dtlcd','05008cd'),
+                ('edds_dsetvld_dtl','dset_vld_dtlid','05008id'),
+                ('edds_dsetstr_usgsnp','dset_str_usg_snpid','05003id'),
+                ('edds_dsetqta_threvt','dset_qta_thr_evtid','05004id'),
+                ('edds_dset','dsetnm','05001nm'),
+                ('edds_dset','dsetid','05001id')
+        ) AS v(table_name, source_name, target_name)
+    LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = item.table_name)
+           AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = item.table_name AND column_name = item.source_name)
+           AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = item.table_name AND column_name = item.target_name) THEN
+            SELECT column_name INTO existing_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = item.table_name
+              AND replace(column_name, '_', '') = replace(item.source_name, '_', '')
+            LIMIT 1;
+            IF existing_name IS NOT NULL THEN
+                EXECUTE format('ALTER TABLE %I RENAME COLUMN %I TO %I', item.table_name, existing_name, item.source_name);
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
+""");
+
+            migrationBuilder.Sql("DROP TABLE IF EXISTS edds_dsetschm_rev;");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edds_dsetvld_seenkey_PK",
