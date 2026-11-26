@@ -58,7 +58,8 @@ FROM (VALUES
  (N'edpf_org',N'orgnm',N'nm'),
  (N'edpf_org',N'orgcd',N'cd'),
  (N'edpf_authplcy_chg',N'auth_plcy_chgid',N'authplcychgid'),
- (N'edpf_authplcy',N'auth_plcyid',N'authplcyid')) AS m(table_name,legacy_name,compact_name);
+ (N'edpf_authplcy',N'auth_plcyid',N'authplcyid'),
+ (N'edpf_authaud_rtnchg',N'auth_aud_rtn_chgid',N'authaudrtnchgid')) AS m(table_name,legacy_name,compact_name);
 OPEN c;
 FETCH NEXT FROM c INTO @table,@legacy,@compact;
 WHILE @@FETCH_STATUS = 0
