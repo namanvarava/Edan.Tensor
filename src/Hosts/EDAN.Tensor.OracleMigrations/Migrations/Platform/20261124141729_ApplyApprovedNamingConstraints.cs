@@ -716,32 +716,6 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_authaud",
                 column: "Id");
 
-            migrationBuilder.CreateTable(
-                name: "edpf_tntmut_aud",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "RAW(16)", nullable: false),
-                    TenantId = table.Column<Guid>(type: "RAW(16)", nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "NVARCHAR2(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<string>(type: "NVARCHAR2(32)", maxLength: 32, nullable: false),
-                    Succeeded = table.Column<bool>(type: "BOOLEAN", nullable: true),
-                    Compensated = table.Column<bool>(type: "BOOLEAN", nullable: true),
-                    ResultJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    Error = table.Column<string>(type: "NVARCHAR2(2000)", maxLength: 2000, nullable: true),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
-                    CompletedAtUtc = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("edpf_tntmut_aud_PK", x => x.Id);
-                    table.ForeignKey(
-                        name: "edpf_tntmut_aud_FKTenantId",
-                        column: x => x.TenantId,
-                        principalTable: "edpf_tnt",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
             migrationBuilder.AddCheckConstraint(
                 name: "CK_edpf_rsrc_project_requires_organization",
                 table: "edpf_rsrc",
@@ -751,20 +725,6 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "CK_edpf_plcy_project_requires_organization",
                 table: "edpf_plcy",
                 sql: "\"project_id\" IS NULL OR \"organization_id\" IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "edpf_tntmut_aud_N01",
-                table: "edpf_tntmut_aud",
-                columns: new[] { "TenantId", "IdempotencyKey" },
-                unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "edpf_tntmut_aud_FKTenantId",
-                table: "edpf_tntmut_aud",
-                column: "TenantId",
-                principalTable: "edpf_tnt",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "edpf_authaud_FKTenantId",
