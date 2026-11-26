@@ -10,6 +10,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_03001\" DROP CONSTRAINT \"AK_edw_03001_auth_aud_arc_jobid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_02001\" DROP CONSTRAINT \"AK_edw_02001_str_qta_plcyid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
@@ -182,11 +183,13 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "AK_edw_01003_01003id_tntid",
                 table: "edw_01003",
                 columns: new[] { "01003id", "tntid" });
+        #endif
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.DropUniqueConstraint(
                 name: "AK_edw_03001_03001id_tntid",
                 table: "edw_03001");
@@ -367,6 +370,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "AK_edw_01003_orgid_tntid",
                 table: "edw_01003",
                 columns: new[] { "orgid", "tntid" });
+        #endif
         }
     }
 }
