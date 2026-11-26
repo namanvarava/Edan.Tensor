@@ -15,10 +15,6 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
                 table: "edpf_authaud");
 
             migrationBuilder.DropForeignKey(
-                name: "edpf_authaud_arcattm_FKJobId",
-                table: "edpf_authaud_arcattm");
-
-            migrationBuilder.DropForeignKey(
                 name: "edpf_authaud_arcattm_FKTenantId",
                 table: "edpf_authaud_arcattm");
 
