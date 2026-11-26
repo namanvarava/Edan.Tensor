@@ -1049,7 +1049,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
             migrationBuilder.AddForeignKey(
                 name: "edpf_inv_FKUserId",
                 table: "edpf_inv",
-                column: "UserId",
+                column: "usrid",
                 principalTable: "edw_01004",
                 principalColumn: "01004id",
                 onDelete: ReferentialAction.Restrict);
