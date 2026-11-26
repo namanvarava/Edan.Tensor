@@ -172,6 +172,15 @@ END $$;
             // Normalize pre-existing semantic index names before EF renames them.
             migrationBuilder.Sql("""
 DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'IX_platform_users_TenantId_Email')
+       AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'edpf_usr_N01') THEN
+        ALTER INDEX "IX_platform_users_TenantId_Email" RENAME TO "edpf_usr_N01";
+    END IF;
+END $$;
+""");
+            migrationBuilder.Sql("""
+DO $$
 DECLARE
     item record;
     existing_name text;
