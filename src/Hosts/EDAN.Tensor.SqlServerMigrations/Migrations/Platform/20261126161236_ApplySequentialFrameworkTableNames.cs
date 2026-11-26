@@ -9,7 +9,36 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
-        {`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`nmigrationBuilder.DropPrimaryKey(
+        {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+migrationBuilder.DropPrimaryKey(
                 name: "edpf_usr_PK",
                 table: "edpf_usr");
 
@@ -924,7 +953,37 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
-        {`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`n`r`nmigrationBuilder.DropPrimaryKey(
+        {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+migrationBuilder.DropPrimaryKey(
                 name: "edw_04003_PK",
                 table: "edw_04003");
 
