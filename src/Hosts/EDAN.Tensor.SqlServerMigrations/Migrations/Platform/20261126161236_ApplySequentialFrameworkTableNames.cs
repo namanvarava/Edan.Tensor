@@ -22,6 +22,15 @@ FROM sys.foreign_keys fk
 WHERE OBJECT_SCHEMA_NAME(fk.parent_object_id) = N'dbo';
 IF @sql <> N'' EXEC sp_executesql @sql;");
 
+            migrationBuilder.Sql(@"
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id))
+    + N'.' + QUOTENAME(OBJECT_NAME(parent_object_id))
+    + N' DROP CONSTRAINT ' + QUOTENAME(name) + N';' + CHAR(13) + CHAR(10)
+FROM sys.key_constraints
+WHERE type = N'UQ' AND OBJECT_SCHEMA_NAME(parent_object_id) = N'dbo';
+IF @sql <> N'' EXEC sp_executesql @sql;");
+
 
 
 
@@ -78,10 +87,6 @@ migrationBuilder.DropPrimaryKey(
                 name: "edpf_strqta_plcychg_PK",
                 table: "edpf_strqta_plcychg");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_strqta_plcy_str_qta_plcyid_tntid",
-                table: "edpf_strqta_plcy");
-
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_strqta_plcy_PK",
                 table: "edpf_strqta_plcy");
@@ -94,10 +99,6 @@ migrationBuilder.DropPrimaryKey(
                 name: "edpf_prjmbr_PK",
                 table: "edpf_prjmbr");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_prj_prjid_orgid_tntid",
-                table: "edpf_prj");
-
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_prj_PK",
                 table: "edpf_prj");
@@ -109,10 +110,6 @@ migrationBuilder.DropPrimaryKey(
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_orgmbr_PK",
                 table: "edpf_orgmbr");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_org_orgid_tntid",
-                table: "edpf_org");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_org_PK",
@@ -137,10 +134,6 @@ migrationBuilder.DropPrimaryKey(
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_authaud_arcschd_PK",
                 table: "edpf_authaud_arcschd");
-
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid",
-                table: "edpf_authaud_arcjob");
 
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_authaud_arcjob_PK",
