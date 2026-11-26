@@ -27,7 +27,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_aud_arc_attmid");
+                        .HasColumnName("03002id");
 
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("integer")
@@ -80,7 +80,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_aud_arc_jobid");
+                        .HasColumnName("03001id");
 
                     b.Property<Guid?>("ArchiveId")
                         .HasColumnType("uuid")
@@ -158,7 +158,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_aud_arc_schdid");
+                        .HasColumnName("03003id");
 
                     b.Property<int>("IntervalHours")
                         .HasColumnType("integer")
@@ -210,7 +210,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_audid");
+                        .HasColumnName("01011id");
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -276,7 +276,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_aud_rtn_chgid");
+                        .HasColumnName("01014id");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -328,7 +328,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_aud_rtnid");
+                        .HasColumnName("01013id");
 
                     b.Property<bool>("IsLegalHold")
                         .HasColumnType("boolean")
@@ -376,7 +376,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_plcyid");
+                        .HasColumnName("01010id");
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -448,7 +448,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("auth_plcy_chgid");
+                        .HasColumnName("01012id");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -576,19 +576,19 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("orgid");
+                        .HasColumnName("01003id");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasColumnName("orgcd");
+                        .HasColumnName("01003cd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("orgnm");
+                        .HasColumnName("01003nm");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -617,7 +617,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("org_mbrid");
+                        .HasColumnName("01005id");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
@@ -662,7 +662,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("plcyid");
+                        .HasColumnName("01009id");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")
@@ -722,19 +722,19 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("prjid");
+                        .HasColumnName("01007id");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasColumnName("prjcd");
+                        .HasColumnName("01007cd");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("prjnm");
+                        .HasColumnName("01007nm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
@@ -770,7 +770,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("prj_mbrid");
+                        .HasColumnName("01006id");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
@@ -819,13 +819,13 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("rsrcid");
+                        .HasColumnName("01008id");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("rsrcnm");
+                        .HasColumnName("01008nm");
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
@@ -874,7 +874,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("str_qta_plcyid");
+                        .HasColumnName("02001id");
 
                     b.Property<long?>("DataSetLimitBytes")
                         .HasColumnType("bigint")
@@ -953,7 +953,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("str_qta_plcy_chgid");
+                        .HasColumnName("02002id");
 
                     b.Property<string>("ActorSubjectId")
                         .IsRequired()
@@ -1007,13 +1007,13 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("tntid");
+                        .HasColumnName("01001id");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasColumnName("tntcd");
+                        .HasColumnName("01001cd");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1023,7 +1023,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("tntnm");
+                        .HasColumnName("01001nm");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1045,7 +1045,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("tnt_dbndid");
+                        .HasColumnName("04001id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1127,7 +1127,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("tnt_mut_audid");
+                        .HasColumnName("04003id");
 
                     b.Property<bool?>("Compensated")
                         .HasColumnType("boolean");
@@ -1180,7 +1180,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("tnt_rtn_alwid");
+                        .HasColumnName("04002id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1228,7 +1228,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("tnt_mbrid");
+                        .HasColumnName("01002id");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -1266,7 +1266,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("usrid");
+                        .HasColumnName("01004id");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
