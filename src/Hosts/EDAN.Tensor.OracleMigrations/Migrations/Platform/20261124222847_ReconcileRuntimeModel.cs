@@ -10,6 +10,14 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg");
+
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_strqta_plcy\" DROP CONSTRAINT \"AK_edpf_strqta_plcy_strqtaplcyid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_authaud_arcjob\" DROP CONSTRAINT \"AK_edpf_authaud_arcjob_authaudarcjobid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
@@ -345,6 +353,22 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid",
                 table: "edpf_authaud_arcjob",
                 columns: new[] { "auth_aud_arc_jobid", "tntid" });
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm",
+                columns: new[] { "jobid", "tntid" },
+                principalTable: "edpf_authaud_arcjob",
+                principalColumns: new[] { "auth_aud_arc_jobid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg",
+                columns: new[] { "plcyid", "tntid" },
+                principalTable: "edpf_strqta_plcy",
+                principalColumns: new[] { "str_qta_plcyid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
