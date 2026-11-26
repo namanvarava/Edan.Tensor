@@ -119,10 +119,6 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_tntmbr");
 
             migrationBuilder.DropForeignKey(
-                name: "edpf_tntmut_aud_FKTenantId",
-                table: "edpf_tntmut_aud");
-
-            migrationBuilder.DropForeignKey(
                 name: "edpf_tntrtnalw_FKTenantId",
                 table: "edpf_tntrtnalw");
 
