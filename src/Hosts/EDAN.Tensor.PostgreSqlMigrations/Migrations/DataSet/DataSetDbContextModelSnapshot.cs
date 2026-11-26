@@ -26,7 +26,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("05001id");
+                        .HasColumnName("dsetid");
 
                     b.Property<string>("ContentFormat")
                         .IsRequired()
@@ -42,7 +42,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("05001nm");
+                        .HasColumnName("dsetnm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
@@ -96,7 +96,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("05004id")
+                        .HasColumnName("dset_qta_thr_evtid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
@@ -162,7 +162,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("05003id")
+                        .HasColumnName("dset_str_usg_snpid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
@@ -205,7 +205,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("05008id")
+                        .HasColumnName("dset_vld_dtlid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
@@ -214,7 +214,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("05008cd");
+                        .HasColumnName("dset_vld_dtlcd");
 
                     b.Property<string>("DetailReference")
                         .IsRequired()
@@ -269,7 +269,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("05007id");
+                        .HasColumnName("dset_vld_excid");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -392,7 +392,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("05005id");
+                        .HasColumnName("dset_vld_prfid");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -402,7 +402,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
-                        .HasColumnName("05005nm");
+                        .HasColumnName("dset_vld_prfnm");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -456,7 +456,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.DataSet
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("05009id")
+                        .HasColumnName("dset_vld_seen_keyid")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
