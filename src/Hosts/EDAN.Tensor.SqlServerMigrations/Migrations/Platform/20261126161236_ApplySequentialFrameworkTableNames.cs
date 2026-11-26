@@ -10,9 +10,17 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "edpf_inv_FKUserId",
-                table: "edpf_inv");
+            // Existing installations may have foreign-key names or shapes that differ from
+            // the generated model. Drop the current platform-schema FKs first; this migration
+            // recreates the canonical FKs after the table/PK/column renames.
+            migrationBuilder.Sql(@"
+DECLARE @sql nvarchar(max) = N'';
+SELECT @sql = @sql + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(fk.parent_object_id))
+    + N'.' + QUOTENAME(OBJECT_NAME(fk.parent_object_id))
+    + N' DROP CONSTRAINT ' + QUOTENAME(fk.name) + N';' + CHAR(13) + CHAR(10)
+FROM sys.foreign_keys fk
+WHERE OBJECT_SCHEMA_NAME(fk.parent_object_id) = N'dbo';
+IF @sql <> N'' EXEC sp_executesql @sql;");
 
 
 
