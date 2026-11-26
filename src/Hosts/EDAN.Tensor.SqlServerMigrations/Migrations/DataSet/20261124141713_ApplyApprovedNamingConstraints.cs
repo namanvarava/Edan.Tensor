@@ -15,6 +15,12 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.DataSet
                 name: "dataset_schema_revisions",
                 newName: "edds_dsetschm_rev");
 
+            // SQL Server does not allow dropping the datasets primary key while
+            // the legacy schema-revision foreign key still references it.
+            migrationBuilder.DropForeignKey(
+                name: "FK_dataset_schema_revisions_datasets_DataSetId",
+                table: "edds_dsetschm_rev");
+
             migrationBuilder.DropPrimaryKey(
                 name: "PK_datasets",
                 table: "datasets");
@@ -188,6 +194,14 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.DataSet
                 name: "edds_dsetqta_threvt_PK",
                 table: "edds_dsetqta_threvt",
                 column: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "edds_dsetschm_rev_FKDataSetId",
+                table: "edds_dsetschm_rev",
+                column: "DataSetId",
+                principalTable: "edds_dset",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
 
             
         }
