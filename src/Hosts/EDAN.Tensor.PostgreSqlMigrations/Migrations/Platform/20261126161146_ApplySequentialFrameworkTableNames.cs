@@ -159,6 +159,16 @@ BEGIN
     END LOOP;
 END $$;
 """);
+
+            // Invitations are intentionally retained outside the sequential table set,
+            // but their references must be detached while the tenant/user PKs are renamed.
+            migrationBuilder.DropForeignKey(
+                name: "FK_platform_invitations_platform_tenants_TenantId",
+                table: "edpf_inv");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_platform_invitations_platform_users_UserId",
+                table: "edpf_inv");
             migrationBuilder.DropForeignKey(
                 name: "edpf_authaud_FKTenantId",
                 table: "edpf_authaud");
@@ -1189,6 +1199,22 @@ END $$;
                 column: "tntid",
                 principalTable: "edw_01001",
                 principalColumn: "01001id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_platform_invitations_platform_tenants_TenantId",
+                table: "edpf_inv",
+                column: "TenantId",
+                principalTable: "edw_01001",
+                principalColumn: "01001id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_platform_invitations_platform_users_UserId",
+                table: "edpf_inv",
+                column: "UserId",
+                principalTable: "edw_01004",
+                principalColumn: "01004id",
                 onDelete: ReferentialAction.Restrict);
         }
 
