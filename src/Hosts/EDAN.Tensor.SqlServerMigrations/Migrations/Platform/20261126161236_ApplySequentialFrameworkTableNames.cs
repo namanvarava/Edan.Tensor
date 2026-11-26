@@ -41,7 +41,11 @@ FROM (VALUES
  (N'edw_03003',N'auth_aud_arc_schdid',N'authaudarcschdid'),
  (N'edw_03001',N'auth_aud_arc_jobid',N'authaudarcjobid'),
  (N'edw_03002',N'auth_aud_arc_attmid',N'authaudarcattmid'),
- (N'edw_01011',N'auth_audid',N'authaudid')) AS m(table_name,legacy_name,compact_name);
+ (N'edw_01011',N'auth_audid',N'authaudid'),
+ (N'edpf_tntdbnd',N'tnt_dbndid',N'tntdbndid'),
+ (N'edpf_tntmbr',N'tnt_mbrid',N'tntmbrid'),
+ (N'edpf_tntrtnalw',N'tnt_rtn_alwid',N'tntrtnalwid'),
+ (N'edpf_tntmut_aud',N'tnt_mut_audid',N'tntmutaudid')) AS m(table_name,legacy_name,compact_name);
 OPEN c;
 FETCH NEXT FROM c INTO @table,@legacy,@compact;
 WHILE @@FETCH_STATUS = 0
