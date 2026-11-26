@@ -90,11 +90,12 @@ public static class ApprovedColumnNameConvention
             ["ServerAddress"] = "svr_addr", ["Port"] = "port", ["Username"] = "usrnm", ["SecretKey"] = "scrt_key"
         };
 
-    public static string? For(string tableName, string propertyName)
+    public static string? For(string tableName, string propertyName, bool useSequentialColumnNames = true)
     {
         // Sequential framework tables use the table number as the physical
         // prefix for their primary/name/code columns (for example 05001id).
-        if (tableName.StartsWith("edw_", StringComparison.Ordinal)
+        if (useSequentialColumnNames
+            && tableName.StartsWith("edw_", StringComparison.Ordinal)
             && tableName.Length == 9
             && int.TryParse(tableName.AsSpan(4), out _)
             && propertyName is "Id" or "Name" or "Code")

@@ -16,10 +16,10 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     {
         base.OnModelCreating(modelBuilder);
         ConfigureModel(modelBuilder);
-        ApplyDatabaseObjectNames(modelBuilder);
+        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true);
     }
 
-    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder)
+    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder, bool useSequentialColumnNames)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -33,7 +33,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
             foreach (var property in entityType.GetProperties())
             {
-                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name, useSequentialColumnNames);
                 if (columnName is not null) property.SetColumnName(columnName);
             }
         }

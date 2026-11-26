@@ -56,10 +56,10 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureTenantDatabaseBinding(modelBuilder);
         ConfigureTenantDatabaseRoutineAllowlist(modelBuilder);
         ConfigureTenantDatabaseMutationAudit(modelBuilder);
-        ApplyDatabaseObjectNames(modelBuilder);
+        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true);
     }
 
-    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder)
+    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder, bool useSequentialColumnNames)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -76,7 +76,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
             foreach (var property in entityType.GetProperties())
             {
-                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name, useSequentialColumnNames);
                 if (columnName is not null) property.SetColumnName(columnName);
             }
         }
