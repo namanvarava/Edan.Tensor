@@ -10,6 +10,155 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Existing installations may already have semantic constraint names from the prior schema migration.
+            // Normalize those names before EF drops/recreates them so this rename migration is repeatable.
+            migrationBuilder.Sql("""
+DO $$
+DECLARE
+    item record;
+    existing_name text;
+BEGIN
+    FOR item IN
+        SELECT * FROM (VALUES
+                ('edpf_authaud','edpf_authaud_FKTenantId','f'),
+                ('edpf_authaud_arcattm','edpf_authaud_arcattm_FKJobId','f'),
+                ('edpf_authaud_arcattm','edpf_authaud_arcattm_FKTenantId','f'),
+                ('edpf_authaud_arcjob','edpf_authaud_arcjob_FKTenantId','f'),
+                ('edpf_authaud_arcschd','edpf_authaud_arcschd_FKTenantId','f'),
+                ('edpf_authaud_rtn','edpf_authaud_rtn_FKTenantId','f'),
+                ('edpf_authaud_rtnchg','edpf_authaud_rtnchg_FKTenantId','f'),
+                ('edpf_authplcy','edpf_authplcy_FKOrganizationId','f'),
+                ('edpf_authplcy','edpf_authplcy_FKProjectId','f'),
+                ('edpf_authplcy','edpf_authplcy_FKTenantId','f'),
+                ('edpf_authplcy_chg','edpf_authplcy_chg_FKTenantId','f'),
+                ('edpf_org','edpf_org_FKTenantId','f'),
+                ('edpf_orgmbr','edpf_orgmbr_FKOrganizationId','f'),
+                ('edpf_plcy','edpf_plcy_FKScopeOrganizationId','f'),
+                ('edpf_plcy','edpf_plcy_FKScopeProjectId','f'),
+                ('edpf_plcy','edpf_plcy_FKScopeTenantId','f'),
+                ('edpf_prj','edpf_prj_FKOrganizationId','f'),
+                ('edpf_prj','edpf_prj_FKTenantId','f'),
+                ('edpf_prjmbr','edpf_prjmbr_FKProjectId','f'),
+                ('edpf_rsrc','edpf_rsrc_FKScopeOrganizationId','f'),
+                ('edpf_rsrc','edpf_rsrc_FKScopeProjectId','f'),
+                ('edpf_rsrc','edpf_rsrc_FKScopeTenantId','f'),
+                ('edpf_strqta_plcy','edpf_strqta_plcy_FKTenantId','f'),
+                ('edpf_strqta_plcychg','edpf_strqta_plcychg_FKPolicyId','f'),
+                ('edpf_strqta_plcychg','edpf_strqta_plcychg_FKTenantId','f'),
+                ('edpf_tntdbnd','edpf_tntdbnd_FKTenantId','f'),
+                ('edpf_tntmbr','edpf_tntmbr_FKTenantId','f'),
+                ('edpf_tntmut_aud','edpf_tntmut_aud_FKTenantId','f'),
+                ('edpf_tntrtnalw','edpf_tntrtnalw_FKTenantId','f'),
+                ('edpf_usr','edpf_usr_FKTenantId','f'),
+                ('edw_01002','edw_01002_FKTenantId','f'),
+                ('edw_01003','edw_01003_FKTenantId','f'),
+                ('edw_01004','edw_01004_FKTenantId','f'),
+                ('edw_01005','edw_01005_FKOrganizationId','f'),
+                ('edw_01006','edw_01006_FKProjectId','f'),
+                ('edw_01007','edw_01007_FKOrganizationId','f'),
+                ('edw_01007','edw_01007_FKTenantId','f'),
+                ('edw_01008','edw_01008_FKScopeOrganizationId','f'),
+                ('edw_01008','edw_01008_FKScopeProjectId','f'),
+                ('edw_01008','edw_01008_FKScopeTenantId','f'),
+                ('edw_01009','edw_01009_FKScopeOrganizationId','f'),
+                ('edw_01009','edw_01009_FKScopeProjectId','f'),
+                ('edw_01009','edw_01009_FKScopeTenantId','f'),
+                ('edw_01010','edw_01010_FKOrganizationId','f'),
+                ('edw_01010','edw_01010_FKProjectId','f'),
+                ('edw_01010','edw_01010_FKTenantId','f'),
+                ('edw_01011','edw_01011_FKTenantId','f'),
+                ('edw_01012','edw_01012_FKTenantId','f'),
+                ('edw_01013','edw_01013_FKTenantId','f'),
+                ('edw_01014','edw_01014_FKTenantId','f'),
+                ('edw_02001','edw_02001_FKTenantId','f'),
+                ('edw_02002','edw_02002_FKPolicyId','f'),
+                ('edw_02002','edw_02002_FKTenantId','f'),
+                ('edw_03001','edw_03001_FKTenantId','f'),
+                ('edw_03002','edw_03002_FKJobId','f'),
+                ('edw_03002','edw_03002_FKTenantId','f'),
+                ('edw_03003','edw_03003_FKTenantId','f'),
+                ('edw_04001','edw_04001_FKTenantId','f'),
+                ('edw_04002','edw_04002_FKTenantId','f'),
+                ('edw_04003','edw_04003_FKTenantId','f'),
+                ('edpf_usr','edpf_usr_PK','p'),
+                ('edpf_tntrtnalw','edpf_tntrtnalw_PK','p'),
+                ('edpf_tntmut_aud','edpf_tntmut_aud_PK','p'),
+                ('edpf_tntmbr','edpf_tntmbr_PK','p'),
+                ('edpf_tntdbnd','edpf_tntdbnd_PK','p'),
+                ('edpf_tnt','edpf_tnt_PK','p'),
+                ('edpf_strqta_plcychg','edpf_strqta_plcychg_PK','p'),
+                ('edpf_strqta_plcy','edpf_strqta_plcy_PK','p'),
+                ('edpf_rsrc','edpf_rsrc_PK','p'),
+                ('edpf_prjmbr','edpf_prjmbr_PK','p'),
+                ('edpf_prj','edpf_prj_PK','p'),
+                ('edpf_plcy','edpf_plcy_PK','p'),
+                ('edpf_orgmbr','edpf_orgmbr_PK','p'),
+                ('edpf_org','edpf_org_PK','p'),
+                ('edpf_authplcy_chg','edpf_authplcy_chg_PK','p'),
+                ('edpf_authplcy','edpf_authplcy_PK','p'),
+                ('edpf_authaud_rtnchg','edpf_authaud_rtnchg_PK','p'),
+                ('edpf_authaud_rtn','edpf_authaud_rtn_PK','p'),
+                ('edpf_authaud_arcschd','edpf_authaud_arcschd_PK','p'),
+                ('edpf_authaud_arcjob','edpf_authaud_arcjob_PK','p'),
+                ('edpf_authaud_arcattm','edpf_authaud_arcattm_PK','p'),
+                ('edpf_authaud','edpf_authaud_PK','p'),
+                ('edw_04003','edw_04003_PK','p'),
+                ('edw_04002','edw_04002_PK','p'),
+                ('edw_04001','edw_04001_PK','p'),
+                ('edw_03003','edw_03003_PK','p'),
+                ('edw_03002','edw_03002_PK','p'),
+                ('edw_03001','edw_03001_PK','p'),
+                ('edw_02002','edw_02002_PK','p'),
+                ('edw_02001','edw_02001_PK','p'),
+                ('edw_01014','edw_01014_PK','p'),
+                ('edw_01013','edw_01013_PK','p'),
+                ('edw_01012','edw_01012_PK','p'),
+                ('edw_01011','edw_01011_PK','p'),
+                ('edw_01010','edw_01010_PK','p'),
+                ('edw_01009','edw_01009_PK','p'),
+                ('edw_01008','edw_01008_PK','p'),
+                ('edw_01007','edw_01007_PK','p'),
+                ('edw_01006','edw_01006_PK','p'),
+                ('edw_01005','edw_01005_PK','p'),
+                ('edw_01004','edw_01004_PK','p'),
+                ('edw_01003','edw_01003_PK','p'),
+                ('edw_01002','edw_01002_PK','p'),
+                ('edw_01001','edw_01001_PK','p'),
+                ('edpf_strqta_plcy','AK_edpf_strqta_plcy_str_qta_plcyid_tntid','u'),
+                ('edpf_prj','AK_edpf_prj_prjid_orgid_tntid','u'),
+                ('edpf_org','AK_edpf_org_orgid_tntid','u'),
+                ('edpf_authaud_arcjob','AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid','u'),
+                ('edw_03001','AK_edw_03001_03001id_tntid','u'),
+                ('edw_02001','AK_edw_02001_02001id_tntid','u'),
+                ('edw_01007','AK_edw_01007_01007id_orgid_tntid','u'),
+                ('edw_01003','AK_edw_01003_01003id_tntid','u')
+        ) AS v(table_name, target_name, constraint_kind)
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint c
+            JOIN pg_class t ON t.oid = c.conrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = 'public'
+              AND t.relname = item.table_name
+              AND c.conname = item.target_name
+        ) THEN
+            SELECT c.conname INTO existing_name
+            FROM pg_constraint c
+            JOIN pg_class t ON t.oid = c.conrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = 'public'
+              AND t.relname = item.table_name
+              AND c.contype = item.constraint_kind
+            ORDER BY c.conname
+            LIMIT 1;
+
+            IF existing_name IS NOT NULL THEN
+                EXECUTE format('ALTER TABLE %I RENAME CONSTRAINT %I TO %I', item.table_name, existing_name, item.target_name);
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
+""");
             migrationBuilder.DropForeignKey(
                 name: "edpf_authaud_FKTenantId",
                 table: "edpf_authaud");
