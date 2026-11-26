@@ -10,6 +10,10 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "edpf_inv_FKUserId",
+                table: "edpf_inv");
+
 
 
 
