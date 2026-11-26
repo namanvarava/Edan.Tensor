@@ -169,6 +169,121 @@ END $$;
             migrationBuilder.DropForeignKey(
                 name: "FK_platform_invitations_platform_users_UserId",
                 table: "edpf_inv");
+            // Normalize pre-existing semantic index names before EF renames them.
+            migrationBuilder.Sql("""
+DO $$
+DECLARE
+    item record;
+    existing_name text;
+BEGIN
+    FOR item IN
+        SELECT * FROM (VALUES
+                ('edw_01004','edpf_usr_N01','edw_01004_N01'),
+                ('edw_04002','edpf_tntrtnalw_N01','edw_04002_N01'),
+                ('edw_04003','edpf_tntmut_aud_N01','edw_04003_N01'),
+                ('edw_01002','edpf_tntmbr_N01','edw_01002_N01'),
+                ('edw_04001','edpf_tntdbnd_N02','edw_04001_N02'),
+                ('edw_04001','edpf_tntdbnd_N01','edw_04001_N01'),
+                ('edw_01001','edpf_tnt_N01','edw_01001_N01'),
+                ('edw_02002','edpf_strqta_plcychg_N02','edw_02002_N02'),
+                ('edw_02002','edpf_strqta_plcychg_N01','edw_02002_N01'),
+                ('edw_02001','edpf_strqta_plcy_N02','edw_02001_N02'),
+                ('edw_02001','edpf_strqta_plcy_N01','edw_02001_N01'),
+                ('edw_01008','edpf_rsrc_N03','edw_01008_N03'),
+                ('edw_01008','edpf_rsrc_N02','edw_01008_N02'),
+                ('edw_01008','edpf_rsrc_N01','edw_01008_N01'),
+                ('edw_01006','edpf_prjmbr_N02','edw_01006_N02'),
+                ('edw_01006','edpf_prjmbr_N01','edw_01006_N01'),
+                ('edw_01007','edpf_prj_N03','edw_01007_N03'),
+                ('edw_01007','edpf_prj_N02','edw_01007_N02'),
+                ('edw_01007','edpf_prj_N01','edw_01007_N01'),
+                ('edw_01009','edpf_plcy_N04','edw_01009_N04'),
+                ('edw_01009','edpf_plcy_N03','edw_01009_N03'),
+                ('edw_01009','edpf_plcy_N02','edw_01009_N02'),
+                ('edw_01009','edpf_plcy_N01','edw_01009_N01'),
+                ('edw_01005','edpf_orgmbr_N02','edw_01005_N02'),
+                ('edw_01005','edpf_orgmbr_N01','edw_01005_N01'),
+                ('edw_01003','edpf_org_N02','edw_01003_N02'),
+                ('edw_01003','edpf_org_N01','edw_01003_N01'),
+                ('edw_01012','edpf_authplcy_chg_N02','edw_01012_N02'),
+                ('edw_01012','edpf_authplcy_chg_N01','edw_01012_N01'),
+                ('edw_01010','edpf_authplcy_N03','edw_01010_N03'),
+                ('edw_01010','edpf_authplcy_N02','edw_01010_N02'),
+                ('edw_01010','edpf_authplcy_N01','edw_01010_N01'),
+                ('edw_01014','edpf_authaud_rtnchg_N01','edw_01014_N01'),
+                ('edw_01013','edpf_authaud_rtn_N01','edw_01013_N01'),
+                ('edw_03003','edpf_authaud_arcschd_N02','edw_03003_N02'),
+                ('edw_03003','edpf_authaud_arcschd_N01','edw_03003_N01'),
+                ('edw_03001','edpf_authaud_arcjob_N01','edw_03001_N01'),
+                ('edw_03002','edpf_authaud_arcattm_N02','edw_03002_N02'),
+                ('edw_03002','edpf_authaud_arcattm_N01','edw_03002_N01'),
+                ('edw_01011','edpf_authaud_N02','edw_01011_N02'),
+                ('edw_01011','edpf_authaud_N01','edw_01011_N01'),
+                ('edpf_tntmut_aud','edw_04003_N01','edpf_tntmut_aud_N01'),
+                ('edpf_tntrtnalw','edw_04002_N01','edpf_tntrtnalw_N01'),
+                ('edpf_tntdbnd','edw_04001_N02','edpf_tntdbnd_N02'),
+                ('edpf_tntdbnd','edw_04001_N01','edpf_tntdbnd_N01'),
+                ('edpf_authaud_arcschd','edw_03003_N02','edpf_authaud_arcschd_N02'),
+                ('edpf_authaud_arcschd','edw_03003_N01','edpf_authaud_arcschd_N01'),
+                ('edpf_authaud_arcattm','edw_03002_N02','edpf_authaud_arcattm_N02'),
+                ('edpf_authaud_arcattm','edw_03002_N01','edpf_authaud_arcattm_N01'),
+                ('edpf_authaud_arcjob','edw_03001_N01','edpf_authaud_arcjob_N01'),
+                ('edpf_strqta_plcychg','edw_02002_N02','edpf_strqta_plcychg_N02'),
+                ('edpf_strqta_plcychg','edw_02002_N01','edpf_strqta_plcychg_N01'),
+                ('edpf_strqta_plcy','edw_02001_N02','edpf_strqta_plcy_N02'),
+                ('edpf_strqta_plcy','edw_02001_N01','edpf_strqta_plcy_N01'),
+                ('edpf_authaud_rtnchg','edw_01014_N01','edpf_authaud_rtnchg_N01'),
+                ('edpf_authaud_rtn','edw_01013_N01','edpf_authaud_rtn_N01'),
+                ('edpf_authplcy_chg','edw_01012_N02','edpf_authplcy_chg_N02'),
+                ('edpf_authplcy_chg','edw_01012_N01','edpf_authplcy_chg_N01'),
+                ('edpf_authaud','edw_01011_N02','edpf_authaud_N02'),
+                ('edpf_authaud','edw_01011_N01','edpf_authaud_N01'),
+                ('edpf_authplcy','edw_01010_N03','edpf_authplcy_N03'),
+                ('edpf_authplcy','edw_01010_N02','edpf_authplcy_N02'),
+                ('edpf_authplcy','edw_01010_N01','edpf_authplcy_N01'),
+                ('edpf_plcy','edw_01009_N04','edpf_plcy_N04'),
+                ('edpf_plcy','edw_01009_N03','edpf_plcy_N03'),
+                ('edpf_plcy','edw_01009_N02','edpf_plcy_N02'),
+                ('edpf_plcy','edw_01009_N01','edpf_plcy_N01'),
+                ('edpf_rsrc','edw_01008_N03','edpf_rsrc_N03'),
+                ('edpf_rsrc','edw_01008_N02','edpf_rsrc_N02'),
+                ('edpf_rsrc','edw_01008_N01','edpf_rsrc_N01'),
+                ('edpf_prj','edw_01007_N03','edpf_prj_N03'),
+                ('edpf_prj','edw_01007_N02','edpf_prj_N02'),
+                ('edpf_prj','edw_01007_N01','edpf_prj_N01'),
+                ('edpf_prjmbr','edw_01006_N02','edpf_prjmbr_N02'),
+                ('edpf_prjmbr','edw_01006_N01','edpf_prjmbr_N01'),
+                ('edpf_orgmbr','edw_01005_N02','edpf_orgmbr_N02'),
+                ('edpf_orgmbr','edw_01005_N01','edpf_orgmbr_N01'),
+                ('edpf_usr','edw_01004_N01','edpf_usr_N01'),
+                ('edpf_org','edw_01003_N02','edpf_org_N02'),
+                ('edpf_org','edw_01003_N01','edpf_org_N01'),
+                ('edpf_tntmbr','edw_01002_N01','edpf_tntmbr_N01'),
+                ('edpf_tnt','edw_01001_N01','edpf_tnt_N01')
+        ) AS v(table_name, source_name, target_name)
+    LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = item.source_name)
+           AND NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = item.target_name) THEN
+            SELECT i.relname INTO existing_name
+            FROM pg_index x
+            JOIN pg_class i ON i.oid = x.indexrelid
+            JOIN pg_class t ON t.oid = x.indrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = 'public'
+              AND t.relname = item.table_name
+              AND NOT x.indisprimary
+            ORDER BY i.relname
+            LIMIT 1;
+            IF existing_name IS NOT NULL THEN
+                EXECUTE format('ALTER INDEX %I RENAME TO %I', existing_name, item.source_name);
+            END IF;
+        ELSIF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = item.source_name)
+              AND EXISTS (SELECT 1 FROM pg_class WHERE relname = item.target_name) THEN
+            EXECUTE format('ALTER INDEX %I RENAME TO %I', item.target_name, item.source_name);
+        END IF;
+    END LOOP;
+END $$;
+""");
             migrationBuilder.DropForeignKey(
                 name: "edpf_authaud_FKTenantId",
                 table: "edpf_authaud");
