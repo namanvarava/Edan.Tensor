@@ -10,6 +10,18 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Older SQL Server installations used compact legacy column names. Normalize
+            // the known tenant-membership key before EF executes the generated rename.
+            migrationBuilder.Sql(@"
+IF OBJECT_ID(N'dbo.edpf_tntmbr') IS NOT NULL
+   AND COL_LENGTH(N'dbo.edpf_tntmbr', N'tntmbrid') IS NOT NULL
+   AND COL_LENGTH(N'dbo.edpf_tntmbr', N'tnt_mbrid') IS NULL
+    EXEC sp_rename N'dbo.edpf_tntmbr.tntmbrid', N'tnt_mbrid', N'COLUMN';
+IF OBJECT_ID(N'dbo.edw_01002') IS NOT NULL
+   AND COL_LENGTH(N'dbo.edw_01002', N'tntmbrid') IS NOT NULL
+   AND COL_LENGTH(N'dbo.edw_01002', N'tnt_mbrid') IS NULL
+    EXEC sp_rename N'dbo.edw_01002.tntmbrid', N'tnt_mbrid', N'COLUMN';");
+
             // Existing installations may have foreign-key names or shapes that differ from
             // the generated model. Drop the current platform-schema FKs first; this migration
             // recreates the canonical FKs after the table/PK/column renames.
