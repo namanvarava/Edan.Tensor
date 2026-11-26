@@ -70,7 +70,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<WorkerTask>();
-        entity.ToTable("edwk_wkrtsk");
+        entity.ToTable("edw_03005");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).ValueGeneratedOnAdd();
         entity.Property(x => x.TenantId).IsRequired();
@@ -106,7 +106,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         entity.HasIndex(x => new { x.TenantId, x.LeaseId });
 
         var replay = modelBuilder.Entity<WorkerTaskReplayRecord>();
-        replay.ToTable("edwk_wkrrpl");
+        replay.ToTable("edw_03006");
         replay.HasKey(x => x.Id);
         replay.Property(x => x.TenantId).IsRequired();
         replay.Property(x => x.OriginalTaskId).IsRequired();
@@ -121,7 +121,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
             .HasFilter("\"ReplayRequestId\" <> '00000000-0000-0000-0000-000000000000'");
 
         var taskType = modelBuilder.Entity<WorkerTaskTypeCatalogEntry>();
-        taskType.ToTable("edwk_wkrtyp");
+        taskType.ToTable("edw_03007");
         taskType.HasKey(x => x.TaskType);
         taskType.Property(x => x.TaskType).HasMaxLength(120).IsRequired();
         taskType.Property(x => x.Description).HasMaxLength(500);
@@ -130,7 +130,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
         taskType.Property(x => x.Version).IsConcurrencyToken();
 
         var delivery = modelBuilder.Entity<ExternalDelivery>();
-        delivery.ToTable("edwk_wkrdlv");
+        delivery.ToTable("edw_03004");
         delivery.HasKey(x => x.Id);
         delivery.Property(x => x.Id).ValueGeneratedNever();
         delivery.Property(x => x.TenantId).IsRequired();

@@ -26,7 +26,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkr_dlvid");
+                        .HasColumnName("03004id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("NUMBER(10)")
@@ -83,16 +83,16 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edwk_wkrdlv_PK");
+                        .HasName("edw_03004_PK");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
-                        .HasDatabaseName("edwk_wkrdlv_N01");
+                        .HasDatabaseName("edw_03004_N01");
 
                     b.HasIndex("TenantId", "Status", "CreatedAtUtc")
-                        .HasDatabaseName("edwk_wkrdlv_N02");
+                        .HasDatabaseName("edw_03004_N02");
 
-                    b.ToTable("edwk_wkrdlv", (string)null);
+                    b.ToTable("edw_03004", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Domain.Model.WorkerTask", b =>
@@ -100,7 +100,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkr_tskid");
+                        .HasColumnName("03005id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("NUMBER(10)")
@@ -218,28 +218,28 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnName("wkrid");
 
                     b.HasKey("Id")
-                        .HasName("edwk_wkrtsk_PK");
+                        .HasName("edw_03005_PK");
 
                     b.HasIndex("Status", "LeaseExpiresAtUtcUnixMilliseconds")
-                        .HasDatabaseName("edwk_wkrtsk_N01");
+                        .HasDatabaseName("edw_03005_N01");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
-                        .HasDatabaseName("edwk_wkrtsk_N02");
+                        .HasDatabaseName("edw_03005_N02");
 
                     b.HasIndex("TenantId", "LeaseId")
-                        .HasDatabaseName("edwk_wkrtsk_N03");
+                        .HasDatabaseName("edw_03005_N03");
 
                     b.HasIndex("Status", "ReadyAtUtcUnixMilliseconds", "TenantId")
-                        .HasDatabaseName("edwk_wkrtsk_N04");
+                        .HasDatabaseName("edw_03005_N04");
 
                     b.HasIndex("TenantId", "Status", "ReadyAtUtcUnixMilliseconds")
-                        .HasDatabaseName("edwk_wkrtsk_N05");
+                        .HasDatabaseName("edw_03005_N05");
 
                     b.HasIndex("TenantId", "Status", "CreatedAtUtcUnixMilliseconds", "Id")
-                        .HasDatabaseName("edwk_wkrtsk_N06");
+                        .HasDatabaseName("edw_03005_N06");
 
-                    b.ToTable("edwk_wkrtsk", (string)null);
+                    b.ToTable("edw_03005", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Infrastructure.Persistence.WorkerTaskReplayRecord", b =>
@@ -247,7 +247,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("RAW(16)")
-                        .HasColumnName("wkr_rplid");
+                        .HasColumnName("03006id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE")
@@ -275,21 +275,21 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edwk_wkrrpl_PK");
+                        .HasName("edw_03006_PK");
 
                     b.HasIndex("TenantId", "ReplayTaskId")
                         .IsUnique()
-                        .HasDatabaseName("edwk_wkrrpl_N01");
+                        .HasDatabaseName("edw_03006_N01");
 
                     b.HasIndex("TenantId", "OriginalTaskId", "CreatedAtUtc")
-                        .HasDatabaseName("edwk_wkrrpl_N02");
+                        .HasDatabaseName("edw_03006_N02");
 
                     b.HasIndex("TenantId", "OriginalTaskId", "ReplayRequestId")
                         .IsUnique()
-                        .HasDatabaseName("edwk_wkrrpl_N03")
+                        .HasDatabaseName("edw_03006_N03")
                         .HasFilter("\"ReplayRequestId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                    b.ToTable("edwk_wkrrpl", (string)null);
+                    b.ToTable("edw_03006", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Worker.Infrastructure.Persistence.WorkerTaskTypeCatalogEntry", b =>
@@ -318,9 +318,9 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                         .HasColumnName("ver");
 
                     b.HasKey("TaskType")
-                        .HasName("edwk_wkrtyp_PK");
+                        .HasName("edw_03007_PK");
 
-                    b.ToTable("edwk_wkrtyp", (string)null);
+                    b.ToTable("edw_03007", (string)null);
                 });
 #pragma warning restore 612, 618
         }

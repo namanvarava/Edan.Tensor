@@ -19,7 +19,8 @@
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.401" />
     <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26400" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="11.0.0" />
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
     <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.14" />

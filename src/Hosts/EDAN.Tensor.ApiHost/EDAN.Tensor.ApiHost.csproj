@@ -11,6 +11,7 @@
     <ProjectReference Include="../../Worker/EDAN.Tensor.Worker.Infrastructure/EDAN.Tensor.Worker.Infrastructure.csproj" />
     <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Application/EDAN.Tensor.DataSet.Application.csproj" />
     <ProjectReference Include="../../DataSet/EDAN.Tensor.DataSet.Infrastructure/EDAN.Tensor.DataSet.Infrastructure.csproj" />
+    <ProjectReference Include="../../Edan/EDAN.Tensor.Edan.Infrastructure/EDAN.Tensor.Edan.Infrastructure.csproj" />
     <ProjectReference Include="../EDAN.Tensor.HostServices/EDAN.Tensor.HostServices.csproj" />
     <ProjectReference Include="../EDAN.Tensor.PostgreSqlMigrations/EDAN.Tensor.PostgreSqlMigrations.csproj" />
     <ProjectReference Include="../EDAN.Tensor.SqlServerMigrations/EDAN.Tensor.SqlServerMigrations.csproj" />

@@ -15,6 +15,7 @@ using EDAN.Tensor.DataSet.Infrastructure;
 using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
+using EDAN.Tensor.Edan.Infrastructure.Persistence;
 using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.ApiHost.Observability;
 using EDAN.Tensor.HostServices.Services;
@@ -104,6 +105,22 @@ var dataSetConnectionString = builder.Configuration.GetConnectionString("DataSet
 builder.Services.AddDataSetInfrastructure(options =>
     ConfigureDatabase(options, databaseProvider, ResolveDatabaseConnection(dataSetConnectionString, databaseProvider, builder.Environment.ContentRootPath),
         migrationsAssembly ?? typeof(DataSetDbContext).Assembly.FullName, "__EFMigrationsHistory_DataSet"));
+
+// Edan 업무 DB는 선택적으로 활성화하며, Framework 운영 DB와 별도 연결을 사용합니다.
+// 기본값은 false이므로 기존 Platform/Worker/DataSet 운영 구성을 변경하지 않습니다.
+if (builder.Configuration.GetValue<bool>("Edan:Enabled"))
+{
+    var edanProvider = builder.Configuration["Edan:Provider"] ?? databaseProvider;
+    var edanConnection = builder.Configuration.GetConnectionString("EdanDatabase")
+        ?? throw new InvalidOperationException("EdanDatabase 연결 문자열이 설정되지 않았습니다.");
+    builder.Services.AddDbContext<EdanDbContext>(options =>
+        ConfigureDatabase(options, edanProvider,
+            ResolveDatabaseConnection(edanConnection, edanProvider, builder.Environment.ContentRootPath),
+            // The runtime Edan assembly owns the SQLite baseline migrations.
+            // Provider-specific migrations are applied by the separate migration hosts.
+            migrationsAssembly: typeof(EdanDbContext).Assembly.FullName,
+            historyTable: "__EFMigrationsHistory_Edan"));
+}
 
 // 콘텐츠 본문은 DataSet 메타데이터와 분리된 전용 SQLite DB에 저장합니다.
 var dataSetContentConnectionString = builder.Configuration.GetConnectionString("DataSetContentDatabase")
@@ -231,6 +248,28 @@ app.MapGet("/health/database", async (DatabaseHealthService health, Cancellation
         snapshot.CanConnect,
         snapshot.Databases
     }, statusCode: snapshot.CanConnect ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+});
+
+app.MapGet("/health/edan", async (IServiceProvider services, CancellationToken cancellationToken) =>
+{
+    var edan = services.GetService<EdanDbContext>();
+    if (edan is null)
+    {
+        return Results.Json(new
+        {
+            Status = "NotConfigured",
+            Service = "EdanDatabase",
+            CanConnect = false
+        }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var canConnect = await edan.Database.CanConnectAsync(cancellationToken);
+    return Results.Json(new
+    {
+        Status = canConnect ? "Connected" : "Disconnected",
+        Service = "EdanDatabase",
+        CanConnect = canConnect
+    }, statusCode: canConnect ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
 });
 
 app.MapGet("/", () => Results.Ok(new { Product = "EDAN Tensor", Service = "ApiHost", Status = "Foundation" }));

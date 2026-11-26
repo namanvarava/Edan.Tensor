@@ -63,7 +63,10 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            var tableName = entityType.GetTableName();
+            var currentTableName = entityType.GetTableName();
+            var tableName = FrameworkTableNames.Resolve(currentTableName);
+            if (!string.Equals(currentTableName, tableName, StringComparison.Ordinal))
+                entityType.SetTableName(tableName);
             if (string.IsNullOrWhiteSpace(tableName)) continue;
             entityType.FindPrimaryKey()?.SetName($"{tableName}_PK");
             var indexNumber = 1;
@@ -79,10 +82,49 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         }
     }
 
+    /// <summary>
+    /// Framework 영역의 물리 테이블 번호를 단일 계약으로 관리합니다.
+    /// 기존 축약명은 호환 Migration에서 순차명으로 전환되며, 새 코드에서는 이 매핑만 사용합니다.
+    /// </summary>
+    private static class FrameworkTableNames
+    {
+        private static readonly IReadOnlyDictionary<string, string> Names =
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["edw_01001"] = "edw_01001",
+                ["edw_01002"] = "edw_01002",
+                ["edw_01003"] = "edw_01003",
+                ["edw_01004"] = "edw_01004",
+                ["edw_01005"] = "edw_01005",
+                ["edw_01006"] = "edw_01006",
+                ["edw_01007"] = "edw_01007",
+                ["edw_01008"] = "edw_01008",
+                ["edw_01009"] = "edw_01009",
+                ["edw_01010"] = "edw_01010",
+                ["edw_01011"] = "edw_01011",
+                ["edw_01012"] = "edw_01012",
+                ["edw_01013"] = "edw_01013",
+                ["edw_01014"] = "edw_01014",
+                ["edw_02001"] = "edw_02001",
+                ["edw_02002"] = "edw_02002",
+                ["edw_03001"] = "edw_03001",
+                ["edw_03002"] = "edw_03002",
+                ["edw_03003"] = "edw_03003",
+                ["edw_04001"] = "edw_04001",
+                ["edw_04002"] = "edw_04002",
+                ["edw_04003"] = "edw_04003",
+            };
+
+        public static string Resolve(string? currentName) =>
+            currentName is not null && Names.TryGetValue(currentName, out var sequentialName)
+                ? sequentialName
+                : currentName ?? string.Empty;
+    }
+
     private static void ConfigureTenantDatabaseBinding(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<TenantDatabaseBinding>();
-        entity.ToTable("edpf_tntdbnd");
+        entity.ToTable("edw_04001");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseBindingId>(value => new TenantDatabaseBindingId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -107,7 +149,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureTenantDatabaseRoutineAllowlist(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<TenantDatabaseRoutineAllowlist>();
-        entity.ToTable("edpf_tntrtnalw");
+        entity.ToTable("edw_04002");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseRoutineAllowlistId>(value => new TenantDatabaseRoutineAllowlistId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -123,7 +165,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureTenantDatabaseMutationAudit(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<TenantDatabaseMutationAudit>();
-        entity.ToTable("edpf_tntmut_aud");
+        entity.ToTable("edw_04003");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<TenantDatabaseMutationAuditId>(value => new TenantDatabaseMutationAuditId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -139,7 +181,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureTenant(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Tenant>();
-        entity.ToTable("edpf_tnt");
+        entity.ToTable("edw_01001");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
         entity.Property(x => x.Code).HasConversion(x => x.Value, x => new TenantCode(x)).HasMaxLength(64).IsRequired();
@@ -152,7 +194,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Organization>();
-        entity.ToTable("edpf_org");
+        entity.ToTable("edw_01003");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationId>(value => new OrganizationId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -167,7 +209,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureProject(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Project>();
-        entity.ToTable("edpf_prj");
+        entity.ToTable("edw_01007");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ProjectId>(value => new ProjectId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
@@ -188,7 +230,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureUser(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<User>();
-        entity.ToTable("edpf_usr");
+        entity.ToTable("edw_01004");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<UserId>(value => new UserId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value));
@@ -229,7 +271,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureTenantMembership(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<TenantMembership>();
-        entity.ToTable("edpf_tntmbr");
+        entity.ToTable("edw_01002");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<TenantMembershipId>(value => new TenantMembershipId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -244,7 +286,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureOrganizationMembership(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<OrganizationMembership>();
-        entity.ToTable("edpf_orgmbr");
+        entity.ToTable("edw_01005");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<OrganizationMembershipId>(value => new OrganizationMembershipId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -264,7 +306,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureProjectMembership(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<ProjectMembership>();
-        entity.ToTable("edpf_prjmbr");
+        entity.ToTable("edw_01006");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ProjectMembershipId>(value => new ProjectMembershipId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -284,7 +326,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureResource(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Resource>();
-        entity.ToTable("edpf_rsrc", table => table.HasCheckConstraint("CK_edpf_rsrc_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
+        entity.ToTable("edw_01008", table => table.HasCheckConstraint("CK_edpf_rsrc_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<ResourceId>(value => new ResourceId(value), id => id.Value));
         entity.Ignore(x => x.Scope);
@@ -309,7 +351,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigurePolicy(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<Policy>();
-        entity.ToTable("edpf_plcy", table => table.HasCheckConstraint("CK_edpf_plcy_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
+        entity.ToTable("edw_01009", table => table.HasCheckConstraint("CK_edpf_plcy_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<PolicyId>(value => new PolicyId(value), id => id.Value));
         entity.Ignore(x => x.Scope);
@@ -337,7 +379,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationPolicy(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<AuthorizationPolicy>();
-        entity.ToTable("edpf_authplcy", table =>
+        entity.ToTable("edw_01010", table =>
             table.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "\"ProjectId\" IS NULL OR \"OrganizationId\" IS NOT NULL"));
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyId>(value => new AuthorizationPolicyId(value), id => id.Value));
@@ -368,7 +410,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationAuditEntry(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<AuthorizationAuditEntry>();
-        entity.ToTable("edpf_authaud");
+        entity.ToTable("edw_01011");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationAuditEntryId>(value => new AuthorizationAuditEntryId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -389,7 +431,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationPolicyChangeAuditEntry(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<AuthorizationPolicyChangeAuditEntry>();
-        entity.ToTable("edpf_authplcy_chg");
+        entity.ToTable("edw_01012");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(IdConverter<AuthorizationPolicyChangeAuditEntryId>(value => new AuthorizationPolicyChangeAuditEntryId(value), id => id.Value));
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -409,7 +451,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationAuditRetention(ModelBuilder modelBuilder)
     {
         var policy = modelBuilder.Entity<AuthorizationAuditRetentionPolicy>();
-        policy.ToTable("edpf_authaud_rtn");
+        policy.ToTable("edw_01013");
         policy.HasKey(x => x.Id);
         policy.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         policy.Property(x => x.RetentionDays).IsRequired();
@@ -422,7 +464,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         policy.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
 
         var change = modelBuilder.Entity<AuthorizationAuditRetentionChange>();
-        change.ToTable("edpf_authaud_rtnchg");
+        change.ToTable("edw_01014");
         change.HasKey(x => x.Id);
         change.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         change.Property(x => x.PolicyId).IsRequired();
@@ -440,7 +482,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationAuditArchiveJobs(ModelBuilder modelBuilder)
     {
         var job = modelBuilder.Entity<AuthorizationAuditArchiveJob>();
-        job.ToTable("edpf_authaud_arcjob");
+        job.ToTable("edw_03001");
         job.HasKey(x => x.Id);
         job.Property(x => x.Id).IsRequired();
         job.Property(x => x.ArchiveId);
@@ -462,7 +504,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         job.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
 
         var attempt = modelBuilder.Entity<AuthorizationAuditArchiveAttempt>();
-        attempt.ToTable("edpf_authaud_arcattm");
+        attempt.ToTable("edw_03002");
         attempt.HasKey(x => x.Id);
         attempt.Property(x => x.Id).IsRequired();
         attempt.Property(x => x.JobId).IsRequired();
@@ -487,7 +529,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureAuthorizationAuditArchiveSchedule(ModelBuilder modelBuilder)
     {
         var entity = modelBuilder.Entity<AuthorizationAuditArchiveSchedule>();
-        entity.ToTable("edpf_authaud_arcschd");
+        entity.ToTable("edw_03003");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).IsRequired();
         entity.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
@@ -507,7 +549,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     private static void ConfigureStorageQuotaPolicies(ModelBuilder modelBuilder)
     {
         var policy = modelBuilder.Entity<StorageQuotaPolicy>();
-        policy.ToTable("edpf_strqta_plcy");
+        policy.ToTable("edw_02001");
         policy.HasKey(x => x.Id);
         policy.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         policy.Property(x => x.Scope).HasConversion<string>().HasMaxLength(24).IsRequired();
@@ -527,7 +569,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         policy.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
 
         var audit = modelBuilder.Entity<StorageQuotaPolicyChangeAuditEntry>();
-        audit.ToTable("edpf_strqta_plcychg");
+        audit.ToTable("edw_02002");
         audit.HasKey(x => x.Id);
         audit.Property(x => x.TenantId).HasConversion(IdConverter<TenantId>(value => new TenantId(value), id => id.Value)).IsRequired();
         audit.Property(x => x.PolicyId).IsRequired();

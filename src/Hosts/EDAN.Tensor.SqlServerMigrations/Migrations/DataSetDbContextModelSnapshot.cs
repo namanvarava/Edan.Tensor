@@ -26,7 +26,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("dsetid");
+                        .HasColumnName("05001id");
 
                     b.Property<string>("ContentFormat")
                         .IsRequired()
@@ -42,7 +42,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("dsetnm");
+                        .HasColumnName("05001nm");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier")
@@ -80,15 +80,15 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edds_dset_PK");
+                        .HasName("edw_05001_PK");
 
                     b.HasIndex("Status", "CreatedAtUtc")
-                        .HasDatabaseName("edds_dset_N01");
+                        .HasDatabaseName("edw_05001_N01");
 
                     b.HasIndex("TenantId", "OrganizationId", "ProjectId")
-                        .HasDatabaseName("edds_dset_N02");
+                        .HasDatabaseName("edw_05001_N02");
 
-                    b.ToTable("edds_dset", (string)null);
+                    b.ToTable("edw_05001", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Persistence.DataSetQuotaThresholdEvent", b =>
@@ -96,7 +96,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("dset_qta_thr_evtid")
+                        .HasColumnName("05004id")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -146,15 +146,15 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("utilization_percent");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetqta_threvt_PK");
+                        .HasName("edw_05004_PK");
 
                     b.HasIndex("TenantId", "OccurredAtUtc")
-                        .HasDatabaseName("edds_dsetqta_threvt_N01");
+                        .HasDatabaseName("edw_05004_N01");
 
                     b.HasIndex("TenantId", "PolicyId", "OccurredAtUtc")
-                        .HasDatabaseName("edds_dsetqta_threvt_N02");
+                        .HasDatabaseName("edw_05004_N02");
 
-                    b.ToTable("edds_dsetqta_threvt", (string)null);
+                    b.ToTable("edw_05004", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Persistence.DataSetStorageUsageSnapshot", b =>
@@ -162,7 +162,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("dset_str_usg_snpid")
+                        .HasColumnName("05003id")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -188,16 +188,16 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("used_bytes");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetstr_usgsnp_PK");
+                        .HasName("edw_05003_PK");
 
                     b.HasIndex("TenantId", "CapturedAtUtc")
-                        .HasDatabaseName("edds_dsetstr_usgsnp_N01");
+                        .HasDatabaseName("edw_05003_N01");
 
                     b.HasIndex("TenantId", "PeriodStartUtc")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetstr_usgsnp_N02");
+                        .HasDatabaseName("edw_05003_N02");
 
-                    b.ToTable("edds_dsetstr_usgsnp", (string)null);
+                    b.ToTable("edw_05003", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationDetail", b =>
@@ -205,7 +205,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("dset_vld_dtlid")
+                        .HasColumnName("05008id")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -214,7 +214,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
-                        .HasColumnName("dset_vld_dtlcd");
+                        .HasColumnName("05008cd");
 
                     b.Property<string>("DetailReference")
                         .IsRequired()
@@ -252,17 +252,17 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetvld_dtl_PK");
+                        .HasName("edw_05008_PK");
 
                     b.HasIndex("TenantId", "ExecutionId", "RowNumber")
-                        .HasDatabaseName("edds_dsetvld_dtl_N01");
+                        .HasDatabaseName("edw_05008_N01");
 
                     b.HasIndex("ExecutionId", "RowNumber", "Code", "FieldName")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetvld_dtl_N02")
+                        .HasDatabaseName("edw_05008_N02")
                         .HasFilter("[fldnm] IS NOT NULL");
 
-                    b.ToTable("edds_dsetvld_dtl", (string)null);
+                    b.ToTable("edw_05008", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationExecution", b =>
@@ -270,7 +270,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("dset_vld_excid");
+                        .HasColumnName("05007id");
 
                     b.Property<DateTimeOffset?>("CompletedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -372,21 +372,21 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("warn_cnt");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetvld_exc_PK");
+                        .HasName("edw_05007_PK");
 
                     b.HasIndex("TenantId", "DetailReference")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetvld_exc_N01");
+                        .HasDatabaseName("edw_05007_N01");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetvld_exc_N02")
+                        .HasDatabaseName("edw_05007_N02")
                         .HasFilter("[idem_key] IS NOT NULL");
 
                     b.HasIndex("TenantId", "DataSetId", "CreatedAtUtc")
-                        .HasDatabaseName("edds_dsetvld_exc_N03");
+                        .HasDatabaseName("edw_05007_N03");
 
-                    b.ToTable("edds_dsetvld_exc", (string)null);
+                    b.ToTable("edw_05007", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationProfile", b =>
@@ -394,7 +394,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("dset_vld_prfid");
+                        .HasColumnName("05005id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset")
@@ -404,20 +404,20 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)")
-                        .HasColumnName("dset_vld_prfnm");
+                        .HasColumnName("05005nm");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetvld_prf_PK");
+                        .HasName("edw_05005_PK");
 
                     b.HasIndex("TenantId", "Name")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetvld_prf_N01");
+                        .HasDatabaseName("edw_05005_N01");
 
-                    b.ToTable("edds_dsetvld_prf", (string)null);
+                    b.ToTable("edw_05005", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationProfileRevision", b =>
@@ -445,12 +445,12 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("ProfileId", "Revision")
-                        .HasName("edds_dsetvld_prfrev_PK");
+                        .HasName("edw_05006_PK");
 
                     b.HasIndex("TenantId", "ProfileId", "Revision")
-                        .HasDatabaseName("edds_dsetvld_prfrev_N01");
+                        .HasDatabaseName("edw_05006_N01");
 
-                    b.ToTable("edds_dsetvld_prfrev", (string)null);
+                    b.ToTable("edw_05006", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Infrastructure.Validation.DataSetValidationSeenKey", b =>
@@ -458,7 +458,7 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("dset_vld_seen_keyid")
+                        .HasColumnName("05009id")
                         .HasAnnotation("Sqlite:Autoincrement", true);
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
@@ -480,13 +480,13 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                         .HasColumnName("rule_cd");
 
                     b.HasKey("Id")
-                        .HasName("edds_dsetvld_seenkey_PK");
+                        .HasName("edw_05009_PK");
 
                     b.HasIndex("ExecutionId", "RuleCode", "KeyHash")
                         .IsUnique()
-                        .HasDatabaseName("edds_dsetvld_seenkey_N01");
+                        .HasDatabaseName("edw_05009_N01");
 
-                    b.ToTable("edds_dsetvld_seenkey", (string)null);
+                    b.ToTable("edw_05009", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.DataSet.Domain.Model.DataSet", b =>
@@ -515,13 +515,13 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations
                                 .HasColumnName("schm_json");
 
                             b1.HasKey("DataSetId", "Version")
-                                .HasName("edds_dsetschm_rev_PK");
+                                .HasName("edw_05002_PK");
 
-                            b1.ToTable("edds_dsetschm_rev", (string)null);
+                            b1.ToTable("edw_05002", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("DataSetId")
-                                .HasConstraintName("edds_dsetschm_rev_FKDataSetId");
+                                .HasConstraintName("edw_05002_FKDataSetId");
                         });
 
                     b.Navigation("SchemaRevisions");
