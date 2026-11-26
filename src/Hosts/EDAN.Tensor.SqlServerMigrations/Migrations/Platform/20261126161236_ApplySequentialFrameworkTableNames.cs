@@ -302,6 +302,44 @@ migrationBuilder.DropPrimaryKey(
                 name: "edpf_authaud",
                 newName: "edw_01011");
 
+            // The table renames above can expose compact legacy columns under their
+            // new sequential table names. Normalize those columns before the
+            // generated EF column renames execute.
+            migrationBuilder.Sql(@"
+DECLARE @table sysname, @legacy sysname, @compact sysname, @sql nvarchar(max);
+DECLARE c CURSOR LOCAL FAST_FORWARD FOR
+SELECT table_name, legacy_name, compact_name
+FROM (VALUES
+ (N'edw_04002',N'tnt_rtn_alwid',N'tntrtnalwid'),
+ (N'edw_04003',N'tnt_mut_audid',N'tntmutaudid'),
+ (N'edw_04001',N'tnt_dbndid',N'tntdbndid'),
+ (N'edw_02002',N'str_qta_plcy_chgid',N'strqtaplcychgid'),
+ (N'edw_02001',N'str_qta_plcyid',N'strqtaplcyid'),
+ (N'edw_01006',N'prj_mbrid',N'prjmbrid'),
+ (N'edw_01005',N'org_mbrid',N'orgmbrid'),
+ (N'edw_01012',N'auth_plcy_chgid',N'authplcychgid'),
+ (N'edw_01010',N'auth_plcyid',N'authplcyid'),
+ (N'edw_01014',N'auth_aud_rtn_chgid',N'authaudrtnchgid'),
+ (N'edw_01013',N'auth_aud_rtnid',N'authaudrtnid'),
+ (N'edw_03003',N'auth_aud_arc_schdid',N'authaudarcschdid'),
+ (N'edw_03001',N'auth_aud_arc_jobid',N'authaudarcjobid'),
+ (N'edw_03002',N'auth_aud_arc_attmid',N'authaudarcattmid'),
+ (N'edw_01011',N'auth_audid',N'authaudid')) AS m(table_name,legacy_name,compact_name);
+OPEN c;
+FETCH NEXT FROM c INTO @table,@legacy,@compact;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    IF OBJECT_ID(N'dbo.' + @table) IS NOT NULL
+       AND COL_LENGTH(N'dbo.' + @table, @legacy) IS NULL
+       AND COL_LENGTH(N'dbo.' + @table, @compact) IS NOT NULL
+    BEGIN
+        SET @sql = N'EXEC sp_rename N''dbo.' + @table + N'.' + @compact + N''', N''' + @legacy + N''', N''COLUMN'';';
+        EXEC sp_executesql @sql;
+    END;
+    FETCH NEXT FROM c INTO @table,@legacy,@compact;
+END;
+CLOSE c; DEALLOCATE c;");
+
             migrationBuilder.RenameColumn(
                 name: "usrid",
                 table: "edw_01004",
