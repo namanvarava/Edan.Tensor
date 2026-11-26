@@ -10,21 +10,13 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_03001_auth_aud_arc_jobid_tntid",
-                table: "edw_03001");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_03001\" DROP CONSTRAINT \"AK_edw_03001_auth_aud_arc_jobid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_02001_str_qta_plcyid_tntid",
-                table: "edw_02001");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_02001\" DROP CONSTRAINT \"AK_edw_02001_str_qta_plcyid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01007_prjid_orgid_tntid",
-                table: "edw_01007");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_01007\" DROP CONSTRAINT \"AK_edw_01007_prjid_orgid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
-            migrationBuilder.DropUniqueConstraint(
-                name: "AK_edw_01003_orgid_tntid",
-                table: "edw_01003");
+            migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edw_01003\" DROP CONSTRAINT \"AK_edw_01003_orgid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
             migrationBuilder.RenameColumn(
                 name: "tnt_mut_audid",
