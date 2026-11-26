@@ -10,6 +10,39 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.DataSet
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // The preceding DataSet table migration may already have applied
+            // the sequential names. Rewind only those columns so the generated
+            // EF renames below are safe to replay.
+            migrationBuilder.Sql(@"
+DECLARE @table sysname, @old sysname, @new sysname, @sql nvarchar(max);
+DECLARE c CURSOR LOCAL FAST_FORWARD FOR
+SELECT table_name, old_name, new_name
+FROM (VALUES
+ (N'edw_05009',N'dset_vld_seen_keyid',N'05009id'),
+ (N'edw_05008',N'dset_vld_dtlcd',N'05008cd'),
+ (N'edw_05008',N'dset_vld_dtlid',N'05008id'),
+ (N'edw_05007',N'dset_vld_excid',N'05007id'),
+ (N'edw_05005',N'dset_vld_prfnm',N'05005nm'),
+ (N'edw_05005',N'dset_vld_prfid',N'05005id'),
+ (N'edw_05004',N'dset_qta_thr_evtid',N'05004id'),
+ (N'edw_05003',N'dset_str_usg_snpid',N'05003id'),
+ (N'edw_05001',N'dsetnm',N'05001nm'),
+ (N'edw_05001',N'dsetid',N'05001id')) AS m(table_name,old_name,new_name);
+OPEN c;
+FETCH NEXT FROM c INTO @table,@old,@new;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    IF OBJECT_ID(N'dbo.' + @table) IS NOT NULL
+       AND COL_LENGTH(N'dbo.' + @table, @old) IS NULL
+       AND COL_LENGTH(N'dbo.' + @table, @new) IS NOT NULL
+    BEGIN
+        SET @sql = N'EXEC sp_rename N''dbo.' + @table + N'.' + @new + N''', N''' + @old + N''', N''COLUMN'';';
+        EXEC sp_executesql @sql;
+    END;
+    FETCH NEXT FROM c INTO @table,@old,@new;
+END;
+CLOSE c; DEALLOCATE c;");
+
             migrationBuilder.RenameColumn(
                 name: "dset_vld_seen_keyid",
                 table: "edw_05009",
