@@ -126,6 +126,10 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "edpf_usr_FKTenantId",
                 table: "edpf_usr");
 
+            migrationBuilder.DropForeignKey(
+                name: "edpf_inv_FKUserId",
+                table: "edpf_inv");
+
             migrationBuilder.DropPrimaryKey(
                 name: "edpf_usr_PK",
                 table: "edpf_usr");
@@ -1036,6 +1040,14 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 column: "tntid",
                 principalTable: "edw_01001",
                 principalColumn: "01001id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_inv_FKUserId",
+                table: "edpf_inv",
+                column: "UserId",
+                principalTable: "edw_01004",
+                principalColumn: "01004id",
                 onDelete: ReferentialAction.Restrict);
         }
 
