@@ -45,7 +45,22 @@ FROM (VALUES
  (N'edw_01012',N'auth_plcy_chgid',N'01012id'),
  (N'edw_01011',N'auth_audid',N'01011id'),
  (N'edw_01010',N'auth_plcyid',N'01010id'),
- (N'edw_01009',N'plcyid',N'01009id')) AS m(table_name,old_name,new_name);
+ (N'edw_01009',N'plcyid',N'01009id'),
+ (N'edw_01008',N'rsrcnm',N'01008nm'),
+ (N'edw_01008',N'rsrcid',N'01008id'),
+ (N'edw_01007',N'prjnm',N'01007nm'),
+ (N'edw_01007',N'prjcd',N'01007cd'),
+ (N'edw_01007',N'prjid',N'01007id'),
+ (N'edw_01006',N'prj_mbrid',N'01006id'),
+ (N'edw_01005',N'org_mbrid',N'01005id'),
+ (N'edw_01004',N'usrid',N'01004id'),
+ (N'edw_01003',N'orgnm',N'01003nm'),
+ (N'edw_01003',N'orgcd',N'01003cd'),
+ (N'edw_01003',N'orgid',N'01003id'),
+ (N'edw_01002',N'tnt_mbrid',N'01002id'),
+ (N'edw_01001',N'tntnm',N'01001nm'),
+ (N'edw_01001',N'tntcd',N'01001cd'),
+ (N'edw_01001',N'tntid',N'01001id')) AS m(table_name,old_name,new_name);
 OPEN c;
 FETCH NEXT FROM c INTO @table,@old,@new;
 WHILE @@FETCH_STATUS = 0
