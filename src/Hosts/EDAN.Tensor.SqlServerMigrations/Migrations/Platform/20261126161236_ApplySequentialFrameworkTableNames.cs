@@ -53,7 +53,8 @@ FROM (VALUES
  (N'edpf_rsrc',N'rsrcnm',N'nm'),
  (N'edpf_prjmbr',N'prj_mbrid',N'prjmbrid'),
  (N'edpf_prj',N'prjnm',N'nm'),
- (N'edpf_prj',N'prjcd',N'cd')) AS m(table_name,legacy_name,compact_name);
+ (N'edpf_prj',N'prjcd',N'cd'),
+ (N'edpf_orgmbr',N'org_mbrid',N'orgmbrid')) AS m(table_name,legacy_name,compact_name);
 OPEN c;
 FETCH NEXT FROM c INTO @table,@legacy,@compact;
 WHILE @@FETCH_STATUS = 0
