@@ -16,7 +16,7 @@ public sealed class WorkerDbContext(DbContextOptions<WorkerDbContext> options) :
     {
         base.OnModelCreating(modelBuilder);
         ConfigureModel(modelBuilder);
-        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true);
+        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) != true);
     }
 
     private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder, bool useSequentialColumnNames)

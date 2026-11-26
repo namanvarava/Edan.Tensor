@@ -56,7 +56,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         ConfigureTenantDatabaseBinding(modelBuilder);
         ConfigureTenantDatabaseRoutineAllowlist(modelBuilder);
         ConfigureTenantDatabaseMutationAudit(modelBuilder);
-        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true);
+        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) != true);
     }
 
     private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder, bool useSequentialColumnNames)
