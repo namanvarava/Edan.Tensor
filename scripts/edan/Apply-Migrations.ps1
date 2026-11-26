@@ -7,6 +7,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$dotnetToolPath = Join-Path $HOME ".dotnet/tools"
+if (Test-Path (Join-Path $dotnetToolPath "dotnet-ef")) { $env:PATH = "$dotnetToolPath$([IO.Path]::PathSeparator)$env:PATH" }
+if (-not (Get-Command dotnet-ef -ErrorAction SilentlyContinue)) { throw "dotnet-ef를 찾을 수 없습니다. 전역 dotnet-ef 도구를 설치하세요." }
 $projectName = switch ($Provider) {
     'Sqlite' { 'EDAN.Tensor.EdanMigrations' }
     'PostgreSQL' { 'EDAN.Tensor.EdanPostgreSqlMigrations' }

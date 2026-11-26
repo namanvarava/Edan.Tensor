@@ -9,6 +9,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Non-interactive SSH/systemd shells may not load the user's dotnet tool path.
+# Resolve the EF tool explicitly so migration execution is reproducible.
+$dotnetToolPath = Join-Path $HOME ".dotnet/tools"
+if (Test-Path (Join-Path $dotnetToolPath "dotnet-ef")) {
+    $env:PATH = "$dotnetToolPath$([IO.Path]::PathSeparator)$env:PATH"
+}
+if (-not (Get-Command dotnet-ef -ErrorAction SilentlyContinue)) {
+    throw "dotnet-ef를 찾을 수 없습니다. 'dotnet tool install --global dotnet-ef'로 설치한 뒤 다시 실행하세요."
+}
+
 function Read-PostgreSqlPassword {
     $secure = Read-Host "PostgreSQL 비밀번호" -AsSecureString
     $passwordPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
