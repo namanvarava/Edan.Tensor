@@ -45,7 +45,9 @@ FROM (VALUES
  (N'edpf_tntdbnd',N'tnt_dbndid',N'tntdbndid'),
  (N'edpf_tntmbr',N'tnt_mbrid',N'tntmbrid'),
  (N'edpf_tntrtnalw',N'tnt_rtn_alwid',N'tntrtnalwid'),
- (N'edpf_tntmut_aud',N'tnt_mut_audid',N'tntmutaudid')) AS m(table_name,legacy_name,compact_name);
+ (N'edpf_tntmut_aud',N'tnt_mut_audid',N'tntmutaudid'),
+ (N'edpf_tnt',N'tntnm',N'nm'),
+ (N'edpf_tnt',N'tntcd',N'cd')) AS m(table_name,legacy_name,compact_name);
 OPEN c;
 FETCH NEXT FROM c INTO @table,@legacy,@compact;
 WHILE @@FETCH_STATUS = 0
