@@ -10,6 +10,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.RenameColumn(
                 name: "dset_vld_seen_keyid",
                 table: "edw_05009",
@@ -59,11 +60,13 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                 name: "dsetid",
                 table: "edw_05001",
                 newName: "05001id");
+        #endif
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.RenameColumn(
                 name: "05009id",
                 table: "edw_05009",
@@ -113,6 +116,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                 name: "05001id",
                 table: "edw_05001",
                 newName: "dsetid");
+        #endif
         }
     }
 }
