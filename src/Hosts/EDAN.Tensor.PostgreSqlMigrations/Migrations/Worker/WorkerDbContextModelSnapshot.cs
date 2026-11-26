@@ -26,7 +26,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Worker
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("wkr_dlvid");
+                        .HasColumnName("03004id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("integer")
@@ -100,7 +100,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("wkr_tskid");
+                        .HasColumnName("03005id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("integer")
@@ -247,7 +247,7 @@ namespace EDAN.Tensor.PostgreSqlMigrations.Migrations.Worker
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("wkr_rplid");
+                        .HasColumnName("03006id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")

@@ -92,6 +92,21 @@ public static class ApprovedColumnNameConvention
 
     public static string? For(string tableName, string propertyName)
     {
+        // Sequential framework tables use the table number as the physical
+        // prefix for their primary/name/code columns (for example 05001id).
+        if (tableName.StartsWith("edw_", StringComparison.Ordinal)
+            && tableName.Length == 9
+            && int.TryParse(tableName.AsSpan(4), out _)
+            && propertyName is "Id" or "Name" or "Code")
+        {
+            return tableName[4..] + (propertyName switch
+            {
+                "Id" => "id",
+                "Name" => "nm",
+                _ => "cd"
+            });
+        }
+
         var prefix = TablePrefix(tableName);
         if (propertyName == "Id")
             return prefix + "id";
