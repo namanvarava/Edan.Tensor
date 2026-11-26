@@ -10,6 +10,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.RenameColumn(
                 name: "wkr_rplid",
                 table: "edw_03006",
@@ -24,11 +25,13 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 name: "wkr_dlvid",
                 table: "edw_03004",
                 newName: "03004id");
+        #endif
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+#if false
             migrationBuilder.RenameColumn(
                 name: "03006id",
                 table: "edw_03006",
@@ -43,6 +46,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Worker
                 name: "03004id",
                 table: "edw_03004",
                 newName: "wkr_dlvid");
+        #endif
         }
     }
 }
