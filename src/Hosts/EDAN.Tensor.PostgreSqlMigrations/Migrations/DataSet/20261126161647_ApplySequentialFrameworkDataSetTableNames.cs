@@ -26,6 +26,7 @@ BEGIN
                 ('edds_dsetvld_prf','dsetvldprfid','dset_vld_prfid'),
                 ('edds_dsetvld_exc','dsetvldexcid','dset_vld_excid'),
                 ('edds_dsetvld_dtl','dsetvlddtlid','dset_vld_dtlid'),
+                ('edds_dsetvld_dtl','cd','dset_vld_dtlcd'),
                 ('edds_dsetstr_usgsnp','dsetstrusgsnpid','dset_str_usg_snpid'),
                 ('edds_dsetqta_threvt','dsetqtathrevtid','dset_qta_thr_evtid'),
                 ('edds_dsetvld_seenkey','dsetvldseenkeyid','dset_vld_seen_keyid'),
