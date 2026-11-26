@@ -221,25 +221,15 @@ CLOSE c; DEALLOCATE c;");
                 table: "edw_01001",
                 newName: "01001id");
 
-            migrationBuilder.AddUniqueConstraint(
-                name: "AK_edw_03001_03001id_tntid",
-                table: "edw_03001",
-                columns: new[] { "03001id", "tntid" });
-
-            migrationBuilder.AddUniqueConstraint(
-                name: "AK_edw_02001_02001id_tntid",
-                table: "edw_02001",
-                columns: new[] { "02001id", "tntid" });
-
-            migrationBuilder.AddUniqueConstraint(
-                name: "AK_edw_01007_01007id_orgid_tntid",
-                table: "edw_01007",
-                columns: new[] { "01007id", "orgid", "tntid" });
-
-            migrationBuilder.AddUniqueConstraint(
-                name: "AK_edw_01003_01003id_tntid",
-                table: "edw_01003",
-                columns: new[] { "01003id", "tntid" });
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edw_03001_03001id_tntid')
+    ALTER TABLE [edw_03001] ADD CONSTRAINT [AK_edw_03001_03001id_tntid] UNIQUE ([03001id], [tntid]);
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edw_02001_02001id_tntid')
+    ALTER TABLE [edw_02001] ADD CONSTRAINT [AK_edw_02001_02001id_tntid] UNIQUE ([02001id], [tntid]);
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edw_01007_01007id_orgid_tntid')
+    ALTER TABLE [edw_01007] ADD CONSTRAINT [AK_edw_01007_01007id_orgid_tntid] UNIQUE ([01007id], [orgid], [tntid]);
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = N'AK_edw_01003_01003id_tntid')
+    ALTER TABLE [edw_01003] ADD CONSTRAINT [AK_edw_01003_01003id_tntid] UNIQUE ([01003id], [tntid]);");
         }
 
         /// <inheritdoc />
