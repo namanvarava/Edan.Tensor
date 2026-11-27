@@ -29,5 +29,8 @@
     <Compile Include="../EDAN.Tensor.ApiHost/Migrations/**/*.cs"
              Link="Migrations/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Remove="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Worker/WorkerDbContextModelSnapshot.cs" />
+    <Compile Remove="../EDAN.Tensor.ApiHost/Migrations/DataSetDbContextModelSnapshot.cs" />
+    <Compile Remove="../EDAN.Tensor.ApiHost/Migrations/PlatformDbContextModelSnapshot.cs" />
+    <Compile Remove="../EDAN.Tensor.ApiHost/Migrations/WorkerDbContextModelSnapshot.cs" />
   </ItemGroup>
 </Project>
