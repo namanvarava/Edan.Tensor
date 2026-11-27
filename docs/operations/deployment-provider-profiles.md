@@ -12,6 +12,8 @@ EDAN.Tensor는 배포 환경에 따라 기본 저장 Provider를 선택할 수 �
 
 두 프로파일 모두 API와 Worker가 같은 Provider 계열을 사용해야 합니다. Provider만 바꾸고 한 호스트의 연결 문자열을 다른 Provider로 남겨 두면 안 됩니다.
 
+Compose를 별도 환경 파일 없이 시작하면 `Operations__Profile=SME`, `Database__Provider=Sqlite`가 기본 적용됩니다. 대기업 운영은 Enterprise 환경 파일을 명시적으로 주입하고 `Operations__Profile=Enterprise`, `Database__Provider=PostgreSQL`을 함께 설정해야 합니다.
+
 ## Online 프로파일
 
 운영 배포에서는 다음 값을 환경 변수 또는 비밀 저장소로 주입합니다.

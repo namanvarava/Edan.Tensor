@@ -33,6 +33,8 @@ Assert-Path 'commercial-input-template' 'docs/operations/commercial-acceptance-i
 Assert-Path 'sme-profile' 'docs/operations/smb-default-profile.md'
 Assert-Path 'enterprise-profile' 'docs/operations/enterprise-default-profile.md'
 Assert-Path 'enterprise-profile-environment' 'docs/operations/enterprise-default-profile.env.example'
+Assert-Path 'profile-selection' 'docs/operations/profile-selection.md'
+Assert-Path 'profile-validation' 'scripts/verification/Assert-DeploymentProfile.ps1'
 Assert-Path 'provider-runbook' 'docs/operations/provider-acceptance-runbook.md'
 
 $requiredSources = @(
