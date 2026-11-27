@@ -7,11 +7,12 @@ services:
       - "idp.edan.test:192.168.56.101"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      Database__Provider: ${Database__Provider:-PostgreSQL}
-      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
-      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
-      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:?Set ConnectionStrings__DataSetDatabase}
-      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:?Set ConnectionStrings__DataSetContentDatabase}
+      Operations__Profile: ${Operations__Profile:-SME}
+      Database__Provider: ${Database__Provider:-Sqlite}
+      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:-Data Source=/app/App_Data/edan-platform.db;Cache=Shared}
+      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:-Data Source=/app/App_Data/edan-worker.db;Cache=Shared}
+      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:-Data Source=/app/App_Data/edan-dataset.db;Cache=Shared}
+      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:-Data Source=/app/App_Data/edan-dataset-content.db;Cache=Shared}
       Authentication__Mode: ${Authentication__Mode:-External}
       Authentication__MetadataAddress: ${Authentication__MetadataAddress:?Set Authentication__MetadataAddress}
       Authentication__Issuer: ${Authentication__Issuer:?Set Authentication__Issuer}
@@ -34,12 +35,13 @@ services:
       dockerfile: Dockerfile.worker
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      Database__Provider: ${Database__Provider:-PostgreSQL}
+      Operations__Profile: ${Operations__Profile:-SME}
+      Database__Provider: ${Database__Provider:-Sqlite}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
-      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
-      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:?Set ConnectionStrings__DataSetDatabase}
-      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:?Set ConnectionStrings__DataSetContentDatabase}
+      ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:-Data Source=/app/App_Data/edan-platform.db;Cache=Shared}
+      ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:-Data Source=/app/App_Data/edan-worker.db;Cache=Shared}
+      ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:-Data Source=/app/App_Data/edan-dataset.db;Cache=Shared}
+      ConnectionStrings__DataSetContentDatabase: ${ConnectionStrings__DataSetContentDatabase:-Data Source=/app/App_Data/edan-dataset-content.db;Cache=Shared}
     ports:
       - "${WORKER_PORT:-5001}:8080"
     depends_on:
