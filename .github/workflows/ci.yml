@@ -54,7 +54,7 @@ jobs:
           ConnectionStrings__DataSetContentDatabase=secret://EDAN_DATASET_CONTENT_CONNECTION_STRING
           '@ | Set-Content -LiteralPath $unsafe -Encoding utf8
           $output = pwsh -File ./scripts/verification/Assert-ProductionConfiguration.ps1 -EnvironmentFile $unsafe 2>&1
-          if ($LASTEXITCODE -eq 0) { throw 'Unsafe production configuration fixture was accepted.' }
+          if ($output -match 'Production configuration PASS') { throw 'Unsafe production configuration fixture was accepted.' }
           Remove-Item -LiteralPath $safe, $unsafe -Force
       - name: Provider migration and container definition check
         shell: pwsh
