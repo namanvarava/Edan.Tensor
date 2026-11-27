@@ -15,7 +15,7 @@ EDAN.Tensor는 배포 환경에 따라 두 가지 기준 Provider 프로파일�
 
 ## 운영 설정 원칙
 
-Production 설정에는 Provider만 선언하고 연결 문자열과 비밀번호는 환경 변수 또는 비밀 저장소로 주입한다.
+Production 설정에는 Provider만 선언하고 연결 문자열과 비밀번호는 환경 변수 또는 비밀 저장소로 주입한다. Compose 기본값도 PostgreSQL로 고정하여 운영 환경변수 누락 시 SQLite로 잘못 기동되지 않게 하며, SQLite는 폐쇄망·독립형 프로파일에서 `Database__Provider=Sqlite`를 명시적으로 선택한다.
 
 필수 환경 변수:
 
