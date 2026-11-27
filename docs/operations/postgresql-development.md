@@ -25,15 +25,13 @@
 - Provider: `PostgreSQL`
 - Host: `192.168.56.101`
 - Port: `5432`
-- Platform Database: `edan_platform`
-- Worker Database: `edan_worker`
-- DataSet Database: `edan_dataset`
+- Framework Database: `edan_framework` (Platform·Worker·DataSet 통합)
 - User: `edan`
 - TLS: 개발 환경에서만 `Ssl Mode=Disable`
 
 예시 연결 문자열은 다음 형식입니다.
 
-`Host=192.168.56.101;Port=5432;Database=edan_platform;Username=edan;Password=<프로세스에서만 주입>;Ssl Mode=Disable`
+`Host=192.168.56.101;Port=5432;Database=edan_framework;Username=edan;Password=<프로세스에서만 주입>;Ssl Mode=Disable`
 
 PowerShell에서는 다음처럼 비밀번호를 입력한 뒤 연결 문자열을 현재 프로세스에만 설정합니다. 입력한 비밀번호는 화면에 표시되지 않으며 저장소에 기록되지 않습니다.
 
@@ -41,9 +39,9 @@ PowerShell에서는 다음처럼 비밀번호를 입력한 뒤 연결 문자열�
 $pgPassword = Read-Host "PostgreSQL 비밀번호" -AsSecureString
 $pgCredential = [System.Net.NetworkCredential]::new("edan", $pgPassword).Password
 $env:Database__Provider = "PostgreSQL"
-$env:ConnectionStrings__PlatformDatabase = "Host=192.168.56.101;Port=5432;Database=edan_platform;Username=edan;Password=$pgCredential;Ssl Mode=Disable"
-$env:ConnectionStrings__WorkerDatabase = "Host=192.168.56.101;Port=5432;Database=edan_worker;Username=edan;Password=$pgCredential;Ssl Mode=Disable"
-$env:ConnectionStrings__DataSetDatabase = "Host=192.168.56.101;Port=5432;Database=edan_dataset;Username=edan;Password=$pgCredential;Ssl Mode=Disable"
+$env:ConnectionStrings__PlatformDatabase = "Host=192.168.56.101;Port=5432;Database=edan_framework;Username=edan;Password=$pgCredential;Ssl Mode=Disable"
+$env:ConnectionStrings__WorkerDatabase = $env:ConnectionStrings__PlatformDatabase
+$env:ConnectionStrings__DataSetDatabase = $env:ConnectionStrings__PlatformDatabase
 $env:Database__ApplyMigrationsInDevelopment = "true"
 ```
 
@@ -59,7 +57,7 @@ Remove-Variable pgPassword, pgCredential -ErrorAction SilentlyContinue
 ## 마이그레이션 실행 전 확인
 
 1. PostgreSQL 서버가 실행 중이고 TCP 5432를 허용하는지 확인합니다.
-2. 대상 데이터베이스(`edan_platform`, `edan_worker`, `edan_dataset`)와 `edan` 사용자에게 스키마 변경 권한이 있는지 확인합니다.
+2. 대상 데이터베이스(`edan_framework`)와 `edan` 사용자에게 스키마 변경 권한이 있는지 확인합니다. Platform·Worker·DataSet 세 Migration은 같은 DB의 별도 Migration History 테이블을 사용합니다.
 3. 애플리케이션 프로세스에만 연결 문자열을 주입합니다.
 4. 개발 환경에서만 `Database:ApplyMigrationsInDevelopment=true`를 사용합니다.
 5. API Host를 실행한 뒤 `/health/database`에서 Platform, Worker, DataSet 연결 상태를 확인합니다.

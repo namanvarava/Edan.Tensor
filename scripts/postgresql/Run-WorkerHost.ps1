@@ -1,6 +1,6 @@
 param(
     [string]$HostUrl = "http://127.0.0.1:5001",
-    [string]$Database = "edan_platform"
+    [string]$Database = "edan_framework"
 )
 
 $ErrorActionPreference = "Stop"
