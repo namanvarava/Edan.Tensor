@@ -8,6 +8,7 @@ EDAN.Tensor는 배포 환경에 따라 기본 저장 Provider를 선택할 수 �
 |---|---|---|---|
 | Online | Edan 운영 서비스 또는 중앙 운영 환경 | PostgreSQL | Platform·Worker·DataSet 메타데이터를 PostgreSQL에 저장 |
 | OfflineSingleCustomer | 폐쇄망 또는 고객사 전용 단일 설치 | SQLite | 고객사 내부의 App_Data 파일에 저장 |
+| Enterprise | 다중 인스턴스·고가용성·대규모 고객 환경 | PostgreSQL | Framework 메타데이터를 HA PostgreSQL 클러스터에 저장 |
 
 두 프로파일 모두 API와 Worker가 같은 Provider 계열을 사용해야 합니다. Provider만 바꾸고 한 호스트의 연결 문자열을 다른 Provider로 남겨 두면 안 됩니다.
 
@@ -54,3 +55,24 @@ SQLite를 사용하더라도 인증을 자동으로 우회하지 않습니다. �
 5. 플랫폼·Worker·Dataset Migration History와 라이선스 검증을 확인합니다.
 
 SQLite는 폐쇄망·단일 고객사에 적합하지만, 여러 인스턴스의 동시 쓰기와 대규모 운영에는 PostgreSQL 프로파일을 사용합니다.
+
+## Enterprise 프로파일
+
+대기업 설치에서는 다음 원칙을 적용합니다.
+
+- API와 Worker를 최소 2개 인스턴스로 운영하고, 무상태 API 앞에 고객사 표준 Load Balancer를 둡니다.
+- Framework의 Platform·Worker·DataSet은 PostgreSQL HA 클러스터 또는 관리형 PostgreSQL에 저장합니다. API와 Worker는 동일한 스키마 계약과 Migration 버전을 사용합니다.
+- 고객 업무 데이터(Edan)는 고객사가 선택한 PostgreSQL·SQL Server·Oracle 중 하나를 Tenant Database Binding으로 연결합니다. Framework DB와 업무 DB를 하나의 분산 트랜잭션으로 묶지 않고, 복수 DB DML은 작업 오케스트레이션·멱등키·재시도·보상·감사상태로 처리합니다.
+- 외부 IdP는 고객사 표준 OIDC/SAML 연계 정책을 따르며, API는 HTTPS Metadata/Issuer와 Audience를 검증합니다. Keycloak은 고객사가 제공하지 않을 때의 참조 구현입니다.
+- DB 비밀번호, IdP Client Secret, 라이선스 서명키는 Vault·클라우드 Secret Manager·고객사 HSM 연계 저장소 중 하나에서 런타임 주입합니다. 환경 파일에는 Secret URI와 비밀 식별자만 둡니다.
+- 백업은 PostgreSQL PITR/WAL과 고객 업무 DB의 공식 백업 기능을 함께 사용합니다. 기본 목표는 RPO 15분, RTO 1시간이며 계약 SLA가 우선합니다. 월 1회 복구 리허설과 분기 1회 장애 전환 리허설을 기록합니다.
+- 로그·감사·메트릭은 고객 SIEM/관제 플랫폼으로 전달하고, API·Worker·DB·백업·라이선스 만료를 알림 규칙으로 연결합니다.
+- 기본 용량 기준은 100명 동시 사용자, 25 RPS, p95 1초 이하·p99 3초 이하입니다. 실제 SLA와 부하시험 결과로 조정합니다.
+
+적용 순서는 다음과 같습니다.
+
+1. PostgreSQL HA, 백업 저장소, Secret Manager, IdP, Load Balancer의 고객 표준을 확정합니다.
+2. `enterprise-default-profile.env.example`을 외부 운영 경로에 복사하고 Secret URI만 입력합니다.
+3. 배포 파이프라인에서 Framework Migration을 단일 실행하고, API·Worker를 동일 릴리스로 롤링 배포합니다.
+4. Tenant, Membership, License, 고객 업무 DB Binding과 Routine Allowlist를 등록합니다.
+5. 정상·실패·재시도·보상·멱등성, 장애 전환, 백업 복구, 보안 및 부하 검증을 수행하고 증적을 보관합니다.
