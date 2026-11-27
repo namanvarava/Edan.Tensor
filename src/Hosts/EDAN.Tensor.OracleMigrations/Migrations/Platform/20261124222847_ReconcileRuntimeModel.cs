@@ -10,6 +10,14 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg");
+
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_strqta_plcy\" DROP CONSTRAINT \"AK_edpf_strqta_plcy_strqtaplcyid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
 
             migrationBuilder.Sql("BEGIN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_authaud_arcjob\" DROP CONSTRAINT \"AK_edpf_authaud_arcjob_authaudarcjobid_tntid\"'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2443 THEN RAISE; END IF; END;");
@@ -19,7 +27,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_tntrtnalw",
                 newName: "tnt_rtn_alwid");
 
-            migrationBuilder.Sql("BEGIN IF EXISTS (SELECT 1 FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid') AND NOT EXISTS (SELECT 1 FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid') THEN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_tntmut_aud\" RENAME COLUMN \"tntmutaudid\" TO \"tnt_mut_audid\"'; END IF; END;");
+            migrationBuilder.Sql("DECLARE v_old NUMBER; v_new NUMBER; BEGIN SELECT COUNT(*) INTO v_old FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tntmutaudid'; SELECT COUNT(*) INTO v_new FROM user_tab_columns WHERE table_name = 'edpf_tntmut_aud' AND column_name = 'tnt_mut_audid'; IF v_old > 0 AND v_new = 0 THEN EXECUTE IMMEDIATE 'ALTER TABLE \"edpf_tntmut_aud\" RENAME COLUMN \"tntmutaudid\" TO \"tnt_mut_audid\"'; END IF; END;");
 
             migrationBuilder.RenameColumn(
                 name: "tntmbrid",
@@ -345,6 +353,22 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "AK_edpf_authaud_arcjob_auth_aud_arc_jobid_tntid",
                 table: "edpf_authaud_arcjob",
                 columns: new[] { "auth_aud_arc_jobid", "tntid" });
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm",
+                columns: new[] { "jobid", "tntid" },
+                principalTable: "edpf_authaud_arcjob",
+                principalColumns: new[] { "auth_aud_arc_jobid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg",
+                columns: new[] { "plcyid", "tntid" },
+                principalTable: "edpf_strqta_plcy",
+                principalColumns: new[] { "str_qta_plcyid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />

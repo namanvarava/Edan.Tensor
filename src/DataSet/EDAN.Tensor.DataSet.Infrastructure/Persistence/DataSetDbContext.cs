@@ -23,10 +23,10 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
     {
         base.OnModelCreating(modelBuilder);
         ConfigureModel(modelBuilder);
-        ApplyDatabaseObjectNames(modelBuilder);
+        ApplyDatabaseObjectNames(modelBuilder, Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) != true);
     }
 
-    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder)
+    private static void ApplyDatabaseObjectNames(ModelBuilder modelBuilder, bool useSequentialColumnNames)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -40,7 +40,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
                 foreignKey.SetConstraintName($"{tableName}_FK{foreignKey.Properties.First().Name}");
             foreach (var property in entityType.GetProperties())
             {
-                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name);
+                var columnName = ApprovedColumnNameConvention.For(tableName, property.Name, useSequentialColumnNames);
                 if (columnName is not null) property.SetColumnName(columnName);
             }
         }
@@ -52,7 +52,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         var idConverter = new ValueConverter<DataSetId, Guid>(id => id.Value, value => new DataSetId(value));
         var storageReferenceConverter = new ValueConverter<StorageReference, string>(reference => reference.Value, value => new StorageReference(value));
         var entity = modelBuilder.Entity<DataSetAggregate>();
-        entity.ToTable("edds_dset");
+        entity.ToTable("edw_05001");
         entity.HasKey(x => x.Id);
         entity.Property(x => x.Id).HasConversion(idConverter).ValueGeneratedNever();
         entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -69,7 +69,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.HasIndex(x => new { x.TenantId, x.OrganizationId, x.ProjectId });
         entity.OwnsMany(x => x.SchemaRevisions, revisions =>
         {
-            revisions.ToTable("edds_dsetschm_rev");
+            revisions.ToTable("edw_05002");
             revisions.WithOwner().HasForeignKey("DataSetId");
             revisions.Property<DataSetId>("DataSetId").HasConversion(idConverter);
             revisions.Property(x => x.Version).IsRequired();
@@ -81,7 +81,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
 
         var usageSnapshot = modelBuilder.Entity<DataSetStorageUsageSnapshot>();
-        usageSnapshot.ToTable("edds_dsetstr_usgsnp");
+        usageSnapshot.ToTable("edw_05003");
         usageSnapshot.HasKey(x => x.Id);
         usageSnapshot.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
         usageSnapshot.Property(x => x.TenantId).IsRequired();
@@ -93,7 +93,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         usageSnapshot.HasIndex(x => new { x.TenantId, x.CapturedAtUtc });
 
         var quotaEvent = modelBuilder.Entity<DataSetQuotaThresholdEvent>();
-        quotaEvent.ToTable("edds_dsetqta_threvt");
+        quotaEvent.ToTable("edw_05004");
         quotaEvent.HasKey(x => x.Id);
         quotaEvent.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
         quotaEvent.Property(x => x.TenantId).IsRequired();
@@ -110,7 +110,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         quotaEvent.HasIndex(x => new { x.TenantId, x.OccurredAtUtc });
 
         var profile = modelBuilder.Entity<DataSetValidationProfile>();
-        profile.ToTable("edds_dsetvld_prf");
+        profile.ToTable("edw_05005");
         profile.HasKey(x => x.Id);
         profile.Property(x => x.TenantId).IsRequired();
         profile.Property(x => x.Name).HasMaxLength(160).IsRequired();
@@ -118,7 +118,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         profile.HasIndex(x => new { x.TenantId, x.Name }).IsUnique();
 
         var profileRevision = modelBuilder.Entity<DataSetValidationProfileRevision>();
-        profileRevision.ToTable("edds_dsetvld_prfrev");
+        profileRevision.ToTable("edw_05006");
         profileRevision.HasKey(x => new { x.ProfileId, x.Revision });
         profileRevision.Property(x => x.ProfileId).IsRequired();
         profileRevision.Property(x => x.TenantId).IsRequired();
@@ -128,7 +128,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         profileRevision.HasIndex(x => new { x.TenantId, x.ProfileId, x.Revision });
 
         var execution = modelBuilder.Entity<DataSetValidationExecution>();
-        execution.ToTable("edds_dsetvld_exc");
+        execution.ToTable("edw_05007");
         execution.HasKey(x => x.Id);
         execution.Property(x => x.TenantId).IsRequired();
         execution.Property(x => x.DataSetId).IsRequired();
@@ -157,7 +157,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         execution.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
 
         var detail = modelBuilder.Entity<DataSetValidationDetail>();
-        detail.ToTable("edds_dsetvld_dtl");
+        detail.ToTable("edw_05008");
         detail.HasKey(x => x.Id);
         detail.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
         detail.Property(x => x.ExecutionId).IsRequired();
@@ -172,7 +172,7 @@ public sealed class DataSetDbContext(DbContextOptions<DataSetDbContext> options)
         detail.HasIndex(x => new { x.ExecutionId, x.RowNumber, x.Code, x.FieldName }).IsUnique();
 
         var seenKey = modelBuilder.Entity<DataSetValidationSeenKey>();
-        seenKey.ToTable("edds_dsetvld_seenkey");
+        seenKey.ToTable("edw_05009");
         seenKey.HasKey(x => x.Id);
         seenKey.Property(x => x.Id).ValueGeneratedOnAdd().HasAnnotation("Sqlite:Autoincrement", true);
         seenKey.Property(x => x.ExecutionId).IsRequired();

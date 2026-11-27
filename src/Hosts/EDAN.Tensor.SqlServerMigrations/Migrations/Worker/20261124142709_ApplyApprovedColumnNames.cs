@@ -10,6 +10,12 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Worker
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // SQL Server requires dependent indexes to be removed before a
+            // column rename. Recreate the legacy replay index after renaming.
+            migrationBuilder.Sql(@"
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edwk_wkrrpl_N03' AND object_id = OBJECT_ID(N'dbo.edwk_wkrrpl'))
+    DROP INDEX [edwk_wkrrpl_N03] ON [edwk_wkrrpl];");
+
             migrationBuilder.RenameColumn(
                 name: "Version",
                 table: "edwk_wkrtyp",
@@ -234,6 +240,10 @@ namespace EDAN.Tensor.SqlServerMigrations.Migrations.Worker
                 name: "Id",
                 table: "edwk_wkrdlv",
                 newName: "wkrdlvid");
+
+            migrationBuilder.Sql(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'edwk_wkrrpl_N03' AND object_id = OBJECT_ID(N'dbo.edwk_wkrrpl'))
+    CREATE INDEX [edwk_wkrrpl_N03] ON [edwk_wkrrpl] ([tntid], [orig_tskid], [rpl_reqid]);");
         }
 
         /// <inheritdoc />

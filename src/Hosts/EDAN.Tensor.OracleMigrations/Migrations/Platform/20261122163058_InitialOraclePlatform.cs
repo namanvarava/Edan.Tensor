@@ -533,7 +533,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_platform_policies", x => x.Id);
-                    table.CheckConstraint("CK_platform_policies_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
+                    table.CheckConstraint("CK_platform_policies_project_requires_organization", "\"project_id\" IS NULL OR \"organization_id\" IS NOT NULL");
                     table.ForeignKey(
                         name: "FK_platform_policies_platform_organizations_organization_id_tenant_id",
                         columns: x => new { x.organization_id, x.tenant_id },
@@ -592,7 +592,7 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_platform_resources", x => x.Id);
-                    table.CheckConstraint("CK_platform_resources_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
+                    table.CheckConstraint("CK_platform_resources_project_requires_organization", "\"project_id\" IS NULL OR \"organization_id\" IS NOT NULL");
                     table.ForeignKey(
                         name: "FK_platform_resources_platform_organizations_organization_id_tenant_id",
                         columns: x => new { x.organization_id, x.tenant_id },

@@ -135,9 +135,17 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "FK_platform_users_platform_tenants_TenantId",
                 table: "platform_users");
 
+            migrationBuilder.DropForeignKey(
+                name: "FK_platform_tenant_database_mutation_audits_platform_tenants_TenantId",
+                table: "platform_tenant_database_mutation_audits");
+
             migrationBuilder.DropPrimaryKey(
                 name: "PK_platform_users",
                 table: "platform_users");
+
+            migrationBuilder.DropPrimaryKey(
+                name: "PK_platform_tenant_database_mutation_audits",
+                table: "platform_tenant_database_mutation_audits");
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_platform_tenants",
@@ -262,6 +270,10 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
             migrationBuilder.RenameTable(
                 name: "platform_tenant_memberships",
                 newName: "edpf_tntmbr");
+
+            migrationBuilder.RenameTable(
+                name: "platform_tenant_database_mutation_audits",
+                newName: "edpf_tntmut_aud");
 
             migrationBuilder.RenameTable(
                 name: "platform_tenant_database_routine_allowlists",
@@ -559,9 +571,19 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_authaud",
                 newName: "edpf_authaud_N01");
 
+            migrationBuilder.RenameIndex(
+                name: "IX_platform_tenant_database_mutation_audits_TenantId_IdempotencyKey",
+                table: "edpf_tntmut_aud",
+                newName: "edpf_tntmut_aud_N01");
+
             migrationBuilder.AddPrimaryKey(
                 name: "edpf_usr_PK",
                 table: "edpf_usr",
+                column: "Id");
+
+            migrationBuilder.AddPrimaryKey(
+                name: "edpf_tntmut_aud_PK",
+                table: "edpf_tntmut_aud",
                 column: "Id");
 
             migrationBuilder.AddPrimaryKey(
@@ -694,47 +716,15 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 table: "edpf_authaud",
                 column: "Id");
 
-            migrationBuilder.CreateTable(
-                name: "edpf_tntmut_aud",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "RAW(16)", nullable: false),
-                    TenantId = table.Column<Guid>(type: "RAW(16)", nullable: false),
-                    IdempotencyKey = table.Column<string>(type: "NVARCHAR2(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<string>(type: "NVARCHAR2(32)", maxLength: 32, nullable: false),
-                    Succeeded = table.Column<bool>(type: "BOOLEAN", nullable: true),
-                    Compensated = table.Column<bool>(type: "BOOLEAN", nullable: true),
-                    ResultJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    Error = table.Column<string>(type: "NVARCHAR2(2000)", maxLength: 2000, nullable: true),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
-                    CompletedAtUtc = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("edpf_tntmut_aud_PK", x => x.Id);
-                    table.ForeignKey(
-                        name: "edpf_tntmut_aud_FKTenantId",
-                        column: x => x.TenantId,
-                        principalTable: "edpf_tnt",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
             migrationBuilder.AddCheckConstraint(
                 name: "CK_edpf_rsrc_project_requires_organization",
                 table: "edpf_rsrc",
-                sql: "project_id IS NULL OR organization_id IS NOT NULL");
+                sql: "\"project_id\" IS NULL OR \"organization_id\" IS NOT NULL");
 
             migrationBuilder.AddCheckConstraint(
                 name: "CK_edpf_plcy_project_requires_organization",
                 table: "edpf_plcy",
-                sql: "project_id IS NULL OR organization_id IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "edpf_tntmut_aud_N01",
-                table: "edpf_tntmut_aud",
-                columns: new[] { "TenantId", "IdempotencyKey" },
-                unique: true);
+                sql: "\"project_id\" IS NULL OR \"organization_id\" IS NOT NULL");
 
             migrationBuilder.AddForeignKey(
                 name: "edpf_authaud_FKTenantId",

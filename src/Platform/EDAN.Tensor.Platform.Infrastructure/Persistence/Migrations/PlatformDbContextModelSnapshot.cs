@@ -59,15 +59,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_arcattm_PK");
+                        .HasName("edw_03002_PK");
 
                     b.HasIndex("JobId", "TenantId")
-                        .HasDatabaseName("edpf_authaud_arcattm_N01");
+                        .HasDatabaseName("edw_03002_N01");
 
                     b.HasIndex("TenantId", "JobId", "StartedAtUtc")
-                        .HasDatabaseName("edpf_authaud_arcattm_N02");
+                        .HasDatabaseName("edw_03002_N02");
 
-                    b.ToTable("edpf_authaud_arcattm", (string)null);
+                    b.ToTable("edw_03002", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveJob", b =>
@@ -140,12 +140,12 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_arcjob_PK");
+                        .HasName("edw_03001_PK");
 
                     b.HasIndex("TenantId", "CreatedAtUtc")
-                        .HasDatabaseName("edpf_authaud_arcjob_N01");
+                        .HasDatabaseName("edw_03001_N01");
 
-                    b.ToTable("edpf_authaud_arcjob", (string)null);
+                    b.ToTable("edw_03001", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveSchedule", b =>
@@ -189,16 +189,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_arcschd_PK");
+                        .HasName("edw_03003_PK");
 
                     b.HasIndex("TenantId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_authaud_arcschd_N01");
+                        .HasDatabaseName("edw_03003_N01");
 
                     b.HasIndex("IsEnabled", "NextRunAtUtc")
-                        .HasDatabaseName("edpf_authaud_arcschd_N02");
+                        .HasDatabaseName("edw_03003_N02");
 
-                    b.ToTable("edpf_authaud_arcschd", (string)null);
+                    b.ToTable("edw_03003", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditEntry", b =>
@@ -255,15 +255,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_PK");
+                        .HasName("edw_01011_PK");
 
                     b.HasIndex("SubjectId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_authaud_N01");
+                        .HasDatabaseName("edw_01011_N01");
 
                     b.HasIndex("TenantId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_authaud_N02");
+                        .HasDatabaseName("edw_01011_N02");
 
-                    b.ToTable("edpf_authaud", (string)null);
+                    b.ToTable("edw_01011", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionChange", b =>
@@ -310,12 +310,12 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_rtnchg_PK");
+                        .HasName("edw_01014_PK");
 
                     b.HasIndex("TenantId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_authaud_rtnchg_N01");
+                        .HasDatabaseName("edw_01014_N01");
 
-                    b.ToTable("edpf_authaud_rtnchg", (string)null);
+                    b.ToTable("edw_01014", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionPolicy", b =>
@@ -358,13 +358,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authaud_rtn_PK");
+                        .HasName("edw_01013_PK");
 
                     b.HasIndex("TenantId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_authaud_rtn_N01");
+                        .HasDatabaseName("edw_01013_N01");
 
-                    b.ToTable("edpf_authaud_rtn", (string)null);
+                    b.ToTable("edw_01013", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicy", b =>
@@ -422,18 +422,18 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authplcy_PK");
+                        .HasName("edw_01010_PK");
 
                     b.HasIndex("OrganizationId", "TenantId")
-                        .HasDatabaseName("edpf_authplcy_N01");
+                        .HasDatabaseName("edw_01010_N01");
 
                     b.HasIndex("ProjectId", "OrganizationId", "TenantId")
-                        .HasDatabaseName("edpf_authplcy_N02");
+                        .HasDatabaseName("edw_01010_N02");
 
                     b.HasIndex("TenantId", "SubjectId", "Action", "ResourceType", "IsEnabled")
-                        .HasDatabaseName("edpf_authplcy_N03");
+                        .HasDatabaseName("edw_01010_N03");
 
-                    b.ToTable("edpf_authplcy", null, t =>
+                    b.ToTable("edw_01010", null, t =>
                         {
                             t.HasCheckConstraint("CK_platform_authorization_policies_project_requires_organization", "\"ProjectId\" IS NULL OR \"OrganizationId\" IS NOT NULL");
                         });
@@ -482,15 +482,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_authplcy_chg_PK");
+                        .HasName("edw_01012_PK");
 
                     b.HasIndex("PolicyId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_authplcy_chg_N01");
+                        .HasDatabaseName("edw_01012_N01");
 
                     b.HasIndex("TenantId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_authplcy_chg_N02");
+                        .HasDatabaseName("edw_01012_N02");
 
-                    b.ToTable("edpf_authplcy_chg", (string)null);
+                    b.ToTable("edw_01012", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Invitation", b =>
@@ -596,16 +596,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_org_PK");
+                        .HasName("edw_01003_PK");
 
                     b.HasIndex("TenantId")
-                        .HasDatabaseName("edpf_org_N01");
+                        .HasDatabaseName("edw_01003_N01");
 
                     b.HasIndex("TenantId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("edpf_org_N02");
+                        .HasDatabaseName("edw_01003_N02");
 
-                    b.ToTable("edpf_org", (string)null);
+                    b.ToTable("edw_01003", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.OrganizationMembership", b =>
@@ -641,16 +641,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_orgmbr_PK");
+                        .HasName("edw_01005_PK");
 
                     b.HasIndex("OrganizationId", "TenantId")
-                        .HasDatabaseName("edpf_orgmbr_N01");
+                        .HasDatabaseName("edw_01005_N01");
 
                     b.HasIndex("TenantId", "OrganizationId", "SubjectId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_orgmbr_N02");
+                        .HasDatabaseName("edw_01005_N02");
 
-                    b.ToTable("edpf_orgmbr", (string)null);
+                    b.ToTable("edw_01005", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Policy", b =>
@@ -693,21 +693,21 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("ver");
 
                     b.HasKey("Id")
-                        .HasName("edpf_plcy_PK");
+                        .HasName("edw_01009_PK");
 
                     b.HasIndex("ScopeTenantId")
-                        .HasDatabaseName("edpf_plcy_N01");
+                        .HasDatabaseName("edw_01009_N01");
 
                     b.HasIndex("Key", "Version")
-                        .HasDatabaseName("edpf_plcy_N02");
+                        .HasDatabaseName("edw_01009_N02");
 
                     b.HasIndex("ScopeOrganizationId", "ScopeTenantId")
-                        .HasDatabaseName("edpf_plcy_N03");
+                        .HasDatabaseName("edw_01009_N03");
 
                     b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
-                        .HasDatabaseName("edpf_plcy_N04");
+                        .HasDatabaseName("edw_01009_N04");
 
-                    b.ToTable("edpf_plcy", null, t =>
+                    b.ToTable("edw_01009", null, t =>
                         {
                             t.HasCheckConstraint("CK_edpf_plcy_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
                         });
@@ -746,19 +746,19 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_prj_PK");
+                        .HasName("edw_01007_PK");
 
                     b.HasIndex("OrganizationId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("edpf_prj_N01");
+                        .HasDatabaseName("edw_01007_N01");
 
                     b.HasIndex("OrganizationId", "TenantId")
-                        .HasDatabaseName("edpf_prj_N02");
+                        .HasDatabaseName("edw_01007_N02");
 
                     b.HasIndex("TenantId", "OrganizationId")
-                        .HasDatabaseName("edpf_prj_N03");
+                        .HasDatabaseName("edw_01007_N03");
 
-                    b.ToTable("edpf_prj", (string)null);
+                    b.ToTable("edw_01007", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.ProjectMembership", b =>
@@ -798,16 +798,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_prjmbr_PK");
+                        .HasName("edw_01006_PK");
 
                     b.HasIndex("ProjectId", "OrganizationId", "TenantId")
-                        .HasDatabaseName("edpf_prjmbr_N01");
+                        .HasDatabaseName("edw_01006_N01");
 
                     b.HasIndex("TenantId", "OrganizationId", "ProjectId", "SubjectId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_prjmbr_N02");
+                        .HasDatabaseName("edw_01006_N02");
 
-                    b.ToTable("edpf_prjmbr", (string)null);
+                    b.ToTable("edw_01006", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Resource", b =>
@@ -847,18 +847,18 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("st");
 
                     b.HasKey("Id")
-                        .HasName("edpf_rsrc_PK");
+                        .HasName("edw_01008_PK");
 
                     b.HasIndex("ScopeTenantId")
-                        .HasDatabaseName("edpf_rsrc_N01");
+                        .HasDatabaseName("edw_01008_N01");
 
                     b.HasIndex("ScopeOrganizationId", "ScopeTenantId")
-                        .HasDatabaseName("edpf_rsrc_N02");
+                        .HasDatabaseName("edw_01008_N02");
 
                     b.HasIndex("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
-                        .HasDatabaseName("edpf_rsrc_N03");
+                        .HasDatabaseName("edw_01008_N03");
 
-                    b.ToTable("edpf_rsrc", null, t =>
+                    b.ToTable("edw_01008", null, t =>
                         {
                             t.HasCheckConstraint("CK_edpf_rsrc_project_requires_organization", "project_id IS NULL OR organization_id IS NOT NULL");
                         });
@@ -931,16 +931,16 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("warn_thr_pct");
 
                     b.HasKey("Id")
-                        .HasName("edpf_strqta_plcy_PK");
+                        .HasName("edw_02001_PK");
 
                     b.HasIndex("TenantId", "IsEnabled")
-                        .HasDatabaseName("edpf_strqta_plcy_N01");
+                        .HasDatabaseName("edw_02001_N01");
 
                     b.HasIndex("TenantId", "Scope", "TargetId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_strqta_plcy_N02");
+                        .HasDatabaseName("edw_02001_N02");
 
-                    b.ToTable("edpf_strqta_plcy", (string)null);
+                    b.ToTable("edw_02001", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicyChangeAuditEntry", b =>
@@ -987,15 +987,15 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_strqta_plcychg_PK");
+                        .HasName("edw_02002_PK");
 
                     b.HasIndex("PolicyId", "TenantId")
-                        .HasDatabaseName("edpf_strqta_plcychg_N01");
+                        .HasDatabaseName("edw_02002_N01");
 
                     b.HasIndex("TenantId", "OccurredAtUtc")
-                        .HasDatabaseName("edpf_strqta_plcychg_N02");
+                        .HasDatabaseName("edw_02002_N02");
 
-                    b.ToTable("edpf_strqta_plcychg", (string)null);
+                    b.ToTable("edw_02002", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Tenant", b =>
@@ -1027,13 +1027,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("st");
 
                     b.HasKey("Id")
-                        .HasName("edpf_tnt_PK");
+                        .HasName("edw_01001_PK");
 
                     b.HasIndex("Code")
                         .IsUnique()
-                        .HasDatabaseName("edpf_tnt_N01");
+                        .HasDatabaseName("edw_01001_N01");
 
-                    b.ToTable("edpf_tnt", (string)null);
+                    b.ToTable("edw_01001", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
@@ -1105,17 +1105,17 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("usrnm");
 
                     b.HasKey("Id")
-                        .HasName("edpf_tntdbnd_PK");
+                        .HasName("edw_04001_PK");
 
                     b.HasIndex("TenantId", "Provider")
-                        .HasDatabaseName("edpf_tntdbnd_N01");
+                        .HasDatabaseName("edw_04001_N01");
 
                     b.HasIndex("TenantId", "Provider", "Status")
                         .IsUnique()
-                        .HasDatabaseName("edpf_tntdbnd_N02")
+                        .HasDatabaseName("edw_04001_N02")
                         .HasFilter("\"Status\" = 'Active'");
 
-                    b.ToTable("edpf_tntdbnd", (string)null);
+                    b.ToTable("edw_04001", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseMutationAudit", b =>
@@ -1162,13 +1162,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_tntmut_aud_PK");
+                        .HasName("edw_04003_PK");
 
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
-                        .HasDatabaseName("edpf_tntmut_aud_N01");
+                        .HasDatabaseName("edw_04003_N01");
 
-                    b.ToTable("edpf_tntmut_aud", (string)null);
+                    b.ToTable("edw_04003", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
@@ -1210,13 +1210,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("upd_utc");
 
                     b.HasKey("Id")
-                        .HasName("edpf_tntrtnalw_PK");
+                        .HasName("edw_04002_PK");
 
                     b.HasIndex("TenantId", "SchemaName", "RoutineName", "Kind")
                         .IsUnique()
-                        .HasDatabaseName("edpf_tntrtnalw_N01");
+                        .HasDatabaseName("edw_04002_N01");
 
-                    b.ToTable("edpf_tntrtnalw", (string)null);
+                    b.ToTable("edw_04002", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
@@ -1248,13 +1248,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_tntmbr_PK");
+                        .HasName("edw_01002_PK");
 
                     b.HasIndex("TenantId", "SubjectId")
                         .IsUnique()
-                        .HasDatabaseName("edpf_tntmbr_N01");
+                        .HasDatabaseName("edw_01002_N01");
 
-                    b.ToTable("edpf_tntmbr", (string)null);
+                    b.ToTable("edw_01002", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.User", b =>
@@ -1286,13 +1286,13 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasColumnName("tntid");
 
                     b.HasKey("Id")
-                        .HasName("edpf_usr_PK");
+                        .HasName("edw_01004_PK");
 
                     b.HasIndex("TenantId", "Email")
                         .IsUnique()
-                        .HasDatabaseName("edpf_usr_N01");
+                        .HasDatabaseName("edw_01004_N01");
 
-                    b.ToTable("edpf_usr", (string)null);
+                    b.ToTable("edw_01004", (string)null);
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveAttempt", b =>
@@ -1302,7 +1302,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_arcattm_FKTenantId");
+                        .HasConstraintName("edw_03002_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveJob", null)
                         .WithMany()
@@ -1310,7 +1310,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_arcattm_FKJobId");
+                        .HasConstraintName("edw_03002_FKJobId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveJob", b =>
@@ -1320,7 +1320,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_arcjob_FKTenantId");
+                        .HasConstraintName("edw_03001_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditArchiveSchedule", b =>
@@ -1330,7 +1330,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_arcschd_FKTenantId");
+                        .HasConstraintName("edw_03003_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditEntry", b =>
@@ -1340,7 +1340,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_FKTenantId");
+                        .HasConstraintName("edw_01011_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionChange", b =>
@@ -1350,7 +1350,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_rtnchg_FKTenantId");
+                        .HasConstraintName("edw_01014_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationAuditRetentionPolicy", b =>
@@ -1360,7 +1360,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authaud_rtn_FKTenantId");
+                        .HasConstraintName("edw_01013_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicy", b =>
@@ -1370,21 +1370,21 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authplcy_FKTenantId");
+                        .HasConstraintName("edw_01010_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_authplcy_FKOrganizationId");
+                        .HasConstraintName("edw_01010_FKOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ProjectId", "OrganizationId", "TenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_authplcy_FKProjectId");
+                        .HasConstraintName("edw_01010_FKProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.AuthorizationPolicyChangeAuditEntry", b =>
@@ -1394,7 +1394,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_authplcy_chg_FKTenantId");
+                        .HasConstraintName("edw_01012_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Invitation", b =>
@@ -1421,7 +1421,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_org_FKTenantId");
+                        .HasConstraintName("edw_01003_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.OrganizationMembership", b =>
@@ -1432,7 +1432,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_orgmbr_FKOrganizationId");
+                        .HasConstraintName("edw_01005_FKOrganizationId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Policy", b =>
@@ -1442,21 +1442,21 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ScopeTenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_plcy_FKScopeTenantId");
+                        .HasConstraintName("edw_01009_FKScopeTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_plcy_FKScopeOrganizationId");
+                        .HasConstraintName("edw_01009_FKScopeOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_plcy_FKScopeProjectId");
+                        .HasConstraintName("edw_01009_FKScopeProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Project", b =>
@@ -1466,7 +1466,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_prj_FKTenantId");
+                        .HasConstraintName("edw_01007_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
@@ -1474,7 +1474,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_prj_FKOrganizationId");
+                        .HasConstraintName("edw_01007_FKOrganizationId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.ProjectMembership", b =>
@@ -1485,7 +1485,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_prjmbr_FKProjectId");
+                        .HasConstraintName("edw_01006_FKProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.Resource", b =>
@@ -1495,21 +1495,21 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ScopeTenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_rsrc_FKScopeTenantId");
+                        .HasConstraintName("edw_01008_FKScopeTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Organization", null)
                         .WithMany()
                         .HasForeignKey("ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_rsrc_FKScopeOrganizationId");
+                        .HasConstraintName("edw_01008_FKScopeOrganizationId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.Project", null)
                         .WithMany()
                         .HasForeignKey("ScopeProjectId", "ScopeOrganizationId", "ScopeTenantId")
                         .HasPrincipalKey("Id", "OrganizationId", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("edpf_rsrc_FKScopeProjectId");
+                        .HasConstraintName("edw_01008_FKScopeProjectId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicy", b =>
@@ -1519,7 +1519,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_strqta_plcy_FKTenantId");
+                        .HasConstraintName("edw_02001_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicyChangeAuditEntry", b =>
@@ -1529,7 +1529,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_strqta_plcychg_FKTenantId");
+                        .HasConstraintName("edw_02002_FKTenantId");
 
                     b.HasOne("EDAN.Tensor.Platform.Domain.Model.StorageQuotaPolicy", null)
                         .WithMany()
@@ -1537,7 +1537,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("Id", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_strqta_plcychg_FKPolicyId");
+                        .HasConstraintName("edw_02002_FKPolicyId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseBinding", b =>
@@ -1547,7 +1547,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_tntdbnd_FKTenantId");
+                        .HasConstraintName("edw_04001_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseMutationAudit", b =>
@@ -1557,7 +1557,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_tntmut_aud_FKTenantId");
+                        .HasConstraintName("edw_04003_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantDatabaseRoutineAllowlist", b =>
@@ -1567,7 +1567,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_tntrtnalw_FKTenantId");
+                        .HasConstraintName("edw_04002_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.TenantMembership", b =>
@@ -1577,7 +1577,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_tntmbr_FKTenantId");
+                        .HasConstraintName("edw_01002_FKTenantId");
                 });
 
             modelBuilder.Entity("EDAN.Tensor.Platform.Domain.Model.User", b =>
@@ -1587,7 +1587,7 @@ namespace EDAN.Tensor.Platform.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("edpf_usr_FKTenantId");
+                        .HasConstraintName("edw_01004_FKTenantId");
                 });
 #pragma warning restore 612, 618
         }

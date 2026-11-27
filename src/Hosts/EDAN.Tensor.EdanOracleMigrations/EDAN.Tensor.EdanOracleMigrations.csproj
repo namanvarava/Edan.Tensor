@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><AssemblyName>EDAN.Tensor.EdanOracleMigrations</AssemblyName><RootNamespace>EDAN.Tensor.EdanOracleMigrations</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Edan/EDAN.Tensor.Edan.Infrastructure/EDAN.Tensor.Edan.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <PackageReference Include="System.Security.Cryptography.Xml" PrivateAssets="all" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" />
+  </ItemGroup>
+  <ItemGroup><Compile Include="*.cs" /><Compile Include="Migrations/**/*.cs" /></ItemGroup>
+</Project>

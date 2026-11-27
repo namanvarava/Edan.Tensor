@@ -11,6 +11,10 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_dataset_schema_revisions_datasets_DataSetId",
+                table: "dataset_schema_revisions");
+
             migrationBuilder.RenameTable(
                 name: "dataset_schema_revisions",
                 newName: "edds_dsetschm_rev");
@@ -153,6 +157,14 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.DataSet
                 name: "edds_dset_PK",
                 table: "edds_dset",
                 column: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "edds_dsetschm_rev_FKDataSetId",
+                table: "edds_dsetschm_rev",
+                column: "DataSetId",
+                principalTable: "edds_dset",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddPrimaryKey(
                 name: "edds_dsetvld_seenkey_PK",

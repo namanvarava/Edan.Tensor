@@ -10,6 +10,50 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_authplcy_FKOrganizationId",
+                table: "edpf_authplcy");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_orgmbr_FKOrganizationId",
+                table: "edpf_orgmbr");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_plcy_FKScopeOrganizationId",
+                table: "edpf_plcy");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_prj_FKOrganizationId",
+                table: "edpf_prj");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_rsrc_FKScopeOrganizationId",
+                table: "edpf_rsrc");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_authplcy_FKProjectId",
+                table: "edpf_authplcy");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_plcy_FKScopeProjectId",
+                table: "edpf_plcy");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_prjmbr_FKProjectId",
+                table: "edpf_prjmbr");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_rsrc_FKScopeProjectId",
+                table: "edpf_rsrc");
+
+            migrationBuilder.DropForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg");
+
             migrationBuilder.DropUniqueConstraint(
                 name: "AK_edpf_strqta_plcy_Id_TenantId",
                 table: "edpf_strqta_plcy");
@@ -769,6 +813,94 @@ namespace EDAN.Tensor.OracleMigrations.Migrations.Platform
                 name: "AK_edpf_authaud_arcjob_authaudarcjobid_tntid",
                 table: "edpf_authaud_arcjob",
                 columns: new[] { "authaudarcjobid", "tntid" });
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_authaud_arcattm_FKJobId",
+                table: "edpf_authaud_arcattm",
+                columns: new[] { "jobid", "tntid" },
+                principalTable: "edpf_authaud_arcjob",
+                principalColumns: new[] { "authaudarcjobid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_authplcy_FKOrganizationId",
+                table: "edpf_authplcy",
+                columns: new[] { "orgid", "tntid" },
+                principalTable: "edpf_org",
+                principalColumns: new[] { "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_orgmbr_FKOrganizationId",
+                table: "edpf_orgmbr",
+                columns: new[] { "orgid", "tntid" },
+                principalTable: "edpf_org",
+                principalColumns: new[] { "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_plcy_FKScopeOrganizationId",
+                table: "edpf_plcy",
+                columns: new[] { "organization_id", "tenant_id" },
+                principalTable: "edpf_org",
+                principalColumns: new[] { "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_prj_FKOrganizationId",
+                table: "edpf_prj",
+                columns: new[] { "orgid", "tntid" },
+                principalTable: "edpf_org",
+                principalColumns: new[] { "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_rsrc_FKScopeOrganizationId",
+                table: "edpf_rsrc",
+                columns: new[] { "organization_id", "tenant_id" },
+                principalTable: "edpf_org",
+                principalColumns: new[] { "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_authplcy_FKProjectId",
+                table: "edpf_authplcy",
+                columns: new[] { "prjid", "orgid", "tntid" },
+                principalTable: "edpf_prj",
+                principalColumns: new[] { "prjid", "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_plcy_FKScopeProjectId",
+                table: "edpf_plcy",
+                columns: new[] { "project_id", "organization_id", "tenant_id" },
+                principalTable: "edpf_prj",
+                principalColumns: new[] { "prjid", "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_prjmbr_FKProjectId",
+                table: "edpf_prjmbr",
+                columns: new[] { "prjid", "orgid", "tntid" },
+                principalTable: "edpf_prj",
+                principalColumns: new[] { "prjid", "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_rsrc_FKScopeProjectId",
+                table: "edpf_rsrc",
+                columns: new[] { "project_id", "organization_id", "tenant_id" },
+                principalTable: "edpf_prj",
+                principalColumns: new[] { "prjid", "orgid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "edpf_strqta_plcychg_FKPolicyId",
+                table: "edpf_strqta_plcychg",
+                columns: new[] { "plcyid", "tntid" },
+                principalTable: "edpf_strqta_plcy",
+                principalColumns: new[] { "strqtaplcyid", "tntid" },
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
