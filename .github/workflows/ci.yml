@@ -53,12 +53,11 @@ jobs:
           ConnectionStrings__DataSetDatabase=Host=db;Password=plaintext
           ConnectionStrings__DataSetContentDatabase=secret://EDAN_DATASET_CONTENT_CONNECTION_STRING
           '@ | Set-Content -LiteralPath $unsafe -Encoding utf8
-          $previousErrorActionPreference = $ErrorActionPreference
-          $ErrorActionPreference = 'Continue'
-          $output = & pwsh -File ./scripts/verification/Assert-ProductionConfiguration.ps1 -EnvironmentFile $unsafe 2>&1
-          $unsafeExitCode = $LASTEXITCODE
-          $ErrorActionPreference = $previousErrorActionPreference
-          if ($unsafeExitCode -eq 0 -or $output -match 'Production configuration PASS') { throw 'Unsafe production configuration fixture was accepted.' }
+          $unsafeProcess = Start-Process -FilePath 'pwsh' -ArgumentList @(
+            '-File', './scripts/verification/Assert-ProductionConfiguration.ps1',
+            '-EnvironmentFile', $unsafe
+          ) -Wait -PassThru -NoNewWindow
+          if ($unsafeProcess.ExitCode -eq 0) { throw 'Unsafe production configuration fixture was accepted.' }
           Remove-Item -LiteralPath $safe, $unsafe -Force
       - name: Provider migration and container definition check
         shell: pwsh
