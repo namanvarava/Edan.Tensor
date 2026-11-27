@@ -21,6 +21,41 @@ jobs:
         run: dotnet restore EDAN.Tensor.sln
       - name: Build
         run: dotnet build EDAN.Tensor.sln --no-restore --configuration Release
+      - name: Production configuration preflight check
+        shell: pwsh
+        run: |
+          $safe = New-TemporaryFile
+          @'
+          ASPNETCORE_ENVIRONMENT=Production
+          Database__Provider=PostgreSQL
+          Authentication__Mode=External
+          Authentication__MetadataAddress=https://idp.example.test/realms/ci/.well-known/openid-configuration
+          Authentication__Issuer=https://idp.example.test/realms/ci
+          Authentication__Audience=edan-tensor-api
+          Authentication__RequireHttpsMetadata=true
+          ConnectionStrings__PlatformDatabase=secret://EDAN_PLATFORM_CONNECTION_STRING
+          ConnectionStrings__WorkerDatabase=secret://EDAN_WORKER_CONNECTION_STRING
+          ConnectionStrings__DataSetDatabase=secret://EDAN_DATASET_CONNECTION_STRING
+          ConnectionStrings__DataSetContentDatabase=secret://EDAN_DATASET_CONTENT_CONNECTION_STRING
+          '@ | Set-Content -LiteralPath $safe -Encoding utf8
+          pwsh -File ./scripts/verification/Assert-ProductionConfiguration.ps1 -EnvironmentFile $safe
+          if ($LASTEXITCODE -ne 0) { throw 'Secure production configuration fixture was rejected.' }
+
+          $unsafe = New-TemporaryFile
+          @'
+          ASPNETCORE_ENVIRONMENT=Production
+          Database__Provider=PostgreSQL
+          Authentication__Mode=Bypass
+          Authentication__MetadataAddress=http://idp.example.test/metadata
+          Authentication__Issuer=http://idp.example.test
+          ConnectionStrings__PlatformDatabase=Host=db;Password=plaintext
+          ConnectionStrings__WorkerDatabase=Host=db;Password=plaintext
+          ConnectionStrings__DataSetDatabase=Host=db;Password=plaintext
+          ConnectionStrings__DataSetContentDatabase=secret://EDAN_DATASET_CONTENT_CONNECTION_STRING
+          '@ | Set-Content -LiteralPath $unsafe -Encoding utf8
+          $output = pwsh -File ./scripts/verification/Assert-ProductionConfiguration.ps1 -EnvironmentFile $unsafe 2>&1
+          if ($LASTEXITCODE -eq 0) { throw 'Unsafe production configuration fixture was accepted.' }
+          Remove-Item -LiteralPath $safe, $unsafe -Force
       - name: Provider migration and container definition check
         shell: pwsh
         run: |
