@@ -1,0 +1,53 @@
+{
+  "responsibility": {
+    "customer": "CUSTOMER_NAME",
+    "operationsOwner": "OWNER_NAME",
+    "securityApprover": "SECURITY_APPROVER",
+    "deploymentApprover": "DEPLOYMENT_APPROVER",
+    "maintenanceWindowUtc": "YYYY-MM-DDThh:mm:ssZ/hours",
+    "rollbackCriteria": "APPROVED_ROLLBACK_CRITERIA"
+  },
+  "secretManager": {
+    "product": "APPROVED_SECRET_MANAGER",
+    "accessPrincipal": "SERVICE_PRINCIPAL_REFERENCE",
+    "credentialRotation": "ROTATION_PERIOD",
+    "recoveryProcedure": "RUNBOOK_REFERENCE"
+  },
+  "identity": {
+    "issuer": "https://idp.example.invalid/realms/tenant",
+    "metadataAddress": "https://idp.example.invalid/realms/tenant/.well-known/openid-configuration",
+    "audience": "APPROVED_AUDIENCE",
+    "certificateOwner": "CERTIFICATE_OWNER"
+  },
+  "network": {
+    "firewallPolicy": "FIREWALL_CHANGE_REFERENCE"
+  },
+  "businessDatabase": {
+    "provider": "PostgreSQL|SqlServer|Oracle",
+    "databaseAndSchema": "DATABASE_AND_SCHEMA_REFERENCE",
+    "minimumPrivilegeEvidence": "PRIVILEGE_REVIEW_REFERENCE",
+    "allowedTables": "TABLE_ALLOWLIST_REFERENCE",
+    "allowedRoutines": "ROUTINE_ALLOWLIST_REFERENCE",
+    "contractVersion": "ROUTINE_CONTRACT_VERSION",
+    "compensationApproval": "COMPENSATION_APPROVAL_REFERENCE"
+  },
+  "backupAlerting": {
+    "backupStore": "EXTERNAL_BACKUP_STORE_REFERENCE",
+    "encryptionKeyOwner": "KEY_OWNER",
+    "retentionAndSchedule": "RETENTION_AND_SCHEDULE",
+    "rpo": "RPO_TARGET",
+    "rto": "RTO_TARGET",
+    "recoveryOwner": "RECOVERY_OWNER",
+    "alertChannelAndRecipients": "ALERT_CHANNEL_AND_RECIPIENTS",
+    "thresholds": "ALERT_THRESHOLD_POLICY"
+  },
+  "performanceAcceptance": {
+    "concurrentUsers": "CONCURRENCY_TARGET",
+    "rps": "RPS_TARGET",
+    "p95": "P95_TARGET",
+    "p99": "P99_TARGET",
+    "multiDbDmlThroughput": "DML_THROUGHPUT_TARGET",
+    "outageTolerance": "OUTAGE_TOLERANCE",
+    "finalAcceptanceEvidence": "ACCEPTANCE_EVIDENCE_REFERENCE"
+  }
+}
