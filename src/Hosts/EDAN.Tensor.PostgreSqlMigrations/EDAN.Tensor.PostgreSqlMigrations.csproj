@@ -24,8 +24,10 @@
     <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Platform/**/*.cs"
              Link="Persistence/Migrations/PostgreSql/Platform/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Worker/**/*.cs"
+             Exclude="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Worker/WorkerDbContextModelSnapshot.cs"
              Link="Persistence/Migrations/PostgreSql/Worker/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../EDAN.Tensor.ApiHost/Migrations/**/*.cs"
              Link="Migrations/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Remove="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Worker/WorkerDbContextModelSnapshot.cs" />
   </ItemGroup>
 </Project>
