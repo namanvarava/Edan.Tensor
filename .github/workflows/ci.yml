@@ -59,6 +59,12 @@ jobs:
           ) -Wait -PassThru -NoNewWindow
           if ($unsafeProcess.ExitCode -eq 0) { throw 'Unsafe production configuration fixture was accepted.' }
           Remove-Item -LiteralPath $safe, $unsafe -Force
+      - name: Commercial acceptance input template check
+        shell: pwsh
+        run: |
+          pwsh -File ./scripts/verification/Assert-CommercialAcceptanceInputs.ps1 `
+            -InputJson ./docs/operations/commercial-acceptance-input.example.json
+          if ($LASTEXITCODE -ne 0) { throw 'Commercial acceptance input template is invalid.' }
       - name: Provider migration and container definition check
         shell: pwsh
         run: |
