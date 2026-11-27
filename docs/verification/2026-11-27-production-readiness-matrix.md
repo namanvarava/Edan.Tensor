@@ -1,7 +1,7 @@
 # EDAN.Tensor 상용 운영 준비도 판정표
 
 검증 기준일: 2026-11-27  
-기준 커밋: `4ddaaf7`
+기준 커밋: `dd8c764`
 
 이 문서는 개발 VM과 저장소에서 확인할 수 있는 완료 항목과, 실제 고객사 운영 환경에서 승인·측정해야 하는 항목을 구분한다. 개발 VM의 성공 결과를 고객사 운영 인수로 확대 해석하지 않는다.
 
@@ -9,7 +9,7 @@
 
 | 영역 | 판정 | 증적 |
 |---|---|---|
-| main 병합 | PASS | PR #341 병합 커밋 `4ddaaf7`, 열린 PR 없음 |
+| main 병합 | PASS | PR #341·#342·#343·#344 병합 커밋 `dd8c764`, 열린 PR 없음 |
 | Release 빌드·전체 테스트 | PASS | `artifacts/local-completion-gate/summary.json` |
 | Provider Migration | PASS | PostgreSQL·SQL Server·Oracle 정적 Migration 검증 |
 | Production 기본 Provider | PASS | 운영 Compose 기본값 PostgreSQL, SQLite는 명시적 오버라이드만 허용 |
