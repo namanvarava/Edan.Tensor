@@ -32,6 +32,7 @@ public sealed class PlatformInfrastructureTests
         var second = await coordinator.ExecuteAsync(tenant.Id, "mutation-once", [step]);
 
         Assert.True(first.Succeeded);
+        Assert.False(first.Compensated);
         Assert.Equal(first.Succeeded, second.Succeeded);
         Assert.Equal(first.Compensated, second.Compensated);
         Assert.Equal(first.Steps.Count, second.Steps.Count);

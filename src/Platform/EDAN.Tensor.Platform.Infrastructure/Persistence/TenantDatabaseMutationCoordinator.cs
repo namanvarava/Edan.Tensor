@@ -77,8 +77,8 @@ public sealed class TenantDatabaseMutationCoordinator(
                 return failed;
             }
         }
-        var succeeded = new TenantDatabaseMutationResult(true, true, results);
-        audit.Complete(true, true, JsonSerializer.Serialize(succeeded), null, clock.GetUtcNow());
+        var succeeded = new TenantDatabaseMutationResult(true, false, results);
+        audit.Complete(true, false, JsonSerializer.Serialize(succeeded), null, clock.GetUtcNow());
         await db.SaveChangesAsync(cancellationToken);
         return succeeded;
     }
