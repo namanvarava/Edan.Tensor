@@ -33,6 +33,7 @@ Assert-Path 'consistency-checker' 'src/Platform/EDAN.Tensor.Platform.Infrastruct
 Assert-Path 'routine-allowlist' 'src/Platform/EDAN.Tensor.Platform.Domain/Model/TenantDatabaseRoutineAllowlist.cs'
 Assert-Path 'edan-baseline-schema' 'docs/database/edan-baseline-schema.md'
 Assert-Path 'customer-extension-policy' 'docs/database/customer-extension-policy.md'
+Assert-Path 'developer-default-api' 'docs/development/developer-default-api.md'
 
 try {
     pwsh -NoProfile -File (Join-Path $RepositoryRoot 'scripts/verification/Assert-EdanBaselineSchema.ps1') *> (Join-Path $evidencePath 'edan-baseline-schema.log')
