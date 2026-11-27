@@ -27,7 +27,7 @@ public sealed class DevelopmentBypassDataSeederTests
             using var factory = new BypassApiHostFactory(root);
             using var client = factory.CreateClient();
             using var response = await client.GetAsync("/api/platform/tenants/mine");
-            Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(global::System.Net.HttpStatusCode.OK, response.StatusCode);
             using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
             var tenant = Assert.Single(document.RootElement.EnumerateArray());
             Assert.Equal("Administrator", tenant.GetProperty("role").GetString());

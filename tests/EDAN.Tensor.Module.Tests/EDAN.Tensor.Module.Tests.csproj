@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/System/EDAN.Tensor.System.Infrastructure/EDAN.Tensor.System.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Master/EDAN.Tensor.Master.Infrastructure/EDAN.Tensor.Master.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Business/EDAN.Tensor.Business.Infrastructure/EDAN.Tensor.Business.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

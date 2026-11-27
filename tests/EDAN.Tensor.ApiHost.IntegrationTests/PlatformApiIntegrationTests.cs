@@ -33,6 +33,44 @@ namespace EDAN.Tensor.ApiHost.IntegrationTests;
 /// <summary>API Host의 OpenAPI, 다중 Tenant 소속 및 데이터 기반 권한 경계를 검증합니다.</summary>
 public sealed class PlatformApiIntegrationTests
 {
+    [Fact]
+    public async Task VersionedModuleEndpointsExposeContractFirstRoutesAndTenantBoundary()
+    {
+        using var factory = new ApiHostFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "module-admin");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "platform_admin");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        using var tenantResponse = await client.PostAsJsonAsync("/api/platform/tenants", new { code = $"MOD-{suffix}", name = "Module test tenant" });
+        Assert.Equal(HttpStatusCode.Created, tenantResponse.StatusCode);
+        var tenantId = await ReadIdAsync(tenantResponse);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/api/platform/tenants/{tenantId}/activate", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync($"/api/platform/tenants/{tenantId}/memberships", new { subjectId = "module-admin", role = "Administrator" })).StatusCode);
+        client.DefaultRequestHeaders.Remove("X-Test-Role");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "tenant_member");
+        client.DefaultRequestHeaders.Remove("X-Test-Subject");
+        client.DefaultRequestHeaders.Add("X-Test-Subject", "module-admin");
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+
+        using var menu = await client.PostAsJsonAsync($"/api/v1/system/menus?tenantId={tenantId:D}", new
+        {
+            code = "HOME", name = "Home", path = "/home", isEnabled = true
+        });
+        Assert.Equal(HttpStatusCode.Created, menu.StatusCode);
+
+        using var codes = await client.GetAsync($"/api/v1/master/codes?tenantId={tenantId:D}&page=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.OK, codes.StatusCode);
+
+        using var work = await client.PostAsJsonAsync($"/api/v1/business/work-items?tenantId={tenantId:D}", new
+        {
+            workType = "ORDER", referenceNo = "ORD-001"
+        });
+        Assert.Equal(HttpStatusCode.Created, work.StatusCode);
+
+        using var mismatch = await client.GetAsync($"/api/v1/system/menus?tenantId={Guid.NewGuid():D}");
+        Assert.Equal(HttpStatusCode.BadRequest, mismatch.StatusCode);
+    }
+
     /// <summary>초대 생성·조회·재전송·수락과 Tenant 관리자 경계를 실제 HTTP 요청으로 검증합니다.</summary>
     [Fact]
     public async Task InvitationHttpSmokeCoversTokenLifecycleAndTenantBoundary()
@@ -135,7 +173,7 @@ public sealed class PlatformApiIntegrationTests
         client.DefaultRequestHeaders.Add("X-Test-Subject", "result-admin");
         client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
         using var body = new ByteArrayContent(Encoding.UTF8.GetBytes("EDAN raw result"));
-        body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+        body.Headers.ContentType = new global::System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
         using var storeResponse = await client.PutAsync($"/api/platform/tenants/{tenantId}/worker/tasks/{taskId}/result/raw", body);
         Assert.Equal(HttpStatusCode.OK, storeResponse.StatusCode);
 
@@ -1012,8 +1050,8 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.NoContent, activationAfterSchema.StatusCode);
 
         const string payload = "EDAN Tensor DataSet content round-trip";
-        using var uploadContent = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(payload));
-        uploadContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        using var uploadContent = new ByteArrayContent(global::System.Text.Encoding.UTF8.GetBytes(payload));
+        uploadContent.Headers.ContentType = new global::System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         using var upload = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", uploadContent);
         Assert.Equal(HttpStatusCode.NoContent, upload.StatusCode);
@@ -1027,16 +1065,16 @@ public sealed class PlatformApiIntegrationTests
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/usage");
         Assert.Equal(HttpStatusCode.OK, usageResponse.StatusCode);
         using var usageDocument = await JsonDocument.ParseAsync(await usageResponse.Content.ReadAsStreamAsync());
-        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+        Assert.Equal(global::System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("tenantBytes").GetInt64());
         Assert.Equal(1, usageDocument.RootElement.GetProperty("tenantDataSetCount").GetInt64());
-        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+        Assert.Equal(global::System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("organizationBytes").GetInt64());
         Assert.Equal(1, usageDocument.RootElement.GetProperty("organizationDataSetCount").GetInt64());
-        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+        Assert.Equal(global::System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("projectBytes").GetInt64());
         Assert.Equal(1, usageDocument.RootElement.GetProperty("projectDataSetCount").GetInt64());
-        Assert.Equal(System.Text.Encoding.UTF8.GetByteCount(payload),
+        Assert.Equal(global::System.Text.Encoding.UTF8.GetByteCount(payload),
             usageDocument.RootElement.GetProperty("dataSetBytes").GetInt64());
         Assert.Equal(50, usageDocument.RootElement.GetProperty("limits").GetProperty("tenantLimitBytes").GetInt64());
 
@@ -1076,7 +1114,7 @@ public sealed class PlatformApiIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, memberCreate.StatusCode);        using var memberRead = await client.GetAsync(
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content");
         Assert.Equal(HttpStatusCode.OK, memberRead.StatusCode);
-        using var memberUploadContent = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("unauthorized"));
+        using var memberUploadContent = new ByteArrayContent(global::System.Text.Encoding.UTF8.GetBytes("unauthorized"));
         using var memberUpload = await client.PostAsync(
             $"/api/platform/tenants/{tenantId}/datasets/{dataSetId}/content", memberUploadContent);
         Assert.Equal(HttpStatusCode.Forbidden, memberUpload.StatusCode);

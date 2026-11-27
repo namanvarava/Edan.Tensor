@@ -198,6 +198,16 @@ public sealed record CreateDataSetRequestContract(
     string StorageAdapter = "sqlite",
     string ContentFormat = "json-array");
 
+public sealed record SystemMenuContractV1(Guid Id, Guid TenantId, string Code, string Name, string Path, bool IsEnabled);
+public sealed record UpsertSystemMenuRequestV1(string Code, string Name, string Path, bool IsEnabled = true);
+public sealed record SystemMenuPageContractV1(IReadOnlyList<SystemMenuContractV1> Items, int TotalCount, int Page, int PageSize);
+public sealed record MasterCodeContractV1(Guid Id, Guid TenantId, string GroupCode, string Code, string Name, int SortOrder, bool IsEnabled);
+public sealed record UpsertMasterCodeRequestV1(string GroupCode, string Code, string Name, int SortOrder = 0, bool IsEnabled = true);
+public sealed record MasterCodePageContractV1(IReadOnlyList<MasterCodeContractV1> Items, int TotalCount, int Page, int PageSize);
+public sealed record BusinessWorkItemContractV1(Guid Id, Guid TenantId, string WorkType, string ReferenceNo, string Status, DateTimeOffset CreatedAtUtc);
+public sealed record CreateBusinessWorkItemRequestV1(string WorkType, string ReferenceNo);
+public sealed record BusinessWorkItemPageContractV1(IReadOnlyList<BusinessWorkItemContractV1> Items, int TotalCount, int Page, int PageSize);
+
 /// <summary>DataSet 생성 직후 반환되는 기본 정보입니다.</summary>
 public sealed record CreateDataSetResponseContract(
     Guid Id,

@@ -16,6 +16,9 @@ using EDAN.Tensor.DataSet.Application.Abstractions;
 using EDAN.Tensor.DataSet.Application.DependencyInjection;
 using EDAN.Tensor.DataSet.Infrastructure.Persistence;
 using EDAN.Tensor.Edan.Infrastructure.Persistence;
+using EDAN.Tensor.System.Infrastructure;
+using EDAN.Tensor.Master.Infrastructure;
+using EDAN.Tensor.Business.Infrastructure;
 using EDAN.Tensor.ApiHost.Services;
 using EDAN.Tensor.ApiHost.Observability;
 using EDAN.Tensor.HostServices.Services;
@@ -67,6 +70,9 @@ if (sqliteConnection is not null
 }
 
 builder.Services.AddPlatformApplication();
+builder.Services.AddSystemModule();
+builder.Services.AddMasterModule();
+builder.Services.AddBusinessModule();
 builder.Services.AddDataSetApplication();
 builder.Services.AddScoped<IDataSetScopeValidator, PlatformDataSetScopeValidator>();
 builder.Services.AddHostedService<AuthorizationAuditArchiveSchedulerWorker>();
@@ -224,6 +230,7 @@ app.MapWorkerEndpoints();
 app.MapDataSetEndpoints();
 app.MapDataSetValidationEndpoints();
 app.MapExternalDeliveryEndpoints();
+app.MapModuleV1Endpoints();
 
 // 데이터베이스 연결 결과를 신호등 상태로 반환하며 연결 예외의 상세 정보는 외부에 노출하지 않습니다.
 app.MapGet("/health", async (DatabaseHealthService health, CancellationToken cancellationToken) =>

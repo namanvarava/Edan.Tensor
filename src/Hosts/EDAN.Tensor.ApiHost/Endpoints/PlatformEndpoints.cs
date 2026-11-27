@@ -140,7 +140,7 @@ public static class PlatformEndpoints
                 await db.SaveChangesAsync(token);
                 return Results.Ok(new { Status = "Healthy", Provider = connection.GetType().Name, CheckedAtUtc = clock.GetUtcNow() });
             }
-            catch (Exception ex) when (ex is InvalidOperationException or System.Data.Common.DbException or TimeoutException)
+            catch (Exception ex) when (ex is InvalidOperationException or global::System.Data.Common.DbException or TimeoutException)
             {
                 return Results.Problem("테넌트 DB 연결 확인에 실패했습니다.", statusCode: StatusCodes.Status503ServiceUnavailable);
             }
