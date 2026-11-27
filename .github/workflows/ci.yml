@@ -126,6 +126,10 @@ jobs:
         run: |
           pwsh -NoProfile -File ./scripts/verification/Assert-DeploymentProfile.ps1 -EnvironmentFile ./docs/operations/smb-default-profile.env.example -Profile SME
           pwsh -NoProfile -File ./scripts/verification/Assert-DeploymentProfile.ps1 -EnvironmentFile ./docs/operations/enterprise-default-profile.env.example -Profile Enterprise
+      - name: Operational readiness gate
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File ./scripts/verification/Assert-OperationalReadiness.ps1 -SkipTests
       - name: Test
         run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-${{ github.run_id }}.trx"
       - name: HTTP smoke
