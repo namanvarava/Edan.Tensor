@@ -14,7 +14,7 @@ Every module route requires a valid bearer token and an `X-Tenant-Id` header equ
 | Master v1 | `GET/POST /api/v1/master/codes` | Tenant common-code catalog | `master.code.read` / `master.code.write` |
 | Business v1 | `GET/POST /api/v1/business/work-items` | Tenant business work intake | `business.work.read` / `business.work.write` |
 
-The current development implementation applies the authenticated route boundary and uses an in-memory adapter. A persistent provider adapter must be supplied before production use; the API contract and application interfaces do not expose a DbContext or provider type.
+The current development implementation applies the authenticated route boundary, requires active Tenant membership for reads, requires Tenant administrator membership for writes, and uses an in-memory adapter. A persistent provider adapter must be supplied before production use; the API contract and application interfaces do not expose a DbContext or provider type.
 
 ## Request conventions
 
@@ -30,4 +30,4 @@ Development exposes `/openapi/v1.json` and Swagger UI. New endpoints have explic
 
 ## Client package
 
-`EDAN.Tensor.Client.Contracts` contains v1 DTOs and `EDAN.Tensor.Client` contains typed read methods. Client package versioning is independent from server route compatibility; a package may consume v1 without referencing Framework DbContext or provider assemblies.
+`EDAN.Tensor.Client.Contracts` contains v1 DTOs and `EDAN.Tensor.Client` contains typed read/write methods. The generated package artifacts use version `1.0.0`. Client package versioning is independent from server route compatibility; a package may consume v1 without referencing Framework DbContext or provider assemblies.

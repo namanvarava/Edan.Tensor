@@ -1,4 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><AssemblyName>EDAN.Tensor.System.Domain</AssemblyName><RootNamespace>EDAN.Tensor.System.Domain</RootNamespace></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../EDAN.Tensor.System.Contracts/EDAN.Tensor.System.Contracts.csproj" /></ItemGroup>
 </Project>

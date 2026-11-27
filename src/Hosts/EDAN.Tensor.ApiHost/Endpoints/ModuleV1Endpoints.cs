@@ -19,6 +19,7 @@ public static class ModuleV1Endpoints
         listMenus.WithName("ListSystemMenusV1").WithOpenApi(operation => { operation.Summary = "시스템 메뉴 조회"; return operation; });
         var createMenu = system.MapPost("/menus", (Guid tenantId, UpsertSystemMenuRequest request, HttpRequest httpRequest, ISystemMenuService service) =>
             TenantResponse(tenantId, httpRequest, () => Results.Created($"/api/v1/system/menus?tenantId={tenantId}", service.Create(tenantId, request))));
+        createMenu.AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
         createMenu.WithName("CreateSystemMenuV1").WithOpenApi(operation => { operation.Summary = "시스템 메뉴 등록"; return operation; });
 
         var master = endpoints.MapGroup("/api/v1/master").WithTags("Master v1").RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>();
@@ -28,6 +29,7 @@ public static class ModuleV1Endpoints
         listCodes.WithName("ListMasterCodesV1").WithOpenApi(operation => { operation.Summary = "공통코드 조회"; return operation; });
         var createCode = master.MapPost("/codes", (Guid tenantId, UpsertMasterCodeRequest request, HttpRequest httpRequest, IMasterCodeService service) =>
             TenantResponse(tenantId, httpRequest, () => Results.Created($"/api/v1/master/codes?tenantId={tenantId}", service.Create(tenantId, request))));
+        createCode.AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
         createCode.WithName("CreateMasterCodeV1").WithOpenApi(operation => { operation.Summary = "공통코드 등록"; return operation; });
 
         var business = endpoints.MapGroup("/api/v1/business").WithTags("Business v1").RequireAuthorization("TenantMember").AddEndpointFilter<TenantMembershipAuthorizationFilter>();
@@ -37,6 +39,7 @@ public static class ModuleV1Endpoints
         listWorkItems.WithName("ListBusinessWorkItemsV1").WithOpenApi(operation => { operation.Summary = "업무 처리 항목 조회"; return operation; });
         var createWorkItem = business.MapPost("/work-items", (Guid tenantId, CreateBusinessWorkItemRequest request, HttpRequest httpRequest, IBusinessWorkItemService service) =>
             TenantResponse(tenantId, httpRequest, () => Results.Created($"/api/v1/business/work-items?tenantId={tenantId}", service.Create(tenantId, request))));
+        createWorkItem.AddEndpointFilter<TenantAdministratorAuthorizationFilter>();
         createWorkItem.WithName("CreateBusinessWorkItemV1").WithOpenApi(operation => { operation.Summary = "업무 처리 항목 등록"; return operation; });
     }
 

@@ -129,6 +129,24 @@ public sealed class TensorApiClient
         return SendJsonAsync<BusinessWorkItemPageContractV1>(CreateRequest(HttpMethod.Get, $"/api/v1/business/work-items{query}", tenantId), cancellationToken);
     }
 
+    public Task<SystemMenuContractV1> CreateSystemMenuV1Async(Guid tenantId, UpsertSystemMenuRequestV1 request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<SystemMenuContractV1>(CreateRequest(HttpMethod.Post, $"/api/v1/system/menus?tenantId={tenantId:D}", tenantId), request, cancellationToken);
+    }
+
+    public Task<MasterCodeContractV1> CreateMasterCodeV1Async(Guid tenantId, UpsertMasterCodeRequestV1 request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<MasterCodeContractV1>(CreateRequest(HttpMethod.Post, $"/api/v1/master/codes?tenantId={tenantId:D}", tenantId), request, cancellationToken);
+    }
+
+    public Task<BusinessWorkItemContractV1> CreateBusinessWorkItemV1Async(Guid tenantId, CreateBusinessWorkItemRequestV1 request, CancellationToken cancellationToken = default)
+    {
+        ValidateTenantId(tenantId); ArgumentNullException.ThrowIfNull(request);
+        return SendJsonAsync<BusinessWorkItemContractV1>(CreateRequest(HttpMethod.Post, $"/api/v1/business/work-items?tenantId={tenantId:D}", tenantId), request, cancellationToken);
+    }
+
     /// <summary>현재 인증 주체가 속한 Tenant 목록을 조회합니다.</summary>
     public Task<IReadOnlyList<TenantMembershipContract>> GetMyMembershipsAsync(
         CancellationToken cancellationToken = default) =>

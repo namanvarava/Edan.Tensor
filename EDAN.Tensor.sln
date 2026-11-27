@@ -147,6 +147,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Business.Applic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Business.Infrastructure", "src\Business\EDAN.Tensor.Business.Infrastructure\EDAN.Tensor.Business.Infrastructure.csproj", "{CEA1F476-F2A8-4D40-BFB3-33A091D137E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDAN.Tensor.Module.Tests", "tests\EDAN.Tensor.Module.Tests\EDAN.Tensor.Module.Tests.csproj", "{C9F1C781-643C-4902-B001-15BE34352736}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -865,6 +867,18 @@ Global
 		{CEA1F476-F2A8-4D40-BFB3-33A091D137E1}.Release|x64.Build.0 = Release|Any CPU
 		{CEA1F476-F2A8-4D40-BFB3-33A091D137E1}.Release|x86.ActiveCfg = Release|Any CPU
 		{CEA1F476-F2A8-4D40-BFB3-33A091D137E1}.Release|x86.Build.0 = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|x64.Build.0 = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Debug|x86.Build.0 = Debug|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|x64.ActiveCfg = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|x64.Build.0 = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|x86.ActiveCfg = Release|Any CPU
+		{C9F1C781-643C-4902-B001-15BE34352736}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -904,5 +918,6 @@ Global
 		{AFB70585-D933-4F69-8C20-4F4408B75422} = {CC1F4FA2-92F2-BA4B-815B-7EC2CBBCCF50}
 		{C27CF87A-47D8-408B-980E-B0191D795217} = {CC1F4FA2-92F2-BA4B-815B-7EC2CBBCCF50}
 		{CEA1F476-F2A8-4D40-BFB3-33A091D137E1} = {CC1F4FA2-92F2-BA4B-815B-7EC2CBBCCF50}
+		{C9F1C781-643C-4902-B001-15BE34352736} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
