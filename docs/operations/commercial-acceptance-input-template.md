@@ -2,6 +2,13 @@
 
 이 문서는 코드에 비밀값을 저장하지 않고, 고객사별 운영 인수에 필요한 결정값과 증적 위치를 한 번에 수집하기 위한 서식이다. 값이 비어 있으면 상용 완전 완료로 판정하지 않는다.
 
+입력값을 JSON으로 작성한 뒤 다음 게이트로 누락과 위험한 비밀값 포함 여부를 검사한다. 예시 파일은 `commercial-acceptance-input.example.json`이다.
+
+```powershell
+pwsh -File ./scripts/verification/Assert-CommercialAcceptanceInputs.ps1 `
+  -InputJson ./docs/operations/commercial-acceptance-input.example.json
+```
+
 ## 1. 운영 책임과 변경 승인
 
 | 항목 | 입력값 | 증적/승인자 |
