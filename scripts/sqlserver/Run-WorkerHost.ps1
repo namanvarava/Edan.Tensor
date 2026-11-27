@@ -2,9 +2,9 @@ param(
     [string]$HostUrl = "http://127.0.0.1:5001",
     [string]$Server = "192.168.56.101",
     [int]$Port = 1433,
-    [string]$PlatformDatabase = "edan_platform",
-    [string]$WorkerDatabase = "edan_worker",
-    [string]$DataSetDatabase = "edan_dataset",
+    [string]$PlatformDatabase = "edan_framework",
+    [string]$WorkerDatabase = "edan_framework",
+    [string]$DataSetDatabase = "edan_framework",
     [string]$User = "edan"
 )
 

@@ -5,9 +5,9 @@ param(
     [string]$Server = "192.168.56.101",
     [int]$Port = 1433,
     [string]$User = "edan",
-    [string]$PlatformDatabase = "edan_platform",
-    [string]$WorkerDatabase = "edan_worker",
-    [string]$DataSetDatabase = "edan_dataset"
+    [string]$PlatformDatabase = "edan_framework",
+    [string]$WorkerDatabase = "edan_framework",
+    [string]$DataSetDatabase = "edan_framework"
 )
 
 $ErrorActionPreference = "Stop"

@@ -2,9 +2,9 @@ param(
     [switch]$Apply,
     [ValidateSet("PlatformDbContext", "WorkerDbContext", "DataSetDbContext")]
     [string[]]$Contexts = @("PlatformDbContext", "WorkerDbContext", "DataSetDbContext"),
-    [string]$PlatformDatabase = "edan_platform",
-    [string]$WorkerDatabase = "edan_worker",
-    [string]$DataSetDatabase = "edan_dataset"
+    [string]$PlatformDatabase = "edan_framework",
+    [string]$WorkerDatabase = "edan_framework",
+    [string]$DataSetDatabase = "edan_framework"
 )
 
 $ErrorActionPreference = "Stop"

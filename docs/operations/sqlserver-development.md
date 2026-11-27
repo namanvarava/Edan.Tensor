@@ -23,9 +23,9 @@ EDAN.Tensor의 SQL Server Provider는 PostgreSQL 기준 구조를 유지하면�
 .\scripts\sqlserver\Apply-Migrations.ps1 `
   -Server 192.168.56.101 `
   -Port 1433 `
-  -PlatformDatabase edan_platform `
-  -WorkerDatabase edan_worker `
-  -DataSetDatabase edan_dataset
+  -PlatformDatabase edan_framework `
+  -WorkerDatabase edan_framework `
+  -DataSetDatabase edan_framework
 ```
 
 ## 운영 원칙

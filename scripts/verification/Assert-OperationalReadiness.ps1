@@ -34,6 +34,16 @@ Assert-Path 'routine-allowlist' 'src/Platform/EDAN.Tensor.Platform.Domain/Model/
 Assert-Path 'edan-baseline-schema' 'docs/database/edan-baseline-schema.md'
 Assert-Path 'customer-extension-policy' 'docs/database/customer-extension-policy.md'
 Assert-Path 'developer-default-api' 'docs/development/developer-default-api.md'
+Assert-Path 'local-dbeaver-provider-setup' 'docs/database/local-dbeaver-provider-setup.md'
+Assert-Path 'postgresql-database-comments' 'scripts/database/postgresql/Apply-DatabaseComments.sql'
+Assert-Path 'sqlserver-database-comments' 'scripts/database/sqlserver/Apply-DatabaseComments.sql'
+Assert-Path 'oracle-database-comments' 'scripts/database/oracle/Apply-DatabaseComments.sql'
+Assert-Path 'framework-database-layout-gate' 'scripts/verification/Assert-FrameworkDatabaseLayout.ps1'
+
+try {
+    pwsh -NoProfile -File (Join-Path $RepositoryRoot 'scripts/verification/Assert-FrameworkDatabaseLayout.ps1') *> (Join-Path $evidencePath 'framework-database-layout.log')
+    Add-Result 'framework-database-layout' ($LASTEXITCODE -eq 0) 'Unified Framework database defaults and DBeaver documentation'
+} catch { Add-Result 'framework-database-layout' $false $_.Exception.Message }
 
 try {
     pwsh -NoProfile -File (Join-Path $RepositoryRoot 'scripts/verification/Assert-EdanBaselineSchema.ps1') *> (Join-Path $evidencePath 'edan-baseline-schema.log')

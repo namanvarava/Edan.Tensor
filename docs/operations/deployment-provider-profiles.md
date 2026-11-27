@@ -20,9 +20,9 @@ Compose를 별도 환경 파일 없이 시작하면 `Operations__Profile=SME`, `
 
 ```text
 Database__Provider=PostgreSQL
-ConnectionStrings__PlatformDatabase=Host=<host>;Port=5432;Database=edan_platform;Username=<user>;Password=<secret>;SSL Mode=Require
-ConnectionStrings__WorkerDatabase=Host=<host>;Port=5432;Database=edan_worker;Username=<user>;Password=<secret>;SSL Mode=Require
-ConnectionStrings__DataSetDatabase=Host=<host>;Port=5432;Database=edan_dataset;Username=<user>;Password=<secret>;SSL Mode=Require
+ConnectionStrings__PlatformDatabase=Host=<host>;Port=5432;Database=edan_framework;Username=<user>;Password=<secret>;SSL Mode=Require
+ConnectionStrings__WorkerDatabase=Host=<host>;Port=5432;Database=edan_framework;Username=<user>;Password=<secret>;SSL Mode=Require
+ConnectionStrings__DataSetDatabase=Host=<host>;Port=5432;Database=edan_framework;Username=<user>;Password=<secret>;SSL Mode=Require
 ConnectionStrings__DataSetContentDatabase=Data Source=/app/App_Data/edan-tensor-dataset-content.db;Cache=Shared
 ```
 
