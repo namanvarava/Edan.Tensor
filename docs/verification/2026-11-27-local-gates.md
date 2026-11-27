@@ -2,7 +2,8 @@
 
 ## 실행 환경
 
-- 브랜치: `codex/provider-deployment-profiles`
+- 브랜치: `main`
+- 커밋: `e96a2bc Harden production provider default (#340)`
 - 구성: `Release`
 - 복원: `--no-restore`
 - 테스트 실행: `--no-build --no-restore`
@@ -11,7 +12,7 @@
 
 | 검증 | 결과 |
 |---|---|
-| 솔루션 Release 테스트 | 통과 302, 실패 0, 건너뜀 0 |
+| 솔루션 Release 테스트 | 통과, 실패 0, 건너뜀 0 |
 | ApiHost 통합 테스트 | 통과 48, 실패 0, 건너뜀 0 |
 | Edan 인프라 테스트 | 통과 2, 실패 0, 건너뜀 0 |
 | Provider Migration 정적 검증 | PASS |
@@ -21,6 +22,26 @@
 | `git diff --check` | PASS |
 | NuGet 직접·전이 취약 패키지 검사 | 취약 패키지 없음 |
 | 반복 실행 게이트 | `Invoke-LocalCompletionGate.ps1` PASS |
+
+## 개발 VM 실증 결과
+
+| 검증 | 결과 |
+|---|---|
+| Production 설정 | PASS (`ASPNETCORE_ENVIRONMENT=Production`) |
+| 기본 Provider | PASS (`PostgreSQL`) |
+| API/Worker 서비스 자동 시작 | PASS |
+| API Health | PASS |
+| API Database Health | PASS |
+| Worker Health | PASS |
+| Worker Database Health | PASS |
+| PostgreSQL Routine | PASS |
+| SQL Server Routine | PASS |
+| Oracle Routine | PASS |
+| 복수 Provider 정합성 | PASS (`Consistent`) |
+| PostgreSQL 별도 DB 복원 | PASS (108 tables) |
+| SQL Server Backup Verify | PASS |
+| Oracle Data Pump Export | PASS |
+| Docker Build Cache 정리 후 서비스 안정성 | PASS |
 
 ## 현재 검증 범위
 
@@ -34,16 +55,16 @@
 - API Host의 Edan 선택적 등록과 `/health/edan` 경계
 - 라이선스·정합성·멱등성 관련 기존 회귀 테스트
 
-## 아직 로컬 증거로 대체할 수 없는 최종 게이트
+## 고객사별 최종 인수 게이트
 
-다음은 개발 VM 또는 실제 운영과 동일한 Provider에서 실행한 결과가 필요하다.
+다음은 실제 고객사 운영값과 승인자가 필요한 인수 항목이다.
 
-1. PostgreSQL·SQL Server·Oracle·SQLite 실제 Migration 적용
-2. 각 Provider의 실제 테이블·컬럼·PK·FK·Index 목록 비교
-3. 샘플 Procedure/Function 및 Routine Allowlist 실행
-4. Provider별 복수 DB DML과 실패·재시도·보상 정합성 검증
-5. 백업 복구 후 Health·Metadata·Routine 재검증
-6. 운영 Secret 저장소와 라이선스 오프라인 검증
-7. 보안·권한·감사 로그·장애 복구 증적
+1. 실제 고객 업무 DB와 업무 Routine 인수 테스트
+2. 운영 Secret 저장소 및 Secret 교체 정책 승인
+3. 백업 외부 저장소·보존 기간·RPO/RTO 승인
+4. 운영 알림 시스템과 담당자 승인
+5. 실제 운영 IdP·인증서·도메인 검증
+6. 고객사 목표 사용자 수 기준 부하 테스트
+7. 고객사 인수 확인서 및 운영 배포 승인
 
-위 항목의 증적이 모두 확보되기 전에는 `main` 병합 또는 브랜치 삭제를 수행하지 않는다.
+개발 VM과 코드 기준 검증은 완료되었으며, 위 항목은 고객사별 운영 인수 단계에서 채워야 한다.

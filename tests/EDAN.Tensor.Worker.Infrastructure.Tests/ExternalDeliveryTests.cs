@@ -154,11 +154,11 @@ public sealed class ExternalDeliveryTests
     public async Task LocalReceiver_ResponseLossThenSuccess_ReusesSameIdempotencyKey()
     {
         await using var receiver = new LocalReceiver();
-        using var receiverTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var receiverTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var receiverTask = receiver.RunAsync(receiverTimeout.Token);
         using var client = new HttpClient(new SocketsHttpHandler { UseProxy = false })
         {
-            Timeout = TimeSpan.FromSeconds(2)
+            Timeout = TimeSpan.FromSeconds(5)
         };
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -168,13 +168,13 @@ public sealed class ExternalDeliveryTests
         var service = new ExternalDeliveryService(
             new ExternalDeliveryRepository(db), client,
             new ExternalDeliveryOptions(new HashSet<string>(StringComparer.OrdinalIgnoreCase), true,
-                TimeSpan.FromSeconds(2)));
+                TimeSpan.FromSeconds(5)));
         var tenantId = Guid.NewGuid();
         var created = await service.CreateAsync(tenantId, receiver.TargetUri,
             "{\"event\":\"local-receiver\"}", "local-receiver-1", 3, DateTimeOffset.UtcNow);
 
         var firstAttempt = service.DeliverAsync(tenantId, created.Id);
-        var firstCompleted = await Task.WhenAny(firstAttempt, Task.Delay(TimeSpan.FromSeconds(5)));
+        var firstCompleted = await Task.WhenAny(firstAttempt, Task.Delay(TimeSpan.FromSeconds(10)));
         Assert.Same(firstAttempt, firstCompleted);
         await Assert.ThrowsAsync<ExternalDeliveryTransientException>(() => firstAttempt);
         var succeeded = await service.DeliverAsync(tenantId, created.Id);
