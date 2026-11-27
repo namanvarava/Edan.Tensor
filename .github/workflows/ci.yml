@@ -129,6 +129,7 @@ jobs:
       - name: Operational readiness gate
         shell: pwsh
         run: |
+          pwsh -NoProfile -File ./scripts/verification/Assert-EdanBaselineSchema.ps1
           pwsh -NoProfile -File ./scripts/verification/Assert-OperationalReadiness.ps1 -SkipTests
       - name: Test
         run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-${{ github.run_id }}.trx"
