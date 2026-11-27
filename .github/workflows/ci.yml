@@ -117,6 +117,10 @@ jobs:
           } else {
             Write-Host 'Docker CLI is unavailable; compose runtime validation is deferred.'
           }
+      - name: Commercial completion gate
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File ./scripts/verification/Assert-CommercialCompletion.ps1 -SkipTests
       - name: Test
         run: dotnet test EDAN.Tensor.sln --no-build --no-restore --configuration Release --logger "trx;LogFileName=test-results-${{ github.run_id }}.trx"
       - name: HTTP smoke
