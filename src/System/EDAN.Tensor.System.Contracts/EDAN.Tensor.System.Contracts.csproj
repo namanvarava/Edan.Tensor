@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>EDAN.Tensor.System.Contracts</AssemblyName><RootNamespace>EDAN.Tensor.System.Contracts</RootNamespace></PropertyGroup>
+</Project>
