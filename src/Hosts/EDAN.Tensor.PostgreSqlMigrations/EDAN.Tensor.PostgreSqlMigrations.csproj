@@ -14,5 +14,18 @@
   <ItemGroup>
     <Compile Include="PostgreSqlMigrationsMarker.cs" />
     <Compile Include="Migrations/**/*.cs" />
+    <!--
+      The provider-specific migration host must contain the complete migration
+      chain.  The original PostgreSQL baselines live in ApiHost because they
+      predate the dedicated migration host.  Link them here so a new unified
+      edan_framework database is created from an empty database before later
+      reconciliation/naming migrations run.
+    -->
+    <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Platform/**/*.cs"
+             Link="Persistence/Migrations/PostgreSql/Platform/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Persistence/Migrations/PostgreSql/Worker/**/*.cs"
+             Link="Persistence/Migrations/PostgreSql/Worker/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../EDAN.Tensor.ApiHost/Migrations/**/*.cs"
+             Link="Migrations/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
