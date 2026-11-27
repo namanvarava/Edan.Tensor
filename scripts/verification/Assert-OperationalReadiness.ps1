@@ -31,6 +31,14 @@ Assert-Path 'secret-resolution-source' 'src/Platform/EDAN.Tensor.Platform.Infras
 Assert-Path 'mutation-coordinator' 'src/Platform/EDAN.Tensor.Platform.Infrastructure/Persistence/TenantDatabaseMutationCoordinator.cs'
 Assert-Path 'consistency-checker' 'src/Platform/EDAN.Tensor.Platform.Infrastructure/Persistence/TenantDatabaseConsistencyChecker.cs'
 Assert-Path 'routine-allowlist' 'src/Platform/EDAN.Tensor.Platform.Domain/Model/TenantDatabaseRoutineAllowlist.cs'
+Assert-Path 'edan-baseline-schema' 'docs/database/edan-baseline-schema.md'
+Assert-Path 'customer-extension-policy' 'docs/database/customer-extension-policy.md'
+Assert-Path 'developer-default-api' 'docs/development/developer-default-api.md'
+
+try {
+    pwsh -NoProfile -File (Join-Path $RepositoryRoot 'scripts/verification/Assert-EdanBaselineSchema.ps1') *> (Join-Path $evidencePath 'edan-baseline-schema.log')
+    Add-Result 'edan-baseline-schema' ($LASTEXITCODE -eq 0) 'Edan SYS/BAS baseline and provider projects'
+} catch { Add-Result 'edan-baseline-schema' $false $_.Exception.Message }
 
 try {
     pwsh -NoProfile -File (Join-Path $RepositoryRoot 'scripts/verification/Assert-CommercialCompletion.ps1') -SkipTests *> (Join-Path $evidencePath 'commercial-gate.log')
