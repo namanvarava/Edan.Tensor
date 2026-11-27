@@ -7,7 +7,7 @@ services:
       - "idp.edan.test:192.168.56.101"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      Database__Provider: ${Database__Provider:-Sqlite}
+      Database__Provider: ${Database__Provider:-PostgreSQL}
       ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
       ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
       ConnectionStrings__DataSetDatabase: ${ConnectionStrings__DataSetDatabase:?Set ConnectionStrings__DataSetDatabase}
@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile.worker
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      Database__Provider: ${Database__Provider:-Sqlite}
+      Database__Provider: ${Database__Provider:-PostgreSQL}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__PlatformDatabase: ${ConnectionStrings__PlatformDatabase:?Set ConnectionStrings__PlatformDatabase}
       ConnectionStrings__WorkerDatabase: ${ConnectionStrings__WorkerDatabase:?Set ConnectionStrings__WorkerDatabase}
