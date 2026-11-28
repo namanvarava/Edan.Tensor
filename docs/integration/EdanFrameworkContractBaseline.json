@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "designStatus": "TENSOR-DESIGN-COMPLETE",
+  "repository": "namanvarava/Edan.Tensor",
+  "branch": "main",
+  "sourceCommitSha": "84fc8494d06974f39506e91700295ee0784e5ebe",
+  "apiContractVersion": "1.0.0",
+  "apiContractDocument": "docs/api/api-contract-first-v1.md",
+  "openApi": {
+    "version": "v1",
+    "path": "/openapi/v1.json",
+    "versioningPolicy": "Existing routes remain unchanged. New contracts are additive under /api/v1/."
+  },
+  "client": {
+    "contractsPackageId": "EDAN.Tensor.Client.Contracts",
+    "clientPackageId": "EDAN.Tensor.Client",
+    "contractsVersion": "1.0.0",
+    "clientVersion": "1.0.0",
+    "sourceProjects": [
+      "src/Client/EDAN.Tensor.Client.Contracts/EDAN.Tensor.Client.Contracts.csproj",
+      "src/Client/EDAN.Tensor.Client/EDAN.Tensor.Client.csproj"
+    ]
+  },
+  "tenant": {
+    "queryParameter": "tenantId",
+    "header": "X-Tenant-Id",
+    "mismatchStatus": 400,
+    "mismatchCode": "tenant.context_mismatch",
+    "authentication": "Bearer token required"
+  },
+  "routes": [
+    {
+      "service": "menu",
+      "get": "GET /api/v1/system/menus?tenantId={tenantId}",
+      "post": "POST /api/v1/system/menus?tenantId={tenantId}",
+      "readPermission": "system.menu.read",
+      "writePermission": "system.menu.write",
+      "clientMethods": ["GetSystemMenusV1Async", "CreateSystemMenuV1Async"]
+    },
+    {
+      "service": "common-code",
+      "get": "GET /api/v1/master/codes?tenantId={tenantId}",
+      "post": "POST /api/v1/master/codes?tenantId={tenantId}",
+      "readPermission": "master.code.read",
+      "writePermission": "master.code.write",
+      "clientMethods": ["GetMasterCodesV1Async", "CreateMasterCodeV1Async"]
+    },
+    {
+      "service": "business-work",
+      "get": "GET /api/v1/business/work-items?tenantId={tenantId}",
+      "post": "POST /api/v1/business/work-items?tenantId={tenantId}",
+      "readPermission": "business.work.read",
+      "writePermission": "business.work.write",
+      "clientMethods": ["GetBusinessWorkItemsV1Async", "CreateBusinessWorkItemV1Async"]
+    },
+    {
+      "service": "organization",
+      "get": "GET /api/platform/tenants/{tenantId}/organizations",
+      "clientMethods": ["GetOrganizationsAsync"]
+    },
+    {
+      "service": "permission",
+      "get": "GET /api/platform/tenants/{tenantId}/authorization-policies",
+      "clientMethods": ["GetAuthorizationPoliciesAsync"]
+    },
+    {
+      "service": "audit",
+      "get": "GET /api/platform/tenants/{tenantId}/authorization-audit",
+      "clientMethods": ["GetAuthorizationAuditAsync"]
+    }
+  ],
+  "dtoPolicy": "Framework adapter maps EDAN.Tensor.Client.Contracts DTOs to Edan.Framework.Contracts DTOs; UI never references Tensor DTOs.",
+  "errorPolicy": "TensorApiException is mapped to FrameworkApiException while preserving HTTP status, code, description and request ID.",
+  "deferred": [
+    "Persistent provider adapter is required before production deployment; current v1 development implementation uses in-memory storage.",
+    "Code sequence, system settings, manufacturing product/BOM/vendor and licensing endpoints are outside the first integration slice and remain explicit follow-up contracts."
+  ]
+}
